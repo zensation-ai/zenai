@@ -459,7 +459,7 @@ function AuthenticatedApp() {
           <BusinessDashboard
             context={context}
             onBack={() => navigateToPage('home')}
-            initialTab={tabParam as 'overview' | 'revenue' | 'traffic' | 'seo' | 'health' | 'insights' | 'reports' | 'connectors' | undefined}
+            initialTab={tabParam as 'overview' | 'revenue' | 'traffic' | 'seo' | 'health' | 'insights' | 'reports' | 'connectors' | 'intelligence' | undefined}
           />
         </Suspense>
       } />
@@ -497,7 +497,7 @@ function AuthenticatedApp() {
             context={context}
             onBack={() => navigateToPage('home')}
             onNavigate={(page) => navigateToPage(page as Page)}
-            initialTab={(tabParam || 'general') as 'profile' | 'general' | 'ai' | 'privacy' | 'automations' | 'governance' | 'integrations' | 'data'}
+            initialTab={(tabParam || 'general') as 'profile' | 'account' | 'general' | 'ai' | 'privacy' | 'automations' | 'proactive-rules' | 'governance' | 'context-rules' | 'security' | 'integrations' | 'mcp-servers' | 'extensions' | 'on-device-ai' | 'system' | 'data'}
           />
         </Suspense>
       } />
@@ -507,7 +507,7 @@ function AuthenticatedApp() {
             context={context}
             onBack={() => navigateToPage('home')}
             onNavigate={(page) => navigateToPage(page as Page)}
-            initialTab={(tabParam || 'general') as 'profile' | 'general' | 'ai' | 'privacy' | 'automations' | 'governance' | 'integrations' | 'data'}
+            initialTab={(tabParam || 'general') as 'profile' | 'account' | 'general' | 'ai' | 'privacy' | 'automations' | 'proactive-rules' | 'governance' | 'context-rules' | 'security' | 'integrations' | 'mcp-servers' | 'extensions' | 'on-device-ai' | 'system' | 'data'}
           />
         </Suspense>
       } />

@@ -25,6 +25,8 @@ import { OfflineIndicator } from '../OfflineIndicator';
 import { useKeyboardNavigation } from '../../hooks/useKeyboardNavigation';
 import { useBreakpoint } from '../../hooks/useBreakpoint';
 import { UnifiedAssistant } from '../UnifiedAssistant/UnifiedAssistant';
+import { FocusMode } from '../FocusMode';
+import { CognitiveLoadIndicator } from './CognitiveLoadIndicator';
 import './AppLayout.css';
 
 interface AppLayoutProps {
@@ -226,7 +228,9 @@ export function AppLayout({
             isFavorited={isFavorited?.(currentPage)}
             onToggleFavorite={toggleFavorite ? () => toggleFavorite(currentPage) : undefined}
           />
-          <div className="flex items-center pr-3 shrink-0 border-b border-white/[0.06]">
+          <div className="flex items-center gap-2 pr-3 shrink-0 border-b border-white/[0.06]">
+            <CognitiveLoadIndicator context={context} />
+            <FocusMode context={context} />
             <ContextIndicator context={context} />
             <ProactiveBellButton context={context} onClick={() => setProactivePanelOpen(prev => !prev)} />
           </div>

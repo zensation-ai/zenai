@@ -27,7 +27,7 @@ router.use(apiKeyAuth);
  * The frontend uses this to decide whether to use on-device or cloud.
  */
 router.get(
-  '/status',
+  '/:context/on-device-ai/status',
   asyncHandler(async (req: Request, res: Response) => {
     const userId = getUserId(req);
     const context = req.params.context;
@@ -69,7 +69,7 @@ router.get(
  * for cross-device sync.
  */
 router.post(
-  '/sync-vocab',
+  '/:context/on-device-ai/sync-vocab',
   asyncHandler(async (req: Request, res: Response) => {
     const userId = getUserId(req);
     const context = req.params.context;
@@ -104,7 +104,7 @@ router.post(
  * Get server-recommended on-device AI configuration.
  */
 router.get(
-  '/config',
+  '/:context/on-device-ai/config',
   asyncHandler(async (req: Request, res: Response) => {
     const userId = getUserId(req);
     const context = req.params.context;
