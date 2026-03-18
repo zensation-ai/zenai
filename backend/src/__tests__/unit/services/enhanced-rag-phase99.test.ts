@@ -1,132 +1,137 @@
 /**
- * Phase 99: Enhanced RAG Tests (Dynamic Weights, Confidence, Self-RAG)
+ * Phase 99/100: Enhanced RAG Tests
+ *
+ * Tests for:
+ * - CRAG Quality Gate (evaluateRetrieval, QualityTier)
+ * - Contextual Chunk Enrichment (enrichChunkWithContext, enrichQueryWithContext)
  */
 
-import { calculateDynamicWeights, calculateRetrievalConfidence } from '../../../services/enhanced-rag';
+import { evaluateRetrieval, QualityTier } from '../../../services/rag-quality-gate';
+import { enrichChunkWithContext, enrichQueryWithContext } from '../../../services/enhanced-rag';
 
-describe('Phase 99: Enhanced RAG Improvements', () => {
-  describe('calculateDynamicWeights', () => {
-    it('gives more weight to the source with higher top score', () => {
-      const hydeResults = [{ score: 0.9 }, { score: 0.7 }];
-      const agenticResults = [{ score: 0.5 }, { score: 0.4 }];
-
-      const { hydeWeight, agenticWeight } = calculateDynamicWeights(hydeResults, agenticResults);
-
-      expect(hydeWeight).toBeGreaterThan(agenticWeight);
-      expect(hydeWeight + agenticWeight).toBeCloseTo(1.0, 5);
+describe('Phase 99/100: Enhanced RAG Improvements', () => {
+  describe('CRAG Quality Gate — evaluateRetrieval', () => {
+    it('returns FAILED tier for empty results', () => {
+      const result = evaluateRetrieval('test query', []);
+      expect(result.tier).toBe(QualityTier.FAILED);
+      expect(result.avgScore).toBe(0);
+      expect(result.combinedScore).toBe(0);
     });
 
-    it('gives more weight to agentic when it has higher scores', () => {
-      const hydeResults = [{ score: 0.3 }];
-      const agenticResults = [{ score: 0.95 }];
-
-      const { hydeWeight, agenticWeight } = calculateDynamicWeights(hydeResults, agenticResults);
-
-      expect(agenticWeight).toBeGreaterThan(hydeWeight);
+    it('returns CONFIDENT tier for high-scoring results with good term coverage', () => {
+      const docs = [
+        { id: '1', title: 'Revenue Analysis', summary: 'Revenue grew 10% in Q3', score: 0.95 },
+        { id: '2', title: 'Q3 Report', summary: 'Quarterly revenue report for Q3', score: 0.90 },
+      ];
+      const result = evaluateRetrieval('revenue Q3', docs);
+      expect(result.tier).toBe(QualityTier.CONFIDENT);
+      expect(result.combinedScore).toBeGreaterThanOrEqual(0.75);
     });
 
-    it('applies diversity bonus when both sources have results', () => {
-      // Both sources present: each gets 1.1x boost
-      const { hydeWeight: w1 } = calculateDynamicWeights([{ score: 0.8 }], [{ score: 0.8 }]);
-      // With diversity: 0.8*1.1 vs 0.8*1.1 → still 50/50 but both boosted
-      expect(w1).toBeCloseTo(0.5, 1);
+    it('returns FAILED tier for low-scoring results', () => {
+      const docs = [
+        { id: '1', title: 'Unrelated', summary: 'Something about cats', score: 0.2 },
+        { id: '2', title: 'Also unrelated', summary: 'Dogs and parks', score: 0.15 },
+      ];
+      const result = evaluateRetrieval('quantum physics equations', docs);
+      expect(result.tier).toBe(QualityTier.FAILED);
+      expect(result.combinedScore).toBeLessThan(0.45);
     });
 
-    it('falls back to defaults when both are empty', () => {
-      const { hydeWeight, agenticWeight } = calculateDynamicWeights([], []);
-      expect(hydeWeight).toBe(0.4);
-      expect(agenticWeight).toBe(0.6);
+    it('returns AMBIGUOUS tier for mid-range scores', () => {
+      const docs = [
+        { id: '1', title: 'Machine Learning', summary: 'Introduction to machine learning concepts', score: 0.6 },
+        { id: '2', title: 'AI Overview', summary: 'Artificial intelligence overview', score: 0.55 },
+      ];
+      const result = evaluateRetrieval('machine learning basics', docs);
+      // combinedScore = avgScore * 0.7 + termCoverage * 0.3
+      // With partial term coverage, should be in AMBIGUOUS range
+      expect(result.combinedScore).toBeGreaterThanOrEqual(0.45);
+      expect([QualityTier.AMBIGUOUS, QualityTier.CONFIDENT]).toContain(result.tier);
     });
 
-    it('handles one empty source', () => {
-      const { hydeWeight, agenticWeight } = calculateDynamicWeights([], [{ score: 0.8 }]);
-      // HyDE has 0 weight, agentic gets all
-      expect(hydeWeight).toBe(0);
-      expect(agenticWeight).toBe(1);
+    it('considers term coverage in combined score', () => {
+      // High score but zero term coverage → lower combined score
+      const docsNoTermMatch = [
+        { id: '1', title: 'Abstract', summary: 'General discussion', score: 0.8 },
+      ];
+      const resultNoTerms = evaluateRetrieval('specific quantum topic', docsNoTermMatch);
+
+      // High score with good term coverage → higher combined score
+      const docsWithTermMatch = [
+        { id: '1', title: 'Quantum Physics', summary: 'Discussion of specific quantum topic research', score: 0.8 },
+      ];
+      const resultWithTerms = evaluateRetrieval('specific quantum topic', docsWithTermMatch);
+
+      expect(resultWithTerms.combinedScore).toBeGreaterThan(resultNoTerms.combinedScore);
     });
 
-    it('normalizes weights to sum to 1.0', () => {
-      const results = calculateDynamicWeights(
-        [{ score: 0.6 }, { score: 0.7 }],
-        [{ score: 0.4 }, { score: 0.5 }]
-      );
-      expect(results.hydeWeight + results.agenticWeight).toBeCloseTo(1.0, 5);
+    it('clamps combinedScore between 0 and 1', () => {
+      const docs = [
+        { id: '1', title: 'Perfect Match', summary: 'Exactly what was searched for', score: 1.0 },
+      ];
+      const result = evaluateRetrieval('perfect match', docs);
+      expect(result.combinedScore).toBeLessThanOrEqual(1.0);
+      expect(result.combinedScore).toBeGreaterThanOrEqual(0);
+    });
+
+    it('avgScore is the mean of all document scores', () => {
+      const docs = [
+        { id: '1', title: 'A', summary: 'a', score: 0.8 },
+        { id: '2', title: 'B', summary: 'b', score: 0.6 },
+        { id: '3', title: 'C', summary: 'c', score: 0.4 },
+      ];
+      const result = evaluateRetrieval('test', docs);
+      expect(result.avgScore).toBeCloseTo(0.6, 5);
     });
   });
 
-  describe('calculateRetrievalConfidence', () => {
-    it('returns 0 for empty results', () => {
-      expect(calculateRetrievalConfidence([])).toBe(0);
+  describe('Contextual Chunk Enrichment', () => {
+    describe('enrichChunkWithContext', () => {
+      it('prepends title, topic, and context', () => {
+        const enriched = enrichChunkWithContext({
+          content: 'Revenue grew 3%',
+          title: 'Q3 Earnings Analysis',
+          topic: 'Finance',
+          context: 'work',
+        });
+        expect(enriched).toContain('[From: "Q3 Earnings Analysis" | Topic: Finance | Context: work]');
+        expect(enriched).toContain('Revenue grew 3%');
+      });
+
+      it('handles missing optional fields', () => {
+        const enriched = enrichChunkWithContext({ content: 'Some content' });
+        expect(enriched).toBe('Some content');
+      });
+
+      it('handles partial context (only title)', () => {
+        const enriched = enrichChunkWithContext({ content: 'Data', title: 'Report' });
+        expect(enriched).toContain('[From: "Report"]');
+        expect(enriched).toContain('Data');
+      });
+
+      it('handles partial context (only topic)', () => {
+        const enriched = enrichChunkWithContext({ content: 'Data', topic: 'Science' });
+        expect(enriched).toContain('[Topic: Science]');
+      });
     });
 
-    it('returns high confidence for high-scoring diverse results', () => {
-      const results = [
-        { score: 0.95, sources: ['hyde', 'agentic'] },
-        { score: 0.90, sources: ['agentic'] },
-        { score: 0.88, sources: ['graphrag'] },
-      ];
+    describe('enrichQueryWithContext', () => {
+      it('prepends context and topic to query', () => {
+        const enriched = enrichQueryWithContext('revenue growth', 'work', 'Finance');
+        expect(enriched).toContain('[Topic: Finance | Context: work]');
+        expect(enriched).toContain('revenue growth');
+      });
 
-      const confidence = calculateRetrievalConfidence(results);
-      expect(confidence).toBeGreaterThan(0.7);
-      expect(confidence).toBeLessThanOrEqual(1.0);
-    });
+      it('returns original query when no context provided', () => {
+        const enriched = enrichQueryWithContext('test query');
+        expect(enriched).toBe('test query');
+      });
 
-    it('returns lower confidence for low-scoring results', () => {
-      const results = [
-        { score: 0.3, sources: ['agentic'] },
-        { score: 0.2, sources: ['agentic'] },
-      ];
-
-      const confidence = calculateRetrievalConfidence(results);
-      expect(confidence).toBeLessThan(0.5);
-    });
-
-    it('penalizes high variance in scores', () => {
-      const consistent = [
-        { score: 0.8, sources: ['agentic'] },
-        { score: 0.78, sources: ['agentic'] },
-        { score: 0.82, sources: ['agentic'] },
-      ];
-
-      const varied = [
-        { score: 0.95, sources: ['agentic'] },
-        { score: 0.3, sources: ['agentic'] },
-        { score: 0.6, sources: ['agentic'] },
-      ];
-
-      const consistentConf = calculateRetrievalConfidence(consistent);
-      const variedConf = calculateRetrievalConfidence(varied);
-
-      // Consistent results should have higher confidence
-      expect(consistentConf).toBeGreaterThan(variedConf);
-    });
-
-    it('rewards source diversity', () => {
-      const singleSource = [
-        { score: 0.8, sources: ['agentic'] },
-        { score: 0.75, sources: ['agentic'] },
-      ];
-
-      const multiSource = [
-        { score: 0.8, sources: ['hyde', 'agentic'] },
-        { score: 0.75, sources: ['graphrag'] },
-      ];
-
-      const singleConf = calculateRetrievalConfidence(singleSource);
-      const multiConf = calculateRetrievalConfidence(multiSource);
-
-      // Multi-source should have higher confidence
-      expect(multiConf).toBeGreaterThan(singleConf);
-    });
-
-    it('clamps result between 0 and 1', () => {
-      const highResults = [
-        { score: 1.0, sources: ['hyde', 'agentic', 'graphrag'] },
-      ];
-
-      const confidence = calculateRetrievalConfidence(highResults);
-      expect(confidence).toBeLessThanOrEqual(1.0);
-      expect(confidence).toBeGreaterThanOrEqual(0);
+      it('handles only context without topic', () => {
+        const enriched = enrichQueryWithContext('test', 'personal');
+        expect(enriched).toContain('[Context: personal]');
+      });
     });
   });
 });

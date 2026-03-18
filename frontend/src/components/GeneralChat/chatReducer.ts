@@ -19,6 +19,8 @@ export interface ToolCall {
   status: 'success' | 'error';
 }
 
+export type ChatPhase = 'idle' | 'loadingSession' | 'ready' | 'streaming' | 'error';
+
 export interface ChatState {
   /** Current conversation messages */
   messages: ChatMessage[];
@@ -36,7 +38,7 @@ export interface ChatState {
   thinkingContent: string;
   /** Whether session is loading */
   loading: boolean;
-  /** Inline error message */
+  /** Inline error message (also used as errorMessage for phase-based compat) */
   inlineError: string | null;
   /** Name of the currently executing tool */
   activeToolName: string | null;
@@ -46,6 +48,12 @@ export interface ChatState {
   activeTools: string[];
   /** Selected images for vision upload */
   selectedImages: File[];
+  /** Phase for backward compatibility with GeneralChat lifecycle */
+  phase: ChatPhase;
+  /** Skip next session load (set after SESSION_CREATED) */
+  skipNextLoad: boolean;
+  /** Error message alias (same as inlineError, for phase-based compat) */
+  errorMessage: string | null;
 }
 
 export type ChatAction =
@@ -68,7 +76,20 @@ export type ChatAction =
   | { type: 'SET_BRANCH'; messages: ChatMessage[] }
   | { type: 'REPLACE_TEMP_MESSAGE'; tempId: string; realMessage: ChatMessage; assistantMessage?: ChatMessage }
   | { type: 'REMOVE_TEMP_MESSAGES' }
-  | { type: 'RESET_STREAMING' };
+  | { type: 'RESET_STREAMING' }
+  // Phase-based lifecycle actions (backward compat with GeneralChat component)
+  | { type: 'LOAD_SESSION' }
+  | { type: 'SESSION_LOADED'; sessionId: string; messages: ChatMessage[] }
+  | { type: 'SESSION_EMPTY' }
+  | { type: 'SESSION_CREATED'; sessionId: string }
+  | { type: 'START_STREAM'; tempUserMessage: ChatMessage }
+  | { type: 'STREAM_COMPLETE'; userMessage: ChatMessage; assistantMessage: ChatMessage | null }
+  | { type: 'STREAM_ABORTED' }
+  | { type: 'ERROR'; message: string }
+  | { type: 'CLEAR_ERROR' }
+  | { type: 'RESET' }
+  | { type: 'SKIP_NEXT_LOAD' }
+  | { type: 'ADD_OFFLINE_REPLY'; reply: ChatMessage };
 
 // ============================================
 // Initial State
@@ -88,7 +109,13 @@ export const initialChatState: ChatState = {
   completedTools: [],
   activeTools: [],
   selectedImages: [],
+  phase: 'idle',
+  skipNextLoad: false,
+  errorMessage: null,
 };
+
+/** Backward-compatible alias used by GeneralChat component */
+export const INITIAL_CHAT_STATE = initialChatState;
 
 // ============================================
 // Reducer
@@ -220,6 +247,101 @@ export function chatReducer(state: ChatState, action: ChatAction): ChatState {
         thinkingContent: '',
         activeToolName: null,
         activeTools: [],
+      };
+
+    // ============================================
+    // Phase-based lifecycle actions
+    // (backward compat with GeneralChat component)
+    // ============================================
+
+    case 'LOAD_SESSION': {
+      if (state.skipNextLoad) {
+        return { ...state, skipNextLoad: false };
+      }
+      return { ...state, phase: 'loadingSession' };
+    }
+
+    case 'SESSION_LOADED':
+      return {
+        ...state,
+        phase: 'ready',
+        sessionId: action.sessionId,
+        messages: action.messages,
+      };
+
+    case 'SESSION_EMPTY':
+      return {
+        ...state,
+        phase: 'ready',
+        sessionId: null,
+      };
+
+    case 'SESSION_CREATED':
+      return {
+        ...state,
+        phase: 'ready',
+        sessionId: action.sessionId,
+        messages: [],
+        skipNextLoad: true,
+      };
+
+    case 'START_STREAM':
+      return {
+        ...state,
+        phase: 'streaming',
+        messages: [...state.messages, action.tempUserMessage],
+      };
+
+    case 'STREAM_COMPLETE': {
+      const withoutTemp = state.messages.filter(m => !m.id.startsWith('temp-'));
+      const msgs = action.assistantMessage
+        ? [...withoutTemp, action.userMessage, action.assistantMessage]
+        : [...withoutTemp, action.userMessage];
+      return {
+        ...state,
+        phase: 'ready',
+        messages: msgs,
+      };
+    }
+
+    case 'STREAM_ABORTED':
+      return {
+        ...state,
+        phase: 'ready',
+        messages: state.messages.filter(m => !m.id.startsWith('temp-')),
+      };
+
+    case 'ERROR':
+      return {
+        ...state,
+        phase: 'error',
+        errorMessage: action.message,
+        inlineError: action.message,
+        messages: state.messages.filter(m => !m.id.startsWith('temp-')),
+      };
+
+    case 'CLEAR_ERROR':
+      return {
+        ...state,
+        phase: state.sessionId ? 'ready' : 'idle',
+        errorMessage: null,
+        inlineError: null,
+      };
+
+    case 'RESET':
+      return {
+        ...initialChatState,
+        phase: 'ready',
+      };
+
+    case 'SKIP_NEXT_LOAD':
+      return { ...state, skipNextLoad: true };
+
+    case 'ADD_OFFLINE_REPLY':
+      return {
+        ...state,
+        phase: 'ready',
+        messages: [...state.messages, action.reply],
       };
 
     default:

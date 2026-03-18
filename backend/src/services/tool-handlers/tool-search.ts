@@ -103,6 +103,10 @@ export class ToolSearchService {
    * @returns Ranked list of matching tools
    */
   async search(query: string, limit = 10): Promise<ToolSearchResult[]> {
+    if (!query || query.trim().length === 0) {
+      return [];
+    }
+
     const defs = toolRegistry.getDefinitions();
     const resultMap = new Map<string, ToolSearchResult>();
 
