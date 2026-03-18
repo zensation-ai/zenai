@@ -106,7 +106,7 @@ export function calculateMRR(scores: number[], threshold: number): number {
 export function calculateNDCG(scores: number[], threshold: number): number {
   if (scores.length === 0) return 0.0;
 
-  const relevance = scores.map(s => (s >= threshold ? 1 : 0));
+  const relevance: number[] = scores.map(s => (s >= threshold ? 1 : 0));
 
   // DCG: actual ranked order
   const dcg = relevance.reduce((sum, rel, i) => {
