@@ -86,7 +86,6 @@ export function ToolDisclosure({ toolCalls }: ToolDisclosureProps) {
 
   if (toolCalls.length === 0) return null;
 
-  const successCount = toolCalls.filter(t => t.status === 'success').length;
   const errorCount = toolCalls.filter(t => t.status === 'error').length;
   const totalDuration = toolCalls.reduce((sum, t) => sum + t.duration_ms, 0);
 
