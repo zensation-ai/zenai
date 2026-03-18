@@ -302,6 +302,38 @@ async function processSleepCompute(job: BullJob): Promise<Record<string, unknown
   }
 }
 
+/**
+ * Process an embedding drift check job (Phase 99).
+ * Runs weekly to detect degradation in embedding quality.
+ */
+async function processEmbeddingDrift(job: BullJob): Promise<Record<string, unknown>> {
+  try {
+    await job.updateProgress(10);
+    const { runDriftCheck } = await import('../embedding-drift');
+    const contexts = ['personal', 'work', 'learning', 'creative'] as const;
+    const results = [];
+
+    for (let i = 0; i < contexts.length; i++) {
+      await job.updateProgress(10 + (i + 1) * 20);
+      const result = await runDriftCheck(contexts[i]);
+      results.push(result);
+    }
+
+    await job.updateProgress(100);
+    return {
+      status: 'completed',
+      results,
+      driftDetected: results.some(r => r.driftDetected),
+    };
+  } catch (error) {
+    logger.debug('Embedding drift check not available', {
+      operation: 'worker',
+      error: error instanceof Error ? error.message : String(error),
+    });
+    return { status: 'skipped' };
+  }
+}
+
 // Worker processor map — now receives the full BullJob for progress reporting
 const processors: Record<string, (job: BullJob) => Promise<Record<string, unknown>>> = {
   'memory-consolidation': processMemoryConsolidation,
@@ -309,6 +341,7 @@ const processors: Record<string, (job: BullJob) => Promise<Record<string, unknow
   'email-processing': processEmailProcessing,
   'graph-indexing': processGraphIndexing,
   'sleep-compute': processSleepCompute,
+  'embedding-drift': processEmbeddingDrift,
 };
 
 // --- Dead Letter Queue helper ---
@@ -364,6 +397,7 @@ export async function startWorkers(): Promise<boolean> {
       'email-processing': 2,
       'graph-indexing': 1,
       'sleep-compute': 1,
+      'embedding-drift': 1,
     };
 
     for (const [queueName, processor] of Object.entries(processors)) {

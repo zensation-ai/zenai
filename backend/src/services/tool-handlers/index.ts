@@ -116,6 +116,19 @@ import {
   handleMCPCallTool,
   handleMCPListTools,
 } from './mcp-tools';
+import {
+  handleSearchTools,
+  initToolRegistry,
+  searchToolsDefinition,
+} from './tool-search';
+import {
+  TOOL_MEMORY_PROMOTE,
+  TOOL_MEMORY_DEMOTE,
+  TOOL_MEMORY_FORGET,
+  handleMemoryPromote,
+  handleMemoryDemote,
+  handleMemoryForget,
+} from './memory-management';
 
 // ===========================================
 // Core Tool Handler Implementations
@@ -1125,6 +1138,18 @@ export function registerAllToolHandlers(): void {
   toolRegistry.register(TOOL_ARCHIVE_IDEA, handleArchiveIdea);
   toolRegistry.register(TOOL_DELETE_IDEA, handleDeleteIdea);
 
+  // Phase 99: Agent-Managed Memory tools
+  toolRegistry.register(TOOL_MEMORY_PROMOTE, handleMemoryPromote);
+  toolRegistry.register(TOOL_MEMORY_DEMOTE, handleMemoryDemote);
+  toolRegistry.register(TOOL_MEMORY_FORGET, handleMemoryForget);
+
+  // Phase 99: Tool Search meta-tool
+  toolRegistry.register(searchToolsDefinition, handleSearchTools);
+
+  // Phase 99: Initialize tool search registry with all registered tool definitions
+  const allDefs = toolRegistry.getDefinitions();
+  initToolRegistry(allDefs);
+
   logger.info('Tool handlers registered', {
     tools: [
       'search_ideas',
@@ -1178,6 +1203,10 @@ export function registerAllToolHandlers(): void {
       'update_idea',
       'archive_idea',
       'delete_idea',
+      'search_tools',
+      'memory_promote',
+      'memory_demote',
+      'memory_forget',
     ],
   });
 }

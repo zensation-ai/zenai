@@ -41,6 +41,7 @@ const QUEUE_NAMES = [
   'email-processing',
   'graph-indexing',
   'sleep-compute',
+  'embedding-drift',
 ] as const;
 
 export type QueueName = (typeof QUEUE_NAMES)[number];
