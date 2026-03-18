@@ -95,7 +95,7 @@ export function SmartSurface({ context }: SmartSurfaceProps) {
 
   return (
     <div className="ds-smart-surface" role="complementary" aria-label="Vorschlaege">
-      <div className="ds-smart-surface-inner">
+      <div className="ds-smart-surface-inner" aria-live="polite" aria-label="KI-Vorschlaege">
         {displaySuggestions.map((s, i) => (
           <div
             key={s.id}
