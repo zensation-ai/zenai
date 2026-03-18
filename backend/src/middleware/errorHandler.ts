@@ -8,6 +8,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { logger } from '../utils/logger';
 import { captureException as sentryCaptureException } from '../services/observability/sentry';
+import { getGermanErrorMessage } from '../utils/error-messages-de';
 
 // ============================================
 // Error Codes (Phase 9)
@@ -153,9 +154,13 @@ export function errorHandler(
 
   // Handle known errors
   if (err instanceof AppError) {
+    const errorMessage = process.env.NODE_ENV === 'production'
+      ? getGermanErrorMessage(err.code)
+      : err.message;
+
     const response: Record<string, unknown> = {
       success: false,
-      error: err.message,
+      error: errorMessage,
       code: err.code,
       requestId,
     };
@@ -183,7 +188,9 @@ export function errorHandler(
       case '23505': // Unique violation
         res.status(409).json({
           success: false,
-          error: 'Resource already exists',
+          error: process.env.NODE_ENV === 'production'
+            ? getGermanErrorMessage('DUPLICATE_ENTRY')
+            : 'Resource already exists',
           code: 'DUPLICATE_ENTRY',
           requestId,
         });
@@ -192,7 +199,9 @@ export function errorHandler(
       case '23503': // Foreign key violation
         res.status(400).json({
           success: false,
-          error: 'Referenced resource does not exist',
+          error: process.env.NODE_ENV === 'production'
+            ? getGermanErrorMessage('REFERENCE_ERROR')
+            : 'Referenced resource does not exist',
           code: 'REFERENCE_ERROR',
           requestId,
         });
@@ -202,7 +211,9 @@ export function errorHandler(
       case '42703': // Undefined column
         res.status(500).json({
           success: false,
-          error: 'Database schema error',
+          error: process.env.NODE_ENV === 'production'
+            ? getGermanErrorMessage('SCHEMA_ERROR')
+            : 'Database schema error',
           code: 'SCHEMA_ERROR',
           requestId,
         });
@@ -218,7 +229,9 @@ export function errorHandler(
   if (err instanceof SyntaxError && 'body' in err) {
     res.status(400).json({
       success: false,
-      error: 'Invalid JSON in request body',
+      error: process.env.NODE_ENV === 'production'
+        ? getGermanErrorMessage('INVALID_JSON')
+        : 'Invalid JSON in request body',
       code: 'INVALID_JSON',
       requestId,
     });
@@ -229,7 +242,7 @@ export function errorHandler(
   res.status(500).json({
     success: false,
     error: process.env.NODE_ENV === 'production'
-      ? 'An unexpected error occurred'
+      ? getGermanErrorMessage('INTERNAL_ERROR')
       : err.message,
     code: 'INTERNAL_ERROR',
     requestId,

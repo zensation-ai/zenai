@@ -294,7 +294,7 @@ describe('Error Handler Middleware', () => {
       expect(statusMock).toHaveBeenCalledWith(500);
       expect(jsonMock).toHaveBeenCalledWith({
         success: false,
-        error: 'An unexpected error occurred',
+        error: 'Ein unerwarteter Fehler ist aufgetreten.',
         code: 'INTERNAL_ERROR',
         requestId: 'test-request-id-123',
       });
