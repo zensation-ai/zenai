@@ -40,6 +40,7 @@ export function useChatSessionsQuery(context: AIContext, type?: string) {
       return (response.data?.sessions ?? []) as ChatSession[];
     },
     staleTime: 30_000,
+    gcTime: 2 * 60_000, // chat sessions expire quickly
   });
 }
 
@@ -56,6 +57,7 @@ export function useChatSessionQuery(context: AIContext, sessionId: string | null
     },
     enabled: !!sessionId,
     staleTime: 15_000,
+    gcTime: 2 * 60_000,
   });
 }
 

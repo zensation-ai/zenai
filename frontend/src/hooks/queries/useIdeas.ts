@@ -30,6 +30,7 @@ export function useIdeasQuery(context: AIContext) {
       return (response.data?.ideas ?? []) as StructuredIdea[];
     },
     staleTime: 30_000,
+    gcTime: 10 * 60_000, // ideas are long-lived, keep cache 10min
   });
 }
 
@@ -47,6 +48,7 @@ export function useArchivedIdeasQuery(context: AIContext, enabled = true) {
     },
     enabled,
     staleTime: 60_000,
+    gcTime: 10 * 60_000,
   });
 }
 
