@@ -368,6 +368,41 @@ function createAgent(role: AgentRole): BaseAgent {
 }
 
 // ===========================================
+// Dynamic Agent Factory (Identity-Aware)
+// ===========================================
+
+/**
+ * Create an agent using DB-stored identity if available, falling back to hardcoded factory.
+ *
+ * 1. Queries AgentIdentityService for a matching role
+ * 2. If found: builds persona prompt from identity fields and injects into agent config
+ * 3. If not found: falls back to existing hardcoded factory (createResearcher, etc.)
+ */
+export async function createAgentWithIdentity(role: AgentRole, _taskContext?: string): Promise<BaseAgent> {
+  try {
+    const { getAgentIdentityService } = await import('./agents/agent-identity');
+    const identityService = getAgentIdentityService();
+    const identities = await identityService.listIdentities({ role, enabled: true });
+
+    if (identities.length > 0) {
+      const identity = identities[0]; // Use first matching identity
+      const personaPrompt = identityService.buildPersonaPrompt(identity);
+
+      // Create agent with hardcoded factory, then inject persona
+      const agent = createAgent(role);
+      // Inject persona prompt into config
+      (agent as any).config.personaPrompt = personaPrompt;
+      return agent;
+    }
+  } catch {
+    // Fall back to hardcoded factory on any error
+    logger.debug('Agent identity lookup failed, using default factory', { role });
+  }
+
+  return createAgent(role);
+}
+
+// ===========================================
 // Task Decomposition
 // ===========================================
 

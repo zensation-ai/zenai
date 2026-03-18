@@ -33,6 +33,8 @@ export interface AgentConfig {
   maxTokens: number;
   /** Maximum tool-use iterations */
   maxIterations: number;
+  /** Optional persona prompt from DB identity (prepended to system prompt) */
+  personaPrompt?: string;
 }
 
 export interface AgentInput {
@@ -303,7 +305,15 @@ export abstract class BaseAgent {
    * Build the full system prompt including shared memory
    */
   protected buildSystemPrompt(input: AgentInput, sharedContext: string): string {
-    const parts: string[] = [this.config.systemPrompt];
+    const parts: string[] = [];
+
+    // Prepend persona prompt from DB identity if available
+    if (this.config.personaPrompt) {
+      parts.push(this.config.personaPrompt);
+      parts.push('');
+    }
+
+    parts.push(this.config.systemPrompt);
 
     if (input.context) {
       parts.push(`\n[ADDITIONAL CONTEXT]\n${input.context}`);
