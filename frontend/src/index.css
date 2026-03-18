@@ -1573,7 +1573,7 @@ select:focus-visible {
   animation: pulse-subtle 2s ease-in-out infinite;
 }
 
-/* Respect prefers-reduced-motion */
+/* Respect prefers-reduced-motion (component-specific) */
 @media (prefers-reduced-motion: reduce) {
   .animate-shimmer::after,
   .animate-pulse-subtle,
@@ -1581,5 +1581,18 @@ select:focus-visible {
   .neuro-breathing {
     animation: none !important;
     transition: none !important;
+  }
+}
+
+/* Global prefers-reduced-motion layer (Phase 101-C3)
+   Catches all CSS animations and transitions not covered by
+   component-specific rules. framer-motion respects this via
+   its own useReducedMotion hook on the motion components. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }
