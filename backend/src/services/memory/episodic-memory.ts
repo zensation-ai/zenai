@@ -17,6 +17,7 @@ import { AIContext, queryContext } from '../../utils/database-context';
 import { logger } from '../../utils/logger';
 import { generateEmbedding } from '../ai';
 import { formatForPgVector } from '../../utils/embedding';
+import { extractFactsFromEpisodes } from './llm-consolidation';
 
 // ===========================================
 // Types & Interfaces
@@ -537,46 +538,42 @@ export class EpisodicMemoryService {
         return result;
       }
 
-      // Extract facts from strong episodes
-      // This could be enhanced with LLM-based extraction
-      for (const row of strongEpisodes.rows) {
+      // Phase 100: LLM-based fact extraction from episodes
+      // Groups episodes and uses Claude Haiku to extract semantic facts
+      const episodeInputs = strongEpisodes.rows.map((row: Record<string, unknown>) => {
         const episode = this.rowToEpisode(row);
         result.episodesProcessed++;
+        return {
+          id: episode.id,
+          trigger: episode.trigger,
+          response: episode.response,
+          retrievalStrength: episode.retrievalStrength,
+        };
+      });
 
-        // Simple fact extraction: store the interaction summary as a fact
-        const factContent = `Frühere Interaktion: "${episode.trigger.substring(0, 100)}..." -> ${episode.response.substring(0, 150)}...`;
+      const extractedFacts = await extractFactsFromEpisodes(episodeInputs);
 
+      for (const fact of extractedFacts) {
         try {
-          // Use appropriate INSERT query based on schema version
           const insertQuery = hasMetadata
             ? `INSERT INTO personalization_facts
                (id, context, fact_type, content, confidence, source, first_seen, last_confirmed, occurrences, is_active, metadata)
-               VALUES ($1, $2, 'context', $3, $4, 'consolidated', $5, $5, 1, true, $6)
+               VALUES ($1, $2, $3, $4, $5, 'consolidated', $6, $6, 1, true, $7)
                ON CONFLICT (id) DO NOTHING`
             : `INSERT INTO personalization_facts
                (id, context, fact_type, content, confidence, source, first_seen, last_confirmed, occurrences, is_active)
-               VALUES ($1, $2, 'context', $3, $4, 'consolidated', $5, $5, 1, true)
+               VALUES ($1, $2, $3, $4, $5, 'consolidated', $6, $6, 1, true)
                ON CONFLICT (id) DO NOTHING`;
 
+          const factId = uuidv4();
           const insertParams = hasMetadata
-            ? [uuidv4(), context, factContent, episode.retrievalStrength, new Date(), JSON.stringify({ source_episode_id: episode.id })]
-            : [uuidv4(), context, factContent, episode.retrievalStrength, new Date()];
+            ? [factId, context, fact.fact_type, fact.content, fact.confidence, new Date(), JSON.stringify({ source: 'llm_consolidation', episode_count: episodeInputs.length })]
+            : [factId, context, fact.fact_type, fact.content, fact.confidence, new Date()];
 
           await queryContext(context, insertQuery, insertParams);
-
           result.factsExtracted++;
-
-          // Link fact to episode
-          await queryContext(
-            context,
-            `UPDATE episodic_memories
-             SET linked_facts = array_append(linked_facts, $2)
-             WHERE id = $1`,
-            [episode.id, episode.id] // Simplified: using episode ID as reference
-          );
         } catch (factError) {
-          logger.debug('Failed to extract fact from episode', {
-            episodeId: episode.id,
+          logger.debug('Failed to store consolidated fact', {
             error: factError instanceof Error ? factError.message : 'Unknown',
           });
         }
