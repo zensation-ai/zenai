@@ -226,6 +226,40 @@ function heuristicRerank(query: string, results: EnhancedResult[]): EnhancedResu
   }).sort((a, b) => b.score - a.score);
 }
 
+// ===========================================
+// Phase 101 B3: Query Complexity Routing
+// ===========================================
+
+/**
+ * German and English complex query signals.
+ * Matches multi-part, comparison, causal, and temporal query patterns.
+ */
+const COMPLEX_QUERY_PATTERNS = /vergleich|warum|wieso|weshalb|unterschied|einerseits|andererseits|vs\.?|pros?\s*(und|&)|cons?|erstens|zweitens|drittens|analysier/i;
+
+/**
+ * Classify a query as simple or complex to optimize retrieval strategy.
+ *
+ * Simple queries (< 10 words AND no complex signals) skip A-RAG overhead
+ * and go directly to HyDE + semantic retrieval for lower latency.
+ *
+ * Complex queries (multi-part, comparison, causal, temporal) benefit from
+ * the full A-RAG pipeline with strategy planning and iterative retrieval.
+ *
+ * @param query - User query string
+ * @returns 'simple' | 'complex'
+ */
+export function classifyQueryComplexity(query: string): 'simple' | 'complex' {
+  const wordCount = query.trim().split(/\s+/).length;
+
+  // Long queries are inherently complex
+  if (wordCount >= 10) return 'complex';
+
+  // Check for complex query signals (comparison, causal, multi-part)
+  if (COMPLEX_QUERY_PATTERNS.test(query)) return 'complex';
+
+  return 'simple';
+}
+
 class EnhancedRAGService {
   private config: EnhancedRAGConfig;
 
@@ -261,8 +295,18 @@ class EnhancedRAGService {
     const methodsUsed: string[] = [];
     const timing: EnhancedRAGResult['timing'] = { total: 0 };
 
+    // Phase 101 B3: Skip A-RAG for simple queries (lower latency path)
+    const queryComplexity = classifyQueryComplexity(query);
+    const shouldUseARAG = cfg.enableARAG && queryComplexity === 'complex';
+
+    if (queryComplexity === 'simple') {
+      logger.debug('Query routing: simple query, skipping A-RAG', {
+        query: query.substring(0, 50),
+      });
+    }
+
     // Phase 70: A-RAG autonomous retrieval (replaces fixed pipeline when enabled)
-    if (cfg.enableARAG) {
+    if (shouldUseARAG) {
       try {
         const aragResult = await this.retrieveWithARAG(query, context, cfg, startTime);
         if (aragResult) {
