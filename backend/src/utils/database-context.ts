@@ -597,6 +597,14 @@ export interface PoolStatsResult {
 }
 
 /**
+ * Returns a snapshot of the database circuit breaker stats.
+ * Exposed for inclusion in /health/detailed.
+ */
+export function getDbBreakerStats() {
+  return dbBreaker.getStats();
+}
+
+/**
  * Get pool statistics for monitoring.
  * Phase 67.3: Returns structured pool metrics with event counters.
  * Note: All contexts share the same pool, so pool-level metrics are reported once.

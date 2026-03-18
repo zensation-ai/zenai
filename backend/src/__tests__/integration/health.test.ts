@@ -25,6 +25,7 @@ jest.mock('../../utils/database-context', () => ({
     events: { connects: 10, acquires: 200, removes: 0, errors: 0 },
   }),
   getHealthCheckStatus: jest.fn().mockReturnValue({ lastCheck: new Date().toISOString(), status: 'ok', isHealthy: true, consecutiveFailures: 0 }),
+  getDbBreakerStats: jest.fn().mockReturnValue({ name: 'database', state: 'CLOSED', failures: 0, successCount: 0, lastFailureAt: null, nextRetryAt: null }),
 }));
 
 jest.mock('../../utils/ollama', () => ({
@@ -70,6 +71,14 @@ jest.mock('../../utils/logger', () => ({
     error: jest.fn(),
     debug: jest.fn(),
   },
+}));
+
+jest.mock('../../services/claude/streaming', () => ({
+  getClaudeBreakerStats: jest.fn().mockReturnValue({ name: 'claude-streaming', state: 'CLOSED', failures: 0, successCount: 0, lastFailureAt: null, nextRetryAt: null }),
+}));
+
+jest.mock('../../services/web-search', () => ({
+  getBraveBreakerStats: jest.fn().mockReturnValue({ name: 'brave-search', state: 'CLOSED', failures: 0, successCount: 0, lastFailureAt: null, nextRetryAt: null }),
 }));
 
 import { testConnections } from '../../utils/database-context';

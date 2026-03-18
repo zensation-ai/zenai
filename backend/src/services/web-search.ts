@@ -99,6 +99,23 @@ export const braveBreaker = new CircuitBreaker({
   resetTimeout: TIMEOUTS.CIRCUIT_BREAKER_BRAVE,
 });
 
+// Observability: log every state transition of the Brave breaker
+braveBreaker.on('stateChange', ({ from, to }: { from: string; to: string }) => {
+  logger.info(`[CircuitBreaker:brave-search] state transition: ${from} → ${to}`, {
+    operation: 'braveBreakerStateChange',
+    from,
+    to,
+  });
+});
+
+/**
+ * Returns a snapshot of the Brave Search circuit breaker stats.
+ * Exposed for inclusion in /health/detailed.
+ */
+export function getBraveBreakerStats() {
+  return braveBreaker.getStats();
+}
+
 // ===========================================
 // Web Search Service
 // ===========================================

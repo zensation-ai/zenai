@@ -35,6 +35,11 @@ export interface CircuitBreakerOptions {
    * Defaults to resetTimeout when not specified.
    */
   windowMs?: number;
+  /**
+   * Number of consecutive successful probes in HALF_OPEN state required
+   * before transitioning back to CLOSED (default: 1).
+   */
+  halfOpenMaxAttempts?: number;
   /** Optional async fallback called instead of the wrapped fn when OPEN */
   fallback?: <T>() => Promise<T>;
 }
@@ -57,6 +62,7 @@ export class CircuitBreaker extends EventEmitter {
   private readonly failureThreshold: number;
   private readonly resetTimeout: number;
   private readonly windowMs: number;
+  private readonly halfOpenMaxAttempts: number;
   private readonly fallback?: <T>() => Promise<T>;
 
   private state: CircuitBreakerState = CircuitBreakerState.CLOSED;
@@ -64,6 +70,8 @@ export class CircuitBreaker extends EventEmitter {
   private failureTimes: number[] = [];
   private successCount = 0;
   private openedAt: number | null = null;
+  /** Number of consecutive successful probes in HALF_OPEN state */
+  private halfOpenSuccesses = 0;
 
   constructor(options: CircuitBreakerOptions) {
     super();
@@ -71,6 +79,7 @@ export class CircuitBreaker extends EventEmitter {
     this.failureThreshold = options.failureThreshold ?? 5;
     this.resetTimeout = options.resetTimeout ?? 60_000;
     this.windowMs = options.windowMs ?? this.resetTimeout;
+    this.halfOpenMaxAttempts = options.halfOpenMaxAttempts ?? 1;
     this.fallback = options.fallback;
   }
 
@@ -147,10 +156,15 @@ export class CircuitBreaker extends EventEmitter {
     this.successCount++;
 
     if (this.state === CircuitBreakerState.HALF_OPEN) {
-      // Probe succeeded — close the circuit and clear window
-      this.failureTimes = [];
-      this.openedAt = null;
-      this.transitionTo(CircuitBreakerState.CLOSED);
+      this.halfOpenSuccesses++;
+      if (this.halfOpenSuccesses >= this.halfOpenMaxAttempts) {
+        // Required probes succeeded — close the circuit and clear window
+        this.halfOpenSuccesses = 0;
+        this.failureTimes = [];
+        this.openedAt = null;
+        this.transitionTo(CircuitBreakerState.CLOSED);
+      }
+      // Otherwise remain HALF_OPEN, waiting for more successful probes
     } else if (this.state === CircuitBreakerState.CLOSED) {
       // Normal success — reset failure window
       this.failureTimes = [];
@@ -161,7 +175,8 @@ export class CircuitBreaker extends EventEmitter {
     const now = Date.now();
 
     if (this.state === CircuitBreakerState.HALF_OPEN) {
-      // Probe failed — reopen immediately
+      // Probe failed — reopen immediately and reset probe counter
+      this.halfOpenSuccesses = 0;
       this.openedAt = now;
       this.failureTimes.push(now);
       this.transitionTo(CircuitBreakerState.OPEN);

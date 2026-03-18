@@ -10,7 +10,7 @@
  */
 
 import { Router } from 'express';
-import { testConnections, getPoolStats, getHealthCheckStatus } from '../utils/database-context';
+import { testConnections, getPoolStats, getHealthCheckStatus, getDbBreakerStats } from '../utils/database-context';
 import { checkOllamaHealth } from '../utils/ollama';
 import { getCacheStats } from '../utils/cache';
 import { getAvailableServices } from '../services/ai';
@@ -18,6 +18,7 @@ import { asyncHandler } from '../middleware/errorHandler';
 import { getCircuitBreakerStatus } from '../utils/retry';
 import { isClaudeAvailable, generateClaudeResponse } from '../services/claude';
 import { getClaudeBreakerStats } from '../services/claude/streaming';
+import { getBraveBreakerStats } from '../services/web-search';
 import { queryContext } from '../utils/database-context';
 import { logger } from '../utils/logger';
 import { getPrometheusMetrics } from '../utils/metrics';
@@ -214,6 +215,8 @@ healthRouter.get('/detailed', optionalAuth, asyncHandler(async (req, res) => {
   const aiServices = getAvailableServices();
   const circuitBreakerStatus = getCircuitBreakerStatus();
   const claudeStreamBreakerStats = getClaudeBreakerStats();
+  const braveBreakerStats = getBraveBreakerStats();
+  const dbBreakerStats = getDbBreakerStats();
 
   const allDbHealthy = dbHealth.personal && dbHealth.work && dbHealth.learning && dbHealth.creative;
   const anyDbHealthy = dbHealth.personal || dbHealth.work || dbHealth.learning || dbHealth.creative;
@@ -279,6 +282,7 @@ healthRouter.get('/detailed', optionalAuth, asyncHandler(async (req, res) => {
         sharedPool: poolStats.pool,
         poolEvents: poolStats.events,
         healthCheck: dbHealthCheckStatus,
+        circuitBreaker: dbBreakerStats,
       },
       ai: {
         primary: aiServices.primary,
@@ -311,7 +315,10 @@ healthRouter.get('/detailed', optionalAuth, asyncHandler(async (req, res) => {
         memory: cacheStats.memory,
       },
       dependencies: {
-        webSearch: braveSearchStatus,
+        webSearch: {
+          ...braveSearchStatus,
+          circuitBreaker: braveBreakerStats,
+        },
         codeExecution: codeExecutionStatus,
         github: {
           configured: !!process.env.GITHUB_PERSONAL_ACCESS_TOKEN,
