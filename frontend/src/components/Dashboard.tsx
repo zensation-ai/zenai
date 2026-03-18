@@ -25,6 +25,7 @@ import {
 } from '../hooks/queries/useDashboard';
 import type { TrendPoint } from '../hooks/queries/useDashboard';
 import { Button, Card, Badge, Skeleton, EmptyState } from '../design-system';
+import { QueryErrorState } from './QueryErrorState';
 import { getPageIcon } from '../utils/navIcons';
 import {
   Lightbulb,
@@ -274,14 +275,7 @@ const DashboardComponent: React.FC<DashboardProps> = ({
         {/* Stat tiles */}
         {fetchError && !loading ? (
           <Card variant="surface" padding="md" className="bento-stat" style={{ gridColumn: 'span 4', textAlign: 'center' }}>
-            <EmptyState
-              title="Daten konnten nicht geladen werden"
-              action={
-                <Button variant="secondary" size="sm" onClick={() => summary.refetch()}>
-                  Erneut versuchen
-                </Button>
-              }
-            />
+            <QueryErrorState error={summary.error} refetch={summary.refetch} />
           </Card>
         ) : loading ? (
           <>

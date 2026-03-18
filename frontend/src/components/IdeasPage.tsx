@@ -54,6 +54,7 @@ import { getErrorMessage } from '../utils/errors';
 import { safeParseResponse, IdeaCreationResponseSchema, SearchResponseSchema, ProgressiveSearchResponseSchema } from '../utils/apiSchemas';
 import { AI_PROCESSING_STEP_DELAY_MS, AI_PROCESSING_INITIAL_DELAY_MS } from '../constants';
 import { Button, Badge, EmptyState } from '../design-system';
+import { QueryErrorState } from './QueryErrorState';
 import './IdeasPage.css';
 
 const IdeaDetail = lazy(() => import('./IdeaDetail').then(m => ({ default: m.IdeaDetail })));
@@ -712,9 +713,12 @@ const IdeasPageComponent: React.FC<IdeasPageProps> = ({
       <div className="ideas-main">
         <RateLimitBanner />
 
-        {displayError && (
+        {queryError && !loading && (
+          <QueryErrorState error={queryError} refetch={() => queryClient.invalidateQueries({ queryKey: queryKeys.ideas.list(context) })} />
+        )}
+        {localError && (
           <div className="error-banner">
-            <span>{displayError}</span>
+            <span>{localError}</span>
             <Button variant="ghost" size="sm" onClick={() => setLocalError(null)} aria-label="Fehler ausblenden">×</Button>
           </div>
         )}
