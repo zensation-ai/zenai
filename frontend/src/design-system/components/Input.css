@@ -80,3 +80,15 @@ textarea.ds-input__field {
   font-size: 13px;
   color: var(--text-secondary, #3a4d5a);
 }
+
+/* Glass variant */
+.ds-input-wrapper--glass .ds-input__field {
+  background: var(--glass-bg, rgba(238, 244, 250, 0.78));
+  border-color: var(--glass-border, rgba(180, 205, 225, 0.55));
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.ds-input-wrapper--glass .ds-input__field:focus {
+  box-shadow: var(--shadow-glass, 0 8px 32px rgba(20, 50, 70, 0.12));
+}

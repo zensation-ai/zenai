@@ -6,7 +6,7 @@ export type { ButtonProps, ButtonVariant, ButtonSize } from './Button';
 
 // Input
 export { Input } from './Input';
-export type { InputProps } from './Input';
+export type { InputProps, InputVariant } from './Input';
 
 // Card
 export { Card } from './Card';
