@@ -26,6 +26,8 @@ import { ragResultCache } from './rag-cache';
 import { planRetrieval } from './arag/strategy-agent';
 import { executeRetrievalPlan } from './arag/iterative-retriever';
 import type { RetrievalInterface, ARAGExecutionMetadata } from './arag/retrieval-interfaces';
+// Phase 100: CRAG Quality Gate
+import { evaluateRetrieval, QualityTier } from './rag-quality-gate';
 
 // ===========================================
 // Types & Interfaces
@@ -237,7 +239,8 @@ class EnhancedRAGService {
   async retrieve(
     query: string,
     context: AIContext,
-    config?: Partial<EnhancedRAGConfig>
+    config?: Partial<EnhancedRAGConfig>,
+    isReformulation?: boolean
   ): Promise<EnhancedRAGResult> {
     const cfg = { ...this.config, ...config };
     const startTime = Date.now();
@@ -394,6 +397,38 @@ class EnhancedRAGService {
     finalResults = finalResults
       .filter(r => r.score >= cfg.minRelevance)
       .slice(0, cfg.maxResults);
+
+    // Step 4.5: CRAG Quality Gate (Phase 100)
+    // Evaluate retrieval quality and reformulate if AMBIGUOUS (only once)
+    if (!isReformulation && finalResults.length > 0) {
+      const qualityEval = evaluateRetrieval(
+        query,
+        finalResults.map(r => ({ id: r.id, title: r.title, summary: r.summary, score: r.score }))
+      );
+
+      if (qualityEval.tier === QualityTier.AMBIGUOUS) {
+        logger.info('CRAG: AMBIGUOUS tier, attempting reformulation', {
+          query: query.substring(0, 50),
+          combinedScore: qualityEval.combinedScore,
+        });
+
+        // Simple reformulation: expand with related terms
+        const reformulatedQuery = `${query} (erweitert: ${finalResults.slice(0, 2).map(r => r.title).join(', ')})`;
+        try {
+          const retryResult = await this.retrieve(reformulatedQuery, context, cfg, true);
+          if (retryResult.confidence > this.calculateConfidence(finalResults, methodsUsed)) {
+            retryResult.debug = {
+              ...retryResult.debug,
+              hydeUsed: retryResult.debug?.hydeUsed ?? false,
+              queryReformulations: [reformulatedQuery],
+            };
+            return retryResult;
+          }
+        } catch {
+          // Reformulation failed, continue with original results
+        }
+      }
+    }
 
     // Calculate overall confidence
     const confidence = this.calculateConfidence(finalResults, methodsUsed);
