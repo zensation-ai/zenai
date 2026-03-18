@@ -273,6 +273,7 @@ export function AppLayout({
           className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden relative scroll-smooth overscroll-y-contain motion-reduce:scroll-auto"
           id="main-content"
           role="main"
+          tabIndex={-1}
           ref={mainContentRef}
         >
           {children}

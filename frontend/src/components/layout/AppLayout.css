@@ -2,6 +2,24 @@
    APP LAYOUT - Sidebar + Main Content Shell
    ============================================ */
 
+/* Skip link for keyboard accessibility */
+.skip-link {
+  position: absolute;
+  top: -40px;
+  left: 0;
+  z-index: 10000;
+  padding: 8px 16px;
+  background: var(--accent-primary, #6366f1);
+  color: white;
+  font-size: 14px;
+  text-decoration: none;
+  border-radius: 0 0 4px 0;
+  transition: top 0.15s;
+}
+.skip-link:focus {
+  top: 0;
+}
+
 .app-layout {
   display: flex;
   height: 100vh;
