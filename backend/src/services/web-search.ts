@@ -15,6 +15,7 @@
 import axios from 'axios';
 import { logger } from '../utils/logger';
 import { fetchUrl, FetchedContent } from './url-fetch';
+import { TIMEOUTS } from '../config/timeouts';
 
 // ===========================================
 // Types
@@ -97,7 +98,7 @@ export async function searchWeb(query: string, options: SearchOptions = {}): Pro
     language = 'de',
     safeSearch = 'moderate',
     deepFetchTop = 0,
-    timeout = 10000,
+    timeout = TIMEOUTS.WEB_SEARCH,
   } = options;
 
   if (!query || query.trim().length === 0) {
@@ -141,7 +142,7 @@ export async function searchWeb(query: string, options: SearchOptions = {}): Pro
     if (deepFetchTop > 0 && results.length > 0) {
       const topResults = results.slice(0, deepFetchTop);
       const fetchedContents = await Promise.all(
-        topResults.map(r => fetchUrl(r.url, { timeout: 5000 }))
+        topResults.map(r => fetchUrl(r.url, { timeout: TIMEOUTS.WEB_SEARCH_DEEP_FETCH }))
       );
 
       // Enhance results with fetched content

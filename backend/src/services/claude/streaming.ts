@@ -17,6 +17,7 @@ import Anthropic from '@anthropic-ai/sdk';
 import crypto from 'crypto';
 import { Response } from 'express';
 import { logger } from '../../utils/logger';
+import { TIMEOUTS } from '../../config/timeouts';
 import { safeStringify } from '../../utils/safe-stringify';
 import { sanitizeError } from '../../utils/sanitize-error';
 import { getClaudeClient, CLAUDE_MODEL } from './client';
@@ -152,7 +153,7 @@ const MAX_TOOL_RESULT_SSE_BYTES = 64 * 1024;
 const MAX_TOOL_RESULT_HISTORY_BYTES = 64 * 1024;
 
 /** Maximum total time budget for all tool calls in one request (60s) */
-const MAX_TOOL_TIME_MS = 60_000;
+const MAX_TOOL_TIME_MS = TIMEOUTS.CLAUDE_TOOL_BUDGET;
 
 /** Hard cap on tool execution iterations (beyond maxToolIterations) */
 const MAX_TOOL_ITERATIONS_HARD_CAP = 10;
@@ -314,7 +315,7 @@ export async function streamToSSE(
     streamTimeout = setTimeout(() => {
       logger.warn('Stream timeout reached (90s), aborting', { requestId });
       stream.abort();
-    }, 90000);
+    }, TIMEOUTS.CLAUDE_STREAM);
 
     // Abort stream on client disconnect signal
     if (opts.abortSignal) {
@@ -555,7 +556,7 @@ export async function streamToSSE(
         const followUpTimeout = setTimeout(() => {
           logger.warn('Follow-up stream timeout reached (90s), aborting', { iteration });
           followUpStream.abort();
-        }, 90000);
+        }, TIMEOUTS.CLAUDE_STREAM);
 
         // Reset content tracking for follow-up
         isInContent = false;

@@ -14,15 +14,16 @@
 
 import { Request, Response, NextFunction } from 'express';
 import { logger } from '../utils/logger';
+import { TIMEOUTS } from '../config/timeouts';
 
 /** Default timeout for standard API requests (30 seconds) */
-const DEFAULT_TIMEOUT_MS = 30_000;
+const DEFAULT_TIMEOUT_MS = TIMEOUTS.REQUEST_DEFAULT;
 
 /** Extended timeout for streaming and voice endpoints (120 seconds) */
-const STREAMING_TIMEOUT_MS = 120_000;
+const STREAMING_TIMEOUT_MS = TIMEOUTS.REQUEST_STREAMING;
 
 /** Extended timeout for vision processing endpoints (180 seconds) */
-const VISION_TIMEOUT_MS = 180_000;
+const VISION_TIMEOUT_MS = TIMEOUTS.REQUEST_VISION;
 
 /**
  * Determine the timeout for a given request path.
