@@ -22,8 +22,11 @@ import { queryKeys } from '../lib/query-keys';
 import { safeLocalStorage } from '../utils/storage';
 import { logError } from '../utils/errors';
 import { logger } from '../utils/logger';
+import { MAX_TOOL_RESULTS } from '../config/chat';
 import type { ChatMessage } from '../components/GeneralChat/types';
 import type { AIContext } from '../components/ContextSwitcher';
+import { PAGE_PATHS } from '../routes';
+import type { Page } from '../types/idea';
 
 // ============================================
 // Types
@@ -72,12 +75,12 @@ export interface UseStreamingChatReturn {
 // SSE Line Parser
 // ============================================
 
-interface SSEParseState {
+export interface SSEParseState {
   currentEventType: string;
   buffer: string;
 }
 
-interface SSEEvent {
+export interface SSEEvent {
   eventType: string;
   data: Record<string, unknown>;
 }
@@ -85,8 +88,9 @@ interface SSEEvent {
 /**
  * Parse raw SSE text into structured events.
  * Returns parsed events and any remaining incomplete buffer.
+ * Exported for independent testing.
  */
-function parseSSEChunk(
+export function parseSSEChunk(
   chunk: string,
   state: SSEParseState
 ): { events: SSEEvent[]; state: SSEParseState } {
@@ -263,14 +267,21 @@ export function useStreamingChat(options: UseStreamingChatOptions): UseStreaming
                 const tool = data.tool as { name?: string; result?: string };
                 const toolName = tool.name ?? 'unknown';
                 const toolResult = tool.result ?? '';
-                setToolResults(prev => [...prev.slice(-4), { name: toolName, result: toolResult }]);
+                setToolResults(prev => {
+                  const next = [...prev, { name: toolName, result: toolResult }];
+                  return next.length > MAX_TOOL_RESULTS ? next.slice(-MAX_TOOL_RESULTS) : next;
+                });
 
-                // Handle navigation actions from tools
+                // Handle navigation actions from tools — validate page exists
                 if (onNavigate) {
                   try {
                     const parsed = JSON.parse(toolResult) as { action?: string; page?: string };
                     if (parsed.action === 'navigate' && parsed.page) {
-                      onNavigate(parsed.page);
+                      if (parsed.page in PAGE_PATHS) {
+                        onNavigate(parsed.page as Page);
+                      } else {
+                        logger.warn(`[useStreamingChat] Ignoring invalid navigation page: "${parsed.page}"`);
+                      }
                     }
                   } catch { /* not JSON or no navigation */ }
                 }

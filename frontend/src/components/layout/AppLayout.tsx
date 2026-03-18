@@ -132,10 +132,23 @@ export function AppLayout({
 
   const chatOverlayRef = useRef<HTMLDivElement>(null);
   const mainContentRef = useRef<HTMLElement>(null);
+  const prevPageRef = useRef<Page>(currentPage);
 
-  // Scroll to top on page change
+  // Scroll to top only on page navigation, not on tab changes within same page
   useEffect(() => {
-    mainContentRef.current?.scrollTo({ top: 0, behavior: 'instant' });
+    // Extract the base page (before any sub-route like /ideas/incubator)
+    const basePage = (page: Page): string => {
+      const s = String(page);
+      return s.split('/')[0] || s;
+    };
+    const prevBase = basePage(prevPageRef.current);
+    const currBase = basePage(currentPage);
+    prevPageRef.current = currentPage;
+
+    // Only scroll when navigating to a different page, not a different tab
+    if (prevBase !== currBase) {
+      mainContentRef.current?.scrollTo({ top: 0, behavior: 'instant' });
+    }
   }, [currentPage]);
 
   // Escape key + body scroll lock for chat overlay
@@ -237,11 +250,13 @@ export function AppLayout({
           </div>
         </div>
 
-        <ProactivePanel
-          context={context}
-          isOpen={proactivePanelOpen}
-          onClose={() => setProactivePanelOpen(false)}
-        />
+        {proactivePanelOpen && (
+          <ProactivePanel
+            context={context}
+            isOpen={proactivePanelOpen}
+            onClose={() => setProactivePanelOpen(false)}
+          />
+        )}
 
         <OfflineIndicator />
 
