@@ -2327,3 +2327,53 @@
   background: rgba(239, 68, 68, 0.15);
   color: #f87171;
 }
+
+/* ============================================
+   CollapsibleResponse (Phase 101-F2)
+   ============================================ */
+
+.collapsible-response {
+  display: flex;
+  flex-direction: column;
+}
+
+.collapsible-response__metadata {
+  margin-bottom: 4px;
+}
+
+.collapsible-response__body {
+  position: relative;
+}
+
+.collapsible-response__gradient {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 2em;
+  background: linear-gradient(transparent, var(--surface-primary, #1a1a2e));
+  pointer-events: none;
+}
+
+.collapsible-response__toggle {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 4px;
+  padding: 4px 8px;
+  font-size: 12px;
+  color: var(--text-secondary);
+  background: none;
+  border: none;
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+.collapsible-response__toggle:hover {
+  background: var(--surface-hover, rgba(255, 255, 255, 0.05));
+}
+
+.collapsible-response__toggle:focus-visible {
+  outline: 2px solid var(--color-brand, #6366f1);
+  outline-offset: 2px;
+}
