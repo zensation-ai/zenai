@@ -124,6 +124,12 @@ import {
   handleMemoryAbstract,
   handleMemorySearchAndLink,
 } from './memory-self-editing';
+import {
+  handleConversationSearch,
+  handleConversationSearchDate,
+  TOOL_CONVERSATION_SEARCH,
+  TOOL_CONVERSATION_SEARCH_DATE,
+} from './conversation-search';
 
 // ===========================================
 // Core Tool Handler Implementations
@@ -1138,6 +1144,10 @@ export function registerAllToolHandlers(): void {
   toolRegistry.register(TOOL_ARCHIVE_IDEA, handleArchiveIdea);
   toolRegistry.register(TOOL_DELETE_IDEA, handleDeleteIdea);
 
+  // Phase 101 B2: Conversation search tools
+  toolRegistry.register(TOOL_CONVERSATION_SEARCH, handleConversationSearch);
+  toolRegistry.register(TOOL_CONVERSATION_SEARCH_DATE, handleConversationSearchDate);
+
   logger.info('Tool handlers registered', {
     tools: [
       'search_ideas',
@@ -1194,6 +1204,8 @@ export function registerAllToolHandlers(): void {
       'update_idea',
       'archive_idea',
       'delete_idea',
+      'conversation_search',
+      'conversation_search_date',
     ],
   });
 }
