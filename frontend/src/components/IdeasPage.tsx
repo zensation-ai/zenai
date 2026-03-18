@@ -97,8 +97,6 @@ const IdeasPageComponent: React.FC<IdeasPageProps> = ({
   const restoreMutation = useRestoreIdeaMutation(context);
   const toggleFavoriteMutation = useToggleFavoriteMutation(context);
 
-  const error = queryError ? getErrorMessage(queryError, 'Gedanken konnten nicht geladen werden') : null;
-
   const { isMobile } = useBreakpoint();
 
   const handlePullToRefresh = useCallback(async () => {
@@ -132,7 +130,6 @@ const IdeasPageComponent: React.FC<IdeasPageProps> = ({
     step: number;
   } | null>(null);
 
-  const displayError = localError || error;
   const isAIActive = processing || isSearching || isRecording || loading;
   const aiActivityType = isRecording ? 'transcribing' : isSearching ? 'searching' : loading ? 'thinking' : 'processing';
 

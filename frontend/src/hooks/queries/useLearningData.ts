@@ -7,49 +7,21 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import axios from 'axios';
-import type { AIContext } from '../../components/ContextSwitcher';
 import { queryKeys } from '../../lib/query-keys';
 import { logError } from '../../utils/errors';
-
-export interface LearningDashboardData {
-  focusTopics?: Array<{
-    id: string;
-    name: string;
-    description: string;
-    keywords: string[];
-    progress: number;
-    lastActive: string;
-  }>;
-  suggestions?: Array<{
-    id: string;
-    title: string;
-    description: string;
-    type: string;
-    relevance: number;
-  }>;
-  research?: Array<{
-    id: string;
-    topic: string;
-    summary: string;
-    createdAt: string;
-  }>;
-  stats?: {
-    totalFocusTopics: number;
-    activeSuggestions: number;
-    researchCount: number;
-  };
-}
+import type { DashboardData } from '../../components/LearningDashboard/types';
 
 /**
  * Fetch learning dashboard data (overview)
+ * Returns the full DashboardData structure from the API.
  */
-export function useLearningDashboardQuery(context: AIContext, enabled = true) {
+export function useLearningDashboardQuery(context: string, enabled = true) {
   return useQuery({
     queryKey: queryKeys.learning.dashboard(context),
     queryFn: async ({ signal }) => {
       try {
         const response = await axios.get(`/api/${context}/learning/dashboard`, { signal });
-        return (response.data?.dashboard ?? null) as LearningDashboardData | null;
+        return (response.data?.dashboard ?? null) as DashboardData | null;
       } catch (error) {
         logError('useLearningDashboardQuery', error);
         throw error;
@@ -63,7 +35,7 @@ export function useLearningDashboardQuery(context: AIContext, enabled = true) {
 /**
  * Fetch learning profile
  */
-export function useLearningProfileQuery(context: AIContext, enabled = true) {
+export function useLearningProfileQuery(context: string, enabled = true) {
   return useQuery({
     queryKey: queryKeys.learning.profile(context),
     queryFn: async ({ signal }) => {
@@ -83,7 +55,7 @@ export function useLearningProfileQuery(context: AIContext, enabled = true) {
 /**
  * Create a new focus topic
  */
-export function useCreateFocusMutation(context: AIContext) {
+export function useCreateFocusMutation(context: string) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (data: { name: string; description: string; keywords: string }) => {
@@ -102,7 +74,7 @@ export function useCreateFocusMutation(context: AIContext) {
 /**
  * Delete a focus topic
  */
-export function useDeleteFocusMutation(context: AIContext) {
+export function useDeleteFocusMutation(context: string) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (focusId: string) => {
@@ -121,7 +93,7 @@ export function useDeleteFocusMutation(context: AIContext) {
 /**
  * Update learning profile
  */
-export function useUpdateLearningProfileMutation(context: AIContext) {
+export function useUpdateLearningProfileMutation(context: string) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (data: Record<string, unknown>) => {
@@ -140,7 +112,7 @@ export function useUpdateLearningProfileMutation(context: AIContext) {
 /**
  * Submit feedback on a suggestion
  */
-export function useLearningFeedbackMutation(context: AIContext) {
+export function useLearningFeedbackMutation(context: string) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (data: { suggestionId: string; rating: number; comment?: string }) => {

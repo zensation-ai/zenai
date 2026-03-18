@@ -9,7 +9,7 @@ import { logError } from '../../utils/errors';
 import { HubPage, type TabDef } from '../HubPage';
 import { SkeletonLoader } from '../SkeletonLoader';
 import { QueryErrorState } from '../QueryErrorState';
-import { LearningDashboardProps, DashboardData, ProfileData } from './types';
+import { LearningDashboardProps, ProfileData } from './types';
 import type { LearningTab } from './types';
 import { useTabNavigation } from '../../hooks/useTabNavigation';
 import { useLearningDashboardQuery } from '../../hooks/queries/useLearningData';
