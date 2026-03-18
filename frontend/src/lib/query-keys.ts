@@ -170,4 +170,53 @@ export const queryKeys = {
   suggestions: {
     list: (ctx: string) => ['suggestions', ctx] as const,
   },
+
+  // Business
+  business: {
+    all: (ctx: string) => ['business', ctx] as const,
+    overview: (ctx: string) => ['business', ctx, 'overview'] as const,
+    revenue: (ctx: string) => ['business', ctx, 'revenue'] as const,
+    traffic: (ctx: string) => ['business', ctx, 'traffic'] as const,
+    seo: (ctx: string) => ['business', ctx, 'seo'] as const,
+    health: (ctx: string) => ['business', ctx, 'health'] as const,
+    insights: (ctx: string) => ['business', ctx, 'insights'] as const,
+  },
+
+  // Insights
+  insights: {
+    all: (ctx: string) => ['insights', ctx] as const,
+    analytics: (ctx: string) => ['insights', ctx, 'analytics'] as const,
+    digest: (ctx: string) => ['insights', ctx, 'digest'] as const,
+    sleepLogs: (ctx: string) => ['insights', ctx, 'sleep-logs'] as const,
+    sleepStats: (ctx: string) => ['insights', ctx, 'sleep-stats'] as const,
+    aiTraces: (ctx: string, filters?: Record<string, unknown>) =>
+      ['insights', ctx, 'ai-traces', stableFilters(filters)] as const,
+  },
+
+  // Learning
+  learning: {
+    all: (ctx: string) => ['learning', ctx] as const,
+    dashboard: (ctx: string) => ['learning', ctx, 'dashboard'] as const,
+    focus: (ctx: string) => ['learning', ctx, 'focus'] as const,
+    suggestions: (ctx: string) => ['learning', ctx, 'suggestions'] as const,
+    research: (ctx: string) => ['learning', ctx, 'research'] as const,
+    profile: (ctx: string) => ['learning', ctx, 'profile'] as const,
+  },
+
+  // My AI
+  myAI: {
+    all: (ctx: string) => ['my-ai', ctx] as const,
+    profile: (ctx: string) => ['my-ai', ctx, 'profile'] as const,
+    memory: (ctx: string) => ['my-ai', ctx, 'memory'] as const,
+    procedures: (ctx: string, filters?: Record<string, unknown>) =>
+      ['my-ai', ctx, 'procedures', stableFilters(filters)] as const,
+  },
+
+  // Settings
+  settings: {
+    all: () => ['settings'] as const,
+    profile: () => ['settings', 'profile'] as const,
+    preferences: () => ['settings', 'preferences'] as const,
+    connectors: () => ['settings', 'connectors'] as const,
+  },
 } as const;

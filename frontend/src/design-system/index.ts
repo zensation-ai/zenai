@@ -25,6 +25,8 @@ export {
   animations,
   zIndex,
   breakpoints,
+  glassTokens,
+  neuroTokens,
 } from './tokens';
 
 // Granular color exports
@@ -111,7 +113,7 @@ export {
 } from './components';
 export type {
   ButtonProps, ButtonVariant, ButtonSize,
-  InputProps,
+  InputProps, InputVariant,
   CardProps, CardVariant, CardPadding,
   BadgeProps, BadgeVariant, BadgeSize, BadgeColor,
   ModalProps, ModalSize,

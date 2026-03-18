@@ -91,6 +91,45 @@ export function getPageIcon(page: Page): LucideIcon {
   return PAGE_ICONS[page] ?? BookOpen;
 }
 
+/**
+ * Map of Lucide icon names (strings) to components.
+ * Used by MobileSidebarDrawer and Breadcrumbs to render icons
+ * from navigation.ts icon names.
+ */
+export const ICON_BY_NAME: Record<string, LucideIcon> = {
+  LayoutDashboard,
+  MessageSquare,
+  Lightbulb,
+  Wrench,
+  BarChart3,
+  FileText,
+  Briefcase,
+  GraduationCap,
+  Brain,
+  Settings,
+  Bell,
+  Mail,
+  Calendar,
+  Users,
+  Wallet,
+  Globe,
+  Monitor,
+  Sparkles,
+  BookOpen,
+  Star,
+  ChevronRight,
+  ChevronLeft,
+  ChevronDown,
+};
+
+/**
+ * Render a Lucide icon by its string name.
+ * Falls back to BookOpen if name is not found.
+ */
+export function getIconByName(name: string): LucideIcon {
+  return ICON_BY_NAME[name] ?? BookOpen;
+}
+
 // Re-export commonly used icons for direct access
 export {
   LayoutDashboard,

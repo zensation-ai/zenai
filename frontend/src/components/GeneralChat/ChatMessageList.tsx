@@ -15,6 +15,7 @@ import {
 import type { ChatMessage } from './types';
 import { ToolResultRenderer } from './ToolResultRenderer';
 import { ThinkingBlock } from './ThinkingBlock';
+import { ConfidenceBadge } from './ConfidenceBadge';
 import { Brain, User, BookOpen, Link, Pencil } from 'lucide-react';
 import { slideUp, springs, usePrefersReducedMotion } from '../../utils/animations';
 
@@ -416,6 +417,9 @@ export function ChatMessageList({
                       {message.role === 'assistant' ? AI_PERSONALITY.name : 'Du'}
                     </span>
                     <span className="chat-message-time">{formatTime(message.createdAt)}</span>
+                    {message.role === 'assistant' && message.metadata?.rag_confidence != null && (
+                      <ConfidenceBadge confidence={message.metadata.rag_confidence} />
+                    )}
                   </div>
                   <div className="chat-message-text">
                     {renderContent(message.content, message.id)}

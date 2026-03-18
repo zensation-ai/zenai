@@ -6,12 +6,21 @@
 
 import type { AIContext } from '../ContextSwitcher';
 
+export interface ChatMessageMetadata {
+  rag_confidence?: number;
+  rag_strategy?: string;
+  tool_count?: number;
+  [key: string]: unknown;
+}
+
 export interface ChatMessage {
   id: string;
   sessionId: string;
   role: 'user' | 'assistant';
   content: string;
   createdAt: string;
+  /** Optional metadata from the AI response (RAG confidence, strategy, etc.) */
+  metadata?: ChatMessageMetadata;
 }
 
 // ChatSession type for API responses (exported for potential external use)

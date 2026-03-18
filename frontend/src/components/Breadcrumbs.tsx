@@ -1,5 +1,6 @@
 import { memo } from 'react';
 import type { Page } from '../types';
+import { getPageIcon } from '../utils/navIcons';
 import './Breadcrumbs.css';
 
 export interface BreadcrumbItem {
@@ -37,7 +38,7 @@ export const Breadcrumbs = memo(function Breadcrumbs({
             <li key={`${item.page}-${index}`} className="breadcrumb-item">
               {isLast ? (
                 <span className="breadcrumb-current" aria-current="page">
-                  {item.icon && <span className="breadcrumb-icon" aria-hidden="true">{item.icon}</span>}
+                  {item.icon && (() => { const Icon = getPageIcon(item.page); return <span className="breadcrumb-icon" aria-hidden="true"><Icon size={14} strokeWidth={1.5} /></span>; })()}
                   <span className="breadcrumb-label">{item.label}</span>
                 </span>
               ) : (
@@ -47,7 +48,7 @@ export const Breadcrumbs = memo(function Breadcrumbs({
                     className="breadcrumb-link neuro-hover-lift"
                     onClick={() => onNavigate(item.page)}
                   >
-                    {item.icon && <span className="breadcrumb-icon" aria-hidden="true">{item.icon}</span>}
+                    {item.icon && (() => { const Icon = getPageIcon(item.page); return <span className="breadcrumb-icon" aria-hidden="true"><Icon size={14} strokeWidth={1.5} /></span>; })()}
                     <span className="breadcrumb-label">{item.label}</span>
                   </button>
                   <span className="breadcrumb-separator" aria-hidden="true">{separator}</span>

@@ -15,3 +15,8 @@ export * from './useChat';
 export * from './useCalendar';
 export * from './useEmail';
 export * from './useFinance';
+export * from './useBusinessData';
+export * from './useInsightsData';
+export * from './useLearningData';
+export * from './useMyAI';
+export * from './useSettings';

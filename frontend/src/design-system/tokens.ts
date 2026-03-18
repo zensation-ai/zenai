@@ -102,6 +102,27 @@ export const breakpoints = {
 } as const;
 
 // ---------------------------------------------------------------------------
+// Glass tokens (Glassmorphism / liquid-glass patterns)
+// ---------------------------------------------------------------------------
+
+export const glassTokens = {
+  background: 'var(--glass-bg, rgba(255, 255, 255, 0.05))',
+  border: 'var(--glass-border, rgba(255, 255, 255, 0.1))',
+  backdropBlur: 'var(--glass-blur, 12px)',
+  shadow: 'var(--glass-shadow, 0 8px 32px rgba(0, 0, 0, 0.12))',
+} as const;
+
+// ---------------------------------------------------------------------------
+// Neuro tokens (interaction feedback)
+// ---------------------------------------------------------------------------
+
+export const neuroTokens = {
+  hoverLift: 'translateY(-2px)',
+  focusRingColor: 'var(--accent-primary, #6366f1)',
+  focusRingWidth: '2px',
+} as const;
+
+// ---------------------------------------------------------------------------
 // Full design token tree
 // ---------------------------------------------------------------------------
 
@@ -116,6 +137,8 @@ export const tokens = {
   animations,
   zIndex,
   breakpoints,
+  glass: glassTokens,
+  neuro: neuroTokens,
 } as const;
 
 export type Tokens = typeof tokens;

@@ -25,6 +25,7 @@ import {
 } from '../hooks/queries/useDashboard';
 import type { TrendPoint } from '../hooks/queries/useDashboard';
 import { Button, Card, Badge, Skeleton, EmptyState } from '../design-system';
+import { QueryErrorState } from './QueryErrorState';
 import { getPageIcon } from '../utils/navIcons';
 import {
   Lightbulb,
@@ -94,7 +95,8 @@ interface QuickNavItem {
   accent: string;
 }
 
-const QUICK_NAV: QuickNavItem[] = [
+/** All available quick nav items with accent colors */
+const ALL_QUICK_NAV: QuickNavItem[] = [
   { label: 'Gedanken', page: 'ideas', accent: 'var(--accent-ideas, #f59e0b)' },
   { label: 'Chat', page: 'chat', accent: 'var(--accent-chat, #f97316)' },
   { label: 'Planer', page: 'calendar', accent: 'var(--accent-calendar, #3b82f6)' },
@@ -103,7 +105,60 @@ const QUICK_NAV: QuickNavItem[] = [
   { label: 'Werkstatt', page: 'workshop', accent: 'var(--accent-workshop, #8b5cf6)' },
   { label: 'Email', page: 'email', accent: 'var(--accent-email, #ec4899)' },
   { label: 'Meine KI', page: 'my-ai', accent: 'var(--accent-ai, #a855f7)' },
+  { label: 'Business', page: 'business', accent: 'var(--accent-business, #0ea5e9)' },
+  { label: 'Finanzen', page: 'finance', accent: 'var(--accent-finance, #14b8a6)' },
+  { label: 'Kontakte', page: 'contacts', accent: 'var(--accent-contacts, #f43f5e)' },
+  { label: 'Lernen', page: 'learning', accent: 'var(--accent-learning, #eab308)' },
 ];
+
+const FRECENCY_KEY = 'zenai_nav_frecency';
+const FRECENCY_HALF_LIFE_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
+
+interface FrecencyEntry { count: number; lastVisit: number; }
+
+/** Read frecency data from localStorage */
+function readFrecency(): Record<string, FrecencyEntry> {
+  try {
+    const raw = localStorage.getItem(FRECENCY_KEY);
+    return raw ? JSON.parse(raw) : {};
+  } catch { return {}; }
+}
+
+/** Record a page visit for frecency scoring */
+export function recordPageVisit(page: string): void {
+  try {
+    const data = readFrecency();
+    const entry = data[page] ?? { count: 0, lastVisit: 0 };
+    entry.count += 1;
+    entry.lastVisit = Date.now();
+    data[page] = entry;
+    localStorage.setItem(FRECENCY_KEY, JSON.stringify(data));
+  } catch { /* ignore storage errors */ }
+}
+
+/** Compute frecency score: frequency * recency decay */
+function frecencyScore(entry: FrecencyEntry | undefined): number {
+  if (!entry || entry.count === 0) return 0;
+  const age = Date.now() - entry.lastVisit;
+  const recency = Math.exp(-age / FRECENCY_HALF_LIFE_MS);
+  return entry.count * recency;
+}
+
+/** Get top-8 quick nav items sorted by frecency, falling back to static order */
+function useFrecencyNav(): QuickNavItem[] {
+  return useMemo(() => {
+    const data = readFrecency();
+    const hasData = Object.keys(data).length > 0;
+    if (!hasData) return ALL_QUICK_NAV.slice(0, 8);
+
+    const scored = ALL_QUICK_NAV.map(item => ({
+      item,
+      score: frecencyScore(data[item.page]),
+    }));
+    scored.sort((a, b) => b.score - a.score);
+    return scored.slice(0, 8).map(s => s.item);
+  }, []);
+}
 
 const EVENT_ICON_MAP: Record<string, LucideIcon> = {
   appointment: Calendar, reminder: Clock, deadline: AlertTriangle,
@@ -203,6 +258,9 @@ const DashboardComponent: React.FC<DashboardProps> = ({
   ideasCount,
   apiStatus,
 }) => {
+  // Frecency-based quick nav (sorted by usage)
+  const quickNav = useFrecencyNav();
+
   // React Query hooks — replaces 7+ useState + fetchData callback + useEffect
   const summaryEnabled = !!apiStatus;
   const summary = useDashboardSummaryQuery(context, summaryEnabled);
@@ -274,14 +332,7 @@ const DashboardComponent: React.FC<DashboardProps> = ({
         {/* Stat tiles */}
         {fetchError && !loading ? (
           <Card variant="surface" padding="md" className="bento-stat" style={{ gridColumn: 'span 4', textAlign: 'center' }}>
-            <EmptyState
-              title="Daten konnten nicht geladen werden"
-              action={
-                <Button variant="secondary" size="sm" onClick={() => summary.refetch()}>
-                  Erneut versuchen
-                </Button>
-              }
-            />
+            <QueryErrorState error={summary.error} refetch={summary.refetch} />
           </Card>
         ) : loading ? (
           <>
@@ -360,7 +411,7 @@ const DashboardComponent: React.FC<DashboardProps> = ({
         <div className="bento-card bento-quicknav">
           <h3 className="bento-section-title">Schnellzugriff</h3>
           <div className="bento-nav-grid">
-            {QUICK_NAV.map((item) => {
+            {quickNav.map((item) => {
               const NavIcon = getPageIcon(item.page);
               return (
                 <button

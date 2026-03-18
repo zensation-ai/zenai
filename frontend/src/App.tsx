@@ -169,9 +169,11 @@ function AuthenticatedApp() {
   const openGlobalSearch = useCallback(() => setGlobalSearchOpen(true), []);
   const closeGlobalSearch = useCallback(() => setGlobalSearchOpen(false), []);
 
-  // Track page visits for recents
+  // Track page visits for recents + frecency nav
   useEffect(() => {
     pageHistory.addRecentPage(currentPage);
+    // Lazy import to avoid bundling frecency in initial chunk
+    import('./components/Dashboard').then(m => m.recordPageVisit?.(currentPage)).catch(() => {});
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentPage]);
 

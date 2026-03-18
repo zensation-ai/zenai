@@ -2,10 +2,14 @@ import { forwardRef, useId } from 'react';
 import type { InputHTMLAttributes, TextareaHTMLAttributes, ReactNode } from 'react';
 import './Input.css';
 
+export type InputVariant = 'default' | 'glass';
+
 export interface InputProps
   extends Omit<InputHTMLAttributes<HTMLInputElement>, 'size'> {
   /** Render as textarea instead of input */
   as?: 'input' | 'textarea';
+  /** Visual variant */
+  variant?: InputVariant;
   label?: string;
   error?: string;
   helperText?: string;
@@ -18,6 +22,7 @@ export const Input = forwardRef<HTMLInputElement | HTMLTextAreaElement, InputPro
   function Input(
     {
       as = 'input',
+      variant = 'default',
       label,
       error,
       helperText,
@@ -37,6 +42,7 @@ export const Input = forwardRef<HTMLInputElement | HTMLTextAreaElement, InputPro
 
     const wrapperClasses = [
       'ds-input-wrapper',
+      variant !== 'default' ? `ds-input-wrapper--${variant}` : '',
       error ? 'ds-input-wrapper--error' : '',
       icon ? 'ds-input-wrapper--has-icon' : '',
       className ?? '',
