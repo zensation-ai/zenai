@@ -60,7 +60,7 @@ Based on state-of-the-art 2025-2026 research:
 | Tool | Purpose |
 |------|---------|
 | `memory_replace(key, old_content, new_content, reason)` | Agent corrects/updates an existing fact |
-| `memory_rethink(fact_ids[], instruction)` | Agent consolidates multiple facts into a higher-level abstraction. Deletes source facts, creates new abstracted fact. |
+| `memory_abstract(fact_ids[], instruction)` | Agent consolidates multiple facts into a higher-level abstraction. Deletes source facts, creates new abstracted fact. Note: Named `memory_abstract` to avoid collision with existing `memory_rethink` tool from Phase 99. |
 | `memory_search_and_link(query, link_type)` | Agent searches related facts and creates explicit relations |
 
 **Chat Loop Integration:** After each tool-use cycle in `streaming.ts`, inject a memory reflection prompt: "Based on this conversation: Is there anything you should remember, correct, or forget? Use memory_replace/memory_rethink if yes, otherwise continue." Only when last user message >50 tokens (no reflection for "yes"/"ok"/"thanks").
@@ -74,7 +74,7 @@ ALTER TABLE learned_facts ADD COLUMN supersede_reason TEXT;
 
 **Files to modify:**
 - `backend/src/services/tool-handlers/memory-management.ts` — Add 3 new tool implementations
-- `backend/src/services/tool-handlers.ts` — Register new tools
+- `backend/src/services/tool-handlers/index.ts` — Register new tools
 - `backend/src/services/claude/streaming.ts` — Memory reflection injection
 - `backend/src/services/memory/long-term-memory.ts` — supersedeFact() method
 
@@ -126,11 +126,14 @@ evaluateRetrieval(query, documents[]):
 
 **Integration:** In `enhanced-rag.ts` after retrieval step, before context assembly. Maximum 1 reformulation (no loop). On FAILED, explicitly tell user the knowledge base doesn't have a good answer.
 
+**A2 Backfill Strategy:** Existing documents indexed before Phase 100 have template-based `enriched_content`. Add a one-time BullMQ batch job (`backfill-contextual-enrichment`) that re-enriches existing records where `enriched_content` starts with the template prefix `"This chunk from '"`. Prioritize by recency. Triggered as background job on first startup after migration, rate-limited to 50/minute.
+
 **Files to modify:**
 - `backend/src/services/enhanced-rag.ts` — Add evaluateRetrieval() call after retrieval, before assembly
 - New file: `backend/src/services/rag-quality-gate.ts` — CRAG evaluation logic
+- `backend/src/services/queue/workers.ts` — Add backfill-contextual-enrichment worker
 
-**Tests:** Unit tests for each evaluation tier (CONFIDENT/AMBIGUOUS/FAILED), integration test for reformulation flow.
+**Tests:** Unit tests for each evaluation tier (CONFIDENT/AMBIGUOUS/FAILED), integration test for reformulation flow, backfill job test.
 
 ### A4: LLM-Based Consolidation
 
@@ -176,11 +179,11 @@ When Conversation History > 80K tokens:
   3. Keep last 20 messages unchanged
 ```
 
-**Token Counting:** Use tiktoken-lite (or simple char/4 heuristic) for fast estimation.
+**Token Counting:** Use existing `backend/src/services/token-estimation.ts` (Phase 97) which already provides char-based token estimation with language and code awareness. No new dependency needed.
 
 **Files to modify:**
 - `backend/src/routes/general-chat.ts` — New assembleContextWithBudget() function
-- New file: `backend/src/utils/token-budget.ts` — Token counting and budget allocation
+- New file: `backend/src/utils/token-budget.ts` — Budget allocation logic, imports from token-estimation.ts
 
 **Tests:** Unit tests for budget allocation with various section sizes, edge case when all sections are large.
 
@@ -258,11 +261,13 @@ CREATE TABLE agent_shared_memory (
 CREATE INDEX idx_shared_memory_exec ON agent_shared_memory(execution_id);
 ```
 
+**Initialization Precedence:** On cold start (process restart), DB (L3) is the authoritative source. `restore(executionId)` loads from DB first, populates Redis and in-memory. The existing `restoreFromRedis()` is superseded: if DB data exists, Redis is populated FROM DB (not the reverse). If no DB data but Redis has data (race condition), Redis data is used as fallback.
+
 **Files to modify:**
-- `backend/src/services/memory/shared-memory.ts` — Add Redis + DB layers
+- `backend/src/services/memory/shared-memory.ts` — Add DB layer, revise init precedence
 - New migration: `backend/sql/migrations/phase100_agent_shared_memory.sql`
 
-**Tests:** Unit tests for write/read/restore across layers, integration test for process restart simulation.
+**Tests:** Unit tests for write/read/restore across layers, integration test for process restart simulation, precedence test (DB wins over Redis).
 
 ### B3: Dynamic Team Composition
 
@@ -328,12 +333,14 @@ detectChatMode(message, sessionHistory):
   if (confidence < 0.6) → existing Claude-based detection
 ```
 
-**Target:** ~80% of messages classified heuristically → 80% less latency overhead.
+**Note:** The current `detectChatModeAsync()` in `chat-modes.ts` already has a heuristic-first path with LLM fallback at confidence < 0.6, plus an LRU cache. The actual gap is that the heuristic keyword lists are too narrow (e.g., "Write a letter" won't match tool triggers). This fix focuses on **expanding trigger keyword lists** and **tuning confidence thresholds**, not rebuilding the existing architecture.
+
+**Target:** Broader heuristic coverage → fewer LLM fallback calls.
 
 **Files to modify:**
-- `backend/src/services/chat-modes.ts` — Add heuristic detection before LLM call
+- `backend/src/services/chat-modes.ts` — Expand trigger keyword lists, tune thresholds
 
-**Tests:** Unit tests for each trigger category, benchmark test for classification accuracy.
+**Tests:** Unit tests for expanded trigger patterns, accuracy benchmark against existing test set.
 
 ---
 
@@ -419,6 +426,12 @@ useStreamingChat internally uses chatReducer + React Query:
   Mutation: Send message → SSE stream → reducer updates
   Optimistic: New user message immediately in cache
 ```
+
+**Implementation Order:** C2 MUST be sequential within Worker C:
+1. First: chatReducer.ts changes (new actions, state shape)
+2. Second: useStreamingChat.ts updates (consumes new reducer shape)
+3. Third: GeneralChat.tsx migration (delegates to hook)
+This prevents type-incompatible changes if both files are modified in parallel.
 
 **Files to modify:**
 - `frontend/src/components/GeneralChat/chatReducer.ts` — +4 new actions, tool state
@@ -584,19 +597,21 @@ if (isError) {
 
 ### D3: Navigation Cleanup
 
-**3a: Remove dead icon fields** from navigation.ts NavItem (emoji strings, unused by Sidebar).
+**3a: Replace emoji icon fields with Lucide icon references** in navigation.ts NavItem. The `icon` field (emoji strings) is actively used by `MobileSidebarDrawer.tsx` and `Breadcrumbs.tsx` — it is NOT dead code. Replace emoji strings with Lucide icon names (matching the existing `getPageIcon()` pattern in `navIcons.ts`), then update all consumers atomically.
 
 **3b: Extract TopBar component** from AppLayout.tsx inline div.
 
 **3c: Dynamic Quick Access** — Dashboard shows frecency-based shortcuts instead of static 8 items.
 
 **Files to modify:**
-- `frontend/src/navigation.ts` — Remove icon field
+- `frontend/src/navigation.ts` — Replace emoji icon field with Lucide icon name string
+- `frontend/src/components/layout/MobileSidebarDrawer.tsx` — Use Lucide icon from nav item instead of emoji
+- `frontend/src/components/Breadcrumbs.tsx` — Use Lucide icon from nav item instead of emoji
 - `frontend/src/components/layout/AppLayout.tsx` — Extract TopBar
 - New component: `frontend/src/components/layout/TopBar.tsx`
 - `frontend/src/components/Dashboard.tsx` — Frecency-based quick nav
 
-**Tests:** Navigation rendering without icon field, TopBar isolation test.
+**Tests:** Navigation rendering with Lucide icons, TopBar isolation test, mobile drawer icon rendering.
 
 ### D4: React Query Completion
 
@@ -608,7 +623,9 @@ if (isError) {
 | InsightsDashboard | `useInsightsData.ts` | stats, summary, connections, sleep | - |
 | LearningDashboard | `useLearningData.ts` | learningTasks, progress | completeTask |
 | MyAIPage | `useMyAI.ts` | memoryStats, memoryFacts, voiceSettings | updatePreferences |
-| SettingsDashboard | `useSettings.ts` | profile, preferences, extensions | updateProfile |
+| SettingsDashboard | `useSettings.ts` | profile, preferences | updateProfile |
+
+Note: Extensions data fetching is handled by `ExtensionMarketplace` component internally. `useSettings.ts` does NOT duplicate extension queries — it covers only profile and preferences data for the Settings page shell.
 
 **Per migration:**
 1. Create hooks/queries/use{Domain}.ts
@@ -672,9 +689,10 @@ CREATE TABLE agent_shared_memory (
 CREATE INDEX idx_shared_memory_exec ON agent_shared_memory(execution_id);
 
 -- C1: Chat Branching
-ALTER TABLE chat_messages ADD COLUMN parent_message_id UUID;
+ALTER TABLE chat_messages ADD COLUMN parent_message_id UUID REFERENCES chat_messages(id);
 ALTER TABLE chat_messages ADD COLUMN version INTEGER DEFAULT 1;
 ALTER TABLE chat_messages ADD COLUMN is_active BOOLEAN DEFAULT true;
+CREATE INDEX idx_chat_messages_parent ON chat_messages(parent_message_id) WHERE parent_message_id IS NOT NULL;
 
 -- C3: Persistent Tool Disclosure
 ALTER TABLE chat_messages ADD COLUMN tool_calls JSONB DEFAULT '[]';
