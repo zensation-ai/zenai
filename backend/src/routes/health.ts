@@ -17,6 +17,7 @@ import { getAvailableServices } from '../services/ai';
 import { asyncHandler } from '../middleware/errorHandler';
 import { getCircuitBreakerStatus } from '../utils/retry';
 import { isClaudeAvailable, generateClaudeResponse } from '../services/claude';
+import { getClaudeBreakerStats } from '../services/claude/streaming';
 import { queryContext } from '../utils/database-context';
 import { logger } from '../utils/logger';
 import { getPrometheusMetrics } from '../utils/metrics';
@@ -212,6 +213,7 @@ healthRouter.get('/detailed', optionalAuth, asyncHandler(async (req, res) => {
   const poolStats = getPoolStats();
   const aiServices = getAvailableServices();
   const circuitBreakerStatus = getCircuitBreakerStatus();
+  const claudeStreamBreakerStats = getClaudeBreakerStats();
 
   const allDbHealthy = dbHealth.personal && dbHealth.work && dbHealth.learning && dbHealth.creative;
   const anyDbHealthy = dbHealth.personal || dbHealth.work || dbHealth.learning || dbHealth.creative;
@@ -290,6 +292,7 @@ healthRouter.get('/detailed', optionalAuth, asyncHandler(async (req, res) => {
           circuitBreaker: {
             standard: circuitBreakerStatus['claude'],
             extendedThinking: circuitBreakerStatus['claude-extended'],
+            streaming: claudeStreamBreakerStats,
           },
         },
         ollama: {

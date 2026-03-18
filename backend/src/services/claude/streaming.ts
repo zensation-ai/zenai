@@ -18,6 +18,7 @@ import crypto from 'crypto';
 import { Response } from 'express';
 import { logger } from '../../utils/logger';
 import { TIMEOUTS } from '../../config/timeouts';
+import { CircuitBreaker, CircuitBreakerStats } from '../../utils/circuit-breaker';
 import { safeStringify } from '../../utils/safe-stringify';
 import { sanitizeError } from '../../utils/sanitize-error';
 import { getClaudeClient, CLAUDE_MODEL } from './client';
@@ -184,6 +185,27 @@ const DEFAULT_OPTIONS: StreamingOptions = {
   temperature: 0.7, // Default for conversation; overridden to 1 when Extended Thinking is enabled
   maxTokens: 16000,
 };
+
+// ===========================================
+// Claude API Circuit Breaker
+// ===========================================
+
+/**
+ * Circuit breaker protecting the Anthropic streaming API.
+ * Opens after 3 consecutive failures; probes again after 60 s.
+ */
+export const claudeBreaker = new CircuitBreaker({
+  name: 'claude-stream',
+  failureThreshold: 3,
+  resetTimeout: TIMEOUTS.CIRCUIT_BREAKER_CLAUDE,
+});
+
+/**
+ * Returns circuit breaker stats for health endpoint inclusion.
+ */
+export function getClaudeBreakerStats(): CircuitBreakerStats {
+  return claudeBreaker.getStats();
+}
 
 // ===========================================
 // SSE Helper Functions
@@ -374,8 +396,9 @@ export async function streamToSSE(
       }
     });
 
-    // Wait for stream completion
-    const finalMessage = await stream.finalMessage();
+    // Wait for stream completion — wrap in circuit breaker to track success/failure.
+    // If the breaker is OPEN this will throw immediately (fast-fail) or call fallback.
+    const finalMessage = await claudeBreaker.execute(() => stream.finalMessage());
     clearTimeout(streamTimeout);
 
     // Check if compaction occurred in the response
