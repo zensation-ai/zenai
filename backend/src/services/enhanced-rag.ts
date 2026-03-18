@@ -11,6 +11,7 @@
  * @module services/enhanced-rag
  */
 
+import { createHash } from 'crypto';
 import { logger } from '../utils/logger';
 import { AIContext } from '../utils/database-context';
 import { agenticRAG, RetrievalResult, RAGAgentConfig } from './agentic-rag';
@@ -87,6 +88,10 @@ export interface EnhancedRAGResult {
   results: EnhancedResult[];
   /** Overall confidence */
   confidence: number;
+  /** Phase 99: Retrieval confidence score (0.0-1.0) */
+  retrievalConfidence?: number;
+  /** Phase 99: Number of unique source types */
+  sourceCount?: number;
   /** Methods used */
   methodsUsed: string[];
   /** Timing breakdown */
@@ -224,6 +229,82 @@ function heuristicRerank(query: string, results: EnhancedResult[]): EnhancedResu
   }).sort((a, b) => b.score - a.score);
 }
 
+// ===========================================
+// Phase 99: Dynamic Weight Calculation
+// ===========================================
+
+/**
+ * Calculate dynamic weights for HyDE and Agentic results based on result quality.
+ * Higher top score gets more weight. Diversity bonus for multiple source types.
+ * Weights are normalized to sum to 1.0.
+ */
+export function calculateDynamicWeights(
+  hydeResults: Array<{ score: number }>,
+  agenticResults: Array<{ score: number }>
+): { hydeWeight: number; agenticWeight: number } {
+  const hydeTopScore = hydeResults.length > 0
+    ? Math.max(...hydeResults.map(r => r.score))
+    : 0;
+  const agenticTopScore = agenticResults.length > 0
+    ? Math.max(...agenticResults.map(r => r.score))
+    : 0;
+
+  // Base weights proportional to top scores
+  let hydeWeight = hydeTopScore;
+  let agenticWeight = agenticTopScore;
+
+  // Diversity bonus: if both sources have results, each gets 10% bonus
+  if (hydeResults.length > 0 && agenticResults.length > 0) {
+    hydeWeight *= 1.1;
+    agenticWeight *= 1.1;
+  }
+
+  // Normalize to sum to 1.0
+  const total = hydeWeight + agenticWeight;
+  if (total === 0) {
+    return { hydeWeight: 0.4, agenticWeight: 0.6 }; // Fallback to defaults
+  }
+
+  return {
+    hydeWeight: hydeWeight / total,
+    agenticWeight: agenticWeight / total,
+  };
+}
+
+// ===========================================
+// Phase 99: Retrieval Confidence Score
+// ===========================================
+
+/**
+ * Calculate a 0.0-1.0 confidence score for retrieval results.
+ *
+ * Components:
+ * - 40% topScore: best result score
+ * - 30% avgScore: average result score
+ * - 15% variance: lower variance = more consistent (better)
+ * - 15% sourceTypes: more diverse sources = higher confidence
+ */
+export function calculateRetrievalConfidence(
+  results: Array<{ score: number; sources: string[] }>
+): number {
+  if (results.length === 0) return 0;
+
+  const scores = results.map(r => r.score);
+  const topScore = Math.max(...scores);
+  const avgScore = scores.reduce((a, b) => a + b, 0) / scores.length;
+
+  // Variance component (lower variance = better)
+  const variance = scores.reduce((sum, s) => sum + Math.pow(s - avgScore, 2), 0) / scores.length;
+  const varianceComponent = Math.max(0, 1 - variance * 5);
+
+  // Source diversity component
+  const allSources = new Set(results.flatMap(r => r.sources));
+  const sourceComponent = Math.min(allSources.size / 3, 1);
+
+  const confidence = topScore * 0.4 + avgScore * 0.3 + varianceComponent * 0.15 + sourceComponent * 0.15;
+  return Math.max(0, Math.min(1, confidence));
+}
+
 class EnhancedRAGService {
   private config: EnhancedRAGConfig;
 
@@ -237,7 +318,8 @@ class EnhancedRAGService {
   async retrieve(
     query: string,
     context: AIContext,
-    config?: Partial<EnhancedRAGConfig>
+    config?: Partial<EnhancedRAGConfig>,
+    options?: { conversationContext?: string; isRetry?: boolean }
   ): Promise<EnhancedRAGResult> {
     const cfg = { ...this.config, ...config };
     const startTime = Date.now();
@@ -381,7 +463,12 @@ class EnhancedRAGService {
         timing.crossEncoder = Date.now() - crossStart;
         methodsUsed.push('cross_encoder');
       } catch (error) {
-        logger.warn('Cross-encoder re-ranking failed, falling back to heuristic rerank', { error });
+        const reason = error instanceof Error ? error.message : 'Unknown error';
+        logger.warn('Cross-encoder reranking failed, falling back to heuristic', {
+          reason,
+          resultCount: merged.length,
+          error,
+        });
         finalResults = heuristicRerank(enrichedQuery, merged);
         timing.crossEncoder = Date.now() - crossStart;
         methodsUsed.push('heuristic_rerank');
@@ -394,6 +481,42 @@ class EnhancedRAGService {
     finalResults = finalResults
       .filter(r => r.score >= cfg.minRelevance)
       .slice(0, cfg.maxResults);
+
+    // Phase 99: Calculate retrieval confidence
+    const retrievalConfidence = calculateRetrievalConfidence(finalResults);
+    const allSources = new Set(finalResults.flatMap(r => r.sources));
+    const sourceCount = allSources.size;
+
+    // Phase 99: Self-RAG Critique — retry with reformulated query on low confidence
+    if (
+      retrievalConfidence < 0.5 &&
+      !options?.isRetry &&
+      options?.conversationContext
+    ) {
+      logger.info('Self-RAG critique: low confidence, retrying with conversation context', {
+        retrievalConfidence,
+        query: query.substring(0, 50),
+      });
+
+      const reformulatedQuery = query + ' ' + options.conversationContext.slice(0, 500);
+      const retryResult = await this.retrieve(reformulatedQuery, context, config, { isRetry: true });
+
+      // Merge both result sets
+      const combinedResults = [...finalResults, ...retryResult.results];
+      // Deduplicate by ID + content hash
+      const seen = new Set<string>();
+      const mergedFinal: EnhancedResult[] = [];
+      for (const r of combinedResults.sort((a, b) => b.score - a.score)) {
+        const snippet = (r.content ?? r.summary).slice(0, 500);
+        const key = r.id + '_' + createHash('sha256').update(snippet).digest('hex').slice(0, 16);
+        if (!seen.has(key)) {
+          seen.add(key);
+          mergedFinal.push(r);
+        }
+      }
+
+      finalResults = mergedFinal.slice(0, cfg.maxResults);
+    }
 
     // Calculate overall confidence
     const confidence = this.calculateConfidence(finalResults, methodsUsed);
@@ -428,6 +551,8 @@ class EnhancedRAGService {
     const result: EnhancedRAGResult = {
       results: finalResults,
       confidence,
+      retrievalConfidence,
+      sourceCount,
       methodsUsed,
       timing: { ...timing, cacheHit: false },
       debug: {
@@ -512,9 +637,9 @@ class EnhancedRAGService {
   ): EnhancedResult[] {
     const merged = new Map<string, EnhancedResult>();
 
-    // Weight factors
-    const HYDE_WEIGHT = 0.4;
-    const AGENTIC_WEIGHT = 0.6;
+    // Phase 99: Dynamic retrieval weights based on result quality
+    const { hydeWeight: HYDE_WEIGHT, agenticWeight: AGENTIC_WEIGHT } =
+      calculateDynamicWeights(hydeResults, agenticResults);
 
     // Add HyDE results with contextual enrichment
     for (const result of hydeResults) {
@@ -586,8 +711,21 @@ class EnhancedRAGService {
       }
     }
 
+    // Phase 99: Content-hash deduplication (removes near-duplicate content across sources)
+    const deduped = new Map<string, EnhancedResult>();
+    for (const result of merged.values()) {
+      const contentSnippet = (result.content ?? result.summary).slice(0, 500);
+      const contentHash = createHash('sha256').update(contentSnippet).digest('hex').slice(0, 16);
+      const dedupKey = result.id + '_' + contentHash;
+
+      const existing = deduped.get(dedupKey);
+      if (!existing || result.score > existing.score) {
+        deduped.set(dedupKey, result);
+      }
+    }
+
     // Sort by score
-    return Array.from(merged.values())
+    return Array.from(deduped.values())
       .sort((a, b) => b.score - a.score);
   }
 

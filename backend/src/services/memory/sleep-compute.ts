@@ -104,26 +104,64 @@ class SleepComputeEngine {
     };
 
     try {
+      // Phase 99: Each stage runs in its own error boundary.
+      // A single stage failure should not block other stages.
+
       // 1. Episodic Memory Consolidation
-      const consolidation = await this.consolidateEpisodes(context);
-      result.processed += consolidation.processed;
-      result.insights.push(...consolidation.insights);
+      try {
+        const consolidation = await this.consolidateEpisodes(context);
+        result.processed += consolidation.processed;
+        result.insights.push(...consolidation.insights);
+      } catch (stageError) {
+        logger.warn('Sleep stage 1 (consolidateEpisodes) failed, continuing', {
+          operation: 'sleep-compute', context,
+          error: stageError instanceof Error ? stageError.message : String(stageError),
+        });
+      }
 
       // 2. Memory Contradiction Detection
-      const contradictions = await this.detectAndResolveContradictions(context);
-      result.contradictionsResolved = contradictions;
+      try {
+        const contradictions = await this.detectAndResolveContradictions(context);
+        result.contradictionsResolved = contradictions;
+      } catch (stageError) {
+        logger.warn('Sleep stage 2 (detectAndResolveContradictions) failed, continuing', {
+          operation: 'sleep-compute', context,
+          error: stageError instanceof Error ? stageError.message : String(stageError),
+        });
+      }
 
       // 3. Working Memory Pre-Loading
-      const preloaded = await this.preloadWorkingMemory(context);
-      result.preloadedItems = preloaded;
+      try {
+        const preloaded = await this.preloadWorkingMemory(context);
+        result.preloadedItems = preloaded;
+      } catch (stageError) {
+        logger.warn('Sleep stage 3 (preloadWorkingMemory) failed, continuing', {
+          operation: 'sleep-compute', context,
+          error: stageError instanceof Error ? stageError.message : String(stageError),
+        });
+      }
 
       // 4. Procedural Memory Optimization
-      const procUpdates = await this.optimizeProcedures(context);
-      result.memoryUpdates += procUpdates;
+      try {
+        const procUpdates = await this.optimizeProcedures(context);
+        result.memoryUpdates += procUpdates;
+      } catch (stageError) {
+        logger.warn('Sleep stage 4 (optimizeProcedures) failed, continuing', {
+          operation: 'sleep-compute', context,
+          error: stageError instanceof Error ? stageError.message : String(stageError),
+        });
+      }
 
       // 5. Entity Graph Maintenance
-      const graphUpdates = await this.maintainEntityGraph(context);
-      result.memoryUpdates += graphUpdates;
+      try {
+        const graphUpdates = await this.maintainEntityGraph(context);
+        result.memoryUpdates += graphUpdates;
+      } catch (stageError) {
+        logger.warn('Sleep stage 5 (maintainEntityGraph) failed, continuing', {
+          operation: 'sleep-compute', context,
+          error: stageError instanceof Error ? stageError.message : String(stageError),
+        });
+      }
 
       result.durationMs = Date.now() - startTime;
 
