@@ -94,6 +94,29 @@ export {
 } from './animations';
 export type { Animations } from './animations';
 
+// Spring physics system (Phase 101-C1)
+export {
+  springs,
+  springCSS,
+  springFallback,
+  useReducedMotion,
+} from './springs';
+export type { SpringPreset } from './springs';
+
+// Motion variants library (Phase 101-C2)
+export {
+  fadeIn,
+  slideUp,
+  scaleIn,
+  listItem,
+  stagger,
+  slideInRight,
+  bounceIn,
+  motionVariants,
+  reducedMotionVariants,
+} from './motion-variants';
+export type { MotionVariantName } from './motion-variants';
+
 // Core UI Components
 export {
   Button,
