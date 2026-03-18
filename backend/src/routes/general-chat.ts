@@ -522,6 +522,203 @@ generalChatRouter.get('/thinking-modes', apiKeyAuth, asyncHandler(async (_req: R
   });
 }));
 
+// ===========================================
+// Message Versions (Chat Branching)
+// ===========================================
+
+/**
+ * GET /api/chat/sessions/:sessionId/messages/:messageId/versions
+ * Returns all versions of a message (all messages sharing the same parent_message_id)
+ */
+generalChatRouter.get('/sessions/:sessionId/messages/:messageId/versions', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
+  const userId = getUserId(req);
+  const { sessionId, messageId } = req.params;
+
+  if (!isValidUUID(sessionId) || !isValidUUID(messageId)) {
+    throw new ValidationError('Invalid ID format. Must be valid UUIDs.');
+  }
+
+  // Find versions: all messages with the same parent_message_id as this message
+  const result = await query(`
+    SELECT id, session_id, role, content, version, is_active, parent_message_id, created_at
+    FROM general_chat_messages
+    WHERE session_id = $1
+      AND user_id = $2
+      AND parent_message_id = (
+        SELECT COALESCE(parent_message_id, id)
+        FROM general_chat_messages
+        WHERE id = $3 AND session_id = $1
+        LIMIT 1
+      )
+    ORDER BY version ASC
+  `, [sessionId, userId, messageId]);
+
+  res.json({
+    success: true,
+    versions: result.rows.map(r => ({
+      id: r.id,
+      sessionId: r.session_id,
+      role: r.role,
+      content: r.content,
+      version: r.version,
+      isActive: r.is_active,
+      parentMessageId: r.parent_message_id,
+      createdAt: r.created_at,
+    })),
+  });
+}));
+
+/**
+ * PUT /api/chat/sessions/:sessionId/messages/:messageId/edit
+ * Edit a user message: deactivate it + all following, create new version
+ */
+generalChatRouter.put('/sessions/:sessionId/messages/:messageId/edit', apiKeyAuth, requireScope('write'), asyncHandler(async (req: Request, res: Response) => {
+  const userId = getUserId(req);
+  const { sessionId, messageId } = req.params;
+  const { content } = req.body;
+
+  if (!isValidUUID(sessionId) || !isValidUUID(messageId)) {
+    throw new ValidationError('Invalid ID format. Must be valid UUIDs.');
+  }
+
+  if (!content || typeof content !== 'string' || content.trim().length === 0) {
+    throw new ValidationError('Content is required and must be a non-empty string.');
+  }
+
+  // Find the original message
+  const originalResult = await query(`
+    SELECT id, session_id, role, content, parent_message_id, version, user_id
+    FROM general_chat_messages
+    WHERE id = $1 AND session_id = $2 AND user_id = $3
+    LIMIT 1
+  `, [messageId, sessionId, userId]);
+
+  if (originalResult.rows.length === 0) {
+    throw new NotFoundError('Message');
+  }
+
+  const original = originalResult.rows[0];
+  const parentId = original.parent_message_id || original.id;
+  const newVersion = (original.version || 1) + 1;
+
+  // Deactivate the edited message and all following messages in this session
+  await query(`
+    UPDATE general_chat_messages
+    SET is_active = false
+    WHERE session_id = $1
+      AND user_id = $2
+      AND created_at >= (SELECT created_at FROM general_chat_messages WHERE id = $3)
+      AND is_active = true
+  `, [sessionId, userId, messageId]);
+
+  // Insert new edited message
+  const newId = crypto.randomUUID();
+  const insertResult = await query(`
+    INSERT INTO general_chat_messages (id, session_id, role, content, version, parent_message_id, is_active, user_id)
+    VALUES ($1, $2, $3, $4, $5, $6, true, $7)
+    RETURNING id, session_id, role, content, version, parent_message_id, is_active, created_at
+  `, [newId, sessionId, original.role, content.trim(), newVersion, parentId, userId]);
+
+  const row = insertResult.rows[0];
+
+  logger.info('Message edited (branching)', {
+    sessionId,
+    originalMessageId: messageId,
+    newMessageId: row.id,
+    version: newVersion,
+  });
+
+  res.json({
+    success: true,
+    message: {
+      id: row.id,
+      sessionId: row.session_id,
+      role: row.role,
+      content: row.content,
+      version: row.version,
+      parentMessageId: row.parent_message_id,
+      isActive: row.is_active,
+      createdAt: row.created_at,
+    },
+  });
+}));
+
+/**
+ * POST /api/chat/sessions/:sessionId/messages/:messageId/regenerate
+ * Regenerate an assistant response: deactivate old, create new version placeholder
+ */
+generalChatRouter.post('/sessions/:sessionId/messages/:messageId/regenerate', apiKeyAuth, requireScope('write'), asyncHandler(async (req: Request, res: Response) => {
+  const userId = getUserId(req);
+  const { sessionId, messageId } = req.params;
+
+  if (!isValidUUID(sessionId) || !isValidUUID(messageId)) {
+    throw new ValidationError('Invalid ID format. Must be valid UUIDs.');
+  }
+
+  // Find the original assistant message
+  const originalResult = await query(`
+    SELECT id, session_id, role, content, parent_message_id, version, user_id
+    FROM general_chat_messages
+    WHERE id = $1 AND session_id = $2 AND user_id = $3
+    LIMIT 1
+  `, [messageId, sessionId, userId]);
+
+  if (originalResult.rows.length === 0) {
+    throw new NotFoundError('Message');
+  }
+
+  const original = originalResult.rows[0];
+
+  if (original.role !== 'assistant') {
+    throw new ValidationError('Only assistant messages can be regenerated.');
+  }
+
+  const parentId = original.parent_message_id || original.id;
+  const newVersion = (original.version || 1) + 1;
+
+  // Deactivate the old assistant message
+  await query(`
+    UPDATE general_chat_messages
+    SET is_active = false
+    WHERE id = $1 AND session_id = $2 AND user_id = $3
+  `, [messageId, sessionId, userId]);
+
+  // Insert new placeholder (content will be filled by streaming)
+  const newId = crypto.randomUUID();
+  const insertResult = await query(`
+    INSERT INTO general_chat_messages (id, session_id, role, content, version, parent_message_id, is_active, user_id)
+    VALUES ($1, $2, 'assistant', '', $3, $4, true, $5)
+    RETURNING id, session_id, role, content, version, parent_message_id, is_active, created_at
+  `, [newId, sessionId, newVersion, parentId, userId]);
+
+  const row = insertResult.rows[0];
+
+  logger.info('Message regeneration requested', {
+    sessionId,
+    originalMessageId: messageId,
+    newMessageId: row.id,
+    version: newVersion,
+  });
+
+  res.json({
+    success: true,
+    message: {
+      id: row.id,
+      sessionId: row.session_id,
+      role: row.role,
+      content: row.content,
+      version: row.version,
+      parentMessageId: row.parent_message_id,
+      isActive: row.is_active,
+      createdAt: row.created_at,
+    },
+  });
+}));
+
+// ===========================================
+// Streaming Message (SSE)
+// ===========================================
+
 generalChatRouter.post('/sessions/:id/messages/stream', apiKeyAuth, requireScope('write'), advancedRateLimiter.ai, inputScreeningMiddleware, validateBody(ChatMessageSchema), asyncHandler(async (req: Request, res: Response) => {
   const userId = getUserId(req);
   const { id } = req.params;
@@ -571,10 +768,11 @@ generalChatRouter.post('/sessions/:id/messages/stream', apiKeyAuth, requireScope
   }
 
   // Get conversation history from public schema (chat tables are in public, not context schemas)
+  // Filter to active messages only (is_active defaults to true; also include NULL for pre-migration rows)
   const historyResult = await query(`
     SELECT role, content
     FROM general_chat_messages
-    WHERE session_id = $1 AND user_id = $2
+    WHERE session_id = $1 AND user_id = $2 AND (is_active = true OR is_active IS NULL)
     ORDER BY created_at ASC
     LIMIT $3
   `, [id, userId, CHAT.MAX_HISTORY_MESSAGES]);
