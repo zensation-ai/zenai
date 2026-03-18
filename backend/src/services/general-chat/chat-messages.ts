@@ -18,6 +18,7 @@ import { graphRAGRetrieve, GraphRAGResult, buildGraphContextPrompt } from '../gr
 import { searchWeb } from '../web-search';
 import { CHAT } from '../../config/constants';
 import { routeToModel, recordUsage } from '../model-orchestrator';
+import { estimateTokensBudget } from '../../utils/token-budget';
 import { logAIDecision } from '../compliance-logger';
 import { estimateChatInputTokens, estimateTokens } from '../../utils/token-estimation';
 import {
@@ -392,6 +393,16 @@ export async function generateEnhancedResponse(
   let toolsCalled: Array<{ name: string; input: Record<string, unknown>; result: string }> = [];
 
   // Process based on detected mode
+  // Phase 100: Token budget guard — log if system prompt is getting large
+  const systemPromptTokens = estimateTokensBudget(systemPrompt);
+  if (systemPromptTokens > 15000) {
+    logger.warn('System prompt exceeds 15K token budget', {
+      sessionId,
+      systemPromptTokens,
+      systemPromptLength: systemPrompt.length,
+    });
+  }
+
   if (modeResult.mode === 'tool_assisted' || modeResult.mode === 'agent') {
     // Use tools for tool_assisted or agent modes
     const tools = modeResult.suggestedTools || getDefaultToolsForMode(modeResult.mode);
