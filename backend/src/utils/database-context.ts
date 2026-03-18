@@ -11,6 +11,8 @@ import { Pool, QueryResult } from 'pg';
 import dotenv from 'dotenv';
 import { logger } from './logger';
 import { getCurrentUserId, getCurrentRequestId } from './request-context';
+import { CircuitBreaker } from './circuit-breaker';
+import { TIMEOUTS } from '../config/timeouts';
 
 // Re-export isValidUUID from centralized validation module for backward compatibility
 export { isValidUUID } from './validation';
@@ -178,6 +180,22 @@ function sleep(ms: number): Promise<void> {
 // New approach: 1 shared pool × 3 max = 3 connections, schema-isolated via search_path
 const sharedPool = new Pool({ ...POOL_CONFIG });
 
+// ===========================================
+// Database Circuit Breaker
+// ===========================================
+
+/**
+ * Protects queryContext from repeated calls to an unavailable database.
+ * Health-check queries (SELECT 1) and HALF_OPEN probes bypass this breaker
+ * to allow recovery detection without further tripping the circuit.
+ * Opens after 5 consecutive failures; probes again after 30 s.
+ */
+export const dbBreaker = new CircuitBreaker({
+  name: 'database',
+  failureThreshold: 5,
+  resetTimeout: TIMEOUTS.CIRCUIT_BREAKER_DB,
+});
+
 // Connection pools for each context - all point to the same shared pool
 const pools: Record<AIContext, Pool> = {
   personal: sharedPool,
@@ -261,16 +279,15 @@ export function getPool(context: AIContext): Pool {
 type QueryParam = string | number | boolean | Date | null | undefined | Buffer | object;
 
 /**
- * Execute a query in the appropriate context database
+ * Execute a query directly (bypasses circuit breaker).
+ * Used for health-check probes (SELECT 1) and by queryContext internally.
+ *
  * Phase 11: Enhanced with query monitoring
  * Phase 23: Added automatic retry for transient errors (ECONNRESET, ETIMEDOUT)
  * Phase 24: CRITICAL FIX - Schema Separation with search_path
- *
- * Executes queries with proper schema isolation based on context.
- * Each context (personal/work) uses its own PostgreSQL schema.
- * This ensures complete data separation between contexts.
+ * Phase 101: Extracted from queryContext for circuit breaker integration
  */
-export async function queryContext(
+async function directQuery(
   context: AIContext,
   text: string,
   params?: QueryParam[]
@@ -423,6 +440,31 @@ export async function queryContext(
 
   // Should not reach here, but TypeScript needs this
   throw lastError || new Error('Query failed after retries');
+}
+
+/**
+ * Execute a query in the appropriate context database.
+ *
+ * Wraps directQuery with the database circuit breaker.
+ * Queries that are health probes (text === 'SELECT 1') bypass the breaker
+ * so they can be used to detect recovery without tripping the circuit further.
+ *
+ * Pass `bypassBreaker: true` for explicit health-check callers.
+ */
+export async function queryContext(
+  context: AIContext,
+  text: string,
+  params?: QueryParam[],
+  options?: { bypassBreaker?: boolean }
+): Promise<QueryResult> {
+  // Health-check queries and callers that explicitly opt-out bypass the breaker.
+  // This prevents health probes from tripping or being blocked by the circuit.
+  const isHealthProbe = text.trim() === 'SELECT 1';
+  if (isHealthProbe || options?.bypassBreaker) {
+    return directQuery(context, text, params);
+  }
+
+  return dbBreaker.execute(() => directQuery(context, text, params));
 }
 
 /**
