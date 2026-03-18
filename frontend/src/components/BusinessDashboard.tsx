@@ -3,6 +3,10 @@
  *
  * Tab-basiertes Dashboard für Business Intelligence.
  * Uses HubPage for unified layout.
+ *
+ * React Query hooks available via `hooks/queries/index.ts` for future migration:
+ * - useDashboardSummary, useDashboardStats (from useDashboard)
+ * Child tab components handle their own data fetching.
  */
 
 import React, { Suspense, lazy, memo } from 'react';

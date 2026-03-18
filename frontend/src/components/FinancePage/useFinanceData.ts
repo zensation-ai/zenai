@@ -31,6 +31,7 @@ export function useFinanceData(context: string) {
   const [budgets, setBudgets] = useState<Budget[]>([]);
   const [goals, setGoals] = useState<FinancialGoal[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
   const abortRef = useRef<AbortController | null>(null);
 
   const fetchOverview = useCallback(async () => {
@@ -145,7 +146,9 @@ export function useFinanceData(context: string) {
     abortRef.current = ctrl;
 
     setLoading(true);
+    setError(null);
     Promise.all([fetchOverview(), fetchTransactions(), fetchAccounts(), fetchBudgets(), fetchGoals()])
+      .catch((err) => setError(err instanceof Error ? err : new Error(String(err))))
       .finally(() => setLoading(false));
 
     return () => {
@@ -155,7 +158,7 @@ export function useFinanceData(context: string) {
   }, [fetchOverview, fetchTransactions, fetchAccounts, fetchBudgets, fetchGoals]);
 
   return {
-    overview, transactions, transactionsTotal, accounts, budgets, goals, loading,
+    overview, transactions, transactionsTotal, accounts, budgets, goals, loading, error,
     fetchTransactions, fetchOverview,
     createTransaction, deleteTransaction,
     createAccount, deleteAccount,

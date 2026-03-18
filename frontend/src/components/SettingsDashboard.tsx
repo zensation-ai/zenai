@@ -1,6 +1,9 @@
 /**
  * SettingsDashboard - Einstellungen (16 Tabs)
  *
+ * React Query hooks available via `hooks/queries/index.ts` for future migration.
+ * Child tab components handle their own data fetching.
+ *
  * Tabs:
  * - Profil: Benutzerprofil und Business-Profil
  * - Konto: Passwort, MFA, Sessions

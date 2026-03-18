@@ -17,6 +17,7 @@ import { EmailList } from './EmailList';
 import { EmailDetail } from './EmailDetail';
 import { EmailCompose } from './EmailCompose';
 import { ImapAccountSetup } from './ImapAccountSetup';
+import { QueryErrorState } from '../QueryErrorState';
 import { PullToRefresh } from '../ui';
 import { useBreakpoint } from '../../hooks/useBreakpoint';
 import type { EmailTab, ComposeState, Email, EmailCategory } from './types';
@@ -368,6 +369,14 @@ export function EmailPage({ context, initialTab = 'inbox' }: EmailPageProps) {
             </button>
           ))}
         </div>
+      )}
+
+      {/* ── Error state ──────────────────────────────────────── */}
+      {data.error && !data.loading && data.emails.length === 0 && (
+        <QueryErrorState
+          error={new Error(data.error)}
+          refetch={() => { data.setError(null); data.fetchEmails(activeFolder); }}
+        />
       )}
 
       {/* ── Split pane ─────────────────────────────────────── */}

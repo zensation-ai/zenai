@@ -2,6 +2,10 @@
  * InsightsDashboard - Konsolidierte Insights-Ansicht
  *
  * Tabs: Statistiken, Zusammenfassung, Verbindungen
+ *
+ * React Query hooks available via `hooks/queries/index.ts` for future migration:
+ * - useDashboardSummary, useDashboardStats (from useDashboard)
+ * Child tab components handle their own data fetching.
  */
 
 import React, { Suspense, lazy, memo } from 'react';

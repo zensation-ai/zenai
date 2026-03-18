@@ -25,6 +25,7 @@ import { OrganizationList } from './OrganizationList';
 import { useEscapeKey } from '../../hooks/useClickOutside';
 import { ContactForm } from './ContactForm';
 import { HubPage, type TabDef } from '../HubPage';
+import { QueryErrorState } from '../QueryErrorState';
 import { PullToRefresh } from '../ui';
 import { useBreakpoint } from '../../hooks/useBreakpoint';
 import { useTabNavigation } from '../../hooks/useTabNavigation';
@@ -188,6 +189,14 @@ export function ContactsPage({ context, initialTab = 'all', onBack }: ContactsPa
         context={context as 'personal' | 'work' | 'learning' | 'creative'}
         headerActions={headerActions}
       >
+        {/* Error state */}
+        {(contactsQuery.isError || orgsQuery.isError) && (
+          <QueryErrorState
+            error={contactsQuery.error ?? orgsQuery.error}
+            refetch={() => { contactsQuery.refetch(); orgsQuery.refetch(); }}
+          />
+        )}
+
         {/* Follow-up Suggestions */}
         {followUps.length > 0 && activeTab !== 'organizations' && (
           <div className="contacts-follow-ups">

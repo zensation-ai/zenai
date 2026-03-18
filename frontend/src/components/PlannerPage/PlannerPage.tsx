@@ -20,6 +20,7 @@ import {
 import { useTabNavigation } from '../../hooks/useTabNavigation';
 import { HubPage, type TabDef } from '../HubPage';
 import { SkeletonLoader } from '../SkeletonLoader';
+import { QueryErrorState } from '../QueryErrorState';
 import type { AIContext } from '../ContextSwitcher';
 
 const CalendarPage = lazy(() =>
@@ -141,6 +142,12 @@ export function PlannerPage({ context, initialTab = 'calendar', onBack }: Planne
         onBack={onBack}
         context={context}
       >
+        {(tasksQuery.isError || projectsQuery.isError) && (
+          <QueryErrorState
+            error={tasksQuery.error ?? projectsQuery.error}
+            refetch={() => { tasksQuery.refetch(); projectsQuery.refetch(); }}
+          />
+        )}
         <Suspense fallback={<SkeletonLoader type="card" count={1} />}>
           {activeTab === 'calendar' && (
             <CalendarPage context={context} embedded={true} />

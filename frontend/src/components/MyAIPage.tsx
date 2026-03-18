@@ -2,6 +2,10 @@
  * MyAIPage - Meine KI
  *
  * Tabs: KI anpassen, KI-Wissen, Sprach-Chat
+ *
+ * React Query hooks available via `hooks/queries/index.ts` for future migration.
+ * Child tab components (PersonalizationChat, MemoryTransparency, VoiceChat)
+ * handle their own data fetching.
  */
 
 import React, { Suspense, lazy, memo } from 'react';

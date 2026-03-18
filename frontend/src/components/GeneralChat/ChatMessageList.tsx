@@ -15,6 +15,7 @@ import {
 import type { ChatMessage } from './types';
 import { ToolResultRenderer } from './ToolResultRenderer';
 import { ThinkingBlock } from './ThinkingBlock';
+import { ToolDisclosure } from './ToolDisclosure';
 import { ConfidenceBadge } from './ConfidenceBadge';
 import { Brain, User, BookOpen, Link, Pencil } from 'lucide-react';
 import { slideUp, springs, usePrefersReducedMotion } from '../../utils/animations';
@@ -393,14 +394,21 @@ export function ChatMessageList({
                       <ConfidenceBadge confidence={message.metadata.rag_confidence} />
                     )}
                   </div>
+                  {/* Thinking block — persisted from history */}
+                  {message.role === 'assistant' && message.thinking_content && (
+                    <ThinkingBlock content={message.thinking_content} isStreaming={false} />
+                  )}
+                  {/* Tool disclosure — persisted from history */}
+                  {message.role === 'assistant' && message.tool_calls && message.tool_calls.length > 0 && (
+                    <ToolDisclosure toolCalls={message.tool_calls} />
+                  )}
                   <div className="chat-message-text">
                     {renderContent(message.content, message.id)}
                   </div>
                   {/* Confidence badge — only renders when backend provides retrievalConfidence */}
-                  {message.role === 'assistant' && (message as ChatMessage & { retrievalConfidence?: number; sourceCount?: number }).retrievalConfidence != null && (
+                  {message.role === 'assistant' && (message as ChatMessage & { retrievalConfidence?: number }).retrievalConfidence != null && (
                     <ConfidenceBadge
                       confidence={(message as ChatMessage & { retrievalConfidence: number }).retrievalConfidence}
-                      sourceCount={(message as ChatMessage & { sourceCount?: number }).sourceCount}
                     />
                   )}
                   {/* Source citations — only renders when backend provides sources array */}

@@ -21,6 +21,10 @@ export interface ChatMessage {
   createdAt: string;
   /** Optional metadata from the AI response (RAG confidence, strategy, etc.) */
   metadata?: ChatMessageMetadata;
+  /** Tool calls made during this message (persisted for history rendering) */
+  tool_calls?: Array<{ name: string; duration_ms: number; status: 'success' | 'error' }>;
+  /** Extended thinking content from the AI (persisted for history rendering) */
+  thinking_content?: string;
 }
 
 // ChatSession type for API responses (exported for potential external use)

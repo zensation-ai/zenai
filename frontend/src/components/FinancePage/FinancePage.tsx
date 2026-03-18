@@ -7,6 +7,7 @@
 
 import { useCallback } from 'react';
 import { HubPage, type TabDef } from '../HubPage';
+import { QueryErrorState } from '../QueryErrorState';
 import { useTabNavigation } from '../../hooks/useTabNavigation';
 import { useFinanceData } from './useFinanceData';
 import { OverviewTab } from './OverviewTab';
@@ -43,7 +44,7 @@ export function FinancePage({ context, initialTab = 'overview', onBack }: Financ
   });
 
   const {
-    overview, transactions, transactionsTotal, accounts, budgets, goals, loading,
+    overview, transactions, transactionsTotal, accounts, budgets, goals, loading, error,
     fetchTransactions,
     createTransaction, deleteTransaction,
     createBudget, updateBudget, deleteBudget,
@@ -70,6 +71,9 @@ export function FinancePage({ context, initialTab = 'overview', onBack }: Financ
       context={context}
       ariaLabel="Finanzen Navigation"
     >
+      {error && !loading && (
+        <QueryErrorState error={error} refetch={() => fetchTransactions()} />
+      )}
       {activeTab === 'overview' && (
         <OverviewTab overview={overview} loading={loading} />
       )}
