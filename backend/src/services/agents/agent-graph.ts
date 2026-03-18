@@ -17,14 +17,30 @@ import { AIContext } from '../../utils/database-context';
 // Types
 // ===========================================
 
+export interface ParallelConfig {
+  /** Branch edge sets - each branch is a list of edges to execute */
+  branches: WorkflowEdge[][];
+  /** Merge strategy: 'all' collects all results, 'first' races for first success */
+  merge_strategy: 'all' | 'first';
+  /** Timeout in milliseconds for parallel execution */
+  timeout_ms: number;
+}
+
+export interface WorkflowEdge {
+  from: string;
+  to: string;
+  condition?: string;
+}
+
 export interface GraphNode {
   id: string;
-  type: 'agent' | 'tool' | 'condition' | 'human_review';
+  type: 'agent' | 'tool' | 'condition' | 'human_review' | 'parallel';
   config: {
     agentRole?: string;
     toolName?: string;
     condition?: (state: WorkflowState) => string;
     label?: string;
+    parallel?: ParallelConfig;
   };
 }
 
@@ -284,6 +300,27 @@ export class AgentGraph {
               state,
             };
           }
+
+          case 'parallel': {
+            const parallelConfig = currentNode.config.parallel;
+            if (!parallelConfig || !parallelConfig.branches.length) {
+              throw new Error(`Parallel node ${currentNode.id} has no branches configured`);
+            }
+
+            const branchResults = await this.executeParallelBranches(
+              parallelConfig,
+              input,
+              state,
+              agentExecutor,
+              toolExecutor,
+            );
+
+            // Store merged results in state variables for downstream nodes
+            state.variables['parallel_results'] = branchResults;
+            lastOutput = branchResults.join('\n\n---\n\n');
+            output = lastOutput;
+            break;
+          }
         }
 
         const result: NodeResult = {
@@ -379,6 +416,75 @@ export class AgentGraph {
       startNodeId: this.startNodeId,
       name: this.name,
     };
+  }
+
+  /**
+   * Execute parallel branches with merge strategy and timeout
+   */
+  private async executeParallelBranches(
+    config: ParallelConfig,
+    input: string,
+    state: WorkflowState,
+    agentExecutor?: (role: string, task: string, state: WorkflowState) => Promise<string>,
+    toolExecutor?: (toolName: string, state: WorkflowState) => Promise<string>,
+  ): Promise<string[]> {
+    const branchPromises = config.branches.map(async (branchEdges) => {
+      // Each branch targets a single node (the `to` of the first edge)
+      const targetNodeId = branchEdges[0]?.to;
+      if (!targetNodeId) return '';
+
+      const targetNode = this.nodes.get(targetNodeId);
+      if (!targetNode) return '';
+
+      // Clone state for branch isolation
+      const branchState: WorkflowState = {
+        ...state,
+        nodeResults: { ...state.nodeResults },
+        variables: { ...state.variables },
+      };
+
+      if (targetNode.type === 'agent' && agentExecutor) {
+        const role = targetNode.config.agentRole || 'researcher';
+        return agentExecutor(role, input, branchState);
+      } else if (targetNode.type === 'tool' && toolExecutor) {
+        const toolName = targetNode.config.toolName || '';
+        return toolExecutor(toolName, branchState);
+      }
+      return `[${targetNode.type} node ${targetNodeId}]`;
+    });
+
+    const timeoutPromise = new Promise<'timeout'>((resolve) =>
+      setTimeout(() => resolve('timeout'), config.timeout_ms)
+    );
+
+    if (config.merge_strategy === 'first') {
+      // Race: first successful branch wins
+      const result = await Promise.race([
+        Promise.any(branchPromises),
+        timeoutPromise,
+      ]);
+      return [result === 'timeout' ? '' : result as string].filter(Boolean);
+    }
+
+    // All: collect all results, timeout returns available results
+    const raceResult = await Promise.race([
+      Promise.allSettled(branchPromises),
+      timeoutPromise,
+    ]);
+
+    if (raceResult === 'timeout') {
+      // On timeout, wait a brief moment for any already-resolved promises
+      const settled = await Promise.allSettled(
+        branchPromises.map(p => Promise.race([p, new Promise<null>(r => setTimeout(() => r(null), 0))]))
+      );
+      return settled
+        .filter((r): r is PromiseFulfilledResult<string | null> => r.status === 'fulfilled' && !!r.value)
+        .map(r => r.value as string);
+    }
+
+    return (raceResult as PromiseSettledResult<string>[])
+      .filter((r): r is PromiseFulfilledResult<string> => r.status === 'fulfilled' && !!r.value)
+      .map(r => r.value);
   }
 
   /**

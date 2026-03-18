@@ -40,6 +40,9 @@ export type TeamStrategy =
   | 'write_only'
   | 'code_solve'
   | 'research_code_review'
+  | 'parallel_research'
+  | 'parallel_code_review'
+  | 'full_parallel'
   | 'custom';
 
 export interface TeamTask {
@@ -248,6 +251,34 @@ export function classifyTeamStrategy(task: string): TeamStrategy {
     /zusammenfass.*und.*empfehl/,
   ];
 
+  // Parallel research patterns
+  const parallelResearchPatterns = [
+    /parallel.*recherchier/,
+    /recherchier.*parallel/,
+    /mehrere\s+quellen.*gleichzeitig/,
+    /aus\s+verschiedenen\s+quellen.*recherchier/,
+  ];
+
+  // Parallel code + research patterns
+  const parallelCodePatterns = [
+    /implementier.*und.*recherchier.*gleichzeitig/,
+    /code.*und.*recherch.*parallel/,
+    /parallel.*code.*und.*recherch/,
+  ];
+
+  // Check parallel patterns first
+  for (const pattern of parallelCodePatterns) {
+    if (pattern.test(taskLower)) {
+      return 'parallel_code_review';
+    }
+  }
+
+  for (const pattern of parallelResearchPatterns) {
+    if (pattern.test(taskLower)) {
+      return 'parallel_research';
+    }
+  }
+
   // Check research + code patterns first
   for (const pattern of researchCodePatterns) {
     if (pattern.test(taskLower)) {
@@ -306,6 +337,12 @@ export function getAgentPipeline(strategy: TeamStrategy, skipReview?: boolean): 
       return skipReview ? ['coder'] : ['coder', 'reviewer'];
     case 'research_code_review':
       return ['researcher', 'coder', 'reviewer'];
+    case 'parallel_research':
+      return ['researcher', 'researcher', 'writer', 'reviewer'];
+    case 'parallel_code_review':
+      return ['coder', 'researcher', 'reviewer'];
+    case 'full_parallel':
+      return ['researcher', 'coder', 'writer', 'reviewer'];
     case 'custom':
       return []; // Will be provided by customPipeline
   }
@@ -328,6 +365,41 @@ function createAgent(role: AgentRole): BaseAgent {
     default:
       throw new Error(`Unknown agent role: ${role}`);
   }
+}
+
+// ===========================================
+// Dynamic Agent Factory (Identity-Aware)
+// ===========================================
+
+/**
+ * Create an agent using DB-stored identity if available, falling back to hardcoded factory.
+ *
+ * 1. Queries AgentIdentityService for a matching role
+ * 2. If found: builds persona prompt from identity fields and injects into agent config
+ * 3. If not found: falls back to existing hardcoded factory (createResearcher, etc.)
+ */
+export async function createAgentWithIdentity(role: AgentRole, _taskContext?: string): Promise<BaseAgent> {
+  try {
+    const { getAgentIdentityService } = await import('./agents/agent-identity');
+    const identityService = getAgentIdentityService();
+    const identities = await identityService.listIdentities({ role, enabled: true });
+
+    if (identities.length > 0) {
+      const identity = identities[0]; // Use first matching identity
+      const personaPrompt = identityService.buildPersonaPrompt(identity);
+
+      // Create agent with hardcoded factory, then inject persona
+      const agent = createAgent(role);
+      // Inject persona prompt into config
+      (agent as any).config.personaPrompt = personaPrompt;
+      return agent;
+    }
+  } catch {
+    // Fall back to hardcoded factory on any error
+    logger.debug('Agent identity lookup failed, using default factory', { role });
+  }
+
+  return createAgent(role);
 }
 
 // ===========================================

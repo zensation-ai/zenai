@@ -1,230 +1,218 @@
 /**
- * Phase 99: Tool Search Tool Pattern
+ * Phase 100 B4: Semantic Tool Search
  *
- * Meta-tool that allows Claude to discover available tools dynamically.
- * Instead of loading all 50+ tools into every request, we provide:
- * - A set of core tools (always available)
- * - A search_tools meta-tool that finds relevant tools by query
- *
- * This reduces token usage while maintaining full tool access.
+ * On-demand tool discovery using both keyword and embedding-based search.
+ * - Keyword matching: tool name words + description words
+ * - Semantic matching: cosine similarity between query and tool description embeddings
+ * - Results are merged and deduplicated
+ * - Falls back to keyword-only if embedding generation fails
  *
  * @module services/tool-handlers/tool-search
  */
 
 import { logger } from '../../utils/logger';
-import type { ToolDefinition, ToolExecutionContext } from '../claude/tool-use';
+import { toolRegistry } from '../claude/tool-use';
 
 // ===========================================
 // Types
 // ===========================================
 
-interface ToolRegistryEntry {
-  definition: ToolDefinition;
-  category: string;
-  keywords: string[];
+export interface ToolSearchResult {
+  name: string;
+  description: string;
+  score: number;
+  matchSource: 'keyword' | 'semantic' | 'both';
+}
+
+interface ToolEmbeddingEntry {
+  name: string;
+  description: string;
+  embedding: number[];
 }
 
 // ===========================================
-// Core Tools (always available in every session)
+// Cosine Similarity
 // ===========================================
 
-export const CORE_TOOL_NAMES = [
-  'search_tools',
-  'remember',
-  'recall',
-  'web_search',
-  'navigate_to',
-] as const;
+function cosineSimilarity(a: number[], b: number[]): number {
+  if (a.length !== b.length || a.length === 0) return 0;
 
-// ===========================================
-// Tool Registry
-// ===========================================
+  let dotProduct = 0;
+  let normA = 0;
+  let normB = 0;
 
-let toolRegistryMap: Map<string, ToolRegistryEntry> = new Map();
-
-/**
- * Extract keywords from a tool description for search matching.
- */
-function extractKeywords(description: string): string[] {
-  // Remove common German/English stop words and extract meaningful terms
-  const stopWords = new Set([
-    'der', 'die', 'das', 'ein', 'eine', 'und', 'oder', 'für', 'mit', 'von',
-    'zu', 'in', 'auf', 'an', 'bei', 'nach', 'über', 'unter', 'vor', 'wenn',
-    'the', 'a', 'an', 'and', 'or', 'for', 'with', 'from', 'to', 'in', 'on',
-    'at', 'by', 'is', 'are', 'was', 'were', 'be', 'been', 'this', 'that',
-    'nutze', 'dies', 'wenn', 'des', 'dem', 'den', 'es', 'er', 'sie', 'ist',
-  ]);
-
-  return description
-    .toLowerCase()
-    .replace(/[^a-zäöüß0-9\s-]/g, ' ')
-    .split(/\s+/)
-    .filter(w => w.length > 2 && !stopWords.has(w))
-    .slice(0, 20); // Cap to prevent excessive keyword lists
-}
-
-/**
- * Infer category from tool name.
- */
-function inferCategory(toolName: string): string {
-  if (toolName.startsWith('github_')) return 'github';
-  if (toolName.startsWith('memory_') || toolName === 'remember' || toolName === 'recall' || toolName === 'memory_introspect') return 'memory';
-  if (toolName.startsWith('get_') && (toolName.includes('revenue') || toolName.includes('traffic') || toolName.includes('seo') || toolName.includes('health'))) return 'business';
-  if (toolName.includes('calendar') || toolName.includes('email') || toolName.includes('travel')) return 'productivity';
-  if (toolName.includes('direction') || toolName.includes('nearby') || toolName.includes('opening') || toolName.includes('route')) return 'maps';
-  if (toolName.includes('project') || toolName.includes('analyze') || toolName.includes('code')) return 'development';
-  if (toolName.includes('document') || toolName.includes('synthesize') || toolName.includes('knowledge')) return 'documents';
-  if (toolName.includes('inbox')) return 'email';
-  if (toolName.includes('mcp')) return 'mcp';
-  if (toolName.includes('web') || toolName.includes('fetch')) return 'web';
-  if (toolName.includes('idea') || toolName.includes('related')) return 'ideas';
-  return 'general';
-}
-
-/**
- * Initialize the tool registry from all available tool definitions.
- * Call this at startup after all tools are registered.
- */
-export function initToolRegistry(allTools: ToolDefinition[]): void {
-  toolRegistryMap = new Map();
-
-  for (const tool of allTools) {
-    const category = inferCategory(tool.name);
-    const keywords = [
-      ...extractKeywords(tool.description),
-      ...tool.name.split('_'),
-      category,
-    ];
-
-    toolRegistryMap.set(tool.name, {
-      definition: tool,
-      category,
-      keywords,
-    });
+  for (let i = 0; i < a.length; i++) {
+    dotProduct += a[i] * b[i];
+    normA += a[i] * a[i];
+    normB += b[i] * b[i];
   }
 
-  logger.info('Tool search registry initialized', {
-    totalTools: toolRegistryMap.size,
-    categories: [...new Set([...toolRegistryMap.values()].map(e => e.category))],
-  });
+  const denominator = Math.sqrt(normA) * Math.sqrt(normB);
+  return denominator === 0 ? 0 : dotProduct / denominator;
 }
 
-/**
- * Search for tools matching a query string.
- * Uses keyword matching against tool names, descriptions, and categories.
- */
-export function searchTools(query: string, maxResults: number = 10): ToolDefinition[] {
-  const queryTerms = query
-    .toLowerCase()
-    .split(/\s+/)
-    .filter(t => t.length > 1);
+// ===========================================
+// Tool Search Service
+// ===========================================
 
-  if (queryTerms.length === 0) {
-    return [];
-  }
+export class ToolSearchService {
+  private toolEmbeddings: Map<string, ToolEmbeddingEntry> = new Map();
+  private embeddingsReady = false;
 
-  const scored: Array<{ definition: ToolDefinition; score: number }> = [];
+  /**
+   * Initialize embeddings for all registered tools.
+   * Call once at startup or lazily on first semantic search.
+   */
+  async initEmbeddings(): Promise<void> {
+    try {
+      const { generateEmbedding } = await import('../ai');
+      const defs = toolRegistry.getDefinitions();
 
-  for (const [, entry] of toolRegistryMap) {
-    let score = 0;
-    const nameWords = entry.definition.name.toLowerCase().split('_');
-
-    for (const term of queryTerms) {
-      // Exact name match is highest
-      if (entry.definition.name.toLowerCase() === term) {
-        score += 10;
+      for (const def of defs) {
+        try {
+          const embedding = await generateEmbedding(def.description);
+          this.toolEmbeddings.set(def.name, {
+            name: def.name,
+            description: def.description,
+            embedding,
+          });
+        } catch {
+          // Skip individual tool if embedding fails
+          logger.debug('Failed to generate embedding for tool', { tool: def.name });
+        }
       }
-      // Name contains term
-      if (nameWords.some(w => w.includes(term))) {
-        score += 5;
-      }
-      // Category match
-      if (entry.category.includes(term)) {
-        score += 3;
-      }
-      // Keyword match
-      const keywordMatches = entry.keywords.filter(k => k.includes(term)).length;
-      score += keywordMatches;
-    }
 
-    if (score > 0) {
-      scored.push({ definition: entry.definition, score });
+      this.embeddingsReady = this.toolEmbeddings.size > 0;
+      logger.info('Tool search embeddings initialized', {
+        toolCount: this.toolEmbeddings.size,
+        total: defs.length,
+      });
+    } catch (error) {
+      logger.warn('Failed to initialize tool embeddings', {
+        error: error instanceof Error ? error.message : String(error),
+      });
+      this.embeddingsReady = false;
     }
   }
 
-  return scored
-    .sort((a, b) => b.score - a.score)
-    .slice(0, maxResults)
-    .map(s => s.definition);
-}
+  /**
+   * Search for tools matching a query using keyword + semantic matching.
+   *
+   * @param query - Natural language search query
+   * @param limit - Maximum results (default 10)
+   * @returns Ranked list of matching tools
+   */
+  async search(query: string, limit = 10): Promise<ToolSearchResult[]> {
+    const defs = toolRegistry.getDefinitions();
+    const resultMap = new Map<string, ToolSearchResult>();
 
-/**
- * Get tool definitions for core tools only.
- */
-export function getCoreTools(): ToolDefinition[] {
-  const coreDefs: ToolDefinition[] = [];
-  for (const name of CORE_TOOL_NAMES) {
-    const entry = toolRegistryMap.get(name);
-    if (entry) {
-      coreDefs.push(entry.definition);
+    // 1. Keyword matching
+    const keywordResults = this.keywordSearch(query, defs);
+    for (const result of keywordResults) {
+      resultMap.set(result.name, result);
     }
-  }
-  return coreDefs;
-}
 
-/**
- * Get all registered tool definitions.
- */
-export function getAllToolDefinitions(): ToolDefinition[] {
-  return [...toolRegistryMap.values()].map(e => e.definition);
-}
+    // 2. Semantic matching (if embeddings are available)
+    if (this.embeddingsReady) {
+      try {
+        const semanticResults = await this.semanticSearch(query);
+        for (const result of semanticResults) {
+          const existing = resultMap.get(result.name);
+          if (existing) {
+            // Merge: take best score, mark as 'both'
+            existing.score = Math.max(existing.score, result.score);
+            existing.matchSource = 'both';
+          } else {
+            resultMap.set(result.name, result);
+          }
+        }
+      } catch {
+        // Fall back to keyword-only on semantic failure
+        logger.debug('Semantic search failed, using keyword results only');
+      }
+    }
 
-// ===========================================
-// search_tools Meta-Tool Definition
-// ===========================================
-
-export const searchToolsDefinition: ToolDefinition = {
-  name: 'search_tools',
-  description: 'Sucht nach verfuegbaren Tools basierend auf einer Beschreibung. Nutze dies um herauszufinden welche Tools fuer eine bestimmte Aufgabe zur Verfuegung stehen, bevor du sie verwendest.',
-  input_schema: {
-    type: 'object',
-    properties: {
-      query: {
-        type: 'string',
-        description: 'Beschreibung der gewuenschten Funktionalitaet (z.B. "E-Mail senden", "Code ausfuehren", "Kalender")',
-      },
-      max_results: {
-        type: 'number',
-        description: 'Maximale Anzahl Ergebnisse (Standard: 10)',
-      },
-    },
-    required: ['query'],
-  },
-};
-
-/**
- * Handler for the search_tools meta-tool.
- */
-export async function handleSearchTools(
-  input: Record<string, unknown>,
-  _execContext: ToolExecutionContext
-): Promise<string> {
-  const query = input.query as string;
-  const maxResults = (input.max_results as number) || 10;
-
-  if (!query) {
-    return 'Fehler: Keine Suchanfrage angegeben.';
+    // Sort by score descending and limit
+    return Array.from(resultMap.values())
+      .sort((a, b) => b.score - a.score)
+      .slice(0, limit);
   }
 
-  const results = searchTools(query, maxResults);
+  /**
+   * Keyword-based search: matches query terms against tool names and descriptions.
+   */
+  private keywordSearch(
+    query: string,
+    defs: Array<{ name: string; description: string }>
+  ): ToolSearchResult[] {
+    const queryLower = query.toLowerCase();
+    const queryTerms = queryLower.split(/\s+/).filter(t => t.length >= 2);
+    const results: ToolSearchResult[] = [];
 
-  if (results.length === 0) {
-    return `Keine passenden Tools gefunden fuer: "${query}". Versuche andere Suchbegriffe.`;
+    for (const def of defs) {
+      const nameLower = def.name.toLowerCase();
+      const nameWords = nameLower.split('_');
+      const descLower = def.description.toLowerCase();
+
+      let score = 0;
+
+      // Exact name match
+      if (queryLower.includes(nameLower) || nameLower.includes(queryLower.replace(/\s+/g, '_'))) {
+        score = 1.0;
+      } else {
+        // Term matching
+        let matchedTerms = 0;
+        for (const term of queryTerms) {
+          if (nameWords.some(w => w.includes(term) || term.includes(w))) {
+            matchedTerms += 2; // Name matches are weighted higher
+          } else if (descLower.includes(term)) {
+            matchedTerms += 1;
+          }
+        }
+        if (matchedTerms > 0 && queryTerms.length > 0) {
+          score = Math.min(matchedTerms / (queryTerms.length * 2), 0.95);
+        }
+      }
+
+      if (score > 0.1) {
+        results.push({
+          name: def.name,
+          description: def.description,
+          score,
+          matchSource: 'keyword',
+        });
+      }
+    }
+
+    return results;
   }
 
-  const formatted = results.map((t, i) =>
-    `${i + 1}. **${t.name}**: ${t.description.substring(0, 120)}${t.description.length > 120 ? '...' : ''}`
-  ).join('\n');
+  /**
+   * Embedding-based semantic search: computes cosine similarity between query and tool embeddings.
+   */
+  private async semanticSearch(query: string): Promise<ToolSearchResult[]> {
+    const { generateEmbedding } = await import('../ai');
+    const queryEmbedding = await generateEmbedding(query);
 
-  return `Verfuegbare Tools (${results.length}) fuer "${query}":\n\n${formatted}\n\nNutze das gewuenschte Tool direkt in deiner naechsten Antwort.`;
+    if (!queryEmbedding || queryEmbedding.length === 0) {
+      return [];
+    }
+
+    const results: ToolSearchResult[] = [];
+
+    for (const [, entry] of this.toolEmbeddings) {
+      const similarity = cosineSimilarity(queryEmbedding, entry.embedding);
+      if (similarity > 0.3) {
+        results.push({
+          name: entry.name,
+          description: entry.description,
+          score: similarity,
+          matchSource: 'semantic',
+        });
+      }
+    }
+
+    // Sort by similarity descending
+    return results.sort((a, b) => b.score - a.score);
+  }
 }
