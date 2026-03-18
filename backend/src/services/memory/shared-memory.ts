@@ -148,6 +148,83 @@ class SharedMemoryService {
   }
 
   /**
+   * L3: Persist a single entry to the database (fire-and-forget)
+   */
+  private async persistToDB(teamId: string, entry: SharedMemoryEntry): Promise<void> {
+    try {
+      const { pool } = await import('../../utils/database-context');
+      await pool.query(`
+        INSERT INTO public.agent_shared_memory (id, team_id, agent_role, entry_type, content, metadata, created_at)
+        VALUES ($1, $2, $3, $4, $5, $6, $7)
+        ON CONFLICT (id) DO NOTHING
+      `, [
+        entry.id,
+        teamId,
+        entry.agentRole,
+        entry.type,
+        entry.content,
+        entry.metadata ? JSON.stringify(entry.metadata) : null,
+        entry.timestamp,
+      ]);
+    } catch {
+      // Non-critical: DB persistence is a durability layer
+    }
+  }
+
+  /**
+   * L3: Restore team store from database.
+   * DB is authoritative on cold start — takes precedence over empty Redis.
+   */
+  async restoreFromDB(teamId: string): Promise<void> {
+    try {
+      const { pool } = await import('../../utils/database-context');
+      const result = await pool.query(`
+        SELECT id, team_id, agent_role, entry_type, content, metadata, created_at
+        FROM public.agent_shared_memory
+        WHERE team_id = $1
+        ORDER BY created_at ASC
+      `, [teamId]);
+
+      if (!result.rows || result.rows.length === 0) return;
+
+      // Don't overwrite if L1 already has data
+      const store = this.stores.get(teamId);
+      if (store && store.entries.length > 0) return;
+
+      // Initialize store if not present
+      if (!store) {
+        const now = new Date();
+        this.stores.set(teamId, {
+          entries: [],
+          createdAt: now,
+          lastActivity: now,
+        });
+      }
+
+      const targetStore = this.stores.get(teamId)!;
+      targetStore.entries = result.rows.map((row: Record<string, unknown>) => ({
+        id: row.id as string,
+        agentRole: row.agent_role as AgentRole,
+        type: row.entry_type as SharedEntryType,
+        content: row.content as string,
+        metadata: row.metadata ? (typeof row.metadata === 'string' ? JSON.parse(row.metadata as string) : row.metadata as Record<string, unknown>) : undefined,
+        timestamp: new Date(row.created_at as string),
+      }));
+
+      if (targetStore.entries.length > 0) {
+        targetStore.lastActivity = targetStore.entries[targetStore.entries.length - 1].timestamp;
+      }
+
+      logger.debug('Shared memory restored from DB', {
+        teamId,
+        entryCount: targetStore.entries.length,
+      });
+    } catch {
+      // Non-critical: DB restore is best-effort
+    }
+  }
+
+  /**
    * Write an entry to shared memory
    */
   write(
@@ -195,6 +272,9 @@ class SharedMemoryService {
 
     // Persist to Redis in background for durability
     this.persistToRedis(teamId).catch(() => { /* non-critical */ });
+
+    // L3: Fire-and-forget DB persistence
+    this.persistToDB(teamId, entry).catch(() => { /* non-critical */ });
 
     return entry;
   }
