@@ -9,6 +9,7 @@
  */
 
 import { useState } from 'react';
+import { AlertCircle } from 'lucide-react';
 import type { ToolCall } from './chatReducer';
 
 // Tool label map (subset — reuse from ChatMessageList for labels)
@@ -127,6 +128,12 @@ export function ToolDisclosure({ toolCalls }: ToolDisclosureProps) {
                 )}
               </span>
               <span className="tool-disclosure-name">{getToolLabel(tc.name)}</span>
+              {tc.status === 'error' && (
+                <span className="tool-disclosure-error" aria-label="Fehlgeschlagen">
+                  <AlertCircle width={11} height={11} aria-hidden="true" />
+                  Fehlgeschlagen
+                </span>
+              )}
               {tc.duration_ms > 0 && (
                 <span className="tool-disclosure-duration">{formatDuration(tc.duration_ms)}</span>
               )}

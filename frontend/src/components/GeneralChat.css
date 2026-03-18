@@ -2377,3 +2377,17 @@
   outline: 2px solid var(--color-brand, #6366f1);
   outline-offset: 2px;
 }
+
+/* ============================================
+   ToolDisclosure Error Badge (Phase 101-F3)
+   ============================================ */
+
+.tool-disclosure-error {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 11px;
+  color: var(--color-error, #ef4444);
+  font-weight: 500;
+  margin-left: 4px;
+}
