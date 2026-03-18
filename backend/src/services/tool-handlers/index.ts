@@ -68,6 +68,9 @@ import {
   TOOL_UPDATE_IDEA,
   TOOL_ARCHIVE_IDEA,
   TOOL_DELETE_IDEA,
+  TOOL_MEMORY_REPLACE,
+  TOOL_MEMORY_ABSTRACT,
+  TOOL_MEMORY_SEARCH_AND_LINK,
   ToolExecutionContext,
 } from '../claude/tool-use';
 import { createMeeting } from '../meetings';
@@ -117,18 +120,10 @@ import {
   handleMCPListTools,
 } from './mcp-tools';
 import {
-  handleSearchTools,
-  initToolRegistry,
-  searchToolsDefinition,
-} from './tool-search';
-import {
-  TOOL_MEMORY_PROMOTE,
-  TOOL_MEMORY_DEMOTE,
-  TOOL_MEMORY_FORGET,
-  handleMemoryPromote,
-  handleMemoryDemote,
-  handleMemoryForget,
-} from './memory-management';
+  handleMemoryReplace,
+  handleMemoryAbstract,
+  handleMemorySearchAndLink,
+} from './memory-self-editing';
 
 // ===========================================
 // Core Tool Handler Implementations
@@ -1133,22 +1128,15 @@ export function registerAllToolHandlers(): void {
   toolRegistry.register(TOOL_MCP_CALL_TOOL, handleMCPCallTool);
   toolRegistry.register(TOOL_MCP_LIST_TOOLS, handleMCPListTools);
 
+  // Phase 100: Memory Self-Editing tools
+  toolRegistry.register(TOOL_MEMORY_REPLACE, handleMemoryReplace);
+  toolRegistry.register(TOOL_MEMORY_ABSTRACT, handleMemoryAbstract);
+  toolRegistry.register(TOOL_MEMORY_SEARCH_AND_LINK, handleMemorySearchAndLink);
+
   // CRUD tools (Idea management)
   toolRegistry.register(TOOL_UPDATE_IDEA, handleUpdateIdea);
   toolRegistry.register(TOOL_ARCHIVE_IDEA, handleArchiveIdea);
   toolRegistry.register(TOOL_DELETE_IDEA, handleDeleteIdea);
-
-  // Phase 99: Agent-Managed Memory tools
-  toolRegistry.register(TOOL_MEMORY_PROMOTE, handleMemoryPromote);
-  toolRegistry.register(TOOL_MEMORY_DEMOTE, handleMemoryDemote);
-  toolRegistry.register(TOOL_MEMORY_FORGET, handleMemoryForget);
-
-  // Phase 99: Tool Search meta-tool
-  toolRegistry.register(searchToolsDefinition, handleSearchTools);
-
-  // Phase 99: Initialize tool search registry with all registered tool definitions
-  const allDefs = toolRegistry.getDefinitions();
-  initToolRegistry(allDefs);
 
   logger.info('Tool handlers registered', {
     tools: [
@@ -1200,13 +1188,12 @@ export function registerAllToolHandlers(): void {
       'inbox_summary',
       'mcp_call_tool',
       'mcp_list_tools',
+      'memory_replace',
+      'memory_abstract',
+      'memory_search_and_link',
       'update_idea',
       'archive_idea',
       'delete_idea',
-      'search_tools',
-      'memory_promote',
-      'memory_demote',
-      'memory_forget',
     ],
   });
 }
