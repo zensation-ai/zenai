@@ -40,6 +40,9 @@ export type TeamStrategy =
   | 'write_only'
   | 'code_solve'
   | 'research_code_review'
+  | 'parallel_research'
+  | 'parallel_code_review'
+  | 'full_parallel'
   | 'custom';
 
 export interface TeamTask {
@@ -248,6 +251,34 @@ export function classifyTeamStrategy(task: string): TeamStrategy {
     /zusammenfass.*und.*empfehl/,
   ];
 
+  // Parallel research patterns
+  const parallelResearchPatterns = [
+    /parallel.*recherchier/,
+    /recherchier.*parallel/,
+    /mehrere\s+quellen.*gleichzeitig/,
+    /aus\s+verschiedenen\s+quellen.*recherchier/,
+  ];
+
+  // Parallel code + research patterns
+  const parallelCodePatterns = [
+    /implementier.*und.*recherchier.*gleichzeitig/,
+    /code.*und.*recherch.*parallel/,
+    /parallel.*code.*und.*recherch/,
+  ];
+
+  // Check parallel patterns first
+  for (const pattern of parallelCodePatterns) {
+    if (pattern.test(taskLower)) {
+      return 'parallel_code_review';
+    }
+  }
+
+  for (const pattern of parallelResearchPatterns) {
+    if (pattern.test(taskLower)) {
+      return 'parallel_research';
+    }
+  }
+
   // Check research + code patterns first
   for (const pattern of researchCodePatterns) {
     if (pattern.test(taskLower)) {
@@ -306,6 +337,12 @@ export function getAgentPipeline(strategy: TeamStrategy, skipReview?: boolean): 
       return skipReview ? ['coder'] : ['coder', 'reviewer'];
     case 'research_code_review':
       return ['researcher', 'coder', 'reviewer'];
+    case 'parallel_research':
+      return ['researcher', 'researcher', 'writer', 'reviewer'];
+    case 'parallel_code_review':
+      return ['coder', 'researcher', 'reviewer'];
+    case 'full_parallel':
+      return ['researcher', 'coder', 'writer', 'reviewer'];
     case 'custom':
       return []; // Will be provided by customPipeline
   }
