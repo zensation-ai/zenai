@@ -10,7 +10,7 @@
  */
 
 import { v4 as uuidv4 } from 'uuid';
-import { AIContext, queryContext } from '../../utils/database-context';
+import { AIContext, queryContext, getPool } from '../../utils/database-context';
 import { logger } from '../../utils/logger';
 import { queryClaudeJSON } from '../claude';
 import { generateEmbedding } from '../ai';
@@ -504,13 +504,19 @@ class LongTermMemoryService {
       interactionsStored: 0,
     };
 
+    // Wrap consolidation in a database transaction for atomicity
+    const pool = getPool(context);
+    const client = await pool.connect();
     try {
-      logger.info('Starting long-term memory consolidation', { context });
+      await client.query('BEGIN');
+      logger.info('Starting long-term memory consolidation (transaction)', { context });
 
       // 1. Analyze recent sessions (last 24h)
       const recentSessions = await this.getRecentSessions(context, 24);
 
       if (recentSessions.length === 0) {
+        await client.query('COMMIT');
+        client.release();
         logger.info('No recent sessions to consolidate', { context });
         return result;
       }
@@ -541,6 +547,8 @@ class LongTermMemoryService {
         memory.consolidationCount++;
       }
 
+      await client.query('COMMIT');
+
       logger.info('Long-term memory consolidation complete', {
         context,
         ...result,
@@ -548,8 +556,17 @@ class LongTermMemoryService {
 
       return result;
     } catch (error) {
+      // ROLLBACK on any failure to maintain data consistency
+      try {
+        await client.query('ROLLBACK');
+        logger.warn('Consolidation rolled back due to error', { context });
+      } catch (rollbackErr) {
+        logger.error('Consolidation ROLLBACK failed', rollbackErr instanceof Error ? rollbackErr : undefined, { context });
+      }
       logger.error('Consolidation failed', error instanceof Error ? error : undefined, { context });
       return result;
+    } finally {
+      client.release();
     }
   }
 

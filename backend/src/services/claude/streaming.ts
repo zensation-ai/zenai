@@ -17,6 +17,8 @@ import Anthropic from '@anthropic-ai/sdk';
 import crypto from 'crypto';
 import { Response } from 'express';
 import { logger } from '../../utils/logger';
+import { safeStringify } from '../../utils/safe-stringify';
+import { sanitizeError } from '../../utils/sanitize-error';
 import { getClaudeClient, CLAUDE_MODEL } from './client';
 import { getAnthropicBetaHeaders } from './client';
 import {
@@ -146,6 +148,15 @@ export interface StreamingResult {
 /** Maximum size for tool results sent via SSE (64KB) */
 const MAX_TOOL_RESULT_SSE_BYTES = 64 * 1024;
 
+/** Maximum size for tool results included in message history (64KB) */
+const MAX_TOOL_RESULT_HISTORY_BYTES = 64 * 1024;
+
+/** Maximum total time budget for all tool calls in one request (60s) */
+const MAX_TOOL_TIME_MS = 60_000;
+
+/** Hard cap on tool execution iterations (beyond maxToolIterations) */
+const MAX_TOOL_ITERATIONS_HARD_CAP = 10;
+
 /**
  * Truncate a tool result string if it exceeds the SSE size limit.
  * Full result is still sent to Claude; only the SSE client gets truncated output.
@@ -154,6 +165,16 @@ function truncateForSSE(result: string): string {
   if (result.length <= MAX_TOOL_RESULT_SSE_BYTES) return result;
   const truncated = result.substring(0, MAX_TOOL_RESULT_SSE_BYTES);
   return `${truncated}\n\n[Output truncated: ${result.length} bytes, showing first 64KB]`;
+}
+
+/**
+ * Truncate a tool result before including it in message history sent to Claude.
+ * Prevents token explosion from oversized tool outputs.
+ */
+function truncateToolResult(result: string, maxSize: number = MAX_TOOL_RESULT_HISTORY_BYTES): string {
+  if (result.length <= maxSize) return result;
+  const truncated = result.substring(0, maxSize);
+  return `${truncated}\n\n[Result truncated: ${result.length} bytes, showing first ${Math.round(maxSize / 1024)}KB]`;
 }
 
 const DEFAULT_OPTIONS: StreamingOptions = {
@@ -171,7 +192,7 @@ const DEFAULT_OPTIONS: StreamingOptions = {
  * Send an SSE event to the client
  */
 export function sendSSE(res: Response, event: StreamEvent): void {
-  const eventString = `event: ${event.type}\ndata: ${JSON.stringify(event.data)}\n\n`;
+  const eventString = `event: ${event.type}\ndata: ${safeStringify(event.data)}\n\n`;
   res.write(eventString);
 }
 
@@ -388,16 +409,33 @@ export async function streamToSSE(
       opts.tools &&
       opts.tools.length > 0
     ) {
-      const maxIterations = opts.maxToolIterations ?? 5;
+      const maxIterations = Math.min(opts.maxToolIterations ?? 5, MAX_TOOL_ITERATIONS_HARD_CAP);
       let currentMessages = [...messages];
       let currentFinalMessage = finalMessage;
       let iteration = 0;
+      const toolStartTime = Date.now();
 
       while (
         currentFinalMessage.stop_reason === 'tool_use' &&
         iteration < maxIterations
       ) {
         iteration++;
+
+        // Check total tool time budget
+        const elapsedToolTime = Date.now() - toolStartTime;
+        if (elapsedToolTime >= MAX_TOOL_TIME_MS) {
+          logger.warn('Tool execution time budget exceeded', {
+            requestId,
+            iteration,
+            elapsedMs: elapsedToolTime,
+            maxMs: MAX_TOOL_TIME_MS,
+          });
+          sendSSE(res, {
+            type: 'content_delta',
+            data: { content: '\n\n[Tool execution time limit reached. Generating response with available results.]' },
+          });
+          break;
+        }
 
         // Extract tool_use blocks from the response
         const toolUseBlocks = currentFinalMessage.content.filter(
@@ -421,10 +459,12 @@ export async function streamToSSE(
           });
 
           try {
-            const result = await opts.toolExecutor(
+            const rawResult = await opts.toolExecutor(
               toolBlock.name,
               toolBlock.input as Record<string, unknown>
             );
+            // Truncate oversized results before including in message history
+            const result = truncateToolResult(rawResult);
             toolResults.push({
               type: 'tool_result',
               tool_use_id: toolBlock.id,
@@ -447,6 +487,26 @@ export async function streamToSSE(
               data: { tool: { name: toolBlock.name, result: `Error: ${errorMsg}` } },
             });
           }
+        }
+
+        // Dedup: skip if the last 3 tool results are identical error messages (prevents loops)
+        const lastToolResults = currentMessages
+          .slice(-3)
+          .filter(m => m.role === 'user' && Array.isArray(m.content))
+          .flatMap(m => (m.content as Array<{ content?: string; is_error?: boolean }>))
+          .filter(tr => tr.is_error && tr.content);
+        const currentErrors = toolResults.filter(tr => tr.is_error).map(tr => tr.content);
+        if (
+          currentErrors.length > 0 &&
+          lastToolResults.length >= 2 &&
+          lastToolResults.slice(-2).every(tr => currentErrors.includes(tr.content ?? ''))
+        ) {
+          logger.warn('Duplicate tool errors detected, breaking loop', { requestId, iteration });
+          sendSSE(res, {
+            type: 'content_delta',
+            data: { content: '\n\n[Repeated tool errors detected. Stopping tool execution.]' },
+          });
+          break;
         }
 
         // Build follow-up messages: assistant response (with tool_use) + tool results
@@ -565,14 +625,16 @@ export async function streamToSSE(
     });
   } catch (error) {
     clearTimeout(streamTimeout);
-    const errorMessage = error instanceof Error ? error.message : 'Unknown streaming error';
+    const sanitized = sanitizeError(error);
     logger.error('SSE stream failed', error instanceof Error ? error : undefined, { requestId });
 
     sendSSE(res, {
       type: 'error',
-      data: { error: errorMessage, requestId },
+      data: { error: sanitized.message, requestId },
     });
   } finally {
+    // Ensure all timers are cleaned up regardless of how we exit
+    clearTimeout(streamTimeout);
     if (!res.writableEnded) {
       res.end();
     }

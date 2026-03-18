@@ -10,6 +10,7 @@ import { csrfProtection, getCsrfTokenHandler, ensureCookieParser } from '../../m
 import { requestContextMiddleware } from '../../utils/request-context';
 import { tracingMiddleware } from '../../middleware/tracing';
 import { cacheControlMiddleware } from '../../middleware/cache-control';
+import { requestTimeoutMiddleware } from '../../middleware/request-timeout';
 import { requestLogger, logger } from '../../utils/logger';
 import { setupSwagger } from '../../utils/swagger';
 
@@ -116,6 +117,9 @@ export class MiddlewareModule implements Module {
 
     // Per-request context for RLS
     app.use(requestContextMiddleware);
+
+    // Request-level timeout enforcement (before routes, after CORS)
+    app.use(requestTimeoutMiddleware);
 
     // Request tracking & compression
     app.use(requestIdMiddleware);

@@ -224,6 +224,9 @@ function heuristicRerank(query: string, results: EnhancedResult[]): EnhancedResu
   }).sort((a, b) => b.score - a.score);
 }
 
+/** Maximum query length to prevent resource exhaustion */
+const MAX_QUERY_LENGTH = 10_000;
+
 class EnhancedRAGService {
   private config: EnhancedRAGConfig;
 
@@ -239,6 +242,15 @@ class EnhancedRAGService {
     context: AIContext,
     config?: Partial<EnhancedRAGConfig>
   ): Promise<EnhancedRAGResult> {
+    // Enforce query size limit to prevent resource exhaustion
+    if (query.length > MAX_QUERY_LENGTH) {
+      logger.warn('RAG query exceeds max length, truncating', {
+        originalLength: query.length,
+        maxLength: MAX_QUERY_LENGTH,
+      });
+      query = query.substring(0, MAX_QUERY_LENGTH);
+    }
+
     const cfg = { ...this.config, ...config };
     const startTime = Date.now();
 
@@ -307,17 +319,28 @@ class EnhancedRAGService {
     const retrievalPromises: Promise<void>[] = [];
 
     // HyDE retrieval (if enabled) — use enriched query for better hypothetical doc generation
+    // Wrapped in a 5s timeout to prevent HyDE from blocking the entire retrieval pipeline
     if (useHyDE) {
       const hydeStart = Date.now();
+      const HYDE_TIMEOUT_MS = 5_000;
       retrievalPromises.push(
-        hydeService.hybridRetrieve(enrichedQuery, context, { maxResults: cfg.maxResults })
+        Promise.race([
+          hydeService.hybridRetrieve(enrichedQuery, context, { maxResults: cfg.maxResults }),
+          new Promise<never>((_resolve, reject) =>
+            setTimeout(() => reject(new Error('HyDE timeout')), HYDE_TIMEOUT_MS)
+          ),
+        ])
           .then(results => {
             hydeResults = results;
             timing.hyde = Date.now() - hydeStart;
             methodsUsed.push('hyde');
           })
           .catch(error => {
-            logger.warn('HyDE retrieval failed', { error });
+            const msg = error instanceof Error ? error.message : String(error);
+            logger.warn('HyDE retrieval failed or timed out, falling back to direct retrieval', {
+              error: msg,
+              timeoutMs: HYDE_TIMEOUT_MS,
+            });
             hydeResults = [];
           })
       );
