@@ -18,6 +18,18 @@ import { createEndpointLimiter } from '../services/security/rate-limit-advanced'
 
 export const authRouter = Router();
 
+/**
+ * Safely extract the authenticated user ID from a request.
+ * Must only be called on routes protected by requireJwt.
+ * Throws 401 if jwtUser is missing (should never happen behind requireJwt).
+ */
+function getAuthUserId(req: Request): string {
+  if (!req.jwtUser?.id) {
+    throw Object.assign(new Error('Authentication required'), { statusCode: 401 });
+  }
+  return req.jwtUser.id;
+}
+
 // ===========================================
 // Rate limit config for auth endpoints
 // ===========================================
@@ -183,7 +195,7 @@ authRouter.post('/refresh', authRateLimiter, asyncHandler(async (req: Request, r
  */
 authRouter.post('/logout', requireJwt, asyncHandler(async (req: Request, res: Response) => {
   const { refreshToken } = req.body;
-  const userId = req.jwtUser!.id;
+  const userId = getAuthUserId(req);
 
   if (refreshToken) {
     // Revoke specific session by refresh token
@@ -210,7 +222,7 @@ authRouter.post('/logout', requireJwt, asyncHandler(async (req: Request, res: Re
  * Get current authenticated user profile.
  */
 authRouter.get('/me', requireJwt, asyncHandler(async (req: Request, res: Response) => {
-  const userId = req.jwtUser!.id;
+  const userId = getAuthUserId(req);
   const user = await userService.findById(userId);
 
   if (!user) {
@@ -232,7 +244,7 @@ authRouter.get('/me', requireJwt, asyncHandler(async (req: Request, res: Respons
  * Update current user profile.
  */
 authRouter.put('/me', requireJwt, asyncHandler(async (req: Request, res: Response) => {
-  const userId = req.jwtUser!.id;
+  const userId = getAuthUserId(req);
   const { display_name, avatar_url, preferences } = req.body;
 
   try {
@@ -399,7 +411,7 @@ authRouter.get('/callback/:provider', asyncHandler(async (req: Request, res: Res
  * Generate TOTP secret and QR code for MFA setup.
  */
 authRouter.post('/mfa/setup', requireJwt, authRateLimiter, asyncHandler(async (req: Request, res: Response) => {
-  const userId = req.jwtUser!.id;
+  const userId = getAuthUserId(req);
   const user = await userService.findById(userId);
 
   if (!user) {
@@ -440,7 +452,7 @@ authRouter.post('/mfa/setup', requireJwt, authRateLimiter, asyncHandler(async (r
  * Verify MFA setup or perform MFA verification.
  */
 authRouter.post('/mfa/verify', requireJwt, authRateLimiter, asyncHandler(async (req: Request, res: Response) => {
-  const userId = req.jwtUser!.id;
+  const userId = getAuthUserId(req);
   const { code } = req.body;
 
   if (!code) {
@@ -494,7 +506,7 @@ authRouter.post('/mfa/verify', requireJwt, authRateLimiter, asyncHandler(async (
  * Revokes all other sessions after password change for security.
  */
 authRouter.post('/change-password', requireJwt, authRateLimiter, asyncHandler(async (req: Request, res: Response) => {
-  const userId = req.jwtUser!.id;
+  const userId = getAuthUserId(req);
   const { currentPassword, newPassword } = req.body;
 
   if (!currentPassword || !newPassword) {
@@ -653,7 +665,7 @@ authRouter.post('/reset-password', authRateLimiter, asyncHandler(async (req: Req
  * Revoke all sessions for the current user (log out from all devices).
  */
 authRouter.post('/logout-all', requireJwt, asyncHandler(async (req: Request, res: Response) => {
-  const userId = req.jwtUser!.id;
+  const userId = getAuthUserId(req);
 
   await jwtService.revokeAllUserSessions(userId);
 
@@ -672,7 +684,7 @@ authRouter.post('/logout-all', requireJwt, asyncHandler(async (req: Request, res
  * Disable MFA for the current user. Requires current MFA code for verification.
  */
 authRouter.post('/mfa/disable', requireJwt, asyncHandler(async (req: Request, res: Response) => {
-  const userId = req.jwtUser!.id;
+  const userId = getAuthUserId(req);
   const { code } = req.body;
 
   if (!code) {
@@ -725,7 +737,7 @@ authRouter.post('/mfa/disable', requireJwt, asyncHandler(async (req: Request, re
  * List active sessions for the current user.
  */
 authRouter.get('/sessions', requireJwt, asyncHandler(async (req: Request, res: Response) => {
-  const userId = req.jwtUser!.id;
+  const userId = getAuthUserId(req);
   const sessions = await sessionStore.listActiveSessions(userId);
 
   return res.json({
@@ -745,7 +757,7 @@ authRouter.get('/sessions', requireJwt, asyncHandler(async (req: Request, res: R
  * Revoke a specific session.
  */
 authRouter.delete('/sessions/:id', requireJwt, asyncHandler(async (req: Request, res: Response) => {
-  const userId = req.jwtUser!.id;
+  const userId = getAuthUserId(req);
   const { id } = req.params;
 
   // Verify session belongs to current user

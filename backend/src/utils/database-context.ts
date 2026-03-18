@@ -295,7 +295,16 @@ export async function queryContext(
   if (waitingCount > 0) {
     emitPoolMetric('waiting');
   }
-  if (waitingCount > maxPool * 0.25) {
+  if (waitingCount > maxPool * 0.75) {
+    logger.error(`Pool CRITICAL exhaustion [${effectiveContext}]`, undefined, {
+      context: effectiveContext,
+      waitingCount,
+      totalCount: pool.totalCount,
+      idleCount: pool.idleCount,
+      maxPool,
+      operation: 'poolCriticalExhaustion',
+    });
+  } else if (waitingCount > maxPool * 0.5) {
     logger.warn(`Pool near exhaustion [${effectiveContext}]`, {
       context: effectiveContext,
       waitingCount,
@@ -365,10 +374,9 @@ export async function queryContext(
 
       // Check if we should retry
       if (attempt < RETRY_CONFIG.maxRetries && isRetryableError(error)) {
-        const delay = Math.min(
-          RETRY_CONFIG.initialDelayMs * Math.pow(2, attempt),
-          RETRY_CONFIG.maxDelayMs
-        );
+        const baseDelay = RETRY_CONFIG.initialDelayMs * Math.pow(2, attempt);
+        const jitter = Math.random() * RETRY_CONFIG.initialDelayMs * 0.5;
+        const delay = Math.min(baseDelay + jitter, RETRY_CONFIG.maxDelayMs);
         logger.warn(`Retryable error [${effectiveContext}], attempt ${attempt + 1}/${RETRY_CONFIG.maxRetries}`, {
           context: effectiveContext,
           attempt: attempt + 1,
