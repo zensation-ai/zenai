@@ -30,21 +30,28 @@
   - Short-Term Memory (Session-Kontext)
   - Long-Term Memory (persistentes Wissen)
 
-## Current Phase: 97
+## Current Phase: 99
 
 ### Phase 31 Features (AI State-of-the-Art)
 
 **Chat Modes & Tool Use:**
 
 - Intelligent mode detection (tool_assisted, agent, rag_enhanced, conversation)
-- 49 integrated tools across 13 categories (see Tools section below)
+- 52 integrated tools across 14 categories (see Tools section below)
+- Tool Search Tool: on-demand tool discovery (saves 40-50% context window)
 - Tool-use visualization: inline activity pills during streaming (Phase 76)
 
 **RAG Pipeline:**
 
-- HyDE (Hypothetical Document Embeddings)
-- Cross-Encoder Re-ranking
-- Confidence scoring and quality metrics
+- HyDE (Hypothetical Document Embeddings) with 5s timeout
+- Cross-Encoder Re-ranking with structured fallback
+- Confidence scoring (4-component: topScore, avgScore, variance, diversity)
+- Contextual Retrieval (Anthropic method, +67% retrieval accuracy)
+- Self-RAG Critique (auto-reformulate at confidence < 0.5)
+- Dynamic RAG weights (score-based instead of fixed 0.4/0.6)
+- Content-hash deduplication (SHA-256)
+- Embedding Drift Detection (BullMQ worker, >10% threshold)
+- Query size limit (10K chars)
 
 **Streaming:**
 
@@ -113,12 +120,13 @@
 - Copy/Download Funktionalität
 - Große Code-Blöcke (>15 Zeilen) als Artifacts
 
-### AI Tools (49 registered)
+### AI Tools (52 registered)
 
 | Category | Tools |
 |----------|-------|
 | **Core Ideas** | `search_ideas`, `create_idea`, `update_idea`, `archive_idea`, `delete_idea`, `get_related_ideas` |
-| **Memory** | `remember`, `recall`, `memory_introspect`, `memory_update`, `memory_delete`, `memory_update_profile` |
+| **Memory** | `remember`, `recall`, `memory_introspect`, `memory_update`, `memory_delete`, `memory_update_profile`, `memory_promote`, `memory_demote`, `memory_forget` |
+| **Meta** | `search_tools` (on-demand tool discovery) |
 | **Web** | `web_search` (Brave/DDG), `fetch_url` |
 | **GitHub** | `github_search`, `github_create_issue`, `github_repo_info`, `github_list_issues`, `github_pr_summary` |
 | **Project Context** | `analyze_project`, `get_project_summary`, `list_project_files` |
@@ -280,6 +288,13 @@
 - Extension Registry: `backend/src/services/extensions/extension-registry.ts`
 - Extension Sandbox: `backend/src/services/extensions/extension-sandbox.ts`
 - Extensions Routes: `backend/src/routes/extensions.ts`
+- Contextual Retrieval: `backend/src/services/contextual-retrieval.ts`
+- Embedding Drift: `backend/src/services/embedding-drift.ts`
+- Tool Search: `backend/src/services/tool-handlers/tool-search.ts`
+- Memory Management Tools: `backend/src/services/tool-handlers/memory-management.ts`
+- Request Timeout: `backend/src/middleware/request-timeout.ts`
+- Error Sanitization: `backend/src/utils/sanitize-error.ts`
+- Safe JSON Stringify: `backend/src/utils/safe-stringify.ts`
 
 ### Frontend
 
@@ -333,6 +348,10 @@
 - Offline Chat: `frontend/src/services/offline-chat.ts`
 - Local Inference Hook: `frontend/src/hooks/useLocalInference.ts`
 - Smart Suggestions Hook: `frontend/src/hooks/useSmartSuggestions.ts`
+- Chat State Machine: `frontend/src/components/GeneralChat/chatReducer.ts`
+- Error Handler: `frontend/src/utils/error-handler.ts`
+- Chat Config: `frontend/src/config/chat.ts`
+- Page Skeletons: `frontend/src/components/skeletons/PageSkeletons.tsx`
 
 ### Tests
 
@@ -1061,9 +1080,9 @@ cd frontend && npx vitest run
 
 | Kategorie | Bestanden | Übersprungen | Fehlgeschlagen |
 |-----------|-----------|--------------|----------------|
-| **Backend** | 4734 | 24 | 0 |
-| **Frontend** | 664 | 0 | 0 |
-| **Gesamt** | 5398 | 24 | 0 |
+| **Backend** | 4809 | 24 | 0 |
+| **Frontend** | 720 | 0 | 0 |
+| **Gesamt** | 5529 | 24 | 0 |
 
 **Absichtlich übersprungene Tests (24):**
 - 21x Code-Execution Sandbox (Docker nicht verfügbar)
@@ -1159,6 +1178,104 @@ mockQueryContext
 - API Docs: `/api-docs` (Swagger)
 
 ## Changelog
+
+### 2026-03-18: Phase 99 - Deep Quality Evolution (50 Fixes, 4 Dimensionen, Research-basiert)
+
+**Groesstes Quality-Upgrade: 50 Fixes ueber 4 Dimensionen, basierend auf State-of-the-Art Research 2025-2026.**
+
+**Basierend auf Research von:** Anthropic (Contextual Retrieval), ICLR 2026 (Memory for AI Agents), Letta/MemGPT V1, LangGraph GA, OpenAI Agents SDK, WCAG 2.1 AA.
+
+**Worker A: Backend Hardening (15 Fixes)**
+
+| Fix | Details |
+|-----|---------|
+| **Request Timeout** | 30s default, 120s streaming/voice, 180s vision; 504 on timeout |
+| **Tool Hard Limits** | 60s total tool budget, 10 iteration hard cap, SSE warning |
+| **Tool Result Truncation** | `truncateToolResult()` at 64KB before message history |
+| **HyDE Timeout** | `Promise.race()` with 5s timeout, fallback to direct retrieval |
+| **Non-Null Assertions** | `getAuthUserId(req)` guard replaces all 10 `req.jwtUser!.id` |
+| **Error Sanitization** | Production: generic message; Dev: full details |
+| **Backoff Jitter** | `+ Math.random() * baseDelay * 0.5` prevents thundering herd |
+| **Atomic Consolidation** | BEGIN/COMMIT/ROLLBACK wrapping memory consolidation |
+| **Stream Cleanup** | `clearTimeout(streamTimeout)` in finally block |
+| **Query Size Limit** | MAX_QUERY_LENGTH = 10,000 with warning log |
+| **Message Dedup** | Checks last 3 messages for identical tool errors, breaks loop |
+| **Safe JSON** | WeakSet cycle detection + BigInt handling in SSE |
+| **Pool Thresholds** | Warning at 50% (was 25%), error at 75% (new) |
+| **as any Elimination** | 24 → 3 (remaining are library typing issues) |
+| **Regex Cache** | Verified already optimal (module-level const arrays) |
+
+**Worker B: AI Core Evolution (10 Fixes)**
+
+| Fix | Details |
+|-----|---------|
+| **Contextual Retrieval** | Anthropic method: prepend document context to chunks (+67% retrieval accuracy) |
+| **Tool Search Tool** | On-demand tool discovery, saves 40-50% context window |
+| **Dynamic RAG Weights** | Score-based + diversity bonus, replaces fixed 0.4/0.6 |
+| **Self-RAG Critique** | Auto-reformulate query at confidence < 0.5, retry once |
+| **Agent Memory Management** | 3 new tools: memory_promote, memory_demote, memory_forget |
+| **Embedding Drift Detection** | BullMQ worker, 50-query sampling, >10% drop threshold |
+| **Content-Hash Dedup** | SHA-256 content hash replacing ID-only deduplication |
+| **Cross-Encoder Fallback** | Structured reason field with resultCount in warning |
+| **Sleep Compute Resilience** | Each of 5 stages wrapped in individual try/catch |
+| **Retrieval Confidence** | 4 components: 40% topScore, 30% avgScore, 15% variance, 15% diversity |
+
+**Worker C: Frontend Architecture (12 Fixes)**
+
+| Fix | Details |
+|-----|---------|
+| **Chat State Machine** | chatReducer.ts: 6 phases, 13 actions, independently testable |
+| **Error Handler** | Centralized with German messages, type classification, retry logic |
+| **Shared Config** | MAX_TOOL_RESULTS=20, MAX_ARTIFACT_CACHE=100, MAX_IMAGE_SIZE=10MB |
+| **AbortController** | Context-level request deduplication |
+| **Intelligent Retry** | 5xx/network only (up to 3x), never 4xx |
+| **ProactivePanel** | Conditional render (was always mounted) |
+| **Scroll Optimization** | Only on base page change, not tab changes |
+| **Per-Domain gcTime** | Chat 2min, Ideas 10min, Dashboard 5min |
+| **Navigation Validation** | Page values validated against PAGE_PATHS union type |
+| **Artifact Eviction** | LRU at 100 entries (was unbounded) |
+| **Image Validation** | Type + 10MB size check before upload |
+| **SSE Export** | parseSSEChunk + types exported for testing |
+
+**Worker D: Accessibility & UX (13 Fixes)**
+
+| Fix | Details |
+|-----|---------|
+| **ARIA Loading** | `role="status" aria-live="polite" aria-label` on chat loading |
+| **Tool Activity** | Semantic `<ol>` + `<li>` structure |
+| **ConfidenceBadge** | Green/amber/red dot + tooltip for RAG quality |
+| **52 Tool Labels** | ToolLabelInfo with label + description, graceful fallback |
+| **SourceCitations** | Expandable component with `aria-expanded` toggle |
+| **Status Dots** | aria-label ("Datenbank: verbunden", "KI: aktiv") |
+| **Favorite Buttons** | `aria-pressed` on both locations |
+| **Sidebar Navigation** | Arrow key handler (Up/Down/Home/End) |
+| **Page Skeletons** | ChatSkeleton, DashboardSkeleton, ListSkeleton |
+| **CSS Variables** | ~30 hardcoded hex → var(--text), var(--text-secondary) |
+| **Touch Targets** | ≥44px for `@media (pointer: coarse)` |
+| **Chevron Contrast** | Opacity 0.4 → 0.6 |
+| **Send Button** | 42px → 44px min-height |
+
+**Neue Dateien (13):**
+
+| Datei | Zweck |
+|-------|-------|
+| `backend/src/middleware/request-timeout.ts` | Request-Level Timeout Middleware |
+| `backend/src/utils/sanitize-error.ts` | Error Sanitization (prod vs dev) |
+| `backend/src/utils/safe-stringify.ts` | Cycle-safe JSON.stringify |
+| `backend/src/services/contextual-retrieval.ts` | Contextual Retrieval Service |
+| `backend/src/services/embedding-drift.ts` | Embedding Drift Detection |
+| `backend/src/services/tool-handlers/tool-search.ts` | Tool Search Meta-Tool |
+| `backend/src/services/tool-handlers/memory-management.ts` | Agent Memory Management |
+| `backend/sql/migrations/phase99_contextual_retrieval.sql` | enriched_content + enriched_embedding Spalten |
+| `frontend/src/components/GeneralChat/chatReducer.ts` | Chat State Machine (6 Phasen) |
+| `frontend/src/utils/error-handler.ts` | Centralized Error Handler |
+| `frontend/src/config/chat.ts` | Shared Chat Constants |
+| `frontend/src/components/skeletons/PageSkeletons.tsx` | Page Skeleton Components |
+| `frontend/src/components/skeletons/PageSkeletons.css` | Skeleton Styles |
+
+**Tests:** Backend 4809 (+75) + Frontend 720 (+56) = **5529 bestanden**, 24 uebersprungen, 0 Failures
+
+---
 
 ### 2026-03-18: Phase 97 - Quality Excellence Sprint (Full-Stack, 12 Bereiche)
 
