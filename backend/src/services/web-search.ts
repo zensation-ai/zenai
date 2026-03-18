@@ -16,6 +16,7 @@ import axios from 'axios';
 import { logger } from '../utils/logger';
 import { fetchUrl, FetchedContent } from './url-fetch';
 import { TIMEOUTS } from '../config/timeouts';
+import { CircuitBreaker } from '../utils/circuit-breaker';
 
 // ===========================================
 // Types
@@ -84,6 +85,21 @@ function getBraveApiKey(): string | undefined {
 }
 
 // ===========================================
+// Circuit Breaker — Brave Search API
+// ===========================================
+
+/**
+ * Protects the Brave Search API.
+ * After 5 consecutive failures the circuit opens and DuckDuckGo is used
+ * as fallback until the circuit probes successfully after 120 s.
+ */
+export const braveBreaker = new CircuitBreaker({
+  name: 'brave-search',
+  failureThreshold: 5,
+  resetTimeout: TIMEOUTS.CIRCUIT_BREAKER_BRAVE,
+});
+
+// ===========================================
 // Web Search Service
 // ===========================================
 
@@ -120,15 +136,30 @@ export async function searchWeb(query: string, options: SearchOptions = {}): Pro
     let results: SearchResult[];
 
     if (apiKey) {
-      // Use Brave Search API
-      results = await searchWithBrave(query, {
-        count: Math.min(count, 20),
-        country,
-        language,
-        safeSearch,
-        timeout,
-        apiKey,
-      });
+      // Use Brave Search API — protected by circuit breaker.
+      // When the breaker opens, fall back to DuckDuckGo automatically.
+      try {
+        results = await braveBreaker.execute(() =>
+          searchWithBrave(query, {
+            count: Math.min(count, 20),
+            country,
+            language,
+            safeSearch,
+            timeout,
+            apiKey,
+          })
+        );
+      } catch {
+        // Circuit open or Brave failed — degrade to DuckDuckGo
+        logger.warn('Brave Search unavailable (circuit open or error), falling back to DuckDuckGo', {
+          query,
+          breakerState: braveBreaker.getState(),
+        });
+        results = await searchWithDuckDuckGo(query, {
+          count: Math.min(count, 10),
+          timeout,
+        });
+      }
     } else {
       // Fallback to DuckDuckGo scraping
       logger.warn('No Brave API key, falling back to DuckDuckGo');
