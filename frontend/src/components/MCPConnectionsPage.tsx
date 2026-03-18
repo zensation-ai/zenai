@@ -15,6 +15,7 @@ import { useState, useEffect, useCallback } from 'react';
 import type { AIContext } from './ContextSwitcher';
 import { ToolMarketplace } from './ToolMarketplace';
 import { ServerSetupWizard } from './ServerSetupWizard';
+import { useConfirm } from './ConfirmDialog';
 import './MCPConnectionsPage.css';
 
 const API_URL = import.meta.env.VITE_API_URL || '';
@@ -116,6 +117,7 @@ interface MCPConnectionsPageProps {
 }
 
 export function MCPConnectionsPage({ context }: MCPConnectionsPageProps) {
+  const confirm = useConfirm();
   const [activeTab, setActiveTab] = useState<MCPTab>('servers');
   const [servers, setServers] = useState<MCPServer[]>([]);
   const [loading, setLoading] = useState(true);
@@ -246,7 +248,13 @@ export function MCPConnectionsPage({ context }: MCPConnectionsPageProps) {
   };
 
   const deleteServer = async (id: string) => {
-    if (!window.confirm('MCP Server wirklich entfernen?')) return;
+    const confirmed = await confirm({
+      title: 'MCP Server entfernen',
+      message: 'MCP Server wirklich entfernen?',
+      confirmText: 'Entfernen',
+      variant: 'danger',
+    });
+    if (!confirmed) return;
     setActionLoading(prev => ({ ...prev, [id]: true }));
     try {
       await apiFetch(`/api/${context}/mcp/servers/${id}`, { method: 'DELETE' });

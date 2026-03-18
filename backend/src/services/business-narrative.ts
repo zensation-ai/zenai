@@ -203,7 +203,8 @@ async function fetchFinanceMetrics(context: AIContext, userId: string, daysBack:
     const txCount = result.rows.length > 0 ? parseInt(result.rows[0].tx_count, 10) : 0;
 
     return { revenue: revenues, currentRevenue, transactionCount: txCount };
-  } catch {
+  } catch (e) {
+    logger.debug('getRevenueData failed', { error: e instanceof Error ? e.message : String(e) });
     return { revenue: [], currentRevenue: 0, transactionCount: 0 };
   }
 }
@@ -233,7 +234,8 @@ async function fetchEmailActivity(context: AIContext, userId: string, daysBack: 
     const importantCount = result.rows.length > 0 ? parseInt(result.rows[0].important, 10) : 0;
 
     return { counts, todayCount, importantCount };
-  } catch {
+  } catch (e) {
+    logger.debug('getEmailData failed', { error: e instanceof Error ? e.message : String(e) });
     return { counts: [], todayCount: 0, importantCount: 0 };
   }
 }
@@ -271,7 +273,8 @@ async function fetchTaskMetrics(context: AIContext, userId: string, daysBack: nu
       completedTasks: completed,
       overdueTasks: overdue,
     };
-  } catch {
+  } catch (e) {
+    logger.debug('getTaskData failed', { error: e instanceof Error ? e.message : String(e) });
     return { completionRates: [], currentCompletionRate: 0, totalTasks: 0, completedTasks: 0, overdueTasks: 0 };
   }
 }
@@ -301,7 +304,8 @@ async function fetchCalendarEvents(context: AIContext, userId: string): Promise<
       tomorrowCount: parseInt(row.tomorrow, 10),
       nextEvent: row.next_event,
     };
-  } catch {
+  } catch (e) {
+    logger.debug('getCalendarData failed', { error: e instanceof Error ? e.message : String(e) });
     return { todayCount: 0, tomorrowCount: 0, nextEvent: null };
   }
 }
@@ -327,7 +331,8 @@ async function fetchSuggestionsSummary(context: AIContext, userId: string): Prom
       activeCount: parseInt(row.active, 10),
       topType: row.top_type,
     };
-  } catch {
+  } catch (e) {
+    logger.debug('getIdeasData failed', { error: e instanceof Error ? e.message : String(e) });
     return { activeCount: 0, topType: null };
   }
 }
@@ -688,8 +693,8 @@ export async function getTrends(
         changePercent: calculateChangePercent(last, first),
       });
     }
-  } catch {
-    logger.debug('Could not fetch revenue trends');
+  } catch (e) {
+    logger.debug('Could not fetch revenue trends', { error: e instanceof Error ? e.message : String(e) });
   }
 
   // Email trend
@@ -719,8 +724,8 @@ export async function getTrends(
         changePercent: calculateChangePercent(last, first),
       });
     }
-  } catch {
-    logger.debug('Could not fetch email trends');
+  } catch (e) {
+    logger.debug('Could not fetch email trends', { error: e instanceof Error ? e.message : String(e) });
   }
 
   // Task completion trend
@@ -750,8 +755,8 @@ export async function getTrends(
         changePercent: calculateChangePercent(last, first),
       });
     }
-  } catch {
-    logger.debug('Could not fetch task trends');
+  } catch (e) {
+    logger.debug('Could not fetch task trends', { error: e instanceof Error ? e.message : String(e) });
   }
 
   return trends;

@@ -272,7 +272,8 @@ async function searchEmails(
       timestamp: row.created_at,
       metadata: { from: row.from_address, status: row.status },
     }));
-  } catch {
+  } catch (e) {
+    logger.warn('searchEmails failed', { error: e instanceof Error ? e.message : String(e) });
     return [];
   }
 }
@@ -314,7 +315,8 @@ async function searchTasks(
       timestamp: row.created_at,
       metadata: { status: row.status, priority: row.priority },
     }));
-  } catch {
+  } catch (e) {
+    logger.warn('searchTasks failed', { error: e instanceof Error ? e.message : String(e) });
     return [];
   }
 }
@@ -346,7 +348,8 @@ async function searchContacts(
       timestamp: row.created_at,
       metadata: { email: row.email, company: row.company },
     }));
-  } catch {
+  } catch (e) {
+    logger.warn('searchContacts failed', { error: e instanceof Error ? e.message : String(e) });
     return [];
   }
 }
@@ -388,7 +391,8 @@ async function searchDocuments(
       timestamp: row.created_at,
       metadata: { fileType: row.file_type },
     }));
-  } catch {
+  } catch (e) {
+    logger.warn('searchDocuments failed', { error: e instanceof Error ? e.message : String(e) });
     return [];
   }
 }
@@ -432,7 +436,8 @@ async function searchChatMessages(
       timestamp: row.created_at,
       metadata: { role: row.role, sessionId: row.session_id },
     }));
-  } catch {
+  } catch (e) {
+    logger.warn('searchChatMessages failed', { error: e instanceof Error ? e.message : String(e) });
     return [];
   }
 }
@@ -474,7 +479,8 @@ async function searchCalendarEvents(
       timestamp: row.created_at,
       metadata: { location: row.location },
     }));
-  } catch {
+  } catch (e) {
+    logger.warn('searchCalendarEvents failed', { error: e instanceof Error ? e.message : String(e) });
     return [];
   }
 }
@@ -516,7 +522,8 @@ async function searchTransactions(
       timestamp: row.created_at,
       metadata: { amount: row.amount, currency: row.currency, category: row.category },
     }));
-  } catch {
+  } catch (e) {
+    logger.warn('searchTransactions failed', { error: e instanceof Error ? e.message : String(e) });
     return [];
   }
 }
@@ -548,7 +555,8 @@ async function searchKnowledgeEntities(
       timestamp: row.created_at,
       metadata: { entityType: row.entity_type },
     }));
-  } catch {
+  } catch (e) {
+    logger.warn('searchKnowledgeEntities failed', { error: e instanceof Error ? e.message : String(e) });
     return [];
   }
 }
@@ -668,7 +676,8 @@ export async function getSearchSuggestions(
   try {
     const result = await queryContext(context, sql, [userId, `${prefix}%`]);
     return result.rows.map(r => r.query);
-  } catch {
+  } catch (e) {
+    logger.warn('getSearchSuggestions failed', { error: e instanceof Error ? e.message : String(e) });
     return [];
   }
 }
@@ -720,7 +729,8 @@ export async function getSearchHistory(
   try {
     const result = await queryContext(context, sql, [userId, limit]);
     return result.rows;
-  } catch {
+  } catch (e) {
+    logger.warn('getSearchHistory failed', { error: e instanceof Error ? e.message : String(e) });
     return [];
   }
 }

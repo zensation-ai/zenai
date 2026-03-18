@@ -10,6 +10,7 @@
  */
 
 import { useRef, useCallback, useState, useEffect, forwardRef, useImperativeHandle } from 'react';
+import DOMPurify from 'dompurify';
 import { renderMarkdownContent, renderCodeContent, renderHtmlContent } from '../../utils/contentRenderers';
 import { CanvasMarkdownToolbar } from './CanvasMarkdownToolbar';
 import { showToast } from '../Toast';
@@ -145,7 +146,7 @@ function MermaidDiagram({ code, diagramId }: { code: string; diagramId: string }
   return (
     <div
       className="canvas-mermaid-diagram"
-      dangerouslySetInnerHTML={{ __html: svgContent }}
+      dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(svgContent, { USE_PROFILES: { svg: true, svgFilters: true } }) }}
     />
   );
 }

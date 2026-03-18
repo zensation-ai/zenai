@@ -216,8 +216,8 @@ async function getUnprocessedFeedback(context: AIContext): Promise<Array<{
       [context]
     );
     return result.rows;
-  } catch {
-    // Tabelle existiert möglicherweise noch nicht
+  } catch (e) {
+    logger.debug('getUnprocessedFeedback failed (table may not exist)', { error: e instanceof Error ? e.message : String(e) });
     return [];
   }
 }
@@ -331,8 +331,8 @@ async function processCorrections(
           reason: fb.feedback_text || 'Nutzer-Korrektur',
         });
       }
-    } catch {
-      logger.warn('Could not process feedback', { feedbackId: fb.id });
+    } catch (e) {
+      logger.warn('Could not process feedback', { feedbackId: fb.id, error: e instanceof Error ? e.message : String(e) });
     }
   }
 
@@ -418,8 +418,8 @@ Sei positiv, konkret und hilfreich. Schreibe auf Deutsch.`;
       keyLearnings: result?.key_learnings || [],
       suggestions: result?.suggestions || [],
     };
-  } catch {
-    logger.warn('Summary generation failed');
+  } catch (e) {
+    logger.warn('Summary generation failed', { error: e instanceof Error ? e.message : String(e) });
 
     return {
       summary: `Heute wurden ${ideas.length} Gedanken erfasst.`,
@@ -478,8 +478,8 @@ async function saveDailyLearningLog(
         data.suggestions_for_tomorrow,
       ]
     );
-  } catch {
-    logger.warn('Could not save daily learning log');
+  } catch (e) {
+    logger.warn('Could not save daily learning log', { error: e instanceof Error ? e.message : String(e) });
   }
 }
 
@@ -549,8 +549,8 @@ async function generateSuggestionsForTomorrow(
           new Date(Date.now() + 8 * 60 * 60 * 1000).toISOString(), // Morgen früh
         ]
       );
-    } catch {
-      // Tabelle existiert möglicherweise noch nicht
+    } catch (e) {
+      logger.debug('generateSuggestionsForTomorrow: save failed (table may not exist)', { error: e instanceof Error ? e.message : String(e) });
     }
   }
 }
@@ -588,7 +588,8 @@ export async function getDailyLearningHistory(
       suggestions_for_tomorrow: row.suggestions_for_tomorrow || [],
       automation_suggestions: row.automation_suggestions || 0,
     }));
-  } catch {
+  } catch (e) {
+    logger.debug('getDailyLearningHistory failed', { error: e instanceof Error ? e.message : String(e) });
     return [];
   }
 }
@@ -614,7 +615,8 @@ export async function getActiveSuggestions(
     );
 
     return result.rows;
-  } catch {
+  } catch (e) {
+    logger.debug('getActiveSuggestions failed', { error: e instanceof Error ? e.message : String(e) });
     return [];
   }
 }
@@ -696,8 +698,8 @@ export async function getDailyLearningLogs(
     );
 
     return result.rows;
-  } catch {
-    logger.warn('Could not get daily learning logs');
+  } catch (e) {
+    logger.warn('Could not get daily learning logs', { error: e instanceof Error ? e.message : String(e) });
     return [];
   }
 }
@@ -744,8 +746,8 @@ export async function getSuggestionStats(
         : 0,
       avg_priority: parseFloat(row.avg_priority) || 5,
     };
-  } catch {
-    logger.warn('Could not get suggestion stats');
+  } catch (e) {
+    logger.warn('Could not get suggestion stats', { error: e instanceof Error ? e.message : String(e) });
     return {
       total_suggestions: 0,
       pending_count: 0,

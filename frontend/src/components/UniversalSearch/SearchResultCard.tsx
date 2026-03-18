@@ -2,7 +2,7 @@
  * SearchResultCard — Individual result card for Universal Search (Phase 95)
  */
 
-import { memo, useMemo } from 'react';
+import { memo, useMemo, type ReactNode } from 'react';
 
 // ===========================================
 // Types
@@ -57,12 +57,15 @@ const TYPE_CONFIG: Record<SearchEntityType, { icon: string; label: string; color
 // Helpers
 // ===========================================
 
-function highlightMatch(text: string, query: string): string {
+function highlightMatch(text: string, query: string): ReactNode {
   if (!query || !text) return text;
   const escaped = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  return text.replace(
-    new RegExp(`(${escaped})`, 'gi'),
-    '<mark class="us-highlight">$1</mark>'
+  const parts = text.split(new RegExp(`(${escaped})`, 'gi'));
+  if (parts.length === 1) return text;
+  return parts.map((part, i) =>
+    part.toLowerCase() === query.toLowerCase()
+      ? <mark key={i} className="us-highlight">{part}</mark>
+      : part
   );
 }
 
@@ -117,17 +120,11 @@ export const SearchResultCard = memo(function SearchResultCard({
       </div>
       <div className="us-result-content">
         <div className="us-result-header">
-          <span
-            className="us-result-title"
-            dangerouslySetInnerHTML={{ __html: highlightedTitle }}
-          />
+          <span className="us-result-title">{highlightedTitle}</span>
           <span className="us-result-time">{formatRelativeTime(result.timestamp)}</span>
         </div>
         {result.snippet && (
-          <p
-            className="us-result-snippet"
-            dangerouslySetInnerHTML={{ __html: highlightedSnippet }}
-          />
+          <p className="us-result-snippet">{highlightedSnippet}</p>
         )}
         <div className="us-result-meta">
           <span

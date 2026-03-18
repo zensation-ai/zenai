@@ -306,7 +306,8 @@ class GlobalSearchService {
         createdAt: (row.created_at as Date)?.toISOString() || new Date().toISOString(),
         metadata: { fileType: row.file_type },
       }));
-    } catch {
+    } catch (e) {
+      logger.warn('searchDocuments failed', { error: e instanceof Error ? e.message : String(e) });
       return [];
     }
   }
@@ -342,7 +343,8 @@ class GlobalSearchService {
         createdAt: (row.created_at as Date)?.toISOString() || new Date().toISOString(),
         metadata: {},
       }));
-    } catch {
+    } catch (e) {
+      logger.warn('searchVoiceMemos failed', { error: e instanceof Error ? e.message : String(e) });
       return [];
     }
   }
@@ -377,7 +379,8 @@ class GlobalSearchService {
         createdAt: (row.date as Date)?.toISOString() || (row.created_at as Date)?.toISOString() || new Date().toISOString(),
         metadata: { meetingType: row.meeting_type },
       }));
-    } catch {
+    } catch (e) {
+      logger.warn('searchMeetings failed', { error: e instanceof Error ? e.message : String(e) });
       return [];
     }
   }
@@ -416,7 +419,8 @@ class GlobalSearchService {
           source: row.source,
         },
       }));
-    } catch {
+    } catch (e) {
+      logger.warn('searchFacts failed', { error: e instanceof Error ? e.message : String(e) });
       return [];
     }
   }
@@ -453,7 +457,8 @@ class GlobalSearchService {
         createdAt: (row.created_at as Date)?.toISOString() || new Date().toISOString(),
         metadata: { messageId: row.id, role: row.role },
       }));
-    } catch {
+    } catch (e) {
+      logger.warn('searchChatHistory failed', { error: e instanceof Error ? e.message : String(e) });
       return [];
     }
   }
@@ -495,7 +500,8 @@ class GlobalSearchService {
         createdAt: (row.created_at as Date)?.toISOString() || new Date().toISOString(),
         metadata: { relationship_type: row.relationship_type, email: row.email },
       }));
-    } catch {
+    } catch (e) {
+      logger.warn('searchContacts failed', { error: e instanceof Error ? e.message : String(e) });
       return [];
     }
   }
@@ -531,7 +537,8 @@ class GlobalSearchService {
         createdAt: (row.created_at as Date)?.toISOString() || new Date().toISOString(),
         metadata: { from: row.from_address, direction: row.direction, status: row.status },
       }));
-    } catch {
+    } catch (e) {
+      logger.warn('searchEmails failed', { error: e instanceof Error ? e.message : String(e) });
       return [];
     }
   }
@@ -569,7 +576,8 @@ class GlobalSearchService {
         createdAt: (row.start_time as Date)?.toISOString() || (row.created_at as Date)?.toISOString() || new Date().toISOString(),
         metadata: { start_time: row.start_time, end_time: row.end_time, location: row.location },
       }));
-    } catch {
+    } catch (e) {
+      logger.warn('searchCalendarEvents failed', { error: e instanceof Error ? e.message : String(e) });
       return [];
     }
   }
@@ -604,7 +612,8 @@ class GlobalSearchService {
         createdAt: (row.transaction_date as Date)?.toISOString() || (row.created_at as Date)?.toISOString() || new Date().toISOString(),
         metadata: { amount: row.amount, currency: row.currency, category: row.category, transaction_type: row.transaction_type },
       }));
-    } catch {
+    } catch (e) {
+      logger.warn('searchTransactions failed', { error: e instanceof Error ? e.message : String(e) });
       return [];
     }
   }
@@ -641,7 +650,8 @@ class GlobalSearchService {
         createdAt: (row.timestamp as Date)?.toISOString() || (row.created_at as Date)?.toISOString() || new Date().toISOString(),
         metadata: { app_name: row.app_name, url: row.url, duration: row.duration_seconds },
       }));
-    } catch {
+    } catch (e) {
+      logger.warn('searchScreenCaptures failed', { error: e instanceof Error ? e.message : String(e) });
       return [];
     }
   }

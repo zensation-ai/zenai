@@ -356,7 +356,7 @@ class EnhancedRAGService {
     await Promise.all(retrievalPromises);
 
     // Step 2: Merge results from all sources
-    const merged = this.mergeAllResults(hydeResults, agenticResults, cfg, graphRAGResults);
+    const merged = this.mergeAllResults(hydeResults, agenticResults, graphRAGResults);
 
     // Step 3: Cross-encoder re-ranking (if enabled and have results)
     let finalResults: EnhancedResult[];
@@ -508,7 +508,6 @@ class EnhancedRAGService {
   private mergeAllResults(
     hydeResults: HyDERetrievalResult[],
     agenticResults: RetrievalResult[],
-    _config: EnhancedRAGConfig,
     graphRAGResults: HybridRetrievalResult[] = []
   ): EnhancedResult[] {
     const merged = new Map<string, EnhancedResult>();

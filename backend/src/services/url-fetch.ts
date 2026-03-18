@@ -94,8 +94,8 @@ async function validateHostSSRF(hostname: string): Promise<{ safe: boolean; reas
       }
     }
     return { safe: true };
-  } catch {
-    // DNS resolution failed — allow fetch to fail naturally with ENOTFOUND
+  } catch (e) {
+    logger.warn('SSRF DNS check failed (allowing fetch to proceed)', { error: e instanceof Error ? e.message : String(e) });
     return { safe: true };
   }
 }
@@ -229,7 +229,8 @@ export async function fetchUrl(url: string, options: FetchOptions = {}): Promise
     if (!['http:', 'https:'].includes(parsedUrl.protocol)) {
       return createErrorResult(url, 'Nur HTTP und HTTPS URLs werden unterstützt.');
     }
-  } catch {
+  } catch (e) {
+    logger.warn('URL validation failed', { url, error: e instanceof Error ? e.message : String(e) });
     return createErrorResult(url, 'Ungültige URL.');
   }
 
@@ -404,8 +405,8 @@ function extractAuthor($: CheerioDoc): string | undefined {
       const data = JSON.parse(jsonLd);
       if (data.author?.name) {return data.author.name;}
       if (typeof data.author === 'string') {return data.author;}
-    } catch {
-      // Ignore JSON parse errors
+    } catch (e) {
+      logger.warn('extractAuthor: JSON-LD parse failed', { error: e instanceof Error ? e.message : String(e) });
     }
   }
 
@@ -443,8 +444,8 @@ function extractPublishedDate($: CheerioDoc): string | undefined {
     try {
       const data = JSON.parse(jsonLd);
       if (data.datePublished) {return data.datePublished;}
-    } catch {
-      // Ignore JSON parse errors
+    } catch (e) {
+      logger.warn('extractDate: JSON-LD parse failed', { error: e instanceof Error ? e.message : String(e) });
     }
   }
 
@@ -487,7 +488,8 @@ function cleanContent(text: string): string {
 function resolveUrl(url: string, baseUrl: string): string {
   try {
     return new URL(url, baseUrl).href;
-  } catch {
+  } catch (e) {
+    logger.warn('resolveUrl failed', { error: e instanceof Error ? e.message : String(e) });
     return url;
   }
 }
@@ -496,8 +498,8 @@ function createErrorResult(url: string, error: string): FetchedContent {
   let domain = '';
   try {
     domain = new URL(url).hostname;
-  } catch {
-    // Ignore URL parse errors
+  } catch (e) {
+    logger.warn('extractDomain: URL parse failed', { error: e instanceof Error ? e.message : String(e) });
   }
 
   return {
@@ -524,7 +526,8 @@ export function isValidUrl(url: string): boolean {
   try {
     const parsed = new URL(url);
     return ['http:', 'https:'].includes(parsed.protocol);
-  } catch {
+  } catch (e) {
+    logger.warn('isValidUrl: URL parse failed', { error: e instanceof Error ? e.message : String(e) });
     return false;
   }
 }
@@ -538,7 +541,8 @@ export { validateHostSSRF };
 export function extractDomain(url: string): string | null {
   try {
     return new URL(url).hostname;
-  } catch {
+  } catch (e) {
+    logger.warn('getHostname: URL parse failed', { error: e instanceof Error ? e.message : String(e) });
     return null;
   }
 }

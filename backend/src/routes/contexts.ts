@@ -6,6 +6,7 @@ import { asyncHandler, ValidationError, NotFoundError } from '../middleware/erro
 import { responseCacheMiddleware, invalidateCacheForContext } from '../middleware/response-cache';
 import { getRecentAIActivities, markActivitiesAsRead, getUnreadActivityCount } from '../services/ai-activity-logger';
 import { getUserId } from '../utils/user-context';
+import { escapeLike } from '../utils/sql-helpers';
 
 const router = Router();
 
@@ -242,7 +243,7 @@ router.post('/:context/ideas/search', apiKeyAuth, asyncHandler(async (req: Reque
     throw new ValidationError('Search query is required');
   }
 
-  const searchPattern = `%${searchQuery}%`;
+  const searchPattern = `%${escapeLike(searchQuery)}%`;
   const limitNum = typeof limit === 'number' ? limit : parseInt(String(limit), 10) || 20;
 
   const result = await queryContext(context as AIContext, `

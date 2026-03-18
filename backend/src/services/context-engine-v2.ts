@@ -217,8 +217,8 @@ class ContextEngineV2 {
           }
         }
       }
-    } catch {
-      // context_rules table may not exist; use fallback
+    } catch (e) {
+      logger.debug('assembleContext: context_rules query failed (table may not exist)', { error: e instanceof Error ? e.message : String(e) });
     }
 
     // Fallback: if no rules matched, add basic context
@@ -264,7 +264,8 @@ class ContextEngineV2 {
         default:
           return null;
       }
-    } catch {
+    } catch (e) {
+      logger.debug('executeDataSource failed', { error: e instanceof Error ? e.message : String(e) });
       return null;
     }
   }
@@ -293,8 +294,8 @@ class ContextEngineV2 {
           usedTokens += tokens;
         }
       }
-    } catch {
-      // Table may not exist
+    } catch (e) {
+      logger.debug('fallbackContext: query failed (table may not exist)', { error: e instanceof Error ? e.message : String(e) });
     }
 
     return parts;
@@ -317,8 +318,8 @@ class ContextEngineV2 {
           : result.rows[0].content;
         return { parts: data.parts || [], totalTokens: result.rows[0].token_count || 0 };
       }
-    } catch {
-      // Cache miss
+    } catch (e) {
+      logger.debug('getCachedContext: cache miss or read error', { error: e instanceof Error ? e.message : String(e) });
     }
     return null;
   }
@@ -337,8 +338,8 @@ class ContextEngineV2 {
           expires_at = NOW() + INTERVAL '1 hour',
           updated_at = NOW()
       `, [cacheKey, domain, JSON.stringify({ parts }), totalTokens]);
-    } catch {
-      // Ignore cache write failures
+    } catch (e) {
+      logger.debug('cacheContext: cache write failed', { error: e instanceof Error ? e.message : String(e) });
     }
   }
 
@@ -351,7 +352,8 @@ class ContextEngineV2 {
         DELETE FROM context_cache WHERE expires_at < NOW()
       `, []);
       return result.rowCount || 0;
-    } catch {
+    } catch (e) {
+      logger.debug('cleanExpiredCache failed', { error: e instanceof Error ? e.message : String(e) });
       return 0;
     }
   }

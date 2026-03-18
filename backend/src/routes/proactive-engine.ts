@@ -188,7 +188,7 @@ proactiveEngineRouter.get(
   (req: Request, res: Response) => {
     const context = req.params.context as AIContext;
     if (!isValidContext(context)) {
-      res.status(400).json({ error: 'Invalid context' });
+      res.status(400).json({ success: false, error: 'Invalid context' });
       return;
     }
 

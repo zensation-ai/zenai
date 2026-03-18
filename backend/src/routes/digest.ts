@@ -201,7 +201,11 @@ digestRouter.post('/:context/digest/generate/weekly', apiKeyAuth, requireScope('
 
   // Check if digest already exists
   const existingDigest = await queryContext(ctx, `
-    SELECT * FROM digests
+    SELECT id, type, period_start, period_end, title, summary,
+           highlights, statistics, ai_insights, recommendations,
+           ideas_count, top_categories, top_types, productivity_score,
+           created_at
+    FROM digests
     WHERE type = 'weekly' AND period_start = $1 AND period_end = $2 AND user_id = $3
   `, [periodStart, periodEnd, userId]);
 
@@ -303,7 +307,11 @@ digestRouter.get('/:context/digest/history', apiKeyAuth, asyncHandler(async (req
   const ctx = context as AIContext;
 
   let query = `
-    SELECT * FROM digests
+    SELECT id, type, period_start, period_end, title, summary,
+           highlights, statistics, ai_insights, recommendations,
+           ideas_count, top_categories, top_types, productivity_score,
+           created_at
+    FROM digests
     WHERE user_id = $1
   `;
   const historyParams: (string | number)[] = [userId];
@@ -344,7 +352,11 @@ digestRouter.get('/:context/digest/latest', apiKeyAuth, asyncHandler(async (req:
   const ctx = context as AIContext;
 
   let query = `
-    SELECT * FROM digests
+    SELECT id, type, period_start, period_end, title, summary,
+           highlights, statistics, ai_insights, recommendations,
+           ideas_count, top_categories, top_types, productivity_score,
+           created_at
+    FROM digests
     WHERE user_id = $1
   `;
   const latestParams: string[] = [userId];
@@ -391,7 +403,9 @@ digestRouter.get('/:context/digest/goals', apiKeyAuth, asyncHandler(async (req: 
   const ctx = context as AIContext;
 
   const result = await queryContext(ctx, `
-    SELECT * FROM productivity_goals WHERE id = 1
+    SELECT id, daily_ideas_target, weekly_ideas_target, focus_categories,
+           enabled_insights, digest_time
+    FROM productivity_goals WHERE id = 1
   `);
 
   if (result.rows.length === 0) {

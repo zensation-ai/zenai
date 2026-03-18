@@ -793,7 +793,7 @@ router.post('/:context/media/analyze-existing', apiKeyAuth, requireScope('write'
   // Fetch media item from database (schema-isolated via queryContext)
   const mediaResult = await queryContext(
     context as AIContext,
-    `SELECT * FROM media_items WHERE id = $1 AND context = $2`,
+    `SELECT id, media_type, filename, file_path, mime_type, file_size, caption, ocr_text, ai_analysis, context, created_at FROM media_items WHERE id = $1 AND context = $2`,
     [mediaId, context]
   );
 

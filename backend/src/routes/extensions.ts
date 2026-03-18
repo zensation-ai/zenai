@@ -10,11 +10,26 @@ import { Router, Request, Response } from 'express';
 import { apiKeyAuth } from '../middleware/auth';
 import { asyncHandler } from '../middleware/errorHandler';
 import { getUserId } from '../utils/user-context';
-import { getExtensionRegistry } from '../services/extensions/extension-registry';
+import { getExtensionRegistry, type ExtensionType, type ExtensionCategory } from '../services/extensions/extension-registry';
 import { getExtensionSandbox } from '../services/extensions/extension-sandbox';
 import { logger } from '../utils/logger';
 
 const router = Router();
+
+// ===========================================
+// Type Guards
+// ===========================================
+
+const VALID_EXTENSION_TYPES: readonly ExtensionType[] = ['tool', 'widget', 'theme', 'integration', 'agent'];
+const VALID_EXTENSION_CATEGORIES: readonly ExtensionCategory[] = ['productivity', 'developer', 'ai', 'appearance', 'communication'];
+
+function isValidExtensionType(value: unknown): value is ExtensionType {
+  return typeof value === 'string' && VALID_EXTENSION_TYPES.includes(value as ExtensionType);
+}
+
+function isValidExtensionCategory(value: unknown): value is ExtensionCategory {
+  return typeof value === 'string' && VALID_EXTENSION_CATEGORIES.includes(value as ExtensionCategory);
+}
 
 // All extension routes require authentication
 router.use(apiKeyAuth);
@@ -36,8 +51,8 @@ router.get(
 
     const registry = getExtensionRegistry();
     const extensions = await registry.listExtensions(userId, {
-      type: type as any,
-      category: category as any,
+      type: isValidExtensionType(type) ? type : undefined,
+      category: isValidExtensionCategory(category) ? category : undefined,
       search: search as string,
     });
 

@@ -26,7 +26,9 @@ router.get('/:context/sleep-compute/logs', asyncHandler(async (req: Request, res
 
   const limit = Math.min(parseInt(req.query.limit as string) || 20, 100);
   const result = await queryContext(context, `
-    SELECT * FROM sleep_compute_logs
+    SELECT id, cycle_type, processed_items, insights_generated,
+           contradictions_resolved, memory_updates, duration_ms, created_at
+    FROM sleep_compute_logs
     WHERE user_id = $1
     ORDER BY created_at DESC
     LIMIT $2
@@ -105,7 +107,9 @@ router.get('/:context/sleep-compute/discoveries', asyncHandler(async (req: Reque
       COALESCE(SUM(contradictions_resolved), 0) as total_contradictions,
       COALESCE(AVG(duration_ms)::integer, 0) as avg_duration_ms
     FROM (
-      SELECT * FROM sleep_compute_logs
+      SELECT processed_items, insights_generated, contradictions_resolved,
+             memory_updates, duration_ms
+      FROM sleep_compute_logs
       WHERE user_id = $1
       ORDER BY created_at DESC
       LIMIT 7

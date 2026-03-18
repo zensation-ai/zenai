@@ -645,7 +645,7 @@ export async function executeTeamTask(
     }
 
     // Aggregate final output
-    const finalOutput = aggregateResults(agentResults, pipeline);
+    const finalOutput = aggregateResults(agentResults);
 
     // Get memory stats
     const memoryStats = sharedMemory.getStats(teamId);
@@ -978,7 +978,7 @@ async function executeWithGraph(
     }
 
     // Aggregate final output
-    const finalOutput = graphResult.finalOutput || aggregateResults(agentOutputs, pipeline);
+    const finalOutput = graphResult.finalOutput || aggregateResults(agentOutputs);
 
     // Get memory stats
     const memoryStats = sharedMemory.getStats(teamId);
@@ -1144,7 +1144,7 @@ export async function executeTeamTaskStreaming(
 /**
  * Aggregate results from all agents into a final output
  */
-function aggregateResults(results: AgentOutput[], _pipeline: AgentRole[]): string {
+function aggregateResults(results: AgentOutput[]): string {
   // If there's a reviewer result, use that (it's the refined version)
   const reviewerResult = results.find(r => r.role === 'reviewer' && r.success);
   if (reviewerResult) {

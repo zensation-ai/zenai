@@ -9,10 +9,10 @@
  * - Storage usage display
  */
 
-import { memo, useEffect, useCallback } from 'react';
+import { memo, useEffect, useCallback, useState } from 'react';
 import { useOnDeviceAI } from '../../hooks/useOnDeviceAI';
 import { estimateStorageUsage } from '../../services/on-device-storage';
-import { useState } from 'react';
+import { useConfirm } from '../ConfirmDialog';
 import './OnDeviceAISettings.css';
 
 interface OnDeviceAISettingsProps {
@@ -65,6 +65,7 @@ const MODELS = [
 ];
 
 export const OnDeviceAISettings = memo(function OnDeviceAISettings(_props: OnDeviceAISettingsProps) {
+  const confirm = useConfirm();
   const {
     isReady,
     isLoading,
@@ -105,12 +106,18 @@ export const OnDeviceAISettings = memo(function OnDeviceAISettings(_props: OnDev
   }, [clearInferenceCache, refreshStats]);
 
   const handleClearAll = useCallback(async () => {
-    if (window.confirm('Alle lokalen KI-Daten loeschen? Dies entfernt Corpus, Cache und Vokabular.')) {
+    const confirmed = await confirm({
+      title: 'Lokale KI-Daten loeschen',
+      message: 'Alle lokalen KI-Daten loeschen? Dies entfernt Corpus, Cache und Vokabular.',
+      confirmText: 'Loeschen',
+      variant: 'danger',
+    });
+    if (confirmed) {
       await clearStorage();
       await refreshStats();
       setStorageUsage(0);
     }
-  }, [clearStorage, refreshStats]);
+  }, [clearStorage, refreshStats, confirm]);
 
   const totalQueries = stats.queriesOnDevice + stats.queriesCloud;
   const onDevicePercent = totalQueries > 0 ? Math.round((stats.queriesOnDevice / totalQueries) * 100) : 0;

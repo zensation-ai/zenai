@@ -318,7 +318,8 @@ class ProactiveDigestService {
         content: `${count} neue Eintraege: ${parts.join(', ')}.`,
         relevance: Math.min(count / 5, 1),
       };
-    } catch {
+    } catch (e) {
+      logger.debug('buildIdeasSection failed', { error: e instanceof Error ? e.message : String(e) });
       return null;
     }
   }
@@ -346,7 +347,8 @@ class ProactiveDigestService {
         content: `${sessions} Gespraech${sessions > 1 ? 'e' : ''} mit ${messages} Nachrichten.`,
         relevance: Math.min(sessions / 3, 0.7),
       };
-    } catch {
+    } catch (e) {
+      logger.debug('buildChatSection failed', { error: e instanceof Error ? e.message : String(e) });
       return null;
     }
   }
@@ -377,7 +379,8 @@ class ProactiveDigestService {
         content: `${accepted} von ${total} Vorschlaegen angenommen (${rate}%).`,
         relevance: 0.5,
       };
-    } catch {
+    } catch (e) {
+      logger.debug('buildSuggestionsSection failed', { error: e instanceof Error ? e.message : String(e) });
       return null;
     }
   }
@@ -402,7 +405,8 @@ class ProactiveDigestService {
         content: `${newFacts} neue${newFacts > 1 ? '' : 's'} Fakt${newFacts > 1 ? 'en' : ''} gelernt.`,
         relevance: 0.4,
       };
-    } catch {
+    } catch (e) {
+      logger.debug('buildMemorySection failed', { error: e instanceof Error ? e.message : String(e) });
       return null;
     }
   }
@@ -457,7 +461,8 @@ class ProactiveDigestService {
         content,
         relevance: Math.min(total / 10, 1),
       };
-    } catch {
+    } catch (e) {
+      logger.debug('buildWeeklyIdeasSection failed', { error: e instanceof Error ? e.message : String(e) });
       return null;
     }
   }
@@ -483,7 +488,8 @@ class ProactiveDigestService {
         content: `${completed} Lernaufgabe${completed > 1 ? 'n' : ''} abgeschlossen.`,
         relevance: 0.7,
       };
-    } catch {
+    } catch (e) {
+      logger.debug('buildLearningSection failed', { error: e instanceof Error ? e.message : String(e) });
       return null;
     }
   }
@@ -521,7 +527,8 @@ class ProactiveDigestService {
         content: `Diese Woche gelernt: ${parts.join(' und ')}.`,
         relevance: 0.5,
       };
-    } catch {
+    } catch (e) {
+      logger.debug('buildMemoryGrowthSection failed', { error: e instanceof Error ? e.message : String(e) });
       return null;
     }
   }
@@ -554,7 +561,8 @@ class ProactiveDigestService {
         content: `Aktivster Tag: ${peakDay} (${count} Aktionen).`,
         relevance: 0.3,
       };
-    } catch {
+    } catch (e) {
+      logger.debug('buildActivityPatternSection failed', { error: e instanceof Error ? e.message : String(e) });
       return null;
     }
   }
@@ -596,7 +604,8 @@ class ProactiveDigestService {
     try {
       const data = typeof row.sections === 'string' ? JSON.parse(row.sections) : row.sections;
       if (Array.isArray(data)) {sections = data as DigestSection[];}
-    } catch {
+    } catch (e) {
+      logger.debug('persist: JSON.parse sections failed', { error: e instanceof Error ? e.message : String(e) });
       sections = [];
     }
 

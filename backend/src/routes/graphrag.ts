@@ -12,6 +12,7 @@ import { asyncHandler, ValidationError } from '../middleware/errorHandler';
 import { isValidContext } from '../utils/database-context';
 import { queryContext } from '../utils/database-context';
 import { getUserId } from '../utils/user-context';
+import { escapeLike } from '../utils/sql-helpers';
 import { graphBuilder } from '../services/knowledge-graph/graph-builder';
 import { hybridRetriever } from '../services/knowledge-graph/hybrid-retriever';
 import { communitySummarizer } from '../services/knowledge-graph/community-summarizer';
@@ -79,7 +80,7 @@ router.get(
     }
 
     if (search) {
-      params.push(`%${search}%`);
+      params.push(`%${escapeLike(search)}%`);
       sql += ` AND (LOWER(name) LIKE LOWER($${params.length}) OR LOWER(description) LIKE LOWER($${params.length}))`;
     }
 

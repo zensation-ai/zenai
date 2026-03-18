@@ -13,6 +13,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import axios from 'axios';
 import { logError } from '../utils/errors';
 import { showToast } from './Toast';
+import { useConfirm } from './ConfirmDialog';
 import './WorkflowPanel.css';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
@@ -312,6 +313,7 @@ interface WorkflowPanelProps {
 
 export function WorkflowPanel({ context: _context }: WorkflowPanelProps) {
   void _context; // reserved for future context-specific workflow filtering
+  const confirm = useConfirm();
   const [workflows, setWorkflows] = useState<WorkflowDefinition[]>([]);
   const [workflowTemplates, setWorkflowTemplates] = useState<WorkflowTemplate[]>([]);
   const [workflowRuns, setWorkflowRuns] = useState<WorkflowRun[]>([]);
@@ -388,7 +390,13 @@ export function WorkflowPanel({ context: _context }: WorkflowPanelProps) {
   };
 
   const handleDelete = async (id: string) => {
-    if (!window.confirm('Workflow wirklich loeschen?')) return;
+    const confirmed = await confirm({
+      title: 'Workflow loeschen',
+      message: 'Workflow wirklich loeschen?',
+      confirmText: 'Loeschen',
+      variant: 'danger',
+    });
+    if (!confirmed) return;
     try {
       await axios.delete(`/api/agent-workflows/${id}`);
       showToast('Workflow geloescht', 'success');

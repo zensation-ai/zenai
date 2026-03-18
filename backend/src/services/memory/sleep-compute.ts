@@ -46,7 +46,8 @@ class SleepComputeEngine {
     try {
       const result = await redis.set(key, lockValue, 'PX', ttlMs, 'NX');
       return result === 'OK' ? lockValue : null;
-    } catch {
+    } catch (e) {
+      logger.debug('acquireLock failed', { error: e instanceof Error ? e.message : String(e) });
       return uuidv4(); // On Redis error, allow execution
     }
   }
@@ -62,8 +63,8 @@ class SleepComputeEngine {
       // Lua script for atomic compare-and-delete
       const script = `if redis.call("get", KEYS[1]) == ARGV[1] then return redis.call("del", KEYS[1]) else return 0 end`;
       await redis.eval(script, 1, key, lockValue);
-    } catch {
-      // Non-critical: lock will expire via TTL
+    } catch (e) {
+      logger.debug('releaseLock failed (lock will expire via TTL)', { error: e instanceof Error ? e.message : String(e) });
     }
   }
 
@@ -169,8 +170,8 @@ class SleepComputeEngine {
         ORDER BY created_at DESC
         LIMIT 50
       `, []);
-    } catch {
-      // Table may not exist or column missing
+    } catch (e) {
+      logger.debug('consolidateEpisodes: query failed (table may not exist)', { error: e instanceof Error ? e.message : String(e) });
       return { processed: 0, insights };
     }
 
@@ -199,8 +200,8 @@ class SleepComputeEngine {
               CASE WHEN $2 > 0.8 THEN 'slow_decay' ELSE 'normal_decay' END)
             ON CONFLICT DO NOTHING
           `, [insight.content, insight.confidence]);
-        } catch {
-          // Ignore duplicate facts
+        } catch (e) {
+          logger.debug('consolidateEpisodes: fact insert failed', { error: e instanceof Error ? e.message : String(e) });
         }
       }
     }
@@ -212,8 +213,8 @@ class SleepComputeEngine {
         await queryContext(context, `
           UPDATE episodic_memories SET consolidated = true WHERE id = ANY($1::uuid[])
         `, [ids]);
-      } catch {
-        // Column may not exist
+      } catch (e) {
+        logger.debug('consolidateEpisodes: mark consolidated failed (column may not exist)', { error: e instanceof Error ? e.message : String(e) });
       }
     }
 
@@ -240,8 +241,8 @@ class SleepComputeEngine {
           AND similarity(f1.content, f2.content) > 0.6
         LIMIT 20
       `, []);
-    } catch {
-      // similarity() requires pg_trgm; table may not exist
+    } catch (e) {
+      logger.debug('detectAndResolveContradictions: similarity query failed (pg_trgm may not be available)', { error: e instanceof Error ? e.message : String(e) });
       return 0;
     }
 
@@ -258,8 +259,8 @@ class SleepComputeEngine {
           WHERE id = $1
         `, [olderId]);
         resolved++;
-      } catch {
-        // Ignore update errors
+      } catch (e) {
+        logger.debug('detectAndResolveContradictions: downgrade fact failed', { error: e instanceof Error ? e.message : String(e) });
       }
     }
 
@@ -285,7 +286,8 @@ class SleepComputeEngine {
         ORDER BY retrieval_count DESC, confidence DESC
         LIMIT 10
       `, []);
-    } catch {
+    } catch (e) {
+      logger.debug('preloadWorkingMemory: facts query failed', { error: e instanceof Error ? e.message : String(e) });
       return 0;
     }
 
@@ -307,8 +309,8 @@ class SleepComputeEngine {
           Math.ceil(String(row.content || '').length / 4),
         ]);
         preloaded++;
-      } catch {
-        // Ignore cache errors
+      } catch (e) {
+        logger.debug('preloadWorkingMemory: cache set failed', { error: e instanceof Error ? e.message : String(e) });
       }
     }
 
@@ -331,7 +333,8 @@ class SleepComputeEngine {
         ORDER BY execution_count DESC
         LIMIT 10
       `, []);
-    } catch {
+    } catch (e) {
+      logger.debug('optimizeProcedures: query failed', { error: e instanceof Error ? e.message : String(e) });
       return 0;
     }
 
@@ -344,8 +347,8 @@ class SleepComputeEngine {
           WHERE id = $1
         `, [row.id]);
         updates++;
-      } catch {
-        // Ignore update errors
+      } catch (e) {
+        logger.debug('optimizeProcedures: update failed', { error: e instanceof Error ? e.message : String(e) });
       }
     }
 
@@ -373,8 +376,8 @@ class SleepComputeEngine {
       updates = result.rows.length;
       // Actual entity extraction would be done by the graph indexer queue
       // Here we just count unprocessed items
-    } catch {
-      // knowledge_entities table may not exist yet
+    } catch (e) {
+      logger.debug('maintainEntityGraph failed (knowledge_entities table may not exist)', { error: e instanceof Error ? e.message : String(e) });
     }
 
     return updates;
@@ -450,7 +453,8 @@ class SleepComputeEngine {
         WHERE updated_at > NOW() - make_interval(mins := $1)
       `, [windowMinutes]);
       return (parseInt(result.rows[0]?.cnt || '0', 10)) < threshold;
-    } catch {
+    } catch (e) {
+      logger.debug('isSystemIdle check failed', { error: e instanceof Error ? e.message : String(e) });
       return true; // Assume idle if we can't check
     }
   }

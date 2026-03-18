@@ -22,8 +22,8 @@ reportsRouter.get('/', apiKeyAuth, asyncHandler(async (req: Request, res: Respon
   const limit = Math.min(parseInt(req.query.limit as string, 10) || 10, 50);
 
   const query = type
-    ? `SELECT * FROM business_reports WHERE report_type = $1 ORDER BY period_end DESC LIMIT $2`
-    : `SELECT * FROM business_reports ORDER BY period_end DESC LIMIT $1`;
+    ? `SELECT id, report_type, period_start, period_end, title, summary, metrics, insights, recommendations, generated_at, created_at FROM business_reports WHERE report_type = $1 ORDER BY period_end DESC LIMIT $2`
+    : `SELECT id, report_type, period_start, period_end, title, summary, metrics, insights, recommendations, generated_at, created_at FROM business_reports ORDER BY period_end DESC LIMIT $1`;
 
   const result = type
     ? await pool.query(query, [type, limit])
@@ -49,7 +49,9 @@ reportsRouter.post('/generate', apiKeyAuth, asyncHandler(async (req: Request, re
   }
 
   const result = await pool.query(`
-    SELECT * FROM business_reports
+    SELECT id, report_type, period_start, period_end, title, summary,
+           metrics, insights, recommendations, generated_at, created_at
+    FROM business_reports
     ORDER BY generated_at DESC
     LIMIT 1
   `);
@@ -65,7 +67,9 @@ reportsRouter.get('/latest', apiKeyAuth, asyncHandler(async (req: Request, res: 
   const type = (req.query.type as string) || 'weekly';
 
   const result = await pool.query(`
-    SELECT * FROM business_reports
+    SELECT id, report_type, period_start, period_end, title, summary,
+           metrics, insights, recommendations, generated_at, created_at
+    FROM business_reports
     WHERE report_type = $1
     ORDER BY period_end DESC
     LIMIT 1

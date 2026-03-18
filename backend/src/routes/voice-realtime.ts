@@ -212,7 +212,9 @@ voiceRealtimeRouter.get(
 
     const result = await queryContext(
       context,
-      'SELECT * FROM voice_settings WHERE user_id = $1 ORDER BY created_at DESC LIMIT 1',
+      `SELECT id, stt_provider, tts_provider, tts_voice, language,
+              vad_sensitivity, silence_threshold_ms, auto_send, created_at, updated_at
+       FROM voice_settings WHERE user_id = $1 ORDER BY created_at DESC LIMIT 1`,
       [userId]
     );
 

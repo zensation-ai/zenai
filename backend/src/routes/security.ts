@@ -9,7 +9,7 @@ import { Router, Request, Response } from 'express';
 import { jwtAuth } from '../middleware/jwt-auth';
 import { requireRole } from '../middleware/rbac';
 import { asyncHandler } from '../middleware/errorHandler';
-import { getAuditLogger } from '../services/security/audit-logger';
+import { getAuditLogger, type SecurityEventType, type SecuritySeverity } from '../services/security/audit-logger';
 import {
   getAllTierConfigs,
   getTierConfig,
@@ -20,6 +20,28 @@ import { isValidContext, AIContext } from '../types';
 import { logger } from '../utils/logger';
 
 const router = Router();
+
+// ===========================================
+// Type Guards
+// ===========================================
+
+const VALID_AUDIT_EVENT_TYPES: readonly SecurityEventType[] = [
+  'login', 'logout', 'failed_login', 'password_change', 'role_change',
+  'api_key_created', 'api_key_revoked', 'sensitive_data_access',
+  'permission_denied', 'config_change',
+] as const;
+
+const VALID_SEVERITY_LEVELS: readonly SecuritySeverity[] = [
+  'info', 'warning', 'critical',
+] as const;
+
+function isValidAuditEventType(value: unknown): value is SecurityEventType {
+  return typeof value === 'string' && VALID_AUDIT_EVENT_TYPES.includes(value as SecurityEventType);
+}
+
+function isValidSeverity(value: unknown): value is SecuritySeverity {
+  return typeof value === 'string' && VALID_SEVERITY_LEVELS.includes(value as SecuritySeverity);
+}
 
 // All security routes require admin role
 const adminAuth = [jwtAuth, requireRole('admin')];
@@ -53,9 +75,9 @@ router.get(
 
     const auditLogger = getAuditLogger();
     const result = await auditLogger.getAuditLog(ctx, {
-      eventType: event_type as any,
+      eventType: isValidAuditEventType(event_type) ? event_type : undefined,
       userId: user_id as string,
-      severity: severity as any,
+      severity: isValidSeverity(severity) ? severity : undefined,
       startDate: start_date as string,
       endDate: end_date as string,
       limit: limit ? parseInt(limit as string, 10) : undefined,
@@ -86,7 +108,9 @@ router.get(
     const { queryContext } = await import('../utils/database-context');
     const result = await queryContext(
       context,
-      'SELECT * FROM security_audit_log WHERE id = $1',
+      `SELECT id, event_type, user_id, ip_address, user_agent,
+              details, severity, created_at
+       FROM security_audit_log WHERE id = $1`,
       [id]
     );
 
@@ -122,7 +146,7 @@ router.get(
     const auditLogger = getAuditLogger();
     const alerts = await auditLogger.getSecurityAlerts(
       ctx,
-      severity as any,
+      isValidSeverity(severity) ? severity : undefined,
       limit ? parseInt(limit as string, 10) : undefined
     );
 

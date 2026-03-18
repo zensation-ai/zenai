@@ -71,7 +71,7 @@ emailWebhooksRouter.post('/resend', async (req: Request, res: Response) => {
       const rawBody = (req as Request & { rawBody?: Buffer }).rawBody;
       if (!rawBody) {
         logger.warn('Missing raw body for webhook verification', { operation: 'resendWebhook' });
-        return res.status(400).json({ error: 'Missing raw body' });
+        return res.status(400).json({ success: false, error: 'Missing raw body' });
       }
 
       try {
@@ -81,12 +81,12 @@ emailWebhooksRouter.post('/resend', async (req: Request, res: Response) => {
           error: (err as Error).message,
           operation: 'resendWebhook',
         });
-        return res.status(401).json({ error: 'Invalid signature' });
+        return res.status(401).json({ success: false, error: 'Invalid signature' });
       }
     } else if (process.env.NODE_ENV === 'production') {
       // CRITICAL: Never skip signature verification in production
       logger.error('RESEND_WEBHOOK_SECRET not configured in production — rejecting webhook', undefined, { operation: 'resendWebhook' });
-      return res.status(403).json({ error: 'Webhook verification not configured' });
+      return res.status(403).json({ success: false, error: 'Webhook verification not configured' });
     } else {
       // In development only, accept without verification
       event = req.body as ResendWebhookEvent;

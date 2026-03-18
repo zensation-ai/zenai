@@ -295,7 +295,8 @@ export async function getLatestSnapshot(context: AIContext): Promise<EvolutionSn
 
     if (result.rows.length === 0) {return null;}
     return mapRowToSnapshot(result.rows[0]);
-  } catch {
+  } catch (e) {
+    logger.warn('getLatestSnapshot failed', { error: e instanceof Error ? e.message : String(e) });
     return null;
   }
 }
@@ -369,7 +370,8 @@ export async function getLearningTimeline(
     `, [context, limit, offset]);
 
     return result.rows.map(mapRowToEvent);
-  } catch {
+  } catch (e) {
+    logger.warn('getLearningTimeline failed', { error: e instanceof Error ? e.message : String(e) });
     return [];
   }
 }
@@ -391,7 +393,8 @@ export async function getEventsByType(
     `, [context, eventType, limit]);
 
     return result.rows.map(mapRowToEvent);
-  } catch {
+  } catch (e) {
+    logger.warn('getEventsByType failed', { error: e instanceof Error ? e.message : String(e) });
     return [];
   }
 }
@@ -482,7 +485,8 @@ export async function getAccuracyTrends(
       trend: row.trend as AccuracyTrend['trend'],
       trend_delta: parseFloat(row.trend_delta as string) || 0,
     }));
-  } catch {
+  } catch (e) {
+    logger.warn('getAccuracyTrends failed', { error: e instanceof Error ? e.message : String(e) });
     return [];
   }
 }
@@ -613,7 +617,8 @@ export async function getMilestones(context: AIContext): Promise<{
       .sort((a, b) => b.progress_percent - a.progress_percent);
 
     return { achieved, upcoming, all };
-  } catch {
+  } catch (e) {
+    logger.warn('getMilestones failed', { error: e instanceof Error ? e.message : String(e) });
     return { achieved: [], upcoming: [], all: [] };
   }
 }
@@ -775,7 +780,8 @@ async function calculateStreak(context: AIContext): Promise<number> {
     `, [context]);
 
     return parseInt(result.rows[0]?.streak || '0', 10);
-  } catch {
+  } catch (e) {
+    logger.warn('calculateStreak failed', { error: e instanceof Error ? e.message : String(e) });
     return 0;
   }
 }
@@ -788,7 +794,8 @@ async function getTotalAutomationExecutions(context: AIContext): Promise<number>
       WHERE ad.context = $1
     `, [context]);
     return parseInt(result.rows[0]?.count || '0', 10);
-  } catch {
+  } catch (e) {
+    logger.warn('getTotalAutomationExecutions failed', { error: e instanceof Error ? e.message : String(e) });
     return 0;
   }
 }
@@ -800,7 +807,8 @@ async function getTotalPatternsLearned(context: AIContext): Promise<number> {
       WHERE context = $1 AND is_active = true
     `, [context]);
     return parseInt(result.rows[0]?.count || '0', 10);
-  } catch {
+  } catch (e) {
+    logger.warn('getTotalPatternsLearned failed', { error: e instanceof Error ? e.message : String(e) });
     return 0;
   }
 }
@@ -813,7 +821,8 @@ async function getTotalActiveDays(context: AIContext): Promise<number> {
       WHERE context = $1
     `, [context]);
     return parseInt(result.rows[0]?.count || '0', 10);
-  } catch {
+  } catch (e) {
+    logger.warn('getTotalActiveDays failed', { error: e instanceof Error ? e.message : String(e) });
     return 0;
   }
 }

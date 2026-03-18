@@ -8,6 +8,7 @@
 import { useState, useCallback } from 'react';
 import type { CalendarAccount, CalendarAccountCalendar } from './useCalendarAccounts';
 import { useEscapeKey } from '../../hooks/useClickOutside';
+import { useConfirm } from '../ConfirmDialog';
 import './CalendarAccountsPanel.css';
 
 interface Props {
@@ -63,6 +64,7 @@ export function CalendarAccountsPanel({
   onUpdateAccount,
   onClose,
 }: Props) {
+  const confirm = useConfirm();
   const [showForm, setShowForm] = useState(accounts.length === 0);
   const [formData, setFormData] = useState({
     provider: 'icloud',
@@ -109,11 +111,17 @@ export function CalendarAccountsPanel({
   }, [onSyncAccount]);
 
   const handleDelete = useCallback(async (id: string) => {
-    if (!window.confirm('Kalender-Verbindung trennen?\nAlle synchronisierten Termine werden entfernt.')) return;
+    const confirmed = await confirm({
+      title: 'Kalender-Verbindung trennen',
+      message: 'Kalender-Verbindung trennen? Alle synchronisierten Termine werden entfernt.',
+      confirmText: 'Trennen',
+      variant: 'danger',
+    });
+    if (!confirmed) return;
     setDeletingId(id);
     await onDeleteAccount(id);
     setDeletingId(null);
-  }, [onDeleteAccount]);
+  }, [onDeleteAccount, confirm]);
 
   const handleToggleCalendar = useCallback(async (account: CalendarAccount, calIndex: number) => {
     if (!onUpdateAccount) return;

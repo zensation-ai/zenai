@@ -9,6 +9,7 @@ import { apiKeyAuth, requireScope } from '../middleware/auth';
 import { asyncHandler } from '../middleware/errorHandler';
 import { queryPublic } from '../utils/database-context';
 import { getUserId } from '../utils/user-context';
+import { escapeLike } from '../utils/sql-helpers';
 
 export const aiTracesRouter = Router();
 
@@ -107,7 +108,7 @@ aiTracesRouter.get(
 
     if (name) {
       conditions.push(`name ILIKE $${paramIdx++}`);
-      params.push(`%${name}%`);
+      params.push(`%${escapeLike(name)}%`);
     }
 
     const where = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
@@ -153,7 +154,9 @@ aiTracesRouter.get(
     const { id } = req.params;
 
     const traceResult = await queryPublic(
-      `SELECT * FROM ai_traces WHERE id = $1 AND user_id = $2`,
+      `SELECT id, session_id, user_id, name, start_time, end_time,
+              total_tokens, total_cost, metadata
+       FROM ai_traces WHERE id = $1 AND user_id = $2`,
       [id, userId],
     );
 
@@ -163,7 +166,9 @@ aiTracesRouter.get(
     }
 
     const spansResult = await queryPublic(
-      `SELECT * FROM ai_spans WHERE trace_id = $1 ORDER BY start_time ASC`,
+      `SELECT id, trace_id, parent_span_id, name, type, start_time, end_time,
+              input_tokens, output_tokens, cost, metadata, status
+       FROM ai_spans WHERE trace_id = $1 ORDER BY start_time ASC`,
       [id],
     );
 

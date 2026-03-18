@@ -270,7 +270,8 @@ export async function calculateTopicQuality(
     let centroidVec: number[];
     try {
       centroidVec = typeof centroid === 'string' ? JSON.parse(centroid) : centroid;
-    } catch {
+    } catch (e) {
+      logger.warn('parseEmbedding: centroid JSON.parse failed', { error: e instanceof Error ? e.message : String(e) });
       centroidVec = centroid;
     }
 
@@ -283,7 +284,8 @@ export async function calculateTopicQuality(
       let embedding: number[];
       try {
         embedding = typeof row.embedding === 'string' ? JSON.parse(row.embedding) : row.embedding;
-      } catch {
+      } catch (e) {
+        logger.warn('parseEmbedding: row embedding JSON.parse failed', { error: e instanceof Error ? e.message : String(e) });
         embedding = row.embedding;
       }
       embeddings.push(embedding);
@@ -329,7 +331,8 @@ export async function calculateTopicQuality(
         otherCentroid = typeof otherTopic.centroid_embedding === 'string'
           ? JSON.parse(otherTopic.centroid_embedding)
           : otherTopic.centroid_embedding;
-      } catch {
+      } catch (e) {
+        logger.warn('parseEmbedding: otherCentroid JSON.parse failed', { error: e instanceof Error ? e.message : String(e) });
         otherCentroid = otherTopic.centroid_embedding;
       }
 
@@ -420,7 +423,8 @@ export async function findBestTopicForIdea(
       ideaEmbedding = typeof ideaResult.rows[0].embedding === 'string'
         ? JSON.parse(ideaResult.rows[0].embedding)
         : ideaResult.rows[0].embedding;
-    } catch {
+    } catch (e) {
+      logger.warn('parseEmbedding: ideaEmbedding JSON.parse failed', { error: e instanceof Error ? e.message : String(e) });
       ideaEmbedding = ideaResult.rows[0].embedding;
     }
 
@@ -446,7 +450,8 @@ export async function findBestTopicForIdea(
         centroid = typeof topic.centroid_embedding === 'string'
           ? JSON.parse(topic.centroid_embedding)
           : topic.centroid_embedding;
-      } catch {
+      } catch (e) {
+        logger.warn('parseEmbedding: topic centroid JSON.parse failed', { error: e instanceof Error ? e.message : String(e) });
         centroid = topic.centroid_embedding;
       }
 
@@ -569,7 +574,8 @@ export async function findSimilarTopics(
           centroid2 = typeof topic2.centroid_embedding === 'string'
             ? JSON.parse(topic2.centroid_embedding)
             : topic2.centroid_embedding;
-        } catch {
+        } catch (e) {
+          logger.warn('parseEmbedding: topic2 centroid JSON.parse failed', { error: e instanceof Error ? e.message : String(e) });
           continue;
         }
 
@@ -648,7 +654,8 @@ export async function getTopicContextForChat(
         centroid = typeof topic.centroid_embedding === 'string'
           ? JSON.parse(topic.centroid_embedding)
           : topic.centroid_embedding;
-      } catch {
+      } catch (e) {
+        logger.warn('parseEmbedding: centroid JSON.parse failed in quality loop', { error: e instanceof Error ? e.message : String(e) });
         continue;
       }
 
@@ -700,7 +707,8 @@ export async function getTopicContextForChat(
           ideaEmbedding = typeof idea.embedding === 'string'
             ? JSON.parse(idea.embedding)
             : idea.embedding;
-        } catch {
+        } catch (e) {
+          logger.warn('parseEmbedding: idea embedding JSON.parse failed', { error: e instanceof Error ? e.message : String(e) });
           continue;
         }
 

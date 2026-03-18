@@ -4,6 +4,7 @@ import axios from 'axios';
 import { showToast } from './Toast';
 import { getTimeBasedGreeting, EMPTY_STATE_MESSAGES } from '../utils/aiPersonality';
 import { AutomationFormModal } from './AutomationFormModal';
+import { useConfirm } from './ConfirmDialog';
 import '../neurodesign.css';
 import './AutomationDashboard.css';
 
@@ -90,6 +91,7 @@ const ACTION_LABELS: Record<string, string> = {
 };
 
 export function AutomationDashboard({ context, onBack, embedded }: AutomationDashboardProps) {
+  const confirm = useConfirm();
   const greeting = getTimeBasedGreeting();
   const [automations, setAutomations] = useState<Automation[]>([]);
   const [suggestions, setSuggestions] = useState<AutomationSuggestion[]>([]);
@@ -163,7 +165,13 @@ export function AutomationDashboard({ context, onBack, embedded }: AutomationDas
   };
 
   const handleDeleteAutomation = async (id: string) => {
-    if (!window.confirm('Automation wirklich löschen?')) return;
+    const confirmed = await confirm({
+      title: 'Automation loeschen',
+      message: 'Automation wirklich loeschen?',
+      confirmText: 'Loeschen',
+      variant: 'danger',
+    });
+    if (!confirmed) return;
 
     try {
       await axios.delete(`/api/${context}/automations/${id}`);

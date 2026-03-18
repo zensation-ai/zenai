@@ -240,8 +240,8 @@ class MemoryGovernanceService {
           [context]
         );
         result.proceduresDeleted = procRes.rowCount || 0;
-      } catch {
-        // Table might not exist yet
+      } catch (e) {
+        logger.warn('deleteProceduralMemories failed (table may not exist)', { error: e instanceof Error ? e.message : String(e) });
       }
 
       // 5. Delete reflection insights
@@ -252,8 +252,8 @@ class MemoryGovernanceService {
           [context]
         );
         result.reflectionsDeleted = reflRes.rowCount || 0;
-      } catch {
-        // Table might not exist yet
+      } catch (e) {
+        logger.warn('deleteReflectionInsights failed (table may not exist)', { error: e instanceof Error ? e.message : String(e) });
       }
 
       // 6. Delete conversation memory/sessions
@@ -264,8 +264,8 @@ class MemoryGovernanceService {
           [context]
         );
         result.conversationsDeleted = convRes.rowCount || 0;
-      } catch {
-        // Table might not exist
+      } catch (e) {
+        logger.warn('deleteConversationMemory failed (table may not exist)', { error: e instanceof Error ? e.message : String(e) });
       }
 
       result.totalDeleted =
@@ -340,7 +340,8 @@ class MemoryGovernanceService {
         await this.logAudit(context, 'deleted', 'long_term', factId, 'Individual fact deleted');
       }
       return deleted;
-    } catch {
+    } catch (e) {
+      logger.warn('deleteSpecificFact failed', { error: e instanceof Error ? e.message : String(e) });
       return false;
     }
   }
@@ -402,8 +403,8 @@ class MemoryGovernanceService {
           [context]
         );
         memoryExport.procedures = procResult.rows;
-      } catch {
-        // Table might not exist
+      } catch (e) {
+        logger.warn('exportMemory: procedural_memories query failed (table may not exist)', { error: e instanceof Error ? e.message : String(e) });
       }
 
       // Reflections
@@ -415,8 +416,8 @@ class MemoryGovernanceService {
           [context]
         );
         memoryExport.reflections = reflResult.rows;
-      } catch {
-        // Table might not exist
+      } catch (e) {
+        logger.warn('exportMemory: reflection_insights query failed (table may not exist)', { error: e instanceof Error ? e.message : String(e) });
       }
 
       await this.logAudit(context, 'exported', 'long_term', undefined,
@@ -558,8 +559,8 @@ class MemoryGovernanceService {
          VALUES ($1, $2, $3, $4, $5, $6, NOW())`,
         [uuidv4(), context, action, layer, itemId || null, reason]
       );
-    } catch {
-      // If table doesn't exist, silently fail (not critical)
+    } catch (e) {
+      logger.warn('logAudit failed (table may not exist)', { error: e instanceof Error ? e.message : String(e) });
     }
   }
 
@@ -585,7 +586,8 @@ class MemoryGovernanceService {
         try {
           const result = await queryContext(context, q.sql, [context]);
           overview[q.key] = Number(result.rows[0]?.cnt || 0);
-        } catch {
+        } catch (e) {
+          logger.warn(`getMemoryOverview: ${q.key} count failed`, { error: e instanceof Error ? e.message : String(e) });
           overview[q.key] = 0;
         }
       }
@@ -603,7 +605,8 @@ class MemoryGovernanceService {
             [context]
           );
           overview[key] = Number(result.rows[0]?.cnt || 0);
-        } catch {
+        } catch (e) {
+          logger.warn(`getMemoryOverview: ${key} count failed (table may not exist)`, { error: e instanceof Error ? e.message : String(e) });
           overview[key] = 0;
         }
       }
@@ -625,7 +628,7 @@ class MemoryGovernanceService {
   private parseJsonArray(value: unknown, fallback: unknown[]): unknown[] {
     if (Array.isArray(value)) {return value;}
     if (typeof value === 'string') {
-      try { return JSON.parse(value); } catch { return fallback; }
+      try { return JSON.parse(value); } catch (e) { logger.warn('parseJsonArray: JSON.parse failed', { error: e instanceof Error ? e.message : String(e) }); return fallback; }
     }
     return fallback;
   }
