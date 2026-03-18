@@ -20,6 +20,7 @@ import {
 
 export const smartSuggestionsRouter = Router();
 
+const MAX_SSE_CLIENTS_PER_CONTEXT = 50;
 const VALID_SNOOZE_DURATIONS: SnoozeDuration[] = ['1h', '4h', 'tomorrow'];
 
 // ─── Get active suggestions ─────────────────────────────
@@ -117,6 +118,13 @@ smartSuggestionsRouter.get(
     const context = req.params.context as AIContext;
     if (!isValidContext(context)) {
       res.status(400).json({ success: false, error: 'Invalid context' });
+      return;
+    }
+
+    // Reject if too many SSE connections for this context
+    const existingClients = sseClients.get(context);
+    if (existingClients && existingClients.size >= MAX_SSE_CLIENTS_PER_CONTEXT) {
+      res.status(429).json({ success: false, error: 'Too many SSE connections' });
       return;
     }
 

@@ -46,6 +46,13 @@ export interface ScreenMemoryStats {
 }
 
 // ============================================================
+// Column list — single source of truth
+// ============================================================
+
+const CAPTURE_COLUMNS = `id, timestamp, app_name, window_title, url, ocr_text,
+  screenshot_path, duration_seconds, is_sensitive, metadata, created_at`;
+
+// ============================================================
 // CRUD
 // ============================================================
 
@@ -116,7 +123,7 @@ export async function getCaptures(
   params.push(offset);
   const offsetIdx = idx++;
 
-  const dataSql = `SELECT * FROM screen_captures ${whereClause}
+  const dataSql = `SELECT ${CAPTURE_COLUMNS} FROM screen_captures ${whereClause}
        ORDER BY timestamp DESC
        LIMIT $${limitIdx} OFFSET $${offsetIdx}`;
 
@@ -133,7 +140,7 @@ export async function getCaptures(
 
 export async function getCapture(context: AIContext, id: string, userId: string = SYSTEM_USER_ID): Promise<ScreenCapture | null> {
   const result = await queryContext(context,
-    `SELECT * FROM screen_captures WHERE id = $1 AND user_id = $2`,
+    `SELECT ${CAPTURE_COLUMNS} FROM screen_captures WHERE id = $1 AND user_id = $2`,
     [id, userId]
   );
   return result.rows[0] || null;

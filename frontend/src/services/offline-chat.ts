@@ -11,6 +11,7 @@
 import axios from 'axios';
 import { safeLocalStorage } from '../utils/storage';
 import { localInference } from './local-inference';
+import { logger } from '../utils/logger';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -269,7 +270,7 @@ if (typeof window !== 'undefined') {
   window.addEventListener('online', () => {
     syncPendingMessages().then(count => {
       if (count > 0) {
-        console.info(`[OfflineChat] Synced ${count} pending message(s)`);
+        logger.info(`[OfflineChat] Synced ${count} pending message(s)`);
       }
     });
   });

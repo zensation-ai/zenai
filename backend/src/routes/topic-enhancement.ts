@@ -17,7 +17,7 @@ import { apiKeyAuth } from '../middleware/auth';
 import { asyncHandler, ValidationError, NotFoundError } from '../middleware/errorHandler';
 import { logger } from '../utils/logger';
 import { isValidUUID, toFloatBounded, toIntBounded } from '../utils/validation';
-import { AIContext, isValidContext } from '../utils/database-context';
+import { AIContext, isValidContext, queryContext } from '../utils/database-context';
 import {
   getTopicsWithKeywords,
   calculateTopicQuality,
@@ -382,9 +382,6 @@ topicEnhancementRouter.get(
     const limit = toIntBounded(req.query.limit as string, 50, 1, 200);
 
     logger.info('Fetching orphaned ideas', { context, limit });
-
-    // This uses the helper function from the migration
-    const { queryContext } = await import('../utils/database-context');
 
     const result = await queryContext(
       context,

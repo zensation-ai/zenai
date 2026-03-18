@@ -122,6 +122,7 @@ function PendingActions({ context }: { context: AIContext }) {
   const [rejectingId, setRejectingId] = useState<string | null>(null);
   const [rejectionReason, setRejectionReason] = useState('');
   const rejectionInputRef = useRef<HTMLInputElement>(null);
+  const retryTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   // SSE controller ref removed - now using fetch-based streaming
 
   const loadPending = useCallback(async () => {
@@ -180,13 +181,16 @@ function PendingActions({ context }: { context: AIContext }) {
         if (controller.signal.aborted) return;
         retryCount++;
         if (retryCount < MAX_RETRIES) {
-          setTimeout(connectSSE, 5000 * retryCount);
+          retryTimeoutRef.current = setTimeout(connectSSE, 5000 * retryCount);
         }
       }
     }
 
     connectSSE();
-    return () => { controller.abort(); };
+    return () => {
+      controller.abort();
+      if (retryTimeoutRef.current) clearTimeout(retryTimeoutRef.current);
+    };
   }, [context, loadPending]);
 
   // Focus rejection input when it appears

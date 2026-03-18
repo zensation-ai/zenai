@@ -50,6 +50,13 @@ router.get('/agent-identities/:id', asyncHandler(async (req: Request, res: Respo
 // POST /api/agent-identities - Create identity
 router.post('/agent-identities', asyncHandler(async (req: Request, res: Response) => {
   getUserId(req); // auth check
+  const { name, role } = req.body;
+  if (!name || typeof name !== 'string' || name.trim().length === 0) {
+    return res.status(400).json({ success: false, error: 'name is required and must be a non-empty string' });
+  }
+  if (!role || typeof role !== 'string' || role.trim().length === 0) {
+    return res.status(400).json({ success: false, error: 'role is required and must be a non-empty string' });
+  }
   const service = getAgentIdentityService();
   const identity = await service.createIdentity(req.body);
   res.status(201).json({ success: true, data: identity });
@@ -58,6 +65,9 @@ router.post('/agent-identities', asyncHandler(async (req: Request, res: Response
 // PUT /api/agent-identities/:id - Update identity
 router.put('/agent-identities/:id', asyncHandler(async (req: Request, res: Response) => {
   getUserId(req); // auth check
+  if (!req.body || typeof req.body !== 'object' || Object.keys(req.body).length === 0) {
+    return res.status(400).json({ success: false, error: 'At least one field is required for update' });
+  }
   const service = getAgentIdentityService();
   const identity = await service.updateIdentity(req.params.id, req.body);
   if (!identity) {
@@ -80,6 +90,10 @@ router.delete('/agent-identities/:id', asyncHandler(async (req: Request, res: Re
 // POST /api/agent-identities/:id/validate - Validate action
 router.post('/agent-identities/:id/validate', asyncHandler(async (req: Request, res: Response) => {
   getUserId(req); // auth check
+  const { action } = req.body;
+  if (!action || typeof action !== 'string' || action.trim().length === 0) {
+    return res.status(400).json({ success: false, error: 'action is required and must be a non-empty string' });
+  }
   const service = getAgentIdentityService();
   const result = await service.validateAction(req.params.id, req.body);
   res.json({ success: true, data: result });
@@ -119,6 +133,10 @@ router.get('/agent-workflows/:id', asyncHandler(async (req: Request, res: Respon
 // POST /api/agent-workflows - Save workflow
 router.post('/agent-workflows', asyncHandler(async (req: Request, res: Response) => {
   getUserId(req); // auth check
+  const { name } = req.body;
+  if (!name || typeof name !== 'string' || name.trim().length === 0) {
+    return res.status(400).json({ success: false, error: 'name is required and must be a non-empty string' });
+  }
   const store = getWorkflowStore();
   const workflow = await store.saveWorkflow(req.body);
   res.status(201).json({ success: true, data: workflow });
@@ -243,7 +261,7 @@ router.get('/agent-workflow-runs', asyncHandler(async (req: Request, res: Respon
   const runs = await store.listRuns({
     workflowId: req.query.workflowId as string | undefined,
     status: req.query.status as string | undefined,
-    limit: parseInt(req.query.limit as string) || 20,
+    limit: parseInt(req.query.limit as string, 10) || 20,
   });
   res.json({ success: true, data: runs });
 }));

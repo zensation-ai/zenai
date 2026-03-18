@@ -32,6 +32,8 @@ import {
 
 export const governanceRouter = Router();
 
+const MAX_SSE_CLIENTS_PER_CONTEXT = 50;
+
 // SSE connections for real-time approval notifications
 const sseClients = new Map<string, Set<Response>>();
 
@@ -59,6 +61,13 @@ governanceRouter.get(
     const { context } = req.params;
     if (!isValidContext(context)) {
       res.status(400).json({ success: false, error: 'Invalid context' });
+      return;
+    }
+
+    // Reject if too many SSE connections for this context
+    const existingClients = sseClients.get(context);
+    if (existingClients && existingClients.size >= MAX_SSE_CLIENTS_PER_CONTEXT) {
+      res.status(429).json({ success: false, error: 'Too many SSE connections' });
       return;
     }
 

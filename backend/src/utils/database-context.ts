@@ -10,7 +10,7 @@
 import { Pool, QueryResult } from 'pg';
 import dotenv from 'dotenv';
 import { logger } from './logger';
-import { getCurrentUserId } from './request-context';
+import { getCurrentUserId, getCurrentRequestId } from './request-context';
 
 // Re-export isValidUUID from centralized validation module for backward compatibility
 export { isValidUUID } from './validation';
@@ -338,6 +338,7 @@ export async function queryContext(
           context: effectiveContext,
           duration,
           query: text.substring(0, 100),
+          requestId: getCurrentRequestId(),
           operation: 'slowQuery',
         });
       }
@@ -743,11 +744,16 @@ export function isPgVectorAvailable(): boolean {
   return extensionCache['vector'] === true;
 }
 
-// Backward compatibility: Keep the old single pool export
-// Now points to shared pool (all contexts use the same pool)
+/**
+ * @deprecated Use queryPublic() for public-schema queries or queryContext() for schema-isolated queries.
+ * This export bypasses schema isolation and points to the shared pool directly.
+ */
 export const pool = sharedPool;
 
-// Keep the old query function for existing code (uses personal context)
+/**
+ * @deprecated Use queryPublic() for public-schema queries or queryContext() for schema-isolated queries.
+ * This function hard-codes the 'personal' context. Prefer queryContext() with an explicit context.
+ */
 export async function query(text: string, params?: QueryParam[]): Promise<QueryResult> {
   return queryContext('personal', text, params);
 }

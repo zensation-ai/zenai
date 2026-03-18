@@ -84,6 +84,7 @@ export const OnDeviceAISettings = memo(function OnDeviceAISettings(_props: OnDev
 
   const [storageUsage, setStorageUsage] = useState(0);
   const [rebuilding, setRebuilding] = useState(false);
+  const [cacheError, setCacheError] = useState<string | null>(null);
 
   useEffect(() => {
     estimateStorageUsage().then(setStorageUsage);
@@ -101,8 +102,13 @@ export const OnDeviceAISettings = memo(function OnDeviceAISettings(_props: OnDev
   }, [rebuildModels, refreshStats]);
 
   const handleClearCache = useCallback(async () => {
-    await clearInferenceCache();
-    await refreshStats();
+    try {
+      setCacheError(null);
+      await clearInferenceCache();
+      await refreshStats();
+    } catch {
+      setCacheError('Cache konnte nicht geleert werden');
+    }
   }, [clearInferenceCache, refreshStats]);
 
   const handleClearAll = useCallback(async () => {
@@ -310,6 +316,7 @@ export const OnDeviceAISettings = memo(function OnDeviceAISettings(_props: OnDev
           <button className="odai-btn destructive" onClick={handleClearAll}>
             Alle Daten loeschen
           </button>
+          {cacheError && <p className="odai-error" role="alert">{cacheError}</p>}
         </div>
       </div>
     </div>

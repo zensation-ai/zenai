@@ -64,6 +64,19 @@ export function getCurrentUserId(): string | undefined {
 }
 
 /**
+ * Set the current request ID in the request context.
+ * Called by requestIdMiddleware after generating/reading the requestId.
+ * This ensures the requestId is available even when the middleware
+ * generates a new UUID (not just from the x-request-id header).
+ */
+export function setRequestId(requestId: string): void {
+  const store = requestContext.getStore();
+  if (store) {
+    store.requestId = requestId;
+  }
+}
+
+/**
  * Get the current request ID from the request context.
  */
 export function getCurrentRequestId(): string | undefined {

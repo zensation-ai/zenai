@@ -41,7 +41,7 @@ function validateId(res: Response, id: string): boolean {
 
 router.get('/:context/finance/overview', asyncHandler(async (req: Request, res: Response) => {
   const userId = getUserId(req);
-  const months = parseInt(req.query.months as string) || 6;
+  const months = parseInt(req.query.months as string, 10) || 6;
   const overview = await financeService.getOverview(getContext(req), months, userId);
   res.json({ success: true, data: overview });
 }));
@@ -124,8 +124,8 @@ router.get('/:context/finance/transactions', asyncHandler(async (req: Request, r
     min_amount: req.query.min_amount ? parseFloat(req.query.min_amount as string) : undefined,
     max_amount: req.query.max_amount ? parseFloat(req.query.max_amount as string) : undefined,
     is_recurring: req.query.is_recurring === 'true' ? true : req.query.is_recurring === 'false' ? false : undefined,
-    limit: parseInt(req.query.limit as string) || 50,
-    offset: parseInt(req.query.offset as string) || 0,
+    limit: parseInt(req.query.limit as string, 10) || 50,
+    offset: parseInt(req.query.offset as string, 10) || 0,
   };
   const result = await financeService.getTransactions(getContext(req), filters, userId);
   res.json({ success: true, data: result.transactions, total: result.total });

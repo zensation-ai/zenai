@@ -146,10 +146,10 @@ describe('Phase 8.2: API Contract Tests', () => {
               keywords: '["test"]',
               created_at: NOW,
               updated_at: NOW,
+              total_count: '1',
             }],
             rowCount: 1,
-          } as any)
-          .mockResolvedValueOnce({ rows: [{ total: '1' }], rowCount: 1 } as any);
+          } as any);
 
         const res = await request(ideasApp)
           .get('/api/ideas')
@@ -178,10 +178,9 @@ describe('Phase 8.2: API Contract Tests', () => {
       });
 
       it('should return empty array when no ideas exist', async () => {
-        // Route calls: 1) SELECT ideas (empty), 2) SELECT COUNT (0)
+        // Route now uses COUNT(*) OVER() — single query returns empty rows
         mockQueryContext
-          .mockResolvedValueOnce({ rows: [], rowCount: 0 } as any)
-          .mockResolvedValueOnce({ rows: [{ total: '0' }], rowCount: 1 } as any);
+          .mockResolvedValueOnce({ rows: [], rowCount: 0 } as any);
 
         const res = await request(ideasApp)
           .get('/api/ideas')

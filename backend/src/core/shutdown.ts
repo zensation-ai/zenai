@@ -1,4 +1,5 @@
 import type http from 'http';
+import { logger } from '../utils/logger';
 
 type ShutdownHandler = () => Promise<void>;
 
@@ -14,13 +15,13 @@ export class ShutdownCoordinator {
     if (this.isShuttingDown) return;
     this.isShuttingDown = true;
 
-    console.log('[Shutdown] Starting graceful shutdown...');
+    logger.info('[Shutdown] Starting graceful shutdown...');
 
     // Close HTTP server first
     if (server) {
       await new Promise<void>((resolve) => {
         server.close(() => {
-          console.log('[Shutdown] HTTP server closed');
+          logger.info('[Shutdown] HTTP server closed');
           resolve();
         });
         // Force close after 10s
@@ -32,13 +33,13 @@ export class ShutdownCoordinator {
     for (const { name, handler } of [...this.handlers].reverse()) {
       try {
         await handler();
-        console.log(`[Shutdown] ${name}: OK`);
+        logger.info(`[Shutdown] ${name}: OK`);
       } catch (err) {
-        console.error(`[Shutdown] ${name}: ERROR`, err);
+        logger.error(`[Shutdown] ${name}: ERROR`, err instanceof Error ? err : undefined);
       }
     }
 
-    console.log('[Shutdown] Complete');
+    logger.info('[Shutdown] Complete');
   }
 
   attachSignalHandlers(server: http.Server): void {

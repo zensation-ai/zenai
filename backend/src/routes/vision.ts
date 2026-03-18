@@ -29,6 +29,7 @@ import {
   isValidImageFormat,
   ImageMediaType,
 } from '../services/claude-vision';
+import { advancedRateLimiter } from '../services/security/rate-limit-advanced';
 
 export const visionRouter = Router();
 
@@ -166,6 +167,7 @@ visionRouter.get(
 visionRouter.post(
   '/analyze',
   apiKeyAuth,
+  advancedRateLimiter.ai,
   upload.single('image'),
   asyncHandler(async (req: Request, res: Response) => {
     if (!req.file) {
@@ -209,6 +211,7 @@ visionRouter.post(
 visionRouter.post(
   '/extract-text',
   apiKeyAuth,
+  advancedRateLimiter.ai,
   upload.single('image'),
   asyncHandler(async (req: Request, res: Response) => {
     if (!req.file) {
@@ -245,6 +248,7 @@ visionRouter.post(
 visionRouter.post(
   '/extract-ideas',
   apiKeyAuth,
+  advancedRateLimiter.ai,
   upload.single('image'),
   asyncHandler(async (req: Request, res: Response) => {
     if (!req.file) {
@@ -282,6 +286,7 @@ visionRouter.post(
 visionRouter.post(
   '/describe',
   apiKeyAuth,
+  advancedRateLimiter.ai,
   upload.single('image'),
   asyncHandler(async (req: Request, res: Response) => {
     if (!req.file) {
@@ -317,6 +322,7 @@ visionRouter.post(
 visionRouter.post(
   '/ask',
   apiKeyAuth,
+  advancedRateLimiter.ai,
   upload.single('image'),
   asyncHandler(async (req: Request, res: Response) => {
     if (!req.file) {
@@ -358,6 +364,7 @@ visionRouter.post(
 visionRouter.post(
   '/compare',
   apiKeyAuth,
+  advancedRateLimiter.ai,
   upload.array('images', 5),
   asyncHandler(async (req: Request, res: Response) => {
     const files = req.files as Express.Multer.File[];
@@ -400,6 +407,7 @@ visionRouter.post(
 visionRouter.post(
   '/document',
   apiKeyAuth,
+  advancedRateLimiter.ai,
   upload.single('image'),
   asyncHandler(async (req: Request, res: Response) => {
     if (!req.file) {

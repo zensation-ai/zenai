@@ -5,6 +5,8 @@
  * Falls back gracefully when running in the web browser.
  */
 
+import { logger } from './logger';
+
 /**
  * Check if running inside Electron desktop app
  */
@@ -100,5 +102,5 @@ export function initializeElectron(navigate: (path: string) => void): void {
     window.dispatchEvent(new CustomEvent('open-command-palette'));
   });
 
-  console.log(`[ZenAI] Running in Electron on ${api.platform}`);
+  logger.info(`[ZenAI] Running in Electron on ${api.platform}`);
 }

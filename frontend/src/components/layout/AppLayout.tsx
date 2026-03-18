@@ -27,6 +27,7 @@ import { useBreakpoint } from '../../hooks/useBreakpoint';
 import { UnifiedAssistant } from '../UnifiedAssistant/UnifiedAssistant';
 import { FocusMode } from '../FocusMode';
 import { CognitiveLoadIndicator } from './CognitiveLoadIndicator';
+import { ErrorBoundary } from '../ErrorBoundary';
 import './AppLayout.css';
 
 interface AppLayoutProps {
@@ -229,9 +230,9 @@ export function AppLayout({
             onToggleFavorite={toggleFavorite ? () => toggleFavorite(currentPage) : undefined}
           />
           <div className="flex items-center gap-2 pr-3 shrink-0 border-b border-white/[0.06]">
-            <CognitiveLoadIndicator context={context} />
+            <ErrorBoundary fallback={null}><CognitiveLoadIndicator context={context} /></ErrorBoundary>
             <FocusMode context={context} />
-            <ContextIndicator context={context} />
+            <ErrorBoundary fallback={null}><ContextIndicator context={context} /></ErrorBoundary>
             <ProactiveBellButton context={context} onClick={() => setProactivePanelOpen(prev => !prev)} />
           </div>
         </div>
@@ -244,7 +245,7 @@ export function AppLayout({
 
         <OfflineIndicator />
 
-        <SmartSurface context={context} />
+        <ErrorBoundary fallback={null}><SmartSurface context={context} /></ErrorBoundary>
 
         <div className="shrink-0 max-md:hidden">
           <Breadcrumbs

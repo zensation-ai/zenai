@@ -36,7 +36,7 @@ router.get(
       throw new ValidationError('Invalid context. Use: personal, work, learning, or creative.');
     }
 
-    const limit = parseInt(req.query.limit as string) || 20;
+    const limit = parseInt(req.query.limit as string, 10) || 20;
     const outcome = req.query.outcome as string | undefined;
 
     const procedures = await proceduralMemory.listProcedures(context, { limit, outcome });
@@ -126,7 +126,7 @@ router.post(
       throw new ValidationError('situation is required and must be a string.');
     }
 
-    const limit = parseInt(req.query.limit as string) || 5;
+    const limit = parseInt(req.query.limit as string, 10) || 5;
     const procedures = await proceduralMemory.recallProcedure(context, situation, limit);
 
     return res.json({ success: true, data: procedures });
@@ -211,7 +211,7 @@ router.get(
       throw new ValidationError('Query parameter "q" is required.');
     }
 
-    const limit = parseInt(req.query.limit as string) || 10;
+    const limit = parseInt(req.query.limit as string, 10) || 10;
     const results = await memoryBM25.search(q, context, limit);
 
     return res.json({ success: true, data: results });
@@ -237,7 +237,7 @@ router.get(
       throw new ValidationError('Query parameter "q" is required.');
     }
 
-    const limit = parseInt(req.query.limit as string) || 10;
+    const limit = parseInt(req.query.limit as string, 10) || 10;
     const results = await memoryBM25.hybridSearch(q, context, limit);
 
     return res.json({ success: true, data: results });

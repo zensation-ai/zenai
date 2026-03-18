@@ -21,6 +21,7 @@ import { getUserId } from '../utils/user-context';
 
 export const proactiveEngineRouter = Router();
 
+const MAX_SSE_CLIENTS_PER_CONTEXT = 50;
 const VALID_DECISIONS = ['notify', 'prepare_context', 'take_action', 'trigger_agent'] as const;
 const VALID_RISK_LEVELS = ['low', 'medium', 'high', 'critical'] as const;
 
@@ -189,6 +190,13 @@ proactiveEngineRouter.get(
     const context = req.params.context as AIContext;
     if (!isValidContext(context)) {
       res.status(400).json({ success: false, error: 'Invalid context' });
+      return;
+    }
+
+    // Reject if too many SSE connections for this context
+    const existingClients = sseClients.get(context);
+    if (existingClients && existingClients.size >= MAX_SSE_CLIENTS_PER_CONTEXT) {
+      res.status(429).json({ success: false, error: 'Too many SSE connections' });
       return;
     }
 

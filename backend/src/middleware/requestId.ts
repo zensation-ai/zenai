@@ -10,11 +10,15 @@
 
 import { Request, Response, NextFunction } from 'express';
 import { randomUUID } from 'crypto';
+import { setRequestId as setRequestIdInContext } from '../utils/request-context';
 
 const REQUEST_ID_HEADER = 'x-request-id';
 
 /**
- * Middleware that assigns a unique ID to each request
+ * Middleware that assigns a unique ID to each request.
+ * Also propagates the requestId into AsyncLocalStorage (request-context)
+ * so it is available in services, database queries, and logging without
+ * passing `res` around.
  */
 export function requestIdMiddleware(req: Request, res: Response, next: NextFunction): void {
   // Use existing request ID from header or generate new one
@@ -22,6 +26,9 @@ export function requestIdMiddleware(req: Request, res: Response, next: NextFunct
 
   // Store in res.locals for access in handlers and error middleware
   res.locals.requestId = requestId;
+
+  // Propagate into AsyncLocalStorage so queryContext, services, etc. can read it
+  setRequestIdInContext(requestId);
 
   // Add to response headers
   res.setHeader('X-Request-ID', requestId);

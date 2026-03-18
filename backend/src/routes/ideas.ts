@@ -105,7 +105,7 @@ async function handleTriageGet(ctx: AIContext, req: Request, res: Response) {
 
   const result = await queryContext(
     ctx,
-    `SELECT ${IDEA_TRIAGE_COLUMNS}
+    `SELECT ${IDEA_TRIAGE_COLUMNS}, COUNT(*) OVER() AS total_count
      FROM ideas i
      LEFT JOIN triage_history th ON th.idea_id = i.id
        AND th.created_at > NOW() - INTERVAL '24 hours'
@@ -126,23 +126,12 @@ async function handleTriageGet(ctx: AIContext, req: Request, res: Response) {
     params
   );
 
-  const countResult = await queryContext(
-    ctx,
-    `SELECT COUNT(*) as total
-     FROM ideas i
-     LEFT JOIN triage_history th ON th.idea_id = i.id
-       AND th.created_at > NOW() - INTERVAL '24 hours'
-     WHERE i.context = $1
-       AND i.is_archived = false
-       AND th.id IS NULL
-       AND i.user_id = $2`,
-    [ctx, userId]
-  );
+  const total = result.rows.length > 0 ? parseInt(result.rows[0].total_count, 10) : 0;
 
   res.json({
     success: true,
     ideas: parseIdeaRows(result.rows as IdeaDatabaseRow[]),
-    total: parseInt(countResult.rows[0].total, 10),
+    total,
     hasMore: result.rows.length === limit,
   });
 }
@@ -298,7 +287,7 @@ async function handleListIdeas(ctx: AIContext, req: Request, res: Response) {
 
   const result = await queryContext(
     ctx,
-    `SELECT ${IDEA_LIST_COLUMNS}
+    `SELECT ${IDEA_LIST_COLUMNS}, COUNT(*) OVER() AS total_count
      FROM ideas
      WHERE is_archived = false AND user_id = $1 ${whereClause}
      ORDER BY created_at DESC
@@ -306,20 +295,16 @@ async function handleListIdeas(ctx: AIContext, req: Request, res: Response) {
     [...params, limit, offset]
   );
 
-  const countResult = await queryContext(
-    ctx,
-    `SELECT COUNT(*) as total FROM ideas WHERE is_archived = false AND user_id = $1 ${whereClause}`,
-    params
-  );
+  const total = result.rows.length > 0 ? parseInt(result.rows[0].total_count, 10) : 0;
 
   res.json({
     success: true,
     ideas: parseIdeaRows(result.rows as IdeaDatabaseRow[]),
     pagination: {
-      total: parseInt(countResult.rows[0].total, 10),
+      total,
       limit,
       offset,
-      hasMore: offset + limit < parseInt(countResult.rows[0].total, 10),
+      hasMore: offset + limit < total,
     },
   });
 }
@@ -338,7 +323,7 @@ async function handleArchivedList(ctx: AIContext, req: Request, res: Response) {
 
   const result = await queryContext(
     ctx,
-    `SELECT ${IDEA_LIST_COLUMNS}
+    `SELECT ${IDEA_LIST_COLUMNS}, COUNT(*) OVER() AS total_count
      FROM ideas
      WHERE is_archived = true AND user_id = $3
      ORDER BY updated_at DESC
@@ -346,20 +331,16 @@ async function handleArchivedList(ctx: AIContext, req: Request, res: Response) {
     [pagination.limit, pagination.offset, userId]
   );
 
-  const countResult = await queryContext(
-    ctx,
-    'SELECT COUNT(*) as total FROM ideas WHERE is_archived = true AND user_id = $1',
-    [userId]
-  );
+  const total = result.rows.length > 0 ? parseInt(result.rows[0].total_count, 10) : 0;
 
   res.json({
     success: true,
     ideas: parseIdeaRows(result.rows as IdeaDatabaseRow[]),
     pagination: {
-      total: parseInt(countResult.rows[0].total, 10),
+      total,
       limit: pagination.limit,
       offset: pagination.offset,
-      hasMore: pagination.offset + pagination.limit < parseInt(countResult.rows[0].total, 10),
+      hasMore: pagination.offset + pagination.limit < total,
     },
   });
 }

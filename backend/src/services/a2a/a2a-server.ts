@@ -15,7 +15,7 @@
 
 import { AIContext } from '../../utils/database-context';
 import { logger } from '../../utils/logger';
-import { a2aTaskManager, A2ATask } from './task-manager';
+import { a2aTaskManager, A2ATask, A2AMessage } from './task-manager';
 import { isValidSkill } from './agent-card';
 
 // ===========================================
@@ -112,7 +112,7 @@ export class A2AServer {
 
     const task = await a2aTaskManager.createTask(context, {
       skill_id: skillId,
-      message: params.message as any,
+      message: params.message as A2AMessage,
       metadata: (params.metadata as Record<string, unknown>) || {},
       caller_agent_url: params.caller_agent_url as string | undefined,
       caller_agent_name: params.caller_agent_name as string | undefined,
@@ -172,7 +172,7 @@ export class A2AServer {
 
     const task = await a2aTaskManager.createTask(context, {
       skill_id: skillId,
-      message: params.message as any,
+      message: params.message as A2AMessage,
       metadata: (params.metadata as Record<string, unknown>) || {},
       caller_agent_url: params.caller_agent_url as string | undefined,
       caller_agent_name: params.caller_agent_name as string | undefined,

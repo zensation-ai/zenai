@@ -36,6 +36,7 @@ export function FocusMode({ context, onToggle }: FocusModeProps) {
   const [showDurations, setShowDurations] = useState(false);
   const [customMinutes, setCustomMinutes] = useState('');
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const fetchStatus = useCallback(async () => {
     try {
@@ -77,6 +78,7 @@ export function FocusMode({ context, onToggle }: FocusModeProps) {
   const handleStart = async (minutes: number) => {
     setLoading(true);
     setShowDurations(false);
+    setError(null);
     try {
       const res = await axios.post(`/api/${context}/focus/start`, {
         durationMinutes: minutes,
@@ -88,7 +90,7 @@ export function FocusMode({ context, onToggle }: FocusModeProps) {
         onToggle?.(true);
       }
     } catch {
-      // Error handled silently
+      setError('Fokus-Sitzung konnte nicht gestartet werden');
     } finally {
       setLoading(false);
     }
@@ -96,6 +98,7 @@ export function FocusMode({ context, onToggle }: FocusModeProps) {
 
   const handleEnd = async () => {
     setLoading(true);
+    setError(null);
     try {
       await axios.post(`/api/${context}/focus/end`);
       setActive(false);
@@ -103,7 +106,7 @@ export function FocusMode({ context, onToggle }: FocusModeProps) {
       setRemainingMinutes(0);
       onToggle?.(false);
     } catch {
-      // Error handled silently
+      setError('Fokus-Sitzung konnte nicht beendet werden');
     } finally {
       setLoading(false);
     }
@@ -132,9 +135,11 @@ export function FocusMode({ context, onToggle }: FocusModeProps) {
           className="focus-mode-btn focus-mode-btn--stop"
           onClick={handleEnd}
           disabled={loading}
+          aria-busy={loading}
         >
           Beenden
         </button>
+        {error && <p className="focus-error" role="alert">{error}</p>}
       </div>
     );
   }
@@ -145,9 +150,12 @@ export function FocusMode({ context, onToggle }: FocusModeProps) {
         className="focus-mode-btn focus-mode-btn--start"
         onClick={() => setShowDurations(!showDurations)}
         disabled={loading}
+        aria-busy={loading}
       >
         <span aria-hidden="true">{'\u{1F3AF}'}</span> Focus Mode
       </button>
+
+      {error && <p className="focus-error" role="alert">{error}</p>}
 
       {showDurations && (
         <div className="focus-mode-durations">
@@ -170,6 +178,7 @@ export function FocusMode({ context, onToggle }: FocusModeProps) {
               value={customMinutes}
               onChange={(e) => setCustomMinutes(e.target.value)}
               className="focus-mode-custom-input"
+              aria-label="Fokus-Dauer in Minuten"
               onKeyDown={(e) => { if (e.key === 'Enter') handleCustomStart(); }}
             />
             <button

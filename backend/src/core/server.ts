@@ -296,7 +296,6 @@ export function startIfMain(callerModule: NodeModule | undefined, callerRef: Nod
   if (callerModule === callerRef) {
     startServer().catch((error) => {
       logger.error('FATAL: Server startup failed', error instanceof Error ? error : undefined);
-      console.error('Server startup failed:', error);
       process.exit(1);
     });
   }

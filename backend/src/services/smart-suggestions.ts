@@ -9,6 +9,13 @@ import { AIContext, queryContext } from '../utils/database-context';
 import { logger } from '../utils/logger';
 
 // ===========================================
+// Column list — single source of truth
+// ===========================================
+
+const SUGGESTION_COLUMNS = `id, user_id, type, title, description, metadata,
+  priority, status, snoozed_until, dismissed_at, created_at`;
+
+// ===========================================
 // Types
 // ===========================================
 
@@ -57,7 +64,7 @@ export async function getActiveSuggestions(
   try {
     const result = await queryContext(
       context,
-      `SELECT * FROM smart_suggestions
+      `SELECT ${SUGGESTION_COLUMNS} FROM smart_suggestions
        WHERE user_id = $1
          AND (
            (status = 'active')

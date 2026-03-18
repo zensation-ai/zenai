@@ -9,6 +9,7 @@
  */
 
 import axios, { AxiosError, type AxiosResponse, type InternalAxiosRequestConfig } from 'axios';
+import { logger } from './logger';
 
 // ---------------------------------------------------------------------------
 // Timeout configuration per endpoint category
@@ -232,7 +233,7 @@ export function installResilienceInterceptors(): void {
           config.__isRetry = true;
 
           const retryDelay = getRetryDelay(retryCount);
-          console.debug(
+          logger.debug(
             `[API Retry] ${config.method?.toUpperCase()} ${config.url} - ` +
             `attempt ${retryCount + 1}/${maxRetries} after ${Math.round(retryDelay)}ms ` +
             `(${error.code || error.response?.status || 'network error'})`

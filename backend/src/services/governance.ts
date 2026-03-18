@@ -93,6 +93,20 @@ export interface AuditEntry {
   created_at: string;
 }
 
+// ===========================================
+// Column lists — single source of truth
+// ===========================================
+
+const GOVERNANCE_ACTION_COLUMNS = `id, context, action_type, action_source, source_id,
+  description, payload, risk_level, status, requires_approval, approved_by, approved_at,
+  rejection_reason, executed_at, execution_result, expires_at, created_at, updated_at`;
+
+const GOVERNANCE_POLICY_COLUMNS = `id, context, name, description, action_type, conditions,
+  risk_level, auto_approve, notify_on_auto_approve, is_active, created_at, updated_at`;
+
+const AUDIT_LOG_COLUMNS = `id, context, event_type, actor, target_type, target_id,
+  description, metadata, created_at`;
+
 export interface ActionRequest {
   action_type: ActionType;
   action_source: ActionSource;
@@ -191,7 +205,7 @@ export async function evaluatePolicy(
 ): Promise<PolicyEvaluation> {
   const result = await queryContext(
     context,
-    `SELECT * FROM governance_policies
+    `SELECT ${GOVERNANCE_POLICY_COLUMNS} FROM governance_policies
      WHERE action_type = $1 AND is_active = true
      ORDER BY created_at DESC`,
     [action.action_type]
@@ -424,7 +438,7 @@ export async function getPendingActions(
 ): Promise<GovernanceAction[]> {
   const { action_type, limit = 50, offset = 0 } = filters;
 
-  let sql = `SELECT * FROM governance_actions WHERE status = 'pending' AND expires_at > NOW()`;
+  let sql = `SELECT ${GOVERNANCE_ACTION_COLUMNS} FROM governance_actions WHERE status = 'pending' AND expires_at > NOW()`;
   const params: (string | number)[] = [];
   let paramIndex = 1;
 
@@ -449,7 +463,7 @@ export async function getActionHistory(
 ): Promise<GovernanceAction[]> {
   const { status, action_type, limit = 50, offset = 0 } = filters;
 
-  let sql = 'SELECT * FROM governance_actions WHERE 1=1';
+  let sql = `SELECT ${GOVERNANCE_ACTION_COLUMNS} FROM governance_actions WHERE 1=1`;
   const params: (string | number)[] = [];
   let paramIndex = 1;
 
@@ -475,7 +489,7 @@ export async function getActionById(
 ): Promise<GovernanceAction | null> {
   const result = await queryContext(
     context,
-    'SELECT * FROM governance_actions WHERE id = $1',
+    `SELECT ${GOVERNANCE_ACTION_COLUMNS} FROM governance_actions WHERE id = $1`,
     [actionId]
   );
   return (result.rows[0] as GovernanceAction) || null;
@@ -523,7 +537,7 @@ export async function getAuditLog(
 ): Promise<AuditEntry[]> {
   const { event_type, actor, target_id, limit = 50, offset = 0, days = 30 } = filters;
 
-  let sql = `SELECT * FROM audit_log WHERE created_at > NOW() - INTERVAL '1 day' * $1`;
+  let sql = `SELECT ${AUDIT_LOG_COLUMNS} FROM audit_log WHERE created_at > NOW() - INTERVAL '1 day' * $1`;
   const params: (string | number)[] = [days];
   let paramIndex = 2;
 
@@ -629,7 +643,7 @@ export async function listPolicies(
   context: AIContext,
   activeOnly = false
 ): Promise<GovernancePolicy[]> {
-  let sql = 'SELECT * FROM governance_policies';
+  let sql = `SELECT ${GOVERNANCE_POLICY_COLUMNS} FROM governance_policies`;
   if (activeOnly) {sql += ' WHERE is_active = true';}
   sql += ' ORDER BY action_type, created_at DESC';
   const result = await queryContext(context, sql);

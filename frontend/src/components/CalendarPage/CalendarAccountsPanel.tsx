@@ -249,6 +249,7 @@ export function CalendarAccountsPanel({
                       className="cal-accounts__action-btn cal-accounts__action-btn--sync"
                       onClick={() => handleSync(account.id)}
                       disabled={isSyncing || isDeleting}
+                      aria-label={`Synchronisieren: ${account.display_name || account.provider}`}
                     >
                       {isSyncing ? (
                         <>
@@ -257,7 +258,7 @@ export function CalendarAccountsPanel({
                         </>
                       ) : (
                         <>
-                          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
                             <path d="M1.75 7C1.75 4.1 4.1 1.75 7 1.75c1.7 0 3.2.82 4.15 2.08M12.25 7c0 2.9-2.35 5.25-5.25 5.25-1.7 0-3.2-.82-4.15-2.08" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
                             <path d="M10.5 1.75v2.33h-2.33M3.5 12.25V9.92h2.33" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
                           </svg>
@@ -269,6 +270,7 @@ export function CalendarAccountsPanel({
                       className="cal-accounts__action-btn cal-accounts__action-btn--danger"
                       onClick={() => handleDelete(account.id)}
                       disabled={isSyncing || isDeleting}
+                      aria-label={`Trennen: ${account.display_name || account.provider}`}
                     >
                       {isDeleting ? 'Wird entfernt...' : 'Trennen'}
                     </button>
@@ -297,6 +299,7 @@ export function CalendarAccountsPanel({
                     key={key}
                     className={`cal-accounts__provider-btn ${formData.provider === key ? 'active' : ''}`}
                     onClick={() => setFormData(p => ({ ...p, provider: key }))}
+                    aria-pressed={formData.provider === key}
                   >
                     <span className="cal-accounts__provider-icon">{info.icon}</span>
                     <span>{info.label}</span>
@@ -322,8 +325,9 @@ export function CalendarAccountsPanel({
               </div>
 
               <div className="cal-accounts__field">
-                <label>{formData.provider === 'icloud' ? 'Apple-ID' : 'E-Mail / Benutzername'}</label>
+                <label htmlFor="cal-account-username">{formData.provider === 'icloud' ? 'Apple-ID' : 'E-Mail / Benutzername'}</label>
                 <input
+                  id="cal-account-username"
                   type="email"
                   value={formData.username}
                   onChange={e => setFormData(p => ({ ...p, username: e.target.value }))}
@@ -334,10 +338,11 @@ export function CalendarAccountsPanel({
               </div>
 
               <div className="cal-accounts__field">
-                <label>
+                <label htmlFor="cal-account-password">
                   {formData.provider === 'icloud' ? 'App-spezifisches Passwort' : 'Passwort'}
                 </label>
                 <input
+                  id="cal-account-password"
                   type="password"
                   value={formData.password}
                   onChange={e => setFormData(p => ({ ...p, password: e.target.value }))}
@@ -347,8 +352,9 @@ export function CalendarAccountsPanel({
               </div>
 
               <div className="cal-accounts__field">
-                <label>Anzeigename <span className="cal-accounts__optional">(optional)</span></label>
+                <label htmlFor="cal-account-displayname">Anzeigename <span className="cal-accounts__optional">(optional)</span></label>
                 <input
+                  id="cal-account-displayname"
                   type="text"
                   value={formData.display_name}
                   onChange={e => setFormData(p => ({ ...p, display_name: e.target.value }))}

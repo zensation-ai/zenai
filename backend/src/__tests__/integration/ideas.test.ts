@@ -113,9 +113,9 @@ describe('Ideas API Integration Tests', () => {
         },
       ];
 
+      const mockIdeasWithCount = mockIdeas.map(i => ({ ...i, total_count: '2' }));
       mockQueryContext
-        .mockResolvedValueOnce({ rows: mockIdeas, rowCount: 2 } as any)
-        .mockResolvedValueOnce({ rows: [{ total: '2' }], rowCount: 1 } as any);
+        .mockResolvedValueOnce({ rows: mockIdeasWithCount, rowCount: 2 } as any);
 
       const response = await request(app)
         .get('/api/ideas')
@@ -129,8 +129,7 @@ describe('Ideas API Integration Tests', () => {
 
     it('should filter ideas by type', async () => {
       mockQueryContext
-        .mockResolvedValueOnce({ rows: [], rowCount: 0 } as any)
-        .mockResolvedValueOnce({ rows: [{ total: '0' }], rowCount: 1 } as any);
+        .mockResolvedValueOnce({ rows: [], rowCount: 0 } as any);
 
       const response = await request(app)
         .get('/api/ideas?type=task')
@@ -144,9 +143,9 @@ describe('Ideas API Integration Tests', () => {
     });
 
     it('should respect pagination parameters', async () => {
+      const paginatedRows = Array.from({ length: 10 }, (_, i) => ({ id: `id-${i}`, title: `Idea ${i}`, total_count: '100' }));
       mockQueryContext
-        .mockResolvedValueOnce({ rows: [], rowCount: 0 } as any)
-        .mockResolvedValueOnce({ rows: [{ total: '100' }], rowCount: 1 } as any);
+        .mockResolvedValueOnce({ rows: paginatedRows, rowCount: 10 } as any);
 
       const response = await request(app)
         .get('/api/ideas?limit=10&offset=20')

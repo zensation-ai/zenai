@@ -1024,7 +1024,7 @@ describe('Agent Identity Routes', () => {
 
     const res = await request(app)
       .post('/api/agent-identities/agent-001/validate')
-      .send({ type: 'tool_call', resource: 'tools.x', impactLevel: 'low' });
+      .send({ action: 'tool_call', type: 'tool_call', resource: 'tools.x', impactLevel: 'low' });
 
     expect(res.status).toBe(200);
     expect(res.body.data.allowed).toBe(true);

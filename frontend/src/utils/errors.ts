@@ -1,4 +1,5 @@
 import { AxiosError, isAxiosError } from 'axios';
+import { logger } from './logger';
 
 /**
  * Type-safe error extraction from Axios errors
@@ -265,5 +266,5 @@ export function logError(context: string, error: unknown): void {
   const message = getErrorMessage(error);
   const category = categorizeError(error);
 
-  console.error(`[${context}] [${category}] ${message}`, error);
+  logger.error(`[${context}] [${category}] ${message}`, error);
 }

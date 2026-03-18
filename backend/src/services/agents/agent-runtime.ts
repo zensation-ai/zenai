@@ -21,6 +21,18 @@ import { executeTeamTask, TeamResult } from '../agent-orchestrator';
 import { sendNotification } from '../push-notifications';
 
 // ===========================================
+// Column lists — single source of truth
+// ===========================================
+
+const AGENT_DEF_COLUMNS = `id, name, description, instructions, triggers, tools, context,
+  status, approval_required, max_actions_per_day, token_budget_daily, template_id,
+  created_at, updated_at`;
+
+const AGENT_EXEC_COLUMNS = `id, agent_definition_id, trigger_type, trigger_data, status,
+  result, actions_taken, approval_status, tokens_used, execution_time_ms, error_message,
+  created_at, completed_at`;
+
+// ===========================================
 // Types
 // ===========================================
 
@@ -109,7 +121,7 @@ class AgentRuntime {
     for (const context of contexts) {
       try {
         const result = await queryContext(context, `
-          SELECT * FROM agent_definitions WHERE status = 'active'
+          SELECT ${AGENT_DEF_COLUMNS} FROM agent_definitions WHERE status = 'active'
         `, []);
 
         for (const row of result.rows) {
@@ -462,7 +474,7 @@ class AgentRuntime {
 
   async getAgent(context: AIContext, agentId: string): Promise<AgentDefinition | null> {
     const result = await queryContext(context, `
-      SELECT * FROM agent_definitions WHERE id = $1
+      SELECT ${AGENT_DEF_COLUMNS} FROM agent_definitions WHERE id = $1
     `, [agentId]);
 
     return result.rows.length > 0 ? this.rowToDefinition(result.rows[0]) : null;
@@ -470,7 +482,7 @@ class AgentRuntime {
 
   async listAgents(context: AIContext): Promise<AgentDefinition[]> {
     const result = await queryContext(context, `
-      SELECT * FROM agent_definitions ORDER BY created_at DESC
+      SELECT ${AGENT_DEF_COLUMNS} FROM agent_definitions ORDER BY created_at DESC
     `, []);
 
     return result.rows.map((r: Record<string, unknown>) => this.rowToDefinition(r));
@@ -572,7 +584,7 @@ class AgentRuntime {
 
   async getExecutionLogs(context: AIContext, agentId: string, limit = 20): Promise<AgentExecution[]> {
     const result = await queryContext(context, `
-      SELECT * FROM agent_executions
+      SELECT ${AGENT_EXEC_COLUMNS} FROM agent_executions
       WHERE agent_definition_id = $1
       ORDER BY created_at DESC
       LIMIT $2

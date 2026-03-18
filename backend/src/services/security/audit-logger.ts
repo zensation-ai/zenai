@@ -65,6 +65,13 @@ export interface AuditLogFilters {
 }
 
 // ===========================================
+// Column list — single source of truth
+// ===========================================
+
+const SECURITY_AUDIT_COLUMNS = `id, event_type, user_id, ip_address, user_agent,
+  details, severity, context, created_at`;
+
+// ===========================================
 // Severity defaults per event type
 // ===========================================
 
@@ -183,7 +190,7 @@ class SecurityAuditLogger {
     const [dataResult, countResult] = await Promise.all([
       queryContext(
         context,
-        `SELECT * FROM security_audit_log ${whereClause}
+        `SELECT ${SECURITY_AUDIT_COLUMNS} FROM security_audit_log ${whereClause}
          ORDER BY created_at DESC
          LIMIT $${paramIdx} OFFSET $${paramIdx + 1}`,
         [...params, limit, offset]
@@ -217,7 +224,7 @@ class SecurityAuditLogger {
 
     const result = await queryContext(
       context,
-      `SELECT * FROM security_audit_log
+      `SELECT ${SECURITY_AUDIT_COLUMNS} FROM security_audit_log
        WHERE ${severityFilter}
        ORDER BY created_at DESC
        LIMIT ${limitParam}`,

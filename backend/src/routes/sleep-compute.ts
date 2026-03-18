@@ -24,7 +24,7 @@ router.get('/:context/sleep-compute/logs', asyncHandler(async (req: Request, res
     return res.status(400).json({ success: false, error: 'Invalid context' });
   }
 
-  const limit = Math.min(parseInt(req.query.limit as string) || 20, 100);
+  const limit = Math.min(parseInt(req.query.limit as string, 10) || 20, 100);
   const result = await queryContext(context, `
     SELECT id, cycle_type, processed_items, insights_generated,
            contradictions_resolved, memory_updates, duration_ms, created_at

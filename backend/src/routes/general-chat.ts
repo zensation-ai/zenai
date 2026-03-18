@@ -65,6 +65,7 @@ import { getUnifiedContext } from '../services/business-context';
 import { getPersonalFactsPromptSection } from '../services/personal-facts-bridge';
 import { getUserId } from '../utils/user-context';
 import { inputScreeningMiddleware } from '../middleware/input-screening';
+import { advancedRateLimiter } from '../services/security/rate-limit-advanced';
 
 export const generalChatRouter = Router();
 
@@ -521,7 +522,7 @@ generalChatRouter.get('/thinking-modes', apiKeyAuth, asyncHandler(async (_req: R
   });
 }));
 
-generalChatRouter.post('/sessions/:id/messages/stream', apiKeyAuth, requireScope('write'), inputScreeningMiddleware, validateBody(ChatMessageSchema), asyncHandler(async (req: Request, res: Response) => {
+generalChatRouter.post('/sessions/:id/messages/stream', apiKeyAuth, requireScope('write'), advancedRateLimiter.ai, inputScreeningMiddleware, validateBody(ChatMessageSchema), asyncHandler(async (req: Request, res: Response) => {
   const userId = getUserId(req);
   const { id } = req.params;
   const { message, thinking_mode, assistantMode } = req.body;

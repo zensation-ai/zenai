@@ -25,7 +25,7 @@ aiTracesRouter.get(
   requireScope('read'),
   asyncHandler(async (req: Request, res: Response) => {
     const userId = getUserId(req);
-    const days = Math.min(parseInt(req.query.days as string) || 7, 90);
+    const days = Math.min(parseInt(req.query.days as string, 10) || 7, 90);
     const since = new Date();
     since.setDate(since.getDate() - days);
 
@@ -97,8 +97,8 @@ aiTracesRouter.get(
   requireScope('read'),
   asyncHandler(async (req: Request, res: Response) => {
     const authUserId = getUserId(req);
-    const limit = Math.min(parseInt(req.query.limit as string) || 50, 200);
-    const offset = parseInt(req.query.offset as string) || 0;
+    const limit = Math.min(parseInt(req.query.limit as string, 10) || 50, 200);
+    const offset = parseInt(req.query.offset as string, 10) || 0;
     const name = req.query.name as string | undefined;
 
     // Always scope to authenticated user

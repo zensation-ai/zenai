@@ -22,7 +22,7 @@ import {
 } from '../services/thought-incubator';
 import { runDailyLearning, getPersonalizedPromptContext } from '../services/learning-engine';
 import { getUserProfile, getRecommendations } from '../services/user-profile';
-import { AIContext, isValidContext, isValidUUID } from '../utils/database-context';
+import { AIContext, isValidContext, isValidUUID, getPool } from '../utils/database-context';
 import { apiKeyAuth, requireScope } from '../middleware/auth';
 import { asyncHandler, ValidationError } from '../middleware/errorHandler';
 
@@ -270,7 +270,6 @@ router.post('/backfill-embeddings', apiKeyAuth, requireScope('write'), asyncHand
 router.get('/debug', apiKeyAuth, requireScope('admin'), asyncHandler(async (req: Request, res: Response) => {
   const context = getContextFromRequest(req);
   const userId = getUserId(req);
-  const { getPool, isValidContext } = await import('../utils/database-context');
   if (!isValidContext(context)) {
     res.status(400).json({ success: false, error: 'Invalid context' });
     return;

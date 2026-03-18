@@ -28,6 +28,7 @@ import {
   updateExecutionStatus,
   getExecutionStatus,
 } from '../services/agent-checkpoints';
+import { advancedRateLimiter } from '../services/security/rate-limit-advanced';
 
 export const agentTeamsRouter = Router();
 
@@ -39,6 +40,7 @@ agentTeamsRouter.post(
   '/execute',
   apiKeyAuth,
   requireScope('write'),
+  advancedRateLimiter.ai,
   asyncHandler(async (req: Request, res: Response) => {
     const {
       task,
@@ -364,6 +366,7 @@ agentTeamsRouter.post(
   '/execute/stream',
   apiKeyAuth,
   requireScope('write'),
+  advancedRateLimiter.ai,
   async (req: Request, res: Response) => {
     try {
       getUserId(req); // auth check

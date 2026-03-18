@@ -186,7 +186,7 @@ const SECRET_DEFINITIONS: SecretDefinition[] = [
   {
     key: 'ANTHROPIC_API_KEY',
     category: SecretCategory.AI,
-    requirement: SecretRequirement.OPTIONAL,
+    requirement: SecretRequirement.PRODUCTION_REQUIRED,
     format: SecretFormat.API_KEY,
     description: 'Anthropic API key for Claude models',
     pattern: /^sk-ant-[a-zA-Z0-9-_]+$/,

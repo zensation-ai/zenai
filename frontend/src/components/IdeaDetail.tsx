@@ -259,7 +259,7 @@ export function IdeaDetail({ idea, onClose, onNavigate, onConvertToTask, onOpenI
                 <div className="research-result">
                   <p className="research-text">{researchResult}</p>
                   <div className="research-actions">
-                    <button type="button" className="research-copy-btn neuro-button neuro-focus-ring" onClick={async () => { await navigator.clipboard.writeText(researchResult); showToast('Kopiert', 'success'); }}>
+                    <button type="button" className="research-copy-btn neuro-button neuro-focus-ring" onClick={async () => { try { await navigator.clipboard.writeText(researchResult); showToast('Kopiert', 'success'); } catch { showToast('Kopieren fehlgeschlagen', 'error'); } }}>
                       📋 Kopieren
                     </button>
                     <button type="button" className="research-clear-btn neuro-button neuro-focus-ring" onClick={() => setResearchResult(null)}>
