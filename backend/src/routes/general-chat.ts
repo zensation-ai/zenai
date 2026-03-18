@@ -64,6 +64,7 @@ import { memoryCoordinator, episodicMemory, workingMemory } from '../services/me
 import { getUnifiedContext } from '../services/business-context';
 import { getPersonalFactsPromptSection } from '../services/personal-facts-bridge';
 import { getUserId } from '../utils/user-context';
+import { generateSessionTitle } from '../services/general-chat/auto-title';
 import { inputScreeningMiddleware } from '../middleware/input-screening';
 import { advancedRateLimiter } from '../services/security/rate-limit-advanced';
 
@@ -1122,6 +1123,10 @@ generalChatRouter.post('/sessions/:id/messages/stream', apiKeyAuth, requireScope
       episodicMemory.store(message, fullResponse, id, contextType).catch(error => {
         logger.warn('Failed to record episodic memory from stream - conversation may not be remembered', { sessionId: id, error });
       });
+
+      // Fire-and-forget: generate AI-quality session title (Phase 100 C5)
+      // Only triggers on first response (when title is still NULL)
+      generateSessionTitle(id, message, fullResponse).catch(() => {/* swallowed */});
 
       logger.info('Streaming chat complete', {
         sessionId: id,
