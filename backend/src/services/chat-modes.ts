@@ -223,6 +223,12 @@ const TOOL_PATTERNS: Array<{ pattern: RegExp; tools: string[]; weight: number }>
   { pattern: /create\s+(a\s+)?(github\s+)?issue/i, tools: ['github_create_issue'], weight: 0.95 },
   { pattern: /github\s+repo(sitory)?\s+info/i, tools: ['github_repo_info'], weight: 0.9 },
 
+  // Phase 100 B5: Expanded German verb triggers
+  { pattern: /übersetz(e|en?)\s+/i, tools: ['execute_code'], weight: 0.9 },
+  { pattern: /generier(e|en?)\s+.{0,30}(code|script|programm)/i, tools: ['execute_code'], weight: 0.9 },
+  { pattern: /konvertier(e|en?)\s+/i, tools: ['execute_code'], weight: 0.85 },
+  { pattern: /formatier(e|en?)\s+/i, tools: ['execute_code'], weight: 0.85 },
+
   // English fallback patterns for core tools
   { pattern: /remember\s+(that|this)/i, tools: ['remember'], weight: 0.95 },
   { pattern: /do\s+you\s+remember/i, tools: ['recall'], weight: 0.9 },
@@ -256,6 +262,12 @@ const AGENT_PATTERNS: Array<{ pattern: RegExp; weight: number }> = [
   // Planning requests
   { pattern: /plane\s+.{10,}\s+basierend\s+auf/i, weight: 0.9 },
   { pattern: /entwickle\s+(eine?\s+)?strategie/i, weight: 0.9 },
+
+  // Phase 100 B5: Expanded agent triggers
+  { pattern: /recherchiere\s+ausführlich/i, weight: 0.9 },
+  { pattern: /analysiere\s+im\s+detail/i, weight: 0.9 },
+  { pattern: /vergleiche\s+.{5,}\s+und\s+(bewerte|evaluiere)/i, weight: 0.9 },
+  { pattern: /erstelle\s+(einen?\s+)?(umfassenden?|detaillierten?|ausführlichen?)\s+(bericht|report|analyse)/i, weight: 0.9 },
 ];
 
 /**
@@ -280,6 +292,12 @@ const RAG_PATTERNS: Array<{ pattern: RegExp; urgency: 'required' | 'recommended'
   // Personal knowledge questions
   { pattern: /was\s+weiß\s+(ich|du)\s+(über|zu|von)/i, urgency: 'recommended', weight: 0.75 },
   { pattern: /habe\s+ich\s+(schon\s+)?(mal|bereits)/i, urgency: 'recommended', weight: 0.75 },
+
+  // Phase 100 B5: Expanded RAG triggers
+  { pattern: /was\s+weißt\s+du\s+(über|zu|von)/i, urgency: 'required', weight: 0.9 },
+  { pattern: /in\s+meinen?\s+(notizen?|ideen?|gedanken)/i, urgency: 'required', weight: 0.9 },
+  { pattern: /habe\s+ich\s+erwähnt/i, urgency: 'required', weight: 0.85 },
+  { pattern: /erinner(e|st)?\s+dich\s+an/i, urgency: 'required', weight: 0.9 },
 ];
 
 // ===========================================
