@@ -16,6 +16,7 @@ import {
   getRAGStrategyPerformance,
   getRAGQueryHistory,
 } from '../services/rag-feedback';
+import { getRAGEvaluationStats } from '../services/rag-evaluation';
 
 const router = Router();
 
@@ -111,6 +112,25 @@ router.get(
     const limit = parseInt(req.query.limit as string, 10) || 50;
     const history = await getRAGQueryHistory(context, limit);
     return res.json({ success: true, data: history });
+  })
+);
+
+/**
+ * GET /api/:context/rag/evaluation
+ * Get RAG evaluation metrics (Precision@k, MRR, NDCG) per strategy
+ */
+router.get(
+  '/:context/rag/evaluation',
+  asyncHandler(async (req: Request, res: Response) => {
+    const context = validateContextParam(req.params.context);
+    getUserId(req); // auth check
+    if (!isValidContext(context)) {
+      throw new ValidationError('Invalid context. Use: personal, work, learning, or creative.');
+    }
+
+    const days = parseInt(req.query.days as string, 10) || 30;
+    const stats = await getRAGEvaluationStats(context, days);
+    return res.json({ success: true, data: stats });
   })
 );
 
