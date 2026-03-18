@@ -1307,6 +1307,84 @@ export const TOOL_MEMORY_RESTRUCTURE: ToolDefinition = {
 };
 
 // ===========================================
+// Phase 100: Memory Self-Editing Tools
+// ===========================================
+
+/**
+ * Memory replace tool - Find and replace a fact with audit trail
+ */
+export const TOOL_MEMORY_REPLACE: ToolDefinition = {
+  name: 'memory_replace',
+  description:
+    'Ersetzt einen bestehenden Fakt im Langzeitgedaechtnis durch neuen Inhalt. Sucht per ID oder Inhalt und protokolliert den Aenderungsgrund als Audit-Trail.',
+  input_schema: {
+    type: 'object',
+    properties: {
+      key: {
+        type: 'string',
+        description: 'Fakt-ID oder Suchbegriff zum Finden des Fakts',
+      },
+      new_content: {
+        type: 'string',
+        description: 'Der neue Inhalt fuer den Fakt',
+      },
+      reason: {
+        type: 'string',
+        description: 'Begruendung fuer die Aenderung (wird im Audit-Trail gespeichert)',
+      },
+    },
+    required: ['key', 'new_content', 'reason'],
+  },
+};
+
+/**
+ * Memory abstract tool - Combine multiple facts into higher-level knowledge
+ */
+export const TOOL_MEMORY_ABSTRACT: ToolDefinition = {
+  name: 'memory_abstract',
+  description:
+    'Abstrahiert mehrere spezifische Fakten zu einem uebergeordneten Wissenselement. Nutze dies wenn du mehrere aehnliche oder zusammengehoerige Fakten erkennst, die zu einem allgemeineren Muster zusammengefasst werden koennen. Die Original-Fakten werden als superseded markiert.',
+  input_schema: {
+    type: 'object',
+    properties: {
+      fact_ids: {
+        type: 'string',
+        description: 'Komma-separierte Liste von Fakt-IDs die abstrahiert werden sollen (mindestens 2)',
+      },
+      instruction: {
+        type: 'string',
+        description: 'Anweisung wie die Fakten abstrahiert werden sollen (z.B. "Fasse zu einer allgemeinen Praeferenz zusammen")',
+      },
+    },
+    required: ['fact_ids', 'instruction'],
+  },
+};
+
+/**
+ * Memory search and link tool - Find and link related facts
+ */
+export const TOOL_MEMORY_SEARCH_AND_LINK: ToolDefinition = {
+  name: 'memory_search_and_link',
+  description:
+    'Sucht semantisch verwandte Fakten im Gedaechtnis und erstellt Verknuepfungen zwischen ihnen. Nutze dies um versteckte Zusammenhaenge zwischen gespeicherten Fakten zu entdecken und das Wissens-Netzwerk zu staerken.',
+  input_schema: {
+    type: 'object',
+    properties: {
+      query: {
+        type: 'string',
+        description: 'Suchbegriff oder Thema um verwandte Fakten zu finden',
+      },
+      link_type: {
+        type: 'string',
+        enum: ['related', 'supports', 'contradicts', 'extends', 'depends_on'],
+        description: 'Art der Verknuepfung zwischen den gefundenen Fakten (Standard: related)',
+      },
+    },
+    required: ['query'],
+  },
+};
+
+// ===========================================
 // Tool Registry
 // ===========================================
 
