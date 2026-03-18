@@ -952,6 +952,10 @@ generalChatRouter.post('/sessions/:id/messages/stream', apiKeyAuth, requireScope
   // instead of monkey-patching res.write (which was fragile and error-prone)
   let fullResponse = '';
   let thinkingContent = '';
+  // Collect tool call metadata for persistent storage (Phase 100 C3)
+  const collectedToolCalls: Array<{ name: string; duration_ms: number; status: 'success' | 'error' }> = [];
+  let currentToolStart = 0;
+  let currentToolName = '';
 
   // Install a listener that captures SSE data as it flows through
   const originalWrite = res.write.bind(res) as typeof res.write;
@@ -985,6 +989,18 @@ generalChatRouter.post('/sessions/:id/messages/stream', apiKeyAuth, requireScope
               fullResponse += data.content;
             } else if (eventType === 'thinking_delta' && data.thinking) {
               thinkingContent += data.thinking;
+            } else if (eventType === 'tool_use_start' && data.tool) {
+              currentToolName = data.tool.name || '';
+              currentToolStart = Date.now();
+            } else if (eventType === 'tool_use_end' && data.tool) {
+              const duration_ms = currentToolStart > 0 ? Date.now() - currentToolStart : 0;
+              collectedToolCalls.push({
+                name: data.tool.name || currentToolName,
+                duration_ms,
+                status: data.tool.is_error ? 'error' : 'success',
+              });
+              currentToolName = '';
+              currentToolStart = 0;
             }
           } catch { /* skip malformed JSON */ }
         }
@@ -1077,7 +1093,23 @@ generalChatRouter.post('/sessions/:id/messages/stream', apiKeyAuth, requireScope
         try { await addMessage(id, 'assistant', fullResponse, userId); } catch { /* best-effort */ }
       }
     } else if (fullResponse) {
-      await addMessage(id, 'assistant', fullResponse, userId);
+      const savedMsg = await addMessage(id, 'assistant', fullResponse, userId);
+
+      // Persist tool_calls and thinking_content on the saved message (Phase 100 C3/C4)
+      if (collectedToolCalls.length > 0 || thinkingContent) {
+        query(`
+          UPDATE general_chat_messages
+          SET tool_calls = $1, thinking_content = $2
+          WHERE id = $3
+        `, [
+          collectedToolCalls.length > 0 ? JSON.stringify(collectedToolCalls) : null,
+          thinkingContent || null,
+          savedMsg.id,
+        ]).catch(err => {
+          // Non-critical: columns may not exist yet (pre-migration)
+          logger.debug('Failed to persist tool_calls/thinking_content', { error: err instanceof Error ? err.message : String(err) });
+        });
+      }
 
       // Add assistant interaction to short-term memory (non-blocking)
       try {
@@ -1096,6 +1128,7 @@ generalChatRouter.post('/sessions/:id/messages/stream', apiKeyAuth, requireScope
         responseLength: fullResponse.length,
         hadThinking: thinkingContent.length > 0,
         hadTools: shouldUseTools,
+        toolCount: collectedToolCalls.length,
       });
     } else {
       // Stream completed but returned no content - store a fallback assistant message
