@@ -109,6 +109,26 @@ export const Sidebar = memo(function Sidebar({
     return section.items.some(item => isNavItemActive(item, currentPage));
   };
 
+  /** Keyboard navigation: ArrowUp/ArrowDown between nav items, Home/End for first/last */
+  const handleNavKeyDown = useCallback((e: React.KeyboardEvent) => {
+    const { key } = e;
+    if (!['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(key)) return;
+    e.preventDefault();
+    const nav = sidebarRef.current;
+    if (!nav) return;
+    const items = Array.from(nav.querySelectorAll<HTMLElement>(
+      '.sidebar-item, .sidebar-footer-item'
+    ));
+    if (items.length === 0) return;
+    const idx = items.indexOf(document.activeElement as HTMLElement);
+    let next = idx;
+    if (key === 'ArrowDown') next = idx < items.length - 1 ? idx + 1 : 0;
+    else if (key === 'ArrowUp') next = idx > 0 ? idx - 1 : items.length - 1;
+    else if (key === 'Home') next = 0;
+    else if (key === 'End') next = items.length - 1;
+    items[next]?.focus();
+  }, []);
+
   /** Render a lucide icon for a nav item */
   const renderIcon = (page: Page, size: number = 18) => {
     const IconComponent = getPageIcon(page);
@@ -121,6 +141,7 @@ export const Sidebar = memo(function Sidebar({
       className={`sidebar ${collapsed ? 'collapsed' : ''}`}
       role="navigation"
       aria-label="Hauptnavigation"
+      onKeyDown={handleNavKeyDown}
     >
       {/* Header: Logo + Collapse Toggle */}
       <div className="sidebar-header">
@@ -239,6 +260,7 @@ export const Sidebar = memo(function Sidebar({
                         className="sidebar-favorite-btn favorited neuro-focus-ring"
                         onClick={() => toggleFavorite(page)}
                         aria-label={`${navItem.label} aus Favoriten entfernen`}
+                        aria-pressed={true}
                         title="Aus Favoriten entfernen"
                       >
                         <Star size={12} strokeWidth={1.5} fill="currentColor" />
@@ -319,6 +341,7 @@ export const Sidebar = memo(function Sidebar({
                           className={`sidebar-favorite-btn neuro-focus-ring ${isFavorited?.(item.page) ? 'favorited' : ''}`}
                           onClick={() => toggleFavorite(item.page)}
                           aria-label={isFavorited?.(item.page) ? `${item.label} aus Favoriten entfernen` : `${item.label} zu Favoriten hinzufuegen`}
+                          aria-pressed={!!isFavorited?.(item.page)}
                           title={isFavorited?.(item.page) ? 'Aus Favoriten entfernen' : 'Zu Favoriten hinzufuegen'}
                         >
                           <Star size={12} strokeWidth={1.5} fill={isFavorited?.(item.page) ? 'currentColor' : 'none'} />
@@ -341,6 +364,7 @@ export const Sidebar = memo(function Sidebar({
             className={`sidebar-status-dot ${apiStatus?.database ? 'connected' : 'disconnected'}`}
             title={apiStatus?.database ? 'Datenbank verbunden' : 'Datenbank getrennt'}
             role="status"
+            aria-label={apiStatus?.database ? 'Datenbank: verbunden' : 'Datenbank: getrennt'}
           >
             <span className="visually-hidden">{apiStatus?.database ? 'Datenbank verbunden' : 'Datenbank getrennt'}</span>
           </span>
@@ -348,6 +372,7 @@ export const Sidebar = memo(function Sidebar({
             className={`sidebar-status-dot ${apiStatus?.ollama ? 'connected' : 'disconnected'}`}
             title={apiStatus?.ollama ? 'KI verbunden' : 'KI getrennt'}
             role="status"
+            aria-label={apiStatus?.ollama ? 'KI: aktiv' : 'KI: inaktiv'}
           >
             <span className="visually-hidden">{apiStatus?.ollama ? 'KI verbunden' : 'KI getrennt'}</span>
           </span>

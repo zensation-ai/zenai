@@ -710,6 +710,36 @@
    Print
    ============================================ */
 
+/* ============================================
+   Mobile Touch Targets (Phase 99 — Fix 50)
+   WCAG 2.5.5: minimum 44x44px touch target
+   ============================================ */
+
+@media (pointer: coarse) {
+  .sidebar-item {
+    min-height: 44px;
+  }
+
+  .sidebar-footer-item {
+    min-height: 44px;
+    padding: 10px;
+  }
+
+  .sidebar-favorite-btn {
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  .sidebar-collapse-btn {
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  .sidebar-section-header {
+    min-height: 44px;
+  }
+}
+
 @media print {
   .sidebar {
     display: none;

@@ -99,63 +99,89 @@ function getErrorIcon(): JSX.Element {
 /* Tool label map                                                      */
 /* ------------------------------------------------------------------ */
 
-/** Tool name to German-friendly label */
-const TOOL_LABELS: Record<string, string> = {
-  search_ideas: 'Durchsuche Gedanken',
-  create_idea: 'Erstelle Gedanken',
-  update_idea: 'Aktualisiere Gedanken',
-  archive_idea: 'Archiviere Gedanken',
-  delete_idea: 'Loesche Gedanken',
-  get_related_ideas: 'Suche Verbindungen',
-  calculate: 'Berechne',
-  remember: 'Merke mir das',
-  recall: 'Erinnere mich',
-  memory_introspect: 'Pruefe Gedaechtnis',
-  memory_update: 'Aktualisiere Erinnerung',
-  memory_delete: 'Loesche Erinnerung',
-  memory_update_profile: 'Aktualisiere Profil',
-  memory_rethink: 'Ueberdenke Erinnerung',
-  memory_restructure: 'Reorganisiere Gedaechtnis',
-  web_search: 'Durchsuche das Web',
-  fetch_url: 'Lade Webseite',
-  github_search: 'Durchsuche GitHub',
-  github_create_issue: 'Erstelle GitHub Issue',
-  github_repo_info: 'Lade Repository-Info',
-  github_list_issues: 'Liste GitHub Issues',
-  github_pr_summary: 'Lade PR-Zusammenfassung',
-  analyze_project: 'Analysiere Projekt',
-  get_project_summary: 'Lade Projektuebersicht',
-  list_project_files: 'Liste Projektdateien',
-  execute_code: 'Fuehre Code aus',
-  analyze_document: 'Analysiere Dokument',
-  search_documents: 'Durchsuche Dokumente',
-  synthesize_knowledge: 'Synthetisiere Wissen',
-  create_meeting: 'Erstelle Termin',
-  navigate_to: 'Navigiere',
-  app_help: 'Suche Hilfe',
-  get_revenue_metrics: 'Lade Umsatzdaten',
-  get_traffic_analytics: 'Lade Traffic-Daten',
-  get_seo_performance: 'Pruefe SEO',
-  get_system_health: 'Pruefe Systemstatus',
-  generate_business_report: 'Erstelle Bericht',
-  identify_anomalies: 'Suche Anomalien',
-  compare_periods: 'Vergleiche Zeitraeume',
-  create_calendar_event: 'Erstelle Kalender-Eintrag',
-  list_calendar_events: 'Lade Kalender',
-  draft_email: 'Schreibe E-Mail-Entwurf',
-  estimate_travel: 'Berechne Reisezeit',
-  get_directions: 'Berechne Route',
-  get_opening_hours: 'Pruefe Oeffnungszeiten',
-  find_nearby_places: 'Suche in der Naehe',
-  optimize_day_route: 'Optimiere Tagesroute',
-  ask_inbox: 'Durchsuche Posteingang',
-  inbox_summary: 'Lade Postfach-Uebersicht',
-  mcp_call_tool: 'Rufe externes Tool',
-  mcp_list_tools: 'Liste verfuegbare Tools',
+/** Tool name to German-friendly label + description for reasoning transparency */
+interface ToolLabelInfo {
+  label: string;
+  description: string;
+}
+
+const TOOL_LABELS: Record<string, ToolLabelInfo> = {
+  // Core Ideas
+  search_ideas: { label: 'Durchsuche Gedanken', description: 'Durchsucht gespeicherte Gedanken nach relevanten Eintraegen...' },
+  create_idea: { label: 'Erstelle Gedanken', description: 'Erstellt einen neuen Gedanken-Eintrag...' },
+  update_idea: { label: 'Aktualisiere Gedanken', description: 'Aktualisiert einen bestehenden Gedanken...' },
+  archive_idea: { label: 'Archiviere Gedanken', description: 'Verschiebt einen Gedanken ins Archiv...' },
+  delete_idea: { label: 'Loesche Gedanken', description: 'Entfernt einen Gedanken dauerhaft...' },
+  get_related_ideas: { label: 'Suche Verbindungen', description: 'Findet verwandte Gedanken und Zusammenhaenge...' },
+  // Memory
+  remember: { label: 'Merke mir das', description: 'Speichert neue Information im Langzeitgedaechtnis...' },
+  recall: { label: 'Erinnere mich', description: 'Durchsucht Erinnerungen nach relevantem Wissen...' },
+  memory_introspect: { label: 'Pruefe Gedaechtnis', description: 'Analysiert den aktuellen Gedaechtniszustand...' },
+  memory_update: { label: 'Aktualisiere Erinnerung', description: 'Aktualisiert eine bestehende Erinnerung...' },
+  memory_delete: { label: 'Loesche Erinnerung', description: 'Entfernt eine veraltete Erinnerung...' },
+  memory_update_profile: { label: 'Aktualisiere Profil', description: 'Aktualisiert das Nutzerprofil im Gedaechtnis...' },
+  memory_rethink: { label: 'Ueberdenke Erinnerung', description: 'Bewertet eine Erinnerung neu und stuft sie ein...' },
+  memory_restructure: { label: 'Reorganisiere Gedaechtnis', description: 'Ordnet Erinnerungen fuer besseren Zugriff neu...' },
+  // Web
+  web_search: { label: 'Durchsuche das Web', description: 'Sucht im Web nach aktuellen Informationen...' },
+  fetch_url: { label: 'Lade Webseite', description: 'Ruft den Inhalt einer Webseite ab...' },
+  // GitHub
+  github_search: { label: 'Durchsuche GitHub', description: 'Sucht auf GitHub nach Repositories und Code...' },
+  github_create_issue: { label: 'Erstelle GitHub Issue', description: 'Erstellt ein neues Issue auf GitHub...' },
+  github_repo_info: { label: 'Lade Repository-Info', description: 'Ruft Details eines GitHub-Repositories ab...' },
+  github_list_issues: { label: 'Liste GitHub Issues', description: 'Listet Issues eines Repositories auf...' },
+  github_pr_summary: { label: 'Lade PR-Zusammenfassung', description: 'Fasst einen Pull Request zusammen...' },
+  // Project Context
+  analyze_project: { label: 'Analysiere Projekt', description: 'Fuehrt eine umfassende Projektanalyse durch...' },
+  get_project_summary: { label: 'Lade Projektuebersicht', description: 'Erstellt eine schnelle Projektuebersicht...' },
+  list_project_files: { label: 'Liste Projektdateien', description: 'Zeigt die Projektstruktur an...' },
+  // Code
+  execute_code: { label: 'Fuehre Code aus', description: 'Fuehrt Code sicher in einer Sandbox aus...' },
+  calculate: { label: 'Berechne', description: 'Fuehrt eine Berechnung durch...' },
+  // Documents
+  analyze_document: { label: 'Analysiere Dokument', description: 'Analysiert den Inhalt eines Dokuments...' },
+  search_documents: { label: 'Durchsuche Dokumente', description: 'Durchsucht die Dokumentensammlung...' },
+  synthesize_knowledge: { label: 'Synthetisiere Wissen', description: 'Kombiniert Wissen aus mehreren Quellen...' },
+  // Assistant
+  create_meeting: { label: 'Erstelle Termin', description: 'Erstellt einen neuen Kalendertermin...' },
+  navigate_to: { label: 'Navigiere', description: 'Navigiert zu einer Seite in der App...' },
+  app_help: { label: 'Suche Hilfe', description: 'Sucht nach Hilfeinformationen...' },
+  // Business
+  get_revenue_metrics: { label: 'Lade Umsatzdaten', description: 'Ruft aktuelle Umsatzmetriken ab...' },
+  get_traffic_analytics: { label: 'Lade Traffic-Daten', description: 'Analysiert Website-Traffic-Daten...' },
+  get_seo_performance: { label: 'Pruefe SEO', description: 'Prueft die SEO-Performance...' },
+  get_system_health: { label: 'Pruefe Systemstatus', description: 'Prueft den Systemgesundheitszustand...' },
+  generate_business_report: { label: 'Erstelle Bericht', description: 'Generiert einen Geschaeftsbericht...' },
+  identify_anomalies: { label: 'Suche Anomalien', description: 'Erkennt ungewoehnliche Muster in Daten...' },
+  compare_periods: { label: 'Vergleiche Zeitraeume', description: 'Vergleicht Metriken verschiedener Zeitraeume...' },
+  // Calendar/Email
+  create_calendar_event: { label: 'Erstelle Kalender-Eintrag', description: 'Erstellt einen neuen Kalendereintrag...' },
+  list_calendar_events: { label: 'Lade Kalender', description: 'Ruft anstehende Termine ab...' },
+  draft_email: { label: 'Schreibe E-Mail-Entwurf', description: 'Erstellt einen E-Mail-Entwurf...' },
+  estimate_travel: { label: 'Berechne Reisezeit', description: 'Schaetzt die Reisezeit zwischen Orten...' },
+  // Maps
+  get_directions: { label: 'Berechne Route', description: 'Berechnet eine Route zwischen Orten...' },
+  get_opening_hours: { label: 'Pruefe Oeffnungszeiten', description: 'Ruft Oeffnungszeiten eines Ortes ab...' },
+  find_nearby_places: { label: 'Suche in der Naehe', description: 'Findet Orte in der Umgebung...' },
+  optimize_day_route: { label: 'Optimiere Tagesroute', description: 'Optimiert die Route fuer mehrere Ziele...' },
+  // Email Intelligence
+  ask_inbox: { label: 'Durchsuche Posteingang', description: 'Durchsucht den Posteingang nach Informationen...' },
+  inbox_summary: { label: 'Lade Postfach-Uebersicht', description: 'Erstellt eine Zusammenfassung des Posteingangs...' },
+  // MCP
+  mcp_call_tool: { label: 'Rufe externes Tool', description: 'Ruft ein externes MCP-Werkzeug auf...' },
+  mcp_list_tools: { label: 'Liste verfuegbare Tools', description: 'Listet verfuegbare externe Werkzeuge auf...' },
 };
 
+/** Get tool label info with graceful fallback for unknown tools */
+function getToolLabelInfo(name: string): ToolLabelInfo {
+  return TOOL_LABELS[name] ?? {
+    label: name.replace(/_/g, ' '),
+    description: `Fuehrt ${name.replace(/_/g, ' ')} aus...`,
+  };
+}
+
 function getToolLabel(name: string): string {
-  return TOOL_LABELS[name] || name.replace(/_/g, ' ');
+  return getToolLabelInfo(name).label;
 }
 
 /** Format milliseconds as human-readable duration */
@@ -194,6 +220,86 @@ function useAIPhase(active: boolean) {
   }, [active]);
 
   return active ? AI_PHASES[phase] : AI_PHASES[0];
+}
+
+/* ------------------------------------------------------------------ */
+/* ConfidenceBadge — shows retrieval confidence on AI responses        */
+/* ------------------------------------------------------------------ */
+
+interface ConfidenceBadgeProps {
+  confidence: number;
+  sourceCount?: number;
+}
+
+function ConfidenceBadge({ confidence, sourceCount }: ConfidenceBadgeProps) {
+  const level = confidence > 0.8 ? 'high' : confidence > 0.5 ? 'medium' : 'low';
+  const percent = Math.round(confidence * 100);
+  const label = sourceCount
+    ? `Basierend auf ${sourceCount} Quelle${sourceCount !== 1 ? 'n' : ''}, Konfidenz: ${percent}%`
+    : `Konfidenz: ${percent}%`;
+
+  return (
+    <span
+      className={`confidence-badge confidence-badge--${level}`}
+      title={label}
+      aria-label={label}
+    >
+      <span className={`confidence-dot confidence-dot--${level}`} aria-hidden="true" />
+      <span className="confidence-text">{percent}%</span>
+    </span>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* SourceCitations — expandable source list below AI messages          */
+/* ------------------------------------------------------------------ */
+
+interface SourceCitation {
+  title: string;
+  snippet?: string;
+  url?: string;
+}
+
+interface SourceCitationsProps {
+  sources: SourceCitation[];
+}
+
+function SourceCitations({ sources }: SourceCitationsProps) {
+  const [expanded, setExpanded] = useState(false);
+  if (sources.length === 0) return null;
+
+  return (
+    <div className="source-citations">
+      <button
+        type="button"
+        className="source-citations-toggle"
+        onClick={() => setExpanded(!expanded)}
+        aria-expanded={expanded}
+        aria-controls="source-list"
+      >
+        {sources.length} Quelle{sources.length !== 1 ? 'n' : ''}
+        <span className={`source-citations-chevron${expanded ? ' source-citations-chevron--open' : ''}`} aria-hidden="true">
+          <svg width={10} height={10} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+        </span>
+      </button>
+      {expanded && (
+        <ol className="source-list" id="source-list">
+          {sources.map((src, i) => (
+            <li key={i} className="source-item">
+              <span className="source-title">
+                {src.url ? (
+                  <a href={src.url} target="_blank" rel="noopener noreferrer" className="source-link">{src.title}</a>
+                ) : (
+                  src.title
+                )}
+              </span>
+              {src.snippet && <span className="source-snippet">{src.snippet}</span>}
+            </li>
+          ))}
+        </ol>
+      )}
+    </div>
+  );
 }
 
 /** Shape of a completed tool result with timing and status */
@@ -313,6 +419,17 @@ export function ChatMessageList({
                   <div className="chat-message-text">
                     {renderContent(message.content, message.id)}
                   </div>
+                  {/* Confidence badge — only renders when backend provides retrievalConfidence */}
+                  {message.role === 'assistant' && (message as ChatMessage & { retrievalConfidence?: number; sourceCount?: number }).retrievalConfidence != null && (
+                    <ConfidenceBadge
+                      confidence={(message as ChatMessage & { retrievalConfidence: number }).retrievalConfidence}
+                      sourceCount={(message as ChatMessage & { sourceCount?: number }).sourceCount}
+                    />
+                  )}
+                  {/* Source citations — only renders when backend provides sources array */}
+                  {message.role === 'assistant' && (message as ChatMessage & { sources?: SourceCitation[] }).sources && (
+                    <SourceCitations sources={(message as ChatMessage & { sources: SourceCitation[] }).sources} />
+                  )}
                 </div>
               </MessageWrapper>
             );
@@ -334,7 +451,7 @@ export function ChatMessageList({
                 )}
                 {/* Tool activity: completed tools + active tool */}
                 {(toolResults.length > 0 || activeToolName) && (
-                  <div className="chat-tool-activity" aria-label="KI nutzt Werkzeuge">
+                  <ol className="chat-tool-activity" aria-label="KI-Tool-Aktivitaeten">
                     {toolResults.map((tr, i) => {
                       const label = getToolLabel(tr.name);
                       const category = getToolCategory(tr.name);
@@ -343,7 +460,7 @@ export function ChatMessageList({
                         ? 'chat-tool-pill chat-tool-pill--done'
                         : 'chat-tool-pill chat-tool-pill--error';
                       return (
-                        <div key={i} className="chat-tool-pill-wrapper">
+                        <li key={i} className="chat-tool-pill-wrapper">
                           <button
                             type="button"
                             className={pillClass}
@@ -374,21 +491,23 @@ export function ChatMessageList({
                               <ToolResultRenderer toolName={tr.name} result={tr.result} success={tr.success} />
                             </div>
                           )}
-                        </div>
+                        </li>
                       );
                     })}
                     {activeToolName && (() => {
                       const label = getToolLabel(activeToolName);
                       const category = getToolCategory(activeToolName);
                       return (
-                        <span className="chat-tool-pill chat-tool-pill--active" aria-label={`${label} laeuft`}>
-                          <span className="chat-tool-icon" aria-hidden="true">{getToolIcon(category)}</span>
-                          {label}
-                          <span className="chat-tool-spinner" aria-hidden="true" />
-                        </span>
+                        <li className="chat-tool-pill-wrapper">
+                          <span className="chat-tool-pill chat-tool-pill--active" role="status" aria-label={`${label} laeuft`}>
+                            <span className="chat-tool-icon" aria-hidden="true">{getToolIcon(category)}</span>
+                            {label}
+                            <span className="chat-tool-spinner" aria-hidden="true" />
+                          </span>
+                        </li>
                       );
                     })()}
-                  </div>
+                  </ol>
                 )}
                 <div className="chat-message-text">
                   {streamingContent ? renderContent(streamingContent) : null}
