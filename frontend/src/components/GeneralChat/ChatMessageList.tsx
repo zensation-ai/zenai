@@ -225,34 +225,6 @@ function useAIPhase(active: boolean) {
 }
 
 /* ------------------------------------------------------------------ */
-/* ConfidenceBadge — shows retrieval confidence on AI responses        */
-/* ------------------------------------------------------------------ */
-
-interface ConfidenceBadgeProps {
-  confidence: number;
-  sourceCount?: number;
-}
-
-function ConfidenceBadge({ confidence, sourceCount }: ConfidenceBadgeProps) {
-  const level = confidence > 0.8 ? 'high' : confidence > 0.5 ? 'medium' : 'low';
-  const percent = Math.round(confidence * 100);
-  const label = sourceCount
-    ? `Basierend auf ${sourceCount} Quelle${sourceCount !== 1 ? 'n' : ''}, Konfidenz: ${percent}%`
-    : `Konfidenz: ${percent}%`;
-
-  return (
-    <span
-      className={`confidence-badge confidence-badge--${level}`}
-      title={label}
-      aria-label={label}
-    >
-      <span className={`confidence-dot confidence-dot--${level}`} aria-hidden="true" />
-      <span className="confidence-text">{percent}%</span>
-    </span>
-  );
-}
-
-/* ------------------------------------------------------------------ */
 /* SourceCitations — expandable source list below AI messages          */
 /* ------------------------------------------------------------------ */
 
