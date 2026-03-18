@@ -970,9 +970,10 @@ export function GeneralChat({ context, isCompact = false, assistantMode = false,
 
   if (loading) {
     return (
-      <div className={`general-chat ${isCompact ? 'compact' : ''} ${fullPage ? 'full-page' : ''}`} role="status" aria-live="polite">
+      <div className={`general-chat ${isCompact ? 'compact' : ''} ${fullPage ? 'full-page' : ''}`} role="status" aria-live="polite" aria-label="Chat wird geladen">
         <div className="chat-loading neuro-loading-contextual">
-          <div className="loading-spinner neuro-loading-spinner" aria-label="Chat wird geladen" />
+          <div className="loading-spinner neuro-loading-spinner" aria-hidden="true" />
+          <span className="visually-hidden">Chat wird geladen</span>
         </div>
       </div>
     );
@@ -988,7 +989,7 @@ export function GeneralChat({ context, isCompact = false, assistantMode = false,
         </div>
       )}
 
-      {/* Messages Area */}
+      {/* Messages Area — inert when voice overlay is open to enforce focus trap */}
       <ChatMessageList
         messages={messages}
         isStreaming={isStreaming}
@@ -1047,6 +1048,15 @@ export function GeneralChat({ context, isCompact = false, assistantMode = false,
           role="dialog"
           aria-modal="true"
           aria-label="Sprachkonversation"
+          ref={(el) => {
+            // Auto-focus first focusable element when overlay opens
+            if (el) {
+              const firstFocusable = el.querySelector<HTMLElement>(
+                'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+              );
+              firstFocusable?.focus();
+            }
+          }}
           onKeyDown={(e: KeyboardEvent<HTMLDivElement>) => {
             if (e.key === 'Escape') setVoiceChatOpen(false);
             // Focus trap: keep Tab cycling within overlay

@@ -417,7 +417,7 @@
   background: rgba(239, 68, 68, 0.1);
   border: 1px solid rgba(239, 68, 68, 0.3);
   border-radius: var(--radius-sm, 8px);
-  color: #dc2626;
+  color: var(--ds-color-error, #dc2626);
   font-size: 0.82rem;
   line-height: 1.4;
   animation: messageSlideIn 0.25s ease;
@@ -451,7 +451,7 @@
   background: rgba(239, 68, 68, 0.1);
   border: none;
   border-radius: 50%;
-  color: #dc2626;
+  color: var(--ds-color-error, #dc2626);
   font-size: 1rem;
   cursor: pointer;
   padding: 0;
@@ -514,8 +514,8 @@
 }
 
 .chat-send-btn {
-  width: 42px;
-  height: 42px;
+  width: 44px;
+  height: 44px;
   border-radius: 50%;
   border: none;
   background: linear-gradient(135deg, var(--ctx-accent-light, var(--primary-light)) 0%, var(--ctx-accent, var(--primary)) 100%);
@@ -1096,7 +1096,8 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 6px 16px;
+  padding: 8px 16px;
+  min-height: 44px;
   background: var(--surface, #fff);
   border: 1px solid var(--glass-border, rgba(0, 0, 0, 0.12));
   border-radius: 20px;
@@ -1204,6 +1205,8 @@
   gap: 0.375rem;
   margin-bottom: 0.5rem;
   padding: 0.25rem 0;
+  list-style: none;
+  margin-top: 0;
 }
 
 /* Wrapper for each tool pill + expandable result */
@@ -1302,7 +1305,7 @@
   display: inline-flex;
   align-items: center;
   transition: transform 0.2s ease;
-  opacity: 0.4;
+  opacity: 0.6;
 }
 
 .chat-tool-chevron--open {
@@ -2193,3 +2196,134 @@
 .dark-mode .tool-result-error-label { color: #fca5a5; }
 :root.dark-mode .tool-result-error-msg,
 .dark-mode .tool-result-error-msg { color: #fca5a5; }
+
+/* ---- Confidence Badge (Phase 99 — Fix 43) ---- */
+
+.confidence-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 0.7rem;
+  font-weight: 500;
+  margin-top: 0.375rem;
+  cursor: default;
+}
+
+.confidence-badge--high {
+  background: var(--ds-color-success-bg, rgba(34, 197, 94, 0.1));
+  color: var(--ds-color-success, #16a34a);
+}
+.confidence-badge--medium {
+  background: var(--ds-color-warning-bg, rgba(245, 158, 11, 0.1));
+  color: var(--ds-color-warning, #d97706);
+}
+.confidence-badge--low {
+  background: var(--ds-color-error-bg, rgba(239, 68, 68, 0.1));
+  color: var(--ds-color-error, #dc2626);
+}
+
+.confidence-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+.confidence-dot--high { background: var(--ds-color-success, #16a34a); }
+.confidence-dot--medium { background: var(--ds-color-warning, #d97706); }
+.confidence-dot--low { background: var(--ds-color-error, #dc2626); }
+
+.confidence-text {
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---- Source Citations (Phase 99 — Fix 45) ---- */
+
+.source-citations {
+  margin-top: 0.5rem;
+  padding-top: 0.375rem;
+  border-top: 1px solid var(--border, rgba(0, 0, 0, 0.08));
+}
+
+.source-citations-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  background: none;
+  border: none;
+  padding: 2px 4px;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  cursor: pointer;
+  border-radius: 4px;
+  transition: background 0.15s;
+}
+.source-citations-toggle:hover {
+  background: var(--ds-color-surface-hover, rgba(0, 0, 0, 0.04));
+}
+.source-citations-toggle:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 1px;
+}
+
+.source-citations-chevron {
+  display: inline-flex;
+  transition: transform 0.2s;
+}
+.source-citations-chevron--open {
+  transform: rotate(180deg);
+}
+
+.source-list {
+  list-style: decimal;
+  margin: 0.375rem 0 0;
+  padding-left: 1.25rem;
+  font-size: 0.75rem;
+}
+
+.source-item {
+  padding: 0.25rem 0;
+  line-height: 1.4;
+}
+
+.source-title {
+  font-weight: 500;
+  color: var(--text);
+}
+
+.source-link {
+  color: var(--primary);
+  text-decoration: none;
+}
+.source-link:hover {
+  text-decoration: underline;
+}
+
+.source-snippet {
+  display: block;
+  color: var(--text-muted);
+  font-size: 0.7rem;
+  margin-top: 2px;
+  line-height: 1.3;
+}
+
+:root.dark-mode .source-citations,
+.dark-mode .source-citations {
+  border-top-color: rgba(255, 255, 255, 0.08);
+}
+
+:root.dark-mode .confidence-badge--high,
+.dark-mode .confidence-badge--high {
+  background: rgba(34, 197, 94, 0.15);
+  color: #4ade80;
+}
+:root.dark-mode .confidence-badge--medium,
+.dark-mode .confidence-badge--medium {
+  background: rgba(245, 158, 11, 0.15);
+  color: #fbbf24;
+}
+:root.dark-mode .confidence-badge--low,
+.dark-mode .confidence-badge--low {
+  background: rgba(239, 68, 68, 0.15);
+  color: #f87171;
+}
