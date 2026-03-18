@@ -14,6 +14,7 @@ import {
 } from '../../utils/aiPersonality';
 import type { ChatMessage } from './types';
 import { ToolResultRenderer } from './ToolResultRenderer';
+import { ThinkingBlock } from './ThinkingBlock';
 import { Brain, User, BookOpen, Link, Pencil } from 'lucide-react';
 import { slideUp, springs, usePrefersReducedMotion } from '../../utils/animations';
 
@@ -327,10 +328,7 @@ export function ChatMessageList({
                   <span className="chat-message-status streaming-indicator">schreibt...</span>
                 </div>
                 {thinkingContent && (
-                  <div className="chat-thinking-block" aria-label="KI denkt nach">
-                    <span className="thinking-label">Denke nach...</span>
-                    <span className="thinking-preview">{thinkingContent.length > 100 ? `${thinkingContent.slice(0, 100)}...` : thinkingContent}</span>
-                  </div>
+                  <ThinkingBlock content={thinkingContent} isStreaming={true} />
                 )}
                 {/* Tool activity: completed tools + active tool */}
                 {(toolResults.length > 0 || activeToolName) && (
