@@ -25,6 +25,7 @@ export {
   animations,
   zIndex,
   breakpoints,
+  opacity,
   glassTokens,
   neuroTokens,
 } from './tokens';

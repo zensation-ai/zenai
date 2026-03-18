@@ -123,6 +123,25 @@ export const neuroTokens = {
 } as const;
 
 // ---------------------------------------------------------------------------
+// Opacity tokens (semantic naming for consistent usage)
+// ---------------------------------------------------------------------------
+
+export const opacity = {
+  /** 0.6 - secondary text, inactive icons */
+  muted: 0.6,
+  /** 0.4 - placeholder text, dividers */
+  subtle: 0.4,
+  /** 0.2 - background overlays */
+  ghost: 0.2,
+  /** 0.38 - disabled elements (WCAG compliant) */
+  disabled: 0.38,
+  /** 0.08 - hover overlay on surfaces */
+  hover: 0.08,
+  /** 0.12 - pressed state overlay */
+  pressed: 0.12,
+} as const;
+
+// ---------------------------------------------------------------------------
 // Full design token tree
 // ---------------------------------------------------------------------------
 
@@ -137,6 +156,7 @@ export const tokens = {
   animations,
   zIndex,
   breakpoints,
+  opacity,
   glass: glassTokens,
   neuro: neuroTokens,
 } as const;
