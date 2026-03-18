@@ -7,12 +7,16 @@
  * Navigation Reorganisation 2026:
  * 4 Sektionen (Ideen, Organisieren, Auswerten, KI & Lernen) + Chat + Footer
  * Funktional gruppiert statt abstrakt.
+ *
+ * Phase 100: Icons are now Lucide icon names (string) instead of emoji.
+ * Use `getPageIcon()` from `utils/navIcons` to render the actual icon component.
  */
 
 import type { Page } from './types';
 
 export interface NavItem {
   page: Page;
+  /** Lucide icon name (e.g. 'MessageSquare', 'Lightbulb') */
   icon: string;
   label: string;
   description?: string;
@@ -25,6 +29,7 @@ export interface NavItem {
 export interface NavSection {
   id: string;
   label: string;
+  /** Lucide icon name for the section header */
   icon: string;
   items: NavItem[];
 }
@@ -34,7 +39,7 @@ export interface NavSection {
  */
 export const NAV_CHAT_ITEM: NavItem = {
   page: 'chat',
-  icon: '💬',
+  icon: 'MessageSquare',
   label: 'Chat',
   description: 'Direkt mit der KI sprechen',
 };
@@ -44,7 +49,7 @@ export const NAV_CHAT_ITEM: NavItem = {
  */
 export const NAV_BROWSER_ITEM: NavItem = {
   page: 'browser',
-  icon: '🌐',
+  icon: 'Globe',
   label: 'Browser',
   description: 'Webseiten durchsuchen & speichern',
 };
@@ -62,18 +67,18 @@ export const NAV_SECTIONS: NavSection[] = [
   {
     id: 'ideen',
     label: 'Ideen',
-    icon: '💡',
+    icon: 'Lightbulb',
     items: [
       {
         page: 'ideas',
-        icon: '💡',
+        icon: 'Lightbulb',
         label: 'Gedanken',
         description: 'Deine Ideen sammeln & ordnen',
         subPages: ['incubator', 'archive', 'triage'],
       },
       {
         page: 'workshop',
-        icon: '🧪',
+        icon: 'Wrench',
         label: 'Werkstatt',
         description: 'KI entwickelt deine Ideen weiter',
         subPages: ['proactive', 'evolution', 'agent-teams', 'automations'],
@@ -83,31 +88,31 @@ export const NAV_SECTIONS: NavSection[] = [
   {
     id: 'organisieren',
     label: 'Organisieren',
-    icon: '📋',
+    icon: 'Calendar',
     items: [
       {
         page: 'calendar',
-        icon: '📋',
+        icon: 'Calendar',
         label: 'Planer',
         description: 'Kalender, Aufgaben & Projekte',
         subPages: ['tasks', 'kanban', 'gantt', 'meetings'],
       },
       {
         page: 'contacts',
-        icon: '👥',
+        icon: 'Users',
         label: 'Kontakte',
         description: 'Kontakte & Organisationen verwalten',
       },
       {
         page: 'email',
-        icon: '✉️',
+        icon: 'Mail',
         label: 'E-Mail',
         description: 'E-Mails senden & empfangen',
         badge: 'email_unread',
       },
       {
         page: 'documents',
-        icon: '📚',
+        icon: 'FileText',
         label: 'Wissensbasis',
         description: 'Dokumente, Notizen & Medien',
         subPages: ['canvas', 'media'],
@@ -117,24 +122,24 @@ export const NAV_SECTIONS: NavSection[] = [
   {
     id: 'auswerten',
     label: 'Auswerten',
-    icon: '📊',
+    icon: 'BarChart3',
     items: [
       {
         page: 'insights',
-        icon: '📊',
+        icon: 'BarChart3',
         label: 'Insights',
         description: 'Muster & Trends in deinen Gedanken',
         subPages: ['analytics', 'digest', 'knowledge-graph'],
       },
       {
         page: 'finance',
-        icon: '💰',
+        icon: 'Wallet',
         label: 'Finanzen',
         description: 'Ausgaben, Budgets & Sparziele',
       },
       {
         page: 'business',
-        icon: '💼',
+        icon: 'Briefcase',
         label: 'Business',
         description: 'Geschaeftszahlen & Berichte',
       },
@@ -143,25 +148,25 @@ export const NAV_SECTIONS: NavSection[] = [
   {
     id: 'ki-lernen',
     label: 'KI & Lernen',
-    icon: '🤖',
+    icon: 'Brain',
     items: [
       {
         page: 'my-ai',
-        icon: '🤖',
+        icon: 'Brain',
         label: 'Meine KI',
         description: 'KI auf dich abstimmen',
         subPages: ['voice-chat', 'memory-insights'],
       },
       {
         page: 'learning',
-        icon: '📖',
+        icon: 'GraduationCap',
         label: 'Lernen',
         description: 'Lernziele setzen & verfolgen',
         subPages: ['learning-tasks'],
       },
       {
         page: 'screen-memory',
-        icon: '🧠',
+        icon: 'Monitor',
         label: 'Screen Memory',
         description: 'Bildschirmaktivitaet durchsuchen',
       },
@@ -175,20 +180,20 @@ export const NAV_SECTIONS: NavSection[] = [
 export const NAV_FOOTER_ITEMS: NavItem[] = [
   {
     page: 'system-admin',
-    icon: '🖥️',
+    icon: 'Monitor',
     label: 'System',
     description: 'Queues, Sicherheit & Sleep Compute',
   },
   {
     page: 'settings',
-    icon: '⚙️',
+    icon: 'Settings',
     label: 'Einstellungen',
     description: 'Profil & App konfigurieren',
     subPages: ['profile', 'automations', 'integrations', 'mcp-servers', 'export', 'sync'],
   },
   {
     page: 'notifications',
-    icon: '🔔',
+    icon: 'Bell',
     label: 'Benachrichtigungen',
     description: 'Benachrichtigungen',
     badge: 'notifications',
@@ -250,7 +255,7 @@ export function getPageLabel(page: Page): string {
  * Find NavItem by page identifier (searches chat, sections + footer)
  */
 export function getNavItemByPage(page: Page): NavItem | undefined {
-  if (page === 'home') return { page: 'home', icon: '🏠', label: 'Dashboard' };
+  if (page === 'home') return { page: 'home', icon: 'LayoutDashboard', label: 'Dashboard' };
   if (page === 'chat') return NAV_CHAT_ITEM;
   if (page === 'browser') return NAV_BROWSER_ITEM;
 

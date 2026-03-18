@@ -14,8 +14,15 @@ import { ThemeToggle } from '../ThemeToggle';
 import { NAV_SECTIONS, NAV_FOOTER_ITEMS, NAV_CHAT_ITEM, NAV_BROWSER_ITEM, isNavItemActive, getNavItemByPage, type NavItem } from '../../navigation';
 import { AI_PERSONALITY } from '../../utils/aiPersonality';
 import { safeLocalStorage } from '../../utils/storage';
+import { getIconByName } from '../../utils/navIcons';
 import { BrainLogo } from './BrainLogo';
 import './MobileSidebarDrawer.css';
+
+/** Render a nav item icon from its Lucide name string */
+function NavIcon({ name, size = 18 }: { name: string; size?: number }) {
+  const Icon = getIconByName(name);
+  return <Icon size={size} strokeWidth={1.5} />;
+}
 
 interface MobileSidebarDrawerProps {
   isOpen: boolean;
@@ -194,7 +201,7 @@ export function MobileSidebarDrawer({
             aria-current={currentPage === 'chat' ? 'page' : undefined}
             style={{ '--stagger-delay': `${globalIndex++ * STAGGER_DELAY}ms` } as CSSProperties}
           >
-            <span className="msd-item-icon">{NAV_CHAT_ITEM.icon}</span>
+            <span className="msd-item-icon"><NavIcon name={NAV_CHAT_ITEM.icon} /></span>
             <span className="msd-item-label">{NAV_CHAT_ITEM.label}</span>
             {currentPage === 'chat' && <span className="msd-item-check" aria-hidden="true">✓</span>}
           </button>
@@ -205,7 +212,7 @@ export function MobileSidebarDrawer({
             aria-current={currentPage === 'browser' ? 'page' : undefined}
             style={{ '--stagger-delay': `${globalIndex++ * STAGGER_DELAY}ms` } as CSSProperties}
           >
-            <span className="msd-item-icon">{NAV_BROWSER_ITEM.icon}</span>
+            <span className="msd-item-icon"><NavIcon name={NAV_BROWSER_ITEM.icon} /></span>
             <span className="msd-item-label">{NAV_BROWSER_ITEM.label}</span>
             {currentPage === 'browser' && <span className="msd-item-check" aria-hidden="true">✓</span>}
           </button>
@@ -245,7 +252,7 @@ export function MobileSidebarDrawer({
                         onClick={() => handleNavigate(page)}
                         aria-current={isActive ? 'page' : undefined}
                       >
-                        <span className="msd-item-icon">{navItem.icon}</span>
+                        <span className="msd-item-icon"><NavIcon name={navItem.icon} /></span>
                         <span className="msd-item-label">{navItem.label}</span>
                         {isActive && <span className="msd-item-check" aria-hidden="true">✓</span>}
                       </button>
@@ -278,7 +285,7 @@ export function MobileSidebarDrawer({
                   onClick={() => toggleSection(section.id)}
                   aria-expanded={isExpanded}
                 >
-                  <span className="msd-section-icon">{section.icon}</span>
+                  <span className="msd-section-icon"><NavIcon name={section.icon} /></span>
                   <span className="msd-section-label">{section.label}</span>
                   <span className="msd-section-count">{section.items.length}</span>
                   <svg
@@ -307,7 +314,7 @@ export function MobileSidebarDrawer({
                         aria-current={isActive ? 'page' : undefined}
                         style={{ '--item-delay': `${idx * STAGGER_DELAY}ms` } as CSSProperties}
                       >
-                        <span className="msd-item-icon">{item.icon}</span>
+                        <span className="msd-item-icon"><NavIcon name={item.icon} /></span>
                         <span className="msd-item-text">
                           <span className="msd-item-label">{item.label}</span>
                           {item.description && (
@@ -338,7 +345,7 @@ export function MobileSidebarDrawer({
                 onClick={() => handleNavigate(item.page)}
                 aria-current={isActive ? 'page' : undefined}
               >
-                <span className="msd-item-icon">{item.icon}</span>
+                <span className="msd-item-icon"><NavIcon name={item.icon} /></span>
                 <span className="msd-item-label">{item.label}</span>
                 {isActive && <span className="msd-item-check" aria-hidden="true">✓</span>}
               </button>
