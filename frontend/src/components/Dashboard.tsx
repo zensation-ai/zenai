@@ -331,7 +331,7 @@ const DashboardComponent: React.FC<DashboardProps> = ({
 
         {/* Stat tiles */}
         {fetchError && !loading ? (
-          <Card variant="surface" padding="md" className="bento-stat" style={{ gridColumn: 'span 4', textAlign: 'center' }}>
+          <Card variant="surface" padding="md" className="bento-stat bento-stat--full-row">
             <QueryErrorState error={summary.error} refetch={summary.refetch} />
           </Card>
         ) : loading ? (

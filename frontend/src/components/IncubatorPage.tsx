@@ -212,10 +212,10 @@ export function IncubatorPage({ onBack, onIdeaCreated, embedded }: Props) {
           <div className="neuro-loading-spinner" aria-hidden="true" />
           <p className="neuro-loading-message">Lade Inkubator...</p>
           <p className="neuro-loading-submessage">Deine Gedanken werden organisiert</p>
-          <div className="skeleton-preview" style={{ marginTop: '2rem', width: '100%', maxWidth: '400px' }}>
-            <div className="neuro-skeleton" style={{ height: '80px', marginBottom: '1rem' }} aria-hidden="true" />
-            <div className="neuro-skeleton" style={{ height: '80px', marginBottom: '1rem' }} aria-hidden="true" />
-            <div className="neuro-skeleton" style={{ height: '80px' }} aria-hidden="true" />
+          <div className="skeleton-preview">
+            <div className="neuro-skeleton" aria-hidden="true" />
+            <div className="neuro-skeleton" aria-hidden="true" />
+            <div className="neuro-skeleton" aria-hidden="true" />
           </div>
         </div>
       ) : (

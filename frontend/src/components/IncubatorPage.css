@@ -638,6 +638,21 @@
   margin-bottom: 1rem;
 }
 
+.incubator-page .skeleton-preview {
+  margin-top: 2rem;
+  width: 100%;
+  max-width: 400px;
+}
+
+.incubator-page .skeleton-preview .neuro-skeleton {
+  height: 80px;
+  margin-bottom: 1rem;
+}
+
+.incubator-page .skeleton-preview .neuro-skeleton:last-child {
+  margin-bottom: 0;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   .incubator-page {

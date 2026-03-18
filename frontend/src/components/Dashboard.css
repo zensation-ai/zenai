@@ -219,6 +219,11 @@
   outline-offset: 2px;
 }
 
+.bento-stat--full-row {
+  grid-column: span 4;
+  text-align: center;
+}
+
 .bento-stat--hot:hover {
   border-color: rgba(255, 107, 53, 0.3);
   box-shadow: 0 4px 16px rgba(255, 107, 53, 0.12);
