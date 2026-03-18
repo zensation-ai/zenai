@@ -77,8 +77,10 @@ class CircuitBreaker {
 - Monitor pool error rate via existing pool event listeners
 - Config: `failureThreshold: 5 errors in 30s window`
 - OPEN state: Return 503 `"Datenbank wird wiederhergestellt"` immediately
-- HALF_OPEN: Single test query `SELECT 1` before reopening
+- HALF_OPEN: Single test query `SELECT 1` **bypassing the breaker** (direct pool.query)
 - Integrate with pool stats already tracked in Phase 67
+- **Exemptions:** Health-check queries (`/api/health/*`) and HALF_OPEN probe queries bypass the circuit breaker entirely to avoid cascading failures
+- **Scope:** Global breaker on the shared pool (not per-context), since all 4 schemas share one pool
 
 ### A5: Centralized Timeout Config
 
@@ -98,10 +100,14 @@ export const TIMEOUTS = {
   CIRCUIT_BREAKER_CLAUDE: 60_000,
   CIRCUIT_BREAKER_BRAVE: 120_000,
   CIRCUIT_BREAKER_DB: 30_000,
+  AGENT_EXECUTION: 60_000,
+  MCP_TOOL_CALL: 30_000,
+  VOICE_STT: 15_000,
+  VOICE_TTS: 10_000,
 } as const;
 ```
 
-Replace all hardcoded timeout values in `streaming.ts` (90_000), `web-search.ts` (10_000), `request-timeout.ts` (30_000/120_000/180_000) with imports from this config.
+Replace all hardcoded timeout values in `streaming.ts` (90_000), `web-search.ts` (10_000), `request-timeout.ts` (30_000/120_000/180_000), `agent-orchestrator.ts` (60_000), `mcp-client.ts`, and voice services with imports from this config.
 
 ### A6: Graceful Degradation Hierarchy
 
@@ -147,10 +153,14 @@ interface RAGEvaluation {
 }
 ```
 
-- Relevance determined by: (a) CRAG confidence tier, (b) cross-encoder score threshold > 0.6
+- **Relevance signal (dual-source):**
+  - Primary: User feedback from Phase 47 `rag_feedback` table (thumbs up/down, relevance ratings) — ground truth
+  - Secondary (estimated): Cross-encoder reranker score > 0.6 as proxy when no user feedback available
+  - Metrics labeled as "Estimated Precision" when based on proxy signal, "Verified Precision" when based on user feedback
+  - Note: CRAG confidence scores are NOT used as relevance labels (circular measurement)
 - Stored in `rag_evaluation_metrics` table (new, x4 schemas)
 - Dashboard endpoint: `GET /api/:context/rag/evaluation?days=7`
-- Aggregates: mean/p50/p95 per strategy, trend over time
+- Aggregates: mean/p50/p95 per strategy, trend over time, estimated vs verified breakdown
 
 **New migration:** `backend/sql/migrations/phase101_rag_evaluation.sql`
 
@@ -265,10 +275,19 @@ export const springs = {
 } as const;
 
 // CSS linear() approximations for non-JS contexts
+// Note: linear() supported in Chrome 113+, Firefox 112+, Safari 17.2+
+// Fallback for older browsers via @supports (see C4)
 export const springCSS = {
   snappy:  'linear(0, 0.25 8%, 0.74 20%, 0.96 35%, 1.01 48%, 1 60%, 0.99 80%, 1)',
   gentle:  'linear(0, 0.19 8%, 0.58 20%, 0.84 35%, 0.96 50%, 1.01 65%, 1 80%, 1)',
   // ... etc
+// Fallbacks for older browsers
+export const springFallback = {
+  snappy:  'cubic-bezier(0.25, 0.1, 0.25, 1)',
+  gentle:  'cubic-bezier(0.22, 1, 0.36, 1)',
+  bouncy:  'cubic-bezier(0.34, 1.56, 0.64, 1)',
+  stiff:   'cubic-bezier(0.4, 0, 0.2, 1)',
+  wobbly:  'cubic-bezier(0.34, 1.56, 0.64, 1)',
 } as const;
 ```
 
@@ -306,7 +325,9 @@ Each variant auto-uses spring preset from `springs.ts`. Each has `reducedMotion`
 
 Implementation:
 - Render via React Portal (overlay, no layout impact)
-- Canvas-based particles (no DOM nodes per particle)
+- **Single shared canvas** reused across all moments (canvas pooling, max 1 active canvas)
+- Max 3 concurrent animations — excess queued and played sequentially
+- Canvas context disposed after 1s idle (no memory leak on rapid triggers)
 - Each respects `prefers-reduced-motion` (replaced with subtle opacity flash)
 - Event-driven: components emit events, SignatureMoments listens globally
 
@@ -329,13 +350,7 @@ Plus: `springs.ts` exports `useReducedMotion()` hook that returns simplified var
 
 ### C5: Progressive Disclosure on AI Responses
 
-**New file:** `frontend/src/components/GeneralChat/CollapsibleResponse.tsx`
-
-- AI responses > 500 characters: Show first 3 lines + gradient fade
-- "Vollstaendig anzeigen" button expands with `springs.gentle` animation
-- Metadata (ConfidenceBadge, ToolDisclosure, ThinkingBlock) always visible above fold
-- Short responses (< 500 chars) render normally (no collapse)
-- User preference: "Immer vollstaendig anzeigen" toggle in Settings/AI
+**Owned by Worker F (F3).** Worker C applies spring animation to the expand/collapse transition in `CollapsibleResponse.tsx` (created by Worker F). No separate file creation here — C only contributes the `springs.gentle` transition config to F3's component.
 
 ### C6: Migration of Existing Animations
 
@@ -418,7 +433,7 @@ import { shadows } from '../../design-system/tokens';
 
 ### D5: CSS Variable Audit Script
 
-**New file:** `scripts/audit-hardcoded-styles.ts`
+**New file:** `backend/scripts/audit-hardcoded-styles.ts`
 
 ```typescript
 // Scans all .tsx and .css files outside design-system/ for:
@@ -529,8 +544,9 @@ All interactive card components receive:
 import { axe, toHaveNoViolations } from 'jest-axe';
 expect.extend(toHaveNoViolations);
 
-// Test 5 critical pages
-const pages = ['ChatSkeleton', 'DashboardSkeleton', 'QueryErrorState', 'ConfidenceBadge', 'ToolDisclosure'];
+// Test leaf components + composed pages
+const leafComponents = ['ChatSkeleton', 'DashboardSkeleton', 'QueryErrorState', 'ConfidenceBadge', 'ToolDisclosure'];
+const composedPages = ['Dashboard', 'IdeasPage', 'ChatPage']; // highest-value a11y targets
 
 pages.forEach(page => {
   test(`${page} has no accessibility violations`, async () => {
@@ -715,7 +731,7 @@ Gradually migrate route handlers to use `successResponse()` / `errorResponse()` 
 
 ### G2: Branded Context Type
 
-**New file:** `backend/src/types/context.ts`
+**New file:** `backend/src/types/context.ts` (Note: `AIContext` type already exists in frontend `ContextSwitcher`. This file creates the canonical backend definition. Frontend should re-export or align with this type.)
 
 ```typescript
 export type AIContext = 'personal' | 'work' | 'learning' | 'creative';
@@ -819,7 +835,7 @@ describe('Concurrent Operations', () => {
 });
 ```
 
-~8 tests. Timeout: 60s per test.
+~8 tests. Timeout: 60s per test. **Note:** These tests use mocked `queryContext` (not real DB) to remain CI-compatible. They test concurrency logic, not database throughput. Mark with `describe.skip` if CI runner lacks sufficient resources.
 
 ### G6: Frontend Streaming Edge Cases
 
@@ -865,6 +881,14 @@ CREATE TABLE IF NOT EXISTS {schema}.rag_evaluation_metrics (
 
 CREATE INDEX idx_{schema}_rag_eval_strategy ON {schema}.rag_evaluation_metrics(strategy, created_at);
 CREATE INDEX idx_{schema}_rag_eval_date ON {schema}.rag_evaluation_metrics(created_at);
+
+-- Worker B2: Conversation Search — tsvector on chat_messages
+ALTER TABLE {schema}.chat_messages
+  ADD COLUMN IF NOT EXISTS search_vector tsvector
+  GENERATED ALWAYS AS (to_tsvector('german', coalesce(content, ''))) STORED;
+
+CREATE INDEX IF NOT EXISTS idx_{schema}_chat_msg_search
+  ON {schema}.chat_messages USING GIN (search_vector);
 ```
 
 Applied to all 4 schemas (personal, work, learning, creative).
@@ -875,14 +899,18 @@ Applied to all 4 schemas (personal, work, learning, creative).
 
 | Worker | New Files | Modified Files | New Tests |
 |--------|-----------|----------------|-----------|
-| A: Resilience | 2 | 3 | ~35 |
-| B: RAG & Memory | 4 | 3 | ~60 |
-| C: Motion | 4 | ~15 | ~15 |
+| A: Resilience | 2 | 4 | ~35 |
+| B: RAG & Memory | 3 | 5 | ~60 |
+| C: Motion | 3 | ~15 | ~15 |
 | D: Design Tokens | 1 | ~25 | ~10 |
 | E: Accessibility | 2 | ~10 | ~22 |
 | F: Error UX | 2 | ~12 | ~16 |
 | G: Type Safety | 7 | ~20 | ~55 |
-| **Total** | **22** | **~88** | **~213** |
+| **Total** | **20** | **~91** | **~213** |
+
+**Dependencies:**
+- Verify `framer-motion` is in `frontend/package.json` (used by Workers C and D). If missing, add as dependency.
+- `vitest-axe` or `jest-axe` needed for Worker E (axe-core tests).
 
 **Target Quality Score:** 8.2/10 → 9.5+/10
 
