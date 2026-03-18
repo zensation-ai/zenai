@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import axios from 'axios';
 import { showToast } from '../Toast';
 import { useConfirm } from '../ConfirmDialog';
@@ -8,9 +8,11 @@ import '../LearningDashboard.css';
 import { logError } from '../../utils/errors';
 import { HubPage, type TabDef } from '../HubPage';
 import { SkeletonLoader } from '../SkeletonLoader';
+import { QueryErrorState } from '../QueryErrorState';
 import { LearningDashboardProps, DashboardData, ProfileData } from './types';
 import type { LearningTab } from './types';
 import { useTabNavigation } from '../../hooks/useTabNavigation';
+import { useLearningDashboardQuery } from '../../hooks/queries/useLearningData';
 import { OverviewTab } from './OverviewTab';
 import { FocusTab } from './FocusTab';
 import { SuggestionsTab } from './SuggestionsTab';
@@ -31,8 +33,10 @@ const BASE_TABS: readonly TabDef<LearningTab>[] = [
 
 export function LearningDashboard({ context, onBack, initialTab = 'overview' }: LearningDashboardProps) {
   const greeting = getTimeBasedGreeting();
-  const [loading, setLoading] = useState(true);
-  const [data, setData] = useState<DashboardData | null>(null);
+
+  // React Query: replaces useState + useEffect + axios + AbortController
+  const { data, isLoading: loading, isError, error: queryError, refetch } = useLearningDashboardQuery(context);
+
   const { activeTab, handleTabChange } = useTabNavigation<LearningTab>({
     initialTab,
     validTabs: VALID_TABS,
@@ -47,44 +51,8 @@ export function LearningDashboard({ context, onBack, initialTab = 'overview' }: 
   const [savingProfile, setSavingProfile] = useState(false);
   const confirm = useConfirm();
 
-  // AbortController ref to prevent memory leaks on unmount
-  const abortControllerRef = useRef<AbortController | null>(null);
-
-  const loadDashboard = useCallback(async (signal?: AbortSignal) => {
-    setLoading(true);
-    try {
-      const response = await axios.get(`/api/${context}/learning/dashboard`, { signal });
-      setData(response.data?.dashboard ?? null);
-    } catch (error) {
-      // Don't update state if request was aborted
-      if (axios.isCancel(error)) return;
-      logError('LearningDashboard:loadData', error);
-      showToast('Dashboard konnte nicht geladen werden', 'error');
-    } finally {
-      setLoading(false);
-    }
-  }, [context]);
-
-  useEffect(() => {
-    // Abort any previous request
-    abortControllerRef.current?.abort();
-
-    // Create new AbortController
-    abortControllerRef.current = new AbortController();
-    loadDashboard(abortControllerRef.current.signal);
-
-    // Cleanup: abort on unmount or context change
-    return () => {
-      abortControllerRef.current?.abort();
-    };
-  }, [loadDashboard]);
-
   // Manual reload handler (for after actions)
-  const handleReload = useCallback(() => {
-    abortControllerRef.current?.abort();
-    abortControllerRef.current = new AbortController();
-    loadDashboard(abortControllerRef.current.signal);
-  }, [loadDashboard]);
+  const handleReload = () => { refetch(); };
 
   const handleToggleFocus = async (id: string, isActive: boolean) => {
     try {
@@ -254,10 +222,8 @@ export function LearningDashboard({ context, onBack, initialTab = 'overview' }: 
       );
     }
 
-    if (!data) {
-      return (
-        <div className="error-state neuro-error-friendly">Dashboard konnte nicht geladen werden</div>
-      );
+    if (isError || !data) {
+      return <QueryErrorState error={queryError ?? new Error('Dashboard konnte nicht geladen werden')} refetch={refetch} />;
     }
 
     return (
