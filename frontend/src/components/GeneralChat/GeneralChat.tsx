@@ -6,7 +6,7 @@
  * Features humanized AI personality with consistent branding.
  */
 
-import { useState, useEffect, useRef, useCallback, lazy, Suspense, type KeyboardEvent } from 'react';
+import { useState, useEffect, useRef, useCallback, useReducer, lazy, Suspense, type KeyboardEvent } from 'react';
 import axios from 'axios';
 import { showToast } from '../Toast';
 import { getErrorMessage, logError } from '../../utils/errors';
@@ -16,10 +16,12 @@ import { ArtifactButton } from '../ArtifactButton';
 import { ErrorBoundary } from '../ErrorBoundary';
 import { extractArtifacts, type Artifact } from '../../types/artifacts';
 import { isOffline, queueMessage, generateOfflineResponse, syncPendingMessages } from '../../services/offline-chat';
+import { MAX_TOOL_RESULTS, MAX_ARTIFACT_CACHE, MAX_IMAGE_SIZE_BYTES, IMAGE_MIME_PREFIX } from '../../config/chat';
 import '../GeneralChat.css';
 
 import { ChatMessageList } from './ChatMessageList';
 import { ChatInput } from './ChatInput';
+import { chatReducer, INITIAL_CHAT_STATE } from './chatReducer';
 import type { ChatMessage, GeneralChatProps } from './types';
 
 // Lazy-load ArtifactPanel (pulls in react-syntax-highlighter ~200KB + react-markdown)
@@ -28,6 +30,9 @@ const ArtifactPanel = lazy(() => import('../ArtifactPanel').then(m => ({ default
 const VoiceChatOverlay = lazy(() => import('../VoiceChat').then(m => ({ default: m.VoiceChat })));
 
 export function GeneralChat({ context, isCompact = false, assistantMode = false, fullPage = false, initialSessionId, onSessionChange }: GeneralChatProps) {
+  // Chat lifecycle state machine (Fix 26)
+  const [chatState, dispatchChat] = useReducer(chatReducer, INITIAL_CHAT_STATE);
+
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [inputValue, setInputValue] = useState('');
@@ -60,12 +65,14 @@ export function GeneralChat({ context, isCompact = false, assistantMode = false,
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
+  // Master AbortController: aborted on context change to cancel ALL in-flight requests
+  const contextAbortRef = useRef<AbortController | null>(null);
   // AbortController for session-loading requests only
   const abortControllerRef = useRef<AbortController | null>(null);
   // Separate AbortController for streaming — useEffect must NOT abort this
   const streamAbortRef = useRef<AbortController | null>(null);
-  // Guard: skip useEffect reload when we caused the session change internally
-  const skipNextSessionLoadRef = useRef(false);
+  // skipNextLoad is now managed by chatReducer (Fix 26)
+  // Kept as derived ref for backward compatibility in the useEffect
   // Track previous initialSessionId to detect "new chat" signal (had value → null)
   const prevInitialSessionIdRef = useRef<string | null | undefined>(undefined);
   // Stable session key: incremented to force re-initialization on rapid parent updates
@@ -82,9 +89,9 @@ export function GeneralChat({ context, isCompact = false, assistantMode = false,
 
   // Load session on mount, context change, or external initialSessionId change
   useEffect(() => {
-    // If WE triggered this change (e.g. createNewSession), skip the reload
-    if (skipNextSessionLoadRef.current) {
-      skipNextSessionLoadRef.current = false;
+    // If WE triggered this change (e.g. createNewSession), skip the reload (Fix 26)
+    if (chatState.skipNextLoad) {
+      dispatchChat({ type: 'LOAD_SESSION' }); // consumes skipNextLoad flag
       prevInitialSessionIdRef.current = initialSessionId;
       return;
     }
@@ -105,14 +112,19 @@ export function GeneralChat({ context, isCompact = false, assistantMode = false,
       return;
     }
 
-    // Abort any previous session-loading request (NOT streaming)
+    // Abort ALL previous requests on context change (Fix 29)
+    contextAbortRef.current?.abort();
+    contextAbortRef.current = new AbortController();
+
+    // Abort previous session-loading request
     abortControllerRef.current?.abort();
     abortControllerRef.current = new AbortController();
 
     loadLastSession(abortControllerRef.current.signal);
 
-    // Cleanup: abort session load + streaming on unmount or context change + cancel pending RAF
+    // Cleanup: abort all requests on unmount or context change + cancel pending RAF
     return () => {
+      contextAbortRef.current?.abort();
       abortControllerRef.current?.abort();
       streamAbortRef.current?.abort();
       if (streamingRafRef.current) {
@@ -121,7 +133,7 @@ export function GeneralChat({ context, isCompact = false, assistantMode = false,
       }
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [context, sessionKey]);
+  }, [context, sessionKey, chatState.skipNextLoad]);
 
   // Track whether this is an initial/session-switch load (instant scroll) vs new message (smooth)
   const isInitialScrollRef = useRef(true);
@@ -249,8 +261,8 @@ export function GeneralChat({ context, isCompact = false, assistantMode = false,
         setMessages([]);
         setThinkingContent('');
         setStreamingContent('');
-        // Guard: prevent useEffect from reloading/aborting when WE change the session
-        skipNextSessionLoadRef.current = true;
+        // Guard: prevent useEffect from reloading/aborting when WE change the session (Fix 26)
+        dispatchChat({ type: 'SESSION_CREATED', sessionId: session.id });
         onSessionChange?.(session.id);
         return session.id;
       }
@@ -334,6 +346,29 @@ export function GeneralChat({ context, isCompact = false, assistantMode = false,
       }
 
       if (imagesToSend.length > 0) {
+        // Validate image files before upload (Fix 37)
+        for (const img of imagesToSend) {
+          if (!img.type.startsWith(IMAGE_MIME_PREFIX)) {
+            const msg = `"${img.name}" ist kein gültiges Bildformat.`;
+            if (assistantMode) { setInlineError(msg); } else { showToast(msg, 'error'); }
+            setSending(false);
+            setMessages(prev => prev.filter(m => !m.id.startsWith('temp-')));
+            setInputValue(messageContent);
+            setSelectedImages(imagesToSend);
+            return;
+          }
+          if (img.size > MAX_IMAGE_SIZE_BYTES) {
+            const sizeMB = (img.size / (1024 * 1024)).toFixed(1);
+            const msg = `"${img.name}" ist zu gross (${sizeMB} MB). Maximum: 10 MB.`;
+            if (assistantMode) { setInlineError(msg); } else { showToast(msg, 'error'); }
+            setSending(false);
+            setMessages(prev => prev.filter(m => !m.id.startsWith('temp-')));
+            setInputValue(messageContent);
+            setSelectedImages(imagesToSend);
+            return;
+          }
+        }
+
         // Use vision endpoint with FormData (no streaming for vision)
         const formData = new FormData();
         formData.append('message', messageContent);
@@ -348,6 +383,7 @@ export function GeneralChat({ context, isCompact = false, assistantMode = false,
               'Content-Type': 'multipart/form-data',
             },
             timeout: 120000, // 2 minute timeout for image processing
+            signal: contextAbortRef.current?.signal, // Abort on context change (Fix 29)
           }
         );
 
@@ -460,7 +496,6 @@ export function GeneralChat({ context, isCompact = false, assistantMode = false,
                           : 0;
                         toolStartTimeRef.current = 0;
                         // Track tool result for inline display (bounded to prevent memory leaks)
-                        const MAX_TOOL_RESULTS = 50;
                         setToolResults(prev => {
                           const next = [...prev, {
                             name: toolName,
@@ -639,9 +674,20 @@ export function GeneralChat({ context, isCompact = false, assistantMode = false,
     // Extract artifacts
     const { text, artifacts: extracted } = extractArtifacts(content);
 
-    // Cache if any found
+    // Cache if any found (with LRU eviction at MAX_ARTIFACT_CACHE)
     if (extracted.length > 0) {
-      setArtifacts(prev => new Map(prev).set(messageId, extracted));
+      setArtifacts(prev => {
+        const next = new Map(prev);
+        next.set(messageId, extracted);
+        // Evict oldest entries when cache exceeds limit
+        if (next.size > MAX_ARTIFACT_CACHE) {
+          const keysToDelete = Array.from(next.keys()).slice(0, next.size - MAX_ARTIFACT_CACHE);
+          for (const key of keysToDelete) {
+            next.delete(key);
+          }
+        }
+        return next;
+      });
     }
 
     return { text, messageArtifacts: extracted };
