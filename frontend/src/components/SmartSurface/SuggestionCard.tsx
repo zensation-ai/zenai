@@ -8,6 +8,7 @@
 
 import { useState, useCallback, useRef } from 'react';
 import type { SmartSuggestion, SnoozeDuration } from '../../hooks/useSmartSuggestions';
+import { animations } from '../../design-system';
 import './SuggestionCard.css';
 
 const TYPE_CONFIG: Record<string, { icon: string; actionLabel: string; color: string }> = {
@@ -47,7 +48,7 @@ export function SuggestionCard({ suggestion, onDismiss, onSnooze, onAccept }: Su
   const runExitAnimation = useCallback((type: 'dismiss' | 'snooze', cb: () => void) => {
     setExitAnimation(type);
     // Wait for the CSS animation to finish before calling the callback
-    setTimeout(cb, 280);
+    setTimeout(cb, animations.duration.layout);
   }, []);
 
   const handleDismiss = useCallback(() => {

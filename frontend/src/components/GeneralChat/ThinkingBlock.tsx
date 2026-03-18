@@ -10,6 +10,8 @@
  */
 
 import { useState, useRef, useEffect, useCallback } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
+import { motionVariants, reducedMotionVariants, useReducedMotion } from '../../design-system';
 
 export interface ThinkingBlockProps {
   /** The thinking/reasoning content from the AI */
@@ -21,6 +23,8 @@ export interface ThinkingBlockProps {
 export function ThinkingBlock({ content, isStreaming }: ThinkingBlockProps) {
   const [expanded, setExpanded] = useState(false);
   const contentRef = useRef<HTMLDivElement>(null);
+  const prefersReduced = useReducedMotion();
+  const slideVariant = prefersReduced ? reducedMotionVariants.slideUp : motionVariants.slideUp;
 
   // Auto-scroll during streaming when expanded
   useEffect(() => {
@@ -78,20 +82,35 @@ export function ThinkingBlock({ content, isStreaming }: ThinkingBlockProps) {
         </span>
       </button>
 
-      {expanded ? (
-        <div
-          id="thinking-block-content"
-          ref={contentRef}
-          className="thinking-block-content"
-        >
-          <pre className="thinking-block-text">{content}</pre>
-        </div>
-      ) : (
-        <div className="thinking-block-preview" aria-hidden="true">
-          <span className="thinking-block-preview-text">{previewText}</span>
-          <span className="thinking-block-fade" />
-        </div>
-      )}
+      <AnimatePresence mode="wait" initial={false}>
+        {expanded ? (
+          <motion.div
+            key="content"
+            id="thinking-block-content"
+            ref={contentRef}
+            className="thinking-block-content"
+            variants={slideVariant}
+            initial="initial"
+            animate="animate"
+            exit="exit"
+          >
+            <pre className="thinking-block-text">{content}</pre>
+          </motion.div>
+        ) : (
+          <motion.div
+            key="preview"
+            className="thinking-block-preview"
+            aria-hidden="true"
+            variants={slideVariant}
+            initial="initial"
+            animate="animate"
+            exit="exit"
+          >
+            <span className="thinking-block-preview-text">{previewText}</span>
+            <span className="thinking-block-fade" />
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
