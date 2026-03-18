@@ -83,10 +83,21 @@ class SharedMemoryService {
     });
     this.enforceTeamLimit();
 
-    // Try to restore from Redis in background
-    this.restoreFromRedis(teamId).catch(() => {
-      // Non-critical: Redis restore failed silently
-    });
+    // Try to restore from Redis first, then DB as authoritative fallback on cold start
+    this.restoreFromRedis(teamId)
+      .then(() => {
+        // If Redis had no data, try DB (authoritative on cold start)
+        const store = this.stores.get(teamId);
+        if (store && store.entries.length === 0) {
+          return this.restoreFromDB(teamId);
+        }
+      })
+      .catch(() => {
+        // If Redis fails, fall back to DB directly
+        this.restoreFromDB(teamId).catch(() => {
+          // Non-critical: both restore paths failed silently
+        });
+      });
   }
 
   /**
@@ -149,21 +160,26 @@ class SharedMemoryService {
 
   /**
    * L3: Persist a single entry to the database (fire-and-forget)
+   *
+   * Maps SharedMemoryEntry to agent_shared_memory schema:
+   *   execution_id = teamId
+   *   key = entry.id (unique per entry)
+   *   value = JSONB { type, content, metadata }
+   *   agent_role = entry.agentRole
    */
   private async persistToDB(teamId: string, entry: SharedMemoryEntry): Promise<void> {
     try {
       const { pool } = await import('../../utils/database-context');
       await pool.query(`
-        INSERT INTO public.agent_shared_memory (id, team_id, agent_role, entry_type, content, metadata, created_at)
-        VALUES ($1, $2, $3, $4, $5, $6, $7)
-        ON CONFLICT (id) DO NOTHING
+        INSERT INTO public.agent_shared_memory (id, execution_id, key, value, agent_role, created_at)
+        VALUES ($1, $2, $3, $4, $5, $6)
+        ON CONFLICT (execution_id, key) DO NOTHING
       `, [
         entry.id,
         teamId,
+        entry.id,
+        JSON.stringify({ type: entry.type, content: entry.content, metadata: entry.metadata }),
         entry.agentRole,
-        entry.type,
-        entry.content,
-        entry.metadata ? JSON.stringify(entry.metadata) : null,
         entry.timestamp,
       ]);
     } catch {
@@ -174,14 +190,20 @@ class SharedMemoryService {
   /**
    * L3: Restore team store from database.
    * DB is authoritative on cold start — takes precedence over empty Redis.
+   *
+   * Reads from agent_shared_memory schema:
+   *   execution_id = teamId
+   *   key = entry.id
+   *   value = JSONB { type, content, metadata }
+   *   agent_role = entry.agentRole
    */
   async restoreFromDB(teamId: string): Promise<void> {
     try {
       const { pool } = await import('../../utils/database-context');
       const result = await pool.query(`
-        SELECT id, team_id, agent_role, entry_type, content, metadata, created_at
+        SELECT id, execution_id, key, value, agent_role, created_at
         FROM public.agent_shared_memory
-        WHERE team_id = $1
+        WHERE execution_id = $1
         ORDER BY created_at ASC
       `, [teamId]);
 
@@ -202,14 +224,17 @@ class SharedMemoryService {
       }
 
       const targetStore = this.stores.get(teamId)!;
-      targetStore.entries = result.rows.map((row: Record<string, unknown>) => ({
-        id: row.id as string,
-        agentRole: row.agent_role as AgentRole,
-        type: row.entry_type as SharedEntryType,
-        content: row.content as string,
-        metadata: row.metadata ? (typeof row.metadata === 'string' ? JSON.parse(row.metadata as string) : row.metadata as Record<string, unknown>) : undefined,
-        timestamp: new Date(row.created_at as string),
-      }));
+      targetStore.entries = result.rows.map((row: Record<string, unknown>) => {
+        const value = typeof row.value === 'string' ? JSON.parse(row.value as string) : (row.value as Record<string, unknown>) || {};
+        return {
+          id: row.id as string,
+          agentRole: row.agent_role as AgentRole,
+          type: (value.type || 'finding') as SharedEntryType,
+          content: (value.content || '') as string,
+          metadata: value.metadata as Record<string, unknown> | undefined,
+          timestamp: new Date(row.created_at as string),
+        };
+      });
 
       if (targetStore.entries.length > 0) {
         targetStore.lastActivity = targetStore.entries[targetStore.entries.length - 1].timestamp;

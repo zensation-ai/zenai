@@ -42,10 +42,15 @@ describe('Persistent Shared Memory (DB Layer L3)', () => {
       expect(mockPoolQuery).toHaveBeenCalled();
       const call = mockPoolQuery.mock.calls[0];
       expect(call[0]).toContain('INSERT INTO public.agent_shared_memory');
+      // execution_id = teamId
       expect(call[1]).toContain('db-write-team');
+      // agent_role
       expect(call[1]).toContain('researcher');
-      expect(call[1]).toContain('finding');
-      expect(call[1]).toContain('Test content');
+      // value is JSONB containing type, content, metadata
+      const valueParam = call[1].find((p: unknown) => typeof p === 'string' && p.includes('"type"'));
+      expect(valueParam).toBeDefined();
+      expect(valueParam).toContain('"content":"Test content"');
+      expect(valueParam).toContain('"type":"finding"');
 
       sharedMemory.clear('db-write-team');
     });
@@ -68,20 +73,18 @@ describe('Persistent Shared Memory (DB Layer L3)', () => {
       const mockDbEntries = [
         {
           id: 'entry-1',
-          team_id: 'restore-team',
+          execution_id: 'restore-team',
+          key: 'entry-1',
+          value: { type: 'finding', content: 'DB finding', metadata: {} },
           agent_role: 'researcher',
-          entry_type: 'finding',
-          content: 'DB finding',
-          metadata: '{}',
           created_at: new Date().toISOString(),
         },
         {
           id: 'entry-2',
-          team_id: 'restore-team',
+          execution_id: 'restore-team',
+          key: 'entry-2',
+          value: { type: 'artifact', content: 'DB artifact' },
           agent_role: 'writer',
-          entry_type: 'artifact',
-          content: 'DB artifact',
-          metadata: null,
           created_at: new Date().toISOString(),
         },
       ];
@@ -105,11 +108,10 @@ describe('Persistent Shared Memory (DB Layer L3)', () => {
       mockPoolQuery.mockResolvedValue({
         rows: [{
           id: 'db-1',
-          team_id: 'existing-team',
+          execution_id: 'existing-team',
+          key: 'db-1',
+          value: { type: 'artifact', content: 'From DB' },
           agent_role: 'writer',
-          entry_type: 'artifact',
-          content: 'From DB',
-          metadata: null,
           created_at: new Date().toISOString(),
         }],
         rowCount: 1,
@@ -137,11 +139,10 @@ describe('Persistent Shared Memory (DB Layer L3)', () => {
       mockPoolQuery.mockResolvedValue({
         rows: [{
           id: 'db-entry',
-          team_id: 'l3-read-team',
+          execution_id: 'l3-read-team',
+          key: 'db-entry',
+          value: { type: 'finding', content: 'From L3' },
           agent_role: 'coder',
-          entry_type: 'finding',
-          content: 'From L3',
-          metadata: null,
           created_at: new Date().toISOString(),
         }],
         rowCount: 1,
@@ -167,11 +168,10 @@ describe('Persistent Shared Memory (DB Layer L3)', () => {
       mockPoolQuery.mockResolvedValue({
         rows: [{
           id: 'cold-1',
-          team_id: 'cold-team',
+          execution_id: 'cold-team',
+          key: 'cold-1',
+          value: { type: 'plan', content: 'DB plan', metadata: {} },
           agent_role: 'researcher',
-          entry_type: 'plan',
-          content: 'DB plan',
-          metadata: '{}',
           created_at: new Date().toISOString(),
         }],
         rowCount: 1,

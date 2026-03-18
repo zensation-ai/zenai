@@ -406,6 +406,27 @@ class EnhancedRAGService {
         finalResults.map(r => ({ id: r.id, title: r.title, summary: r.summary, score: r.score }))
       );
 
+      if (qualityEval.tier === QualityTier.FAILED) {
+        logger.info('CRAG: FAILED tier, returning low-confidence result', {
+          query: query.substring(0, 50),
+          combinedScore: qualityEval.combinedScore,
+          avgScore: qualityEval.avgScore,
+        });
+
+        // Return early with capped confidence so downstream knows retrieval was poor
+        timing.total = Date.now() - startTime;
+        return {
+          results: finalResults,
+          confidence: Math.min(qualityEval.avgScore, 0.2),
+          methodsUsed: [...methodsUsed, 'failed_retrieval'],
+          timing: { ...timing, cacheHit: false },
+          debug: {
+            hydeUsed: useHyDE,
+            hydeReason: 'CRAG gate: retrieval quality too low',
+          },
+        };
+      }
+
       if (qualityEval.tier === QualityTier.AMBIGUOUS) {
         logger.info('CRAG: AMBIGUOUS tier, attempting reformulation', {
           query: query.substring(0, 50),

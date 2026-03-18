@@ -845,6 +845,50 @@ function buildGraphForStrategy(strategy: TeamStrategy, skipReview?: boolean): Ag
         .setStart('researcher');
     }
 
+    case 'parallel_research': {
+      // 2x Researcher parallel → Writer → Reviewer
+      const graph = new AgentGraph('parallel-research')
+        .addNode({ id: 'researcher1', type: 'agent', config: { agentRole: 'researcher', label: 'Research 1' } })
+        .addNode({ id: 'researcher2', type: 'agent', config: { agentRole: 'researcher', label: 'Research 2' } })
+        .addNode({ id: 'writer', type: 'agent', config: { agentRole: 'writer', label: 'Write' } })
+        .addEdge({ from: 'researcher1', to: 'writer' })
+        .addEdge({ from: 'researcher2', to: 'writer' });
+      if (!skipReview) {
+        graph
+          .addNode({ id: 'reviewer', type: 'agent', config: { agentRole: 'reviewer', label: 'Review' } })
+          .addEdge({ from: 'writer', to: 'reviewer' });
+      }
+      return graph.setStart('researcher1');
+    }
+
+    case 'parallel_code_review': {
+      // Coder + Researcher parallel → Reviewer
+      const graph = new AgentGraph('parallel-code-review')
+        .addNode({ id: 'coder', type: 'agent', config: { agentRole: 'coder', label: 'Code' } })
+        .addNode({ id: 'researcher', type: 'agent', config: { agentRole: 'researcher', label: 'Research' } })
+        .addNode({ id: 'reviewer', type: 'agent', config: { agentRole: 'reviewer', label: 'Review' } })
+        .addEdge({ from: 'coder', to: 'reviewer' })
+        .addEdge({ from: 'researcher', to: 'reviewer' })
+        .setStart('coder');
+      return graph;
+    }
+
+    case 'full_parallel': {
+      // Researcher + Coder parallel → Writer → Reviewer
+      const graph = new AgentGraph('full-parallel')
+        .addNode({ id: 'researcher', type: 'agent', config: { agentRole: 'researcher', label: 'Research' } })
+        .addNode({ id: 'coder', type: 'agent', config: { agentRole: 'coder', label: 'Code' } })
+        .addNode({ id: 'writer', type: 'agent', config: { agentRole: 'writer', label: 'Write' } })
+        .addEdge({ from: 'researcher', to: 'writer' })
+        .addEdge({ from: 'coder', to: 'writer' });
+      if (!skipReview) {
+        graph
+          .addNode({ id: 'reviewer', type: 'agent', config: { agentRole: 'reviewer', label: 'Review' } })
+          .addEdge({ from: 'writer', to: 'reviewer' });
+      }
+      return graph.setStart('researcher');
+    }
+
     case 'custom': {
       // Custom strategy cannot be auto-mapped to a graph; fall back to empty graph
       return new AgentGraph('custom');
