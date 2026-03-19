@@ -234,7 +234,7 @@ function heuristicRerank(query: string, results: EnhancedResult[]): EnhancedResu
  * German and English complex query signals.
  * Matches multi-part, comparison, causal, and temporal query patterns.
  */
-const COMPLEX_QUERY_PATTERNS = /vergleich|warum|wieso|weshalb|unterschied|einerseits|andererseits|vs\.?|pros?\s*(und|&)|cons?|erstens|zweitens|drittens|analysier/i;
+const COMPLEX_QUERY_PATTERNS = /vergleich|warum|wieso|weshalb|unterschied|einerseits|andererseits|vs\.?|pros?\s*(und|&)|cons?|erstens|zweitens|drittens|analysier|compare|why|because|explain|difference|relationship|how\s+does|what\s+causes/i;
 
 /**
  * Classify a query as simple or complex to optimize retrieval strategy.

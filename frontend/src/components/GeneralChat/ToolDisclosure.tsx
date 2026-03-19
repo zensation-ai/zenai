@@ -80,9 +80,11 @@ function formatDuration(ms: number): string {
 
 export interface ToolDisclosureProps {
   toolCalls: ToolCall[];
+  messageId?: string;
 }
 
-export function ToolDisclosure({ toolCalls }: ToolDisclosureProps) {
+export function ToolDisclosure({ toolCalls, messageId }: ToolDisclosureProps) {
+  const listId = `tool-disclosure-list-${messageId || Math.random().toString(36).slice(2, 8)}`;
   const [expanded, setExpanded] = useState(false);
 
   if (toolCalls.length === 0) return null;
@@ -97,7 +99,7 @@ export function ToolDisclosure({ toolCalls }: ToolDisclosureProps) {
         className="tool-disclosure-toggle"
         onClick={() => setExpanded(!expanded)}
         aria-expanded={expanded}
-        aria-controls="tool-disclosure-list"
+        aria-controls={listId}
       >
         <span className="tool-disclosure-icon" aria-hidden="true">
           <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
@@ -117,9 +119,9 @@ export function ToolDisclosure({ toolCalls }: ToolDisclosureProps) {
       </button>
 
       {expanded && (
-        <ol id="tool-disclosure-list" className="tool-disclosure-list">
+        <ol id={listId} className="tool-disclosure-list">
           {toolCalls.map((tc, i) => (
-            <li key={i} className={`tool-disclosure-item ${tc.status === 'error' ? 'tool-disclosure-item--error' : ''}`}>
+            <li key={`${tc.name}-${i}`} className={`tool-disclosure-item ${tc.status === 'error' ? 'tool-disclosure-item--error' : ''}`}>
               <span className="tool-disclosure-status" aria-hidden="true">
                 {tc.status === 'success' ? (
                   <svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke="var(--color-success, #22c55e)" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>

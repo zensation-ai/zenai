@@ -84,13 +84,13 @@ export async function handleConversationSearch(
   input: Record<string, unknown>,
   execContext: ToolExecutionContext
 ): Promise<string> {
-  const query = input.query as string;
-  const limit = Math.min((input.limit as number) || 10, 20);
-  const context = execContext.aiContext;
-
-  if (!query || typeof query !== 'string') {
+  const rawQuery = input.query;
+  if (!rawQuery || typeof rawQuery !== 'string') {
     return 'Fehler: Kein Suchbegriff angegeben.';
   }
+  const query = rawQuery;
+  const limit = Math.min(Number(input.limit) || 10, 20);
+  const context = execContext.aiContext;
 
   logger.debug('Tool: conversation_search', { query, limit, context });
 
@@ -139,23 +139,27 @@ export async function handleConversationSearchDate(
   input: Record<string, unknown>,
   execContext: ToolExecutionContext
 ): Promise<string> {
-  const query = input.query as string;
-  const fromDate = input.from_date as string;
-  const toDate = input.to_date as string;
-  const limit = Math.min((input.limit as number) || 10, 20);
-  const context = execContext.aiContext;
+  const rawQuery = input.query;
+  const rawFromDate = input.from_date;
+  const rawToDate = input.to_date;
 
-  if (!query || typeof query !== 'string') {
+  if (!rawQuery || typeof rawQuery !== 'string') {
     return 'Fehler: Kein Suchbegriff angegeben.';
   }
 
-  if (!fromDate || !isValidDate(fromDate)) {
-    return `Fehler: Ungueltes Startdatum "${fromDate}". Bitte Format YYYY-MM-DD verwenden.`;
+  if (!rawFromDate || typeof rawFromDate !== 'string' || !isValidDate(rawFromDate)) {
+    return `Fehler: Ungueltiges Startdatum "${rawFromDate}". Bitte Format YYYY-MM-DD verwenden.`;
   }
 
-  if (!toDate || !isValidDate(toDate)) {
-    return `Fehler: Ungueltes Enddatum "${toDate}". Bitte Format YYYY-MM-DD verwenden.`;
+  if (!rawToDate || typeof rawToDate !== 'string' || !isValidDate(rawToDate)) {
+    return `Fehler: Ungueltiges Enddatum "${rawToDate}". Bitte Format YYYY-MM-DD verwenden.`;
   }
+
+  const query = rawQuery;
+  const fromDate = rawFromDate;
+  const toDate = rawToDate;
+  const limit = Math.min(Number(input.limit) || 10, 20);
+  const context = execContext.aiContext;
 
   logger.debug('Tool: conversation_search_date', { query, fromDate, toDate, limit, context });
 

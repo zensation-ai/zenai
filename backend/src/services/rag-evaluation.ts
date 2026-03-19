@@ -191,15 +191,15 @@ export async function getRAGEvaluationStats(
         AVG(mrr) AS avg_mrr,
         AVG(ndcg) AS avg_ndcg
       FROM rag_evaluation_metrics
-      WHERE created_at >= NOW() - INTERVAL '${days} days'
+      WHERE created_at >= NOW() - INTERVAL '1 day' * $1
       GROUP BY strategy_used
       ORDER BY total_evaluations DESC`,
-      []
+      [days]
     );
 
     return result.rows.map(row => ({
       strategyUsed: row.strategy_used ?? null,
-      totalEvaluations: parseInt(row.total_evaluations, 10),
+      totalEvaluations: parseInt(row.total_evaluations, 10) || 0,
       avgPrecision: parseFloat(row.avg_precision) || 0,
       avgMRR: parseFloat(row.avg_mrr) || 0,
       avgNDCG: parseFloat(row.avg_ndcg) || 0,

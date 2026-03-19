@@ -8,8 +8,8 @@
  * @module components/GeneralChat/CollapsibleResponse
  */
 
-import { useState } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
+import { useState, useId } from 'react';
+import { motion } from 'framer-motion';
 import { springs } from '../../design-system/springs';
 import '../GeneralChat.css';
 
@@ -42,6 +42,7 @@ export interface CollapsibleResponseProps {
 
 export function CollapsibleResponse({ content, children, metadata }: CollapsibleResponseProps) {
   const [expanded, setExpanded] = useState(false);
+  const bodyId = useId();
 
   const isLong = content.length > COLLAPSE_THRESHOLD;
 
@@ -59,32 +60,31 @@ export function CollapsibleResponse({ content, children, metadata }: Collapsible
     <div className="collapsible-response">
       {metadata && <div className="collapsible-response__metadata">{metadata}</div>}
 
-      <AnimatePresence initial={false}>
-        <motion.div
-          key={expanded ? 'expanded' : 'collapsed'}
-          className="collapsible-response__body"
-          style={{
-            position: 'relative',
-            overflow: 'hidden',
-          }}
-          initial={false}
-          animate={{
-            maxHeight: expanded ? 9999 : COLLAPSED_HEIGHT,
-          }}
-          transition={{ type: 'spring', ...springs.gentle }}
-        >
-          {children}
+      <motion.div
+        id={bodyId}
+        className="collapsible-response__body"
+        style={{
+          position: 'relative',
+          overflow: 'hidden',
+        }}
+        animate={{
+          maxHeight: expanded ? 9999 : COLLAPSED_HEIGHT,
+        }}
+        transition={{ type: 'spring', ...springs.gentle }}
+      >
+        {children}
 
-          {!expanded && (
-            <div className="collapsible-response__gradient" aria-hidden="true" />
-          )}
-        </motion.div>
-      </AnimatePresence>
+        {!expanded && (
+          <div className="collapsible-response__gradient" aria-hidden="true" />
+        )}
+      </motion.div>
 
       <button
         type="button"
         className="collapsible-response__toggle"
         aria-expanded={expanded}
+        aria-controls={bodyId}
+        aria-label={expanded ? 'KI-Antwort einklappen' : 'KI-Antwort vollstaendig anzeigen'}
         onClick={() => setExpanded(prev => !prev)}
       >
         <svg
