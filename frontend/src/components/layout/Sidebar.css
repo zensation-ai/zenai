@@ -740,6 +740,106 @@
   }
 }
 
+/* ============================================
+   Phase 105: Hub Item + Flat Nav + Divider
+   ============================================ */
+
+.sidebar-hub {
+  padding: 8px 12px 4px;
+  flex-shrink: 0;
+}
+
+.sidebar.collapsed .sidebar-hub {
+  padding: 8px 8px 4px;
+}
+
+.sidebar-hub-item {
+  background: rgba(255, 165, 0, 0.10);
+  border: 1px solid rgba(255, 165, 0, 0.18);
+  font-weight: 600;
+}
+
+.sidebar-hub-item:hover {
+  background: rgba(255, 165, 0, 0.16);
+  border-color: rgba(255, 165, 0, 0.28);
+}
+
+.sidebar-hub-item.active {
+  background: rgba(255, 165, 0, 0.18);
+  border-color: rgba(255, 165, 0, 0.30);
+}
+
+.sidebar-divider {
+  height: 1px;
+  margin: 4px 16px 4px;
+  background: rgba(255, 255, 255, 0.06);
+  flex-shrink: 0;
+}
+
+.sidebar.collapsed .sidebar-divider {
+  margin: 4px 8px 4px;
+}
+
+/* Flat nav items (Phase 105) */
+.sidebar-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 8px 12px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm, 8px);
+  color: var(--dark-text-secondary, rgba(255,255,255,0.6));
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: all 150ms ease;
+  text-align: left;
+  position: relative;
+  min-height: 40px;
+}
+
+.sidebar-nav-item:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--dark-text, #fff);
+}
+
+.sidebar-nav-item.active {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--dark-text, #fff);
+}
+
+.sidebar-nav-item[aria-current="page"]::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 6px;
+  bottom: 6px;
+  width: 2px;
+  background: var(--color-accent-primary, #ff8c5a);
+  border-radius: 1px;
+}
+
+.sidebar-nav {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 4px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.sidebar.collapsed .sidebar-nav {
+  padding: 4px 8px;
+}
+
+.sidebar.collapsed .sidebar-nav-item {
+  justify-content: center;
+  padding: 8px;
+}
+
 @media print {
   .sidebar {
     display: none;
