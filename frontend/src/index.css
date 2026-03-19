@@ -64,6 +64,89 @@ textarea::placeholder {
 }
 
 :root {
+  /* ===== Phase 102: Calm Neurodesign Tokens ===== */
+
+  /* Semantic Colors (5 hues) */
+  --color-accent: hsl(250, 65%, 58%);
+  --color-accent-hover: hsl(250, 65%, 52%);
+  --color-accent-glow: hsla(250, 65%, 58%, 0.25);
+  --color-accent-2: hsl(190, 60%, 45%);
+  --color-accent-2-hover: hsl(190, 60%, 40%);
+  --color-success: hsl(160, 70%, 42%);
+  --color-success-light: hsla(160, 70%, 42%, 0.12);
+  --color-warning: hsl(38, 95%, 55%);
+  --color-warning-light: hsla(38, 95%, 55%, 0.12);
+  --color-danger: hsl(0, 72%, 55%);
+  --color-danger-light: hsla(0, 72%, 55%, 0.12);
+
+  /* Context Colors */
+  --context-personal: hsl(210, 70%, 55%);
+  --context-work: hsl(160, 60%, 45%);
+  --context-learning: hsl(280, 60%, 55%);
+  --context-creative: hsl(35, 90%, 55%);
+
+  /* Surface Scale (Light) */
+  --surface-bg: hsl(220, 14%, 97%);
+  --surface-1: hsl(220, 14%, 99%);
+  --surface-2: hsl(220, 12%, 95%);
+  --surface-3: hsl(220, 10%, 91%);
+
+  /* Text (never pure black/white) */
+  --text-primary: hsl(220, 15%, 15%);
+  --text-secondary: hsl(220, 10%, 45%);
+  --text-tertiary: hsl(220, 8%, 62%);
+
+  /* Glass */
+  --glass-bg: rgba(255, 255, 255, 0.72);
+  --glass-blur: 16px;
+  --glass-border: rgba(255, 255, 255, 0.25);
+
+  /* Typography (Modular 1.25 scale) */
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.25rem;
+  --text-2xl: 1.5rem;
+  --text-3xl: 1.875rem;
+  --font-normal: 400;
+  --font-medium: 500;
+  --font-semibold: 600;
+  --font-bold: 700;
+  --leading-tight: 1.3;
+  --leading-normal: 1.55;
+  --leading-relaxed: 1.7;
+
+  /* Spacing (4px base) */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+
+  /* Animation */
+  --ease-default: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-exit: cubic-bezier(0.4, 0, 1, 1);
+  --duration-instant: 80ms;
+  --duration-fast: 150ms;
+  --duration-base: 250ms;
+  --duration-smooth: 350ms;
+  --duration-layout: 450ms;
+
+  /* Glass Level Shadows */
+  --glass-l1-shadow: 0 2px 16px rgba(0, 0, 0, 0.04);
+  --glass-l2-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+
+  /* Visual Haptics */
+  --haptic-press: scale(0.97);
+
   /* ===== Phase 83: Premium Design Tokens ===== */
 
   /* Typography - Inter + Geist Mono */
@@ -393,6 +476,21 @@ textarea::placeholder {
   /* ===== Dashboard ===== */
   --dashboard-card-bg: rgba(255, 255, 255, 0.75);
   --dashboard-stat-highlight: var(--primary);
+}
+
+/* Phase 102: Dark mode for new Calm Neurodesign tokens */
+[data-theme="dark"] {
+  --surface-bg: hsl(225, 18%, 10%);
+  --surface-1: hsl(225, 16%, 14%);
+  --surface-2: hsl(225, 14%, 18%);
+  --surface-3: hsl(225, 12%, 24%);
+  --text-primary: hsl(220, 15%, 95%);
+  --text-secondary: hsl(220, 10%, 72%);
+  --text-tertiary: hsl(220, 8%, 55%);
+  --glass-bg: rgba(30, 30, 46, 0.72);
+  --glass-border: rgba(255, 255, 255, 0.08);
+  --glass-l1-shadow: 0 2px 16px rgba(0, 0, 0, 0.15);
+  --glass-l2-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
 }
 
 /* ============================================
@@ -1595,4 +1693,22 @@ select:focus-visible {
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
+}
+
+/* Phase 102: Reduced motion (mandatory per spec) */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Phase 102: Visual Haptics — tactile press feedback */
+.interactive:active {
+  transform: var(--haptic-press);
+}
+
+@keyframes success-flash {
+  0% { box-shadow: 0 0 0 0 var(--color-success-light); }
+  100% { box-shadow: 0 0 0 8px transparent; }
 }
