@@ -217,3 +217,28 @@ describe('Calm Neurodesign Animation Tokens', () => {
     expect(animations.keyframes).toBeDefined();
   });
 });
+
+import { shadows } from '../design-system/shadows';
+
+describe('Calm Neurodesign Shadow Tokens', () => {
+  it('exports new glass levels', () => {
+    expect(shadows.glassLevel.level1).toBeDefined();
+    expect(shadows.glassLevel.level2).toBeDefined();
+    expect(shadows.glassLevel.backdrop).toBeDefined();
+  });
+
+  it('exports new elevation shadows', () => {
+    expect(shadows.elevation.sm).toBeDefined();
+    expect(shadows.elevation.md).toBeDefined();
+    expect(shadows.elevation.lg).toBeDefined();
+  });
+
+  it('preserves ALL legacy aggregate properties', () => {
+    expect(shadows.light).toBeDefined();
+    expect(shadows.light.sm).toBeDefined();
+    expect(shadows.light.card).toBeDefined();
+    expect(shadows.dark).toBeDefined();
+    expect(shadows.dark.sm).toBeDefined();
+    expect(shadows.glass2026).toBeDefined();
+  });
+});
