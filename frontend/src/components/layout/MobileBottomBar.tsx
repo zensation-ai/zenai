@@ -2,8 +2,7 @@
  * MobileBottomBar - Mobile Bottom Tab Navigation
  *
  * Fixed bottom bar with 5 tabs, visible only on mobile (< 768px).
- * Phase 85: Enhanced with SVG icons, sliding dot indicator,
- * micro-animations, and haptic feedback.
+ * Phase 105: Updated to Chat, Ideen, Planer, Inbox, Mehr.
  */
 
 import { memo, useMemo } from 'react';
@@ -27,12 +26,21 @@ interface BottomTab {
 }
 
 const BOTTOM_TABS: BottomTab[] = [
-  { id: 'home', label: 'Home', page: 'home' },
-  { id: 'chat', label: 'Chat', page: 'chat' },
-  { id: 'email', label: 'E-Mail', page: 'email' },
+  { id: 'hub', label: 'Chat', page: 'hub' },
+  { id: 'ideas', label: 'Ideen', page: 'ideas' },
   { id: 'calendar', label: 'Planer', page: 'calendar' },
+  { id: 'email', label: 'Inbox', page: 'email' },
   { id: 'more', label: 'Mehr', isSpecial: 'more' },
 ];
+
+// Hub tab active pages
+const HUB_ACTIVE_PAGES: Page[] = ['hub', 'home', 'chat', 'dashboard', 'browser', 'screen-memory', 'agent-teams'];
+// Ideas tab active pages
+const IDEAS_ACTIVE_PAGES: Page[] = ['ideas', 'workshop', 'incubator', 'archive', 'triage', 'proactive', 'evolution', 'ai-workshop'];
+// Calendar tab active pages
+const CALENDAR_ACTIVE_PAGES: Page[] = ['calendar', 'tasks', 'kanban', 'gantt', 'meetings', 'contacts', 'learning-tasks'];
+// Email tab active pages
+const EMAIL_ACTIVE_PAGES: Page[] = ['email', 'notifications'];
 
 /** SVG icons for each tab — 24x24 viewBox, stroke-based */
 function TabIcon({ id, active }: { id: string; active: boolean }) {
@@ -40,24 +48,18 @@ function TabIcon({ id, active }: { id: string; active: boolean }) {
   const weight = active ? '2' : '1.5';
 
   switch (id) {
-    case 'home':
-      return (
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={weight} strokeLinecap="round" strokeLinejoin="round">
-          <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
-          <polyline points="9 22 9 12 15 12 15 22" />
-        </svg>
-      );
-    case 'chat':
+    case 'hub':
       return (
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={weight} strokeLinecap="round" strokeLinejoin="round">
           <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
         </svg>
       );
-    case 'email':
+    case 'ideas':
       return (
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={weight} strokeLinecap="round" strokeLinejoin="round">
-          <rect x="2" y="4" width="20" height="16" rx="2" />
-          <polyline points="22 7 12 13 2 7" />
+          <path d="M9 18h6" />
+          <path d="M10 22h4" />
+          <path d="M15.09 14c.18-.98.65-1.74 1.41-2.5A4.65 4.65 0 0 0 18 8 6 6 0 0 0 6 8c0 1 .23 2.23 1.5 3.5A4.61 4.61 0 0 1 8.91 14" />
         </svg>
       );
     case 'calendar':
@@ -67,6 +69,13 @@ function TabIcon({ id, active }: { id: string; active: boolean }) {
           <line x1="16" y1="2" x2="16" y2="6" />
           <line x1="8" y1="2" x2="8" y2="6" />
           <line x1="3" y1="10" x2="21" y2="10" />
+        </svg>
+      );
+    case 'email':
+      return (
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={weight} strokeLinecap="round" strokeLinejoin="round">
+          <rect x="2" y="4" width="20" height="16" rx="2" />
+          <polyline points="22 7 12 13 2 7" />
         </svg>
       );
     case 'more':
@@ -99,12 +108,19 @@ export const MobileBottomBar = memo(function MobileBottomBar({
 
   const isActive = (tab: BottomTab): boolean => {
     if (tab.isSpecial) return false;
-    return currentPage === tab.page;
+    switch (tab.id) {
+      case 'hub': return HUB_ACTIVE_PAGES.includes(currentPage);
+      case 'ideas': return IDEAS_ACTIVE_PAGES.includes(currentPage);
+      case 'calendar': return CALENDAR_ACTIVE_PAGES.includes(currentPage);
+      case 'email': return EMAIL_ACTIVE_PAGES.includes(currentPage);
+      default: return currentPage === tab.page;
+    }
   };
 
   // Calculate active tab index for the sliding indicator
   const activeIndex = useMemo(() => {
-    return BOTTOM_TABS.findIndex(tab => !tab.isSpecial && currentPage === tab.page);
+    return BOTTOM_TABS.findIndex(tab => !tab.isSpecial && isActive(tab));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentPage]);
 
   return (
@@ -128,12 +144,12 @@ export const MobileBottomBar = memo(function MobileBottomBar({
             key={tab.id}
             type="button"
             role="tab"
-            className={`bottom-tab ${active ? 'active' : ''} ${tab.page === 'chat' ? 'chat-tab' : ''} ${tab.isSpecial === 'more' ? 'more-tab' : ''}`}
+            className={`bottom-tab ${active ? 'active' : ''} ${tab.id === 'hub' ? 'chat-tab' : ''} ${tab.isSpecial === 'more' ? 'more-tab' : ''}`}
             onClick={() => handleClick(tab)}
             aria-selected={active}
             aria-label={tab.label}
           >
-            <span className={`bottom-tab-icon ${tab.page === 'chat' ? 'chat-icon' : ''}`} aria-hidden="true">
+            <span className={`bottom-tab-icon ${tab.id === 'hub' ? 'chat-icon' : ''}`} aria-hidden="true">
               <TabIcon id={tab.id} active={active} />
             </span>
             <span className={`bottom-tab-label ${active ? 'label-visible' : ''}`}>
