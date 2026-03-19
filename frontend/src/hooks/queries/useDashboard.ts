@@ -253,3 +253,25 @@ export function useHealthQuery() {
     retry: 2,
   });
 }
+
+// ===========================================
+// Phase 104: ChatHub convenience hooks
+// ===========================================
+
+/**
+ * Convenience hook for SmartSurface cards in ChatHub.
+ * Aggregates dashboard summary data into a lightweight shape
+ * suitable for displaying contextual cards above the chat.
+ */
+export function useSmartSurfaceCards(context: AIContext) {
+  const summary = useDashboardSummaryQuery(context);
+  const pulse = useAIPulseQuery(context, !!summary.data);
+
+  return {
+    loading: summary.isLoading,
+    recentIdeas: summary.data?.recentIdeas ?? [],
+    upcomingEvents: summary.data?.activities?.slice(0, 3) ?? [],
+    memoryFacts: pulse.data?.memoryFacts ?? 0,
+    streak: summary.data?.streak ?? 0,
+  };
+}

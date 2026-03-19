@@ -1,0 +1,52 @@
+/**
+ * ChatHub layout styles (Phase 104)
+ *
+ * 3-layer flexbox column:
+ * - SmartSurfaceV2 (auto height, top)
+ * - .chat-hub__conversation (flex:1, scrollable)
+ * - .chat-hub__input-area (auto height, bottom)
+ */
+
+.chat-hub {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  position: relative;
+  background: var(--surface-primary, var(--color-bg));
+}
+
+/* ─── Conversation stream ─────────────────────── */
+
+.chat-hub__conversation {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  position: relative;
+}
+
+.chat-hub__loader {
+  padding: var(--spacing-4, 1rem);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-3, 0.75rem);
+}
+
+/* ─── Input area ──────────────────────────────── */
+
+.chat-hub__input-area {
+  flex-shrink: 0;
+  padding: var(--spacing-3, 0.75rem) var(--spacing-4, 1rem);
+  padding-bottom: max(var(--spacing-4, 1rem), env(safe-area-inset-bottom));
+  border-top: 1px solid var(--border-subtle, var(--color-border));
+  background: var(--surface-primary, var(--color-bg));
+}
+
+/* ─── Mobile ──────────────────────────────────── */
+
+@media (max-width: 640px) {
+  .chat-hub__input-area {
+    padding: var(--spacing-2, 0.5rem) var(--spacing-3, 0.75rem);
+    padding-bottom: max(var(--spacing-3, 0.75rem), env(safe-area-inset-bottom));
+  }
+}

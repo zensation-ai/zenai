@@ -15,6 +15,8 @@ import {
   DocumentVaultPage, BusinessDashboard, PlannerPage, EmailPage,
   LearningDashboard, MyAIPage, SettingsDashboard, NotificationsPage,
   MemoryInsightsPage, SystemAdminPage,
+  // Phase 104: ChatHub is the new primary start page
+  ChatHub,
 } from './routes/LazyPages';
 
 // Onboarding (Phase 86)
@@ -215,8 +217,15 @@ function AuthenticatedApp() {
 
   const renderRoutes = () => (
     <Routes>
-      {/* Dashboard */}
+      {/* Phase 104: ChatHub is now the primary start page */}
       <Route path="/" element={
+        <Suspense fallback={<PageLoader />}>
+          <ChatHub context={context} />
+        </Suspense>
+      } />
+
+      {/* Dashboard — still accessible at /dashboard */}
+      <Route path="/dashboard" element={
         <Suspense fallback={<PageLoader />}>
           <Dashboard
             context={context}
