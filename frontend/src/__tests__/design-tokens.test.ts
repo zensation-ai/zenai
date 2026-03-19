@@ -101,6 +101,43 @@ describe('Calm Neurodesign Color Tokens', () => {
 
 import { typography } from '../design-system/typography';
 
+import { spacing, scale, gestalt } from '../design-system/spacing';
+
+describe('Calm Neurodesign Spacing Tokens', () => {
+  it('exports 4px base scale as string px values', () => {
+    expect(scale[1]).toBe('4px');
+    expect(scale[2]).toBe('8px');
+    expect(scale[4]).toBe('16px');
+    expect(scale[6]).toBe('24px');
+    expect(scale[8]).toBe('32px');
+    expect(scale[12]).toBe('48px');
+    expect(scale[16]).toBe('64px');
+  });
+
+  it('exports gestalt proximity aliases', () => {
+    expect(gestalt.intraGroup).toBe('8px');
+    expect(gestalt.interGroup).toBe('24px');
+  });
+
+  it('preserves legacy spacing as numeric object', () => {
+    expect(spacing.xs).toBe(4);
+    expect(spacing.sm).toBe(8);
+    expect(spacing.md).toBe(12);
+    expect(spacing.lg).toBe(16);
+    expect(spacing.xl).toBe(20);
+    expect(spacing['2xl']).toBe(24);
+    expect(spacing['3xl']).toBe(32);
+    expect(spacing['4xl']).toBe(48);
+  });
+
+  it('preserves legacy space, layout, px exports', async () => {
+    const { space, layout, px } = await import('../design-system/spacing');
+    expect(space[1]).toBe(4);
+    expect(layout.sidebarWidth).toBe(260);
+    expect(px(16)).toBe('16px');
+  });
+});
+
 describe('Calm Neurodesign Typography Tokens', () => {
   it('exports modular scale sizes', () => {
     expect(typography.size.xs).toBe('0.75rem');
