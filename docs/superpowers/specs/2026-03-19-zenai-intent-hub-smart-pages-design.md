@@ -140,7 +140,7 @@ Three approaches were evaluated:
 
 ## 3. Information Architecture
 
-### Current State: 17 Nav Items + 40+ Page Types
+### Current State: 17 Nav Items + 49 Page Types
 
 ```
 Chat, Browser
@@ -305,7 +305,7 @@ Every existing `Page` type from `types/idea.ts` is explicitly mapped below. No p
 
 ### Result
 
-- **Page types:** 47 → 8 (7 Smart Pages + 1 Chat Hub). All 47 explicitly mapped above
+- **Page types:** 49 → 8 (7 Smart Pages + 1 Chat Hub). All 49 explicitly mapped above
 - **Navigation items:** 17 → 7 + 1
 - **Zero features lost:** Every capability remains accessible via direct page OR chat intent
 - **Zero API endpoints removed:** All backend routes remain active
@@ -801,7 +801,7 @@ Tooltip, Dropdown, Switch, Progress, Alert, Dialog/Sheet, Popover, Chip/Tag, Div
 
 ### 6.8 React Query Hook Migration Strategy
 
-The existing 9 hook files in `hooks/queries/` are organized per-page. With consolidation, hooks merge alongside pages:
+The existing 13 hook files in `hooks/queries/` are organized per-page. With consolidation, hooks merge alongside pages:
 
 | Current Hook | Target | Action |
 |---|---|---|
@@ -819,7 +819,9 @@ The existing 9 hook files in `hooks/queries/` are organized per-page. With conso
 | `useMyAI.ts` | Meine KI page hooks | Keep as-is |
 | `useSettings.ts` | System page hooks | Rename to `useSystem.ts` |
 
-**Query Key Factory** (`lib/query-keys.ts`): Consolidate 12 domains → 8 domains matching the new page structure. Old keys remain as aliases during migration for backward compatibility.
+**Query Key Factory** (`lib/query-keys.ts`): Consolidate 22 domains → 8 domains matching the new page structure. Old keys remain as aliases during migration for backward compatibility.
+
+**New hook:** `useWissen.ts` — Created in Phase 109, receives document queries + learning docs + browser bookmarks.
 
 **Migration approach:** Per-page — when a Smart Page is built (Phases 106-110), its hooks are consolidated in the same phase. No separate "hook migration" phase needed.
 
@@ -1055,7 +1057,7 @@ Each phase ends with passing tests and a production-deployable state. No big-ban
 | Metric | Current | Target | How to Measure |
 |--------|---------|--------|---------------|
 | Navigation items | 17 | 8 | Count sidebar items |
-| Page types | 40+ | 8 (7 Smart + Hub) | Count Page union type |
+| Page types | 49 | 8 (7 Smart + Hub) | Count Page union type. Legacy types removed after Quality Gate II |
 | CSS files | ~159 | ~60-70 | `find frontend/src -name "*.css" \| wc -l` — pages consolidate (17→8 = ~50% fewer page CSS), but DS components retain individual CSS |
 | DS component usage | ~25% | 95%+ | Audit: components using DS vs custom |
 | Lighthouse Performance | ~70 | 95+ | Lighthouse CI |
