@@ -1,7 +1,7 @@
 # ZenAI Intent Hub + Smart Pages — Design Specification
 
 > **Codename:** Project Zenith
-> **Version:** 1.0
+> **Version:** 1.1
 > **Date:** 2026-03-19
 > **Author:** Alexander Bering + Claude Opus 4.6
 > **Status:** Draft — Pending Review
@@ -182,7 +182,7 @@ Footer: System-Admin, Settings (6 tabs), Notifications
 |----------|-------------|-----------|
 | home (Dashboard) | Smart Surface in Chat Hub | Dashboard was passive display. Smart Surface is active: shows actionable cards |
 | chat | Core of Chat Hub | Chat IS the primary interaction |
-| browser | Chat intent: "Open URL..." or Cmd+K | Browser as standalone page was a foreign element |
+| browser | Chat intent: "Open URL..." or Cmd+K. Bookmarks → Wissen. History → chat query | Browser page removed. All 13 API endpoints remain active. Bookmarks migrate to Wissen as a document source. History accessible via chat intent ("Show browsing history"). `fetch_url` tool handles URL analysis |
 
 #### 💡 Ideen (merges: Gedanken + Werkstatt)
 
@@ -198,7 +198,7 @@ Footer: System-Admin, Settings (6 tabs), Notifications
 | Old Page | New Location | Rationale |
 |----------|-------------|-----------|
 | calendar (5 tabs) | Planer with view-switcher (Calendar/List/Board/Timeline) | Gantt, Kanban, Tasks are different VIEWS of the same data |
-| contacts | Slide-panel within Planer (or chat intent) | Contacts are context for planning — "meeting with Sarah" should show her contact inline |
+| contacts | Dedicated Contacts view within Planer + slide panels for detail | Full CRM preserved. Contacts is a view in Planer's view-switcher. Contact detail opens as slide panel when referenced from other views |
 | meetings | Part of calendar (meeting = event with protocol) | Already the case, just separated as a tab |
 
 #### 📧 Inbox (merges: Email + Notifications + Unified Inbox)
@@ -215,7 +215,7 @@ Footer: System-Admin, Settings (6 tabs), Notifications
 |----------|-------------|-----------|
 | documents (Docs, Canvas, Media) | Wissen: Documents, Canvas, Media | Core preserved |
 | knowledge-graph (Insights tab) | Visualization within Wissen page | KG shows connections between knowledge units — belongs here |
-| learning | Learning mode within Wissen or chat intent | "Explain React Hooks" is a chat intent. Learning goals are tasks. Learning material is documents |
+| learning | Learning mode within Wissen (view) + tasks in Planer | "Explain X" = chat intent. Learning goals migrate to Planer tasks (tagged `source: 'learning'`). `learning_tasks` table data → `tasks` table. Learning material = docs in Wissen. "Learning" filter chip in Planer + Wissen surfaces all learning-related items |
 | screen-memory | Chat intent: "What was on my screen yesterday?" | Niche feature, no dedicated page needed |
 
 #### 📊 Cockpit (merges: Business + Finance + Insights)
@@ -243,11 +243,72 @@ Footer: System-Admin, Settings (6 tabs), Notifications
 | system-admin | System: Admin tab | Was always "configuration" |
 | mcp-servers | System: Integrations tab | MCP is an integration |
 
+### Complete Page Type Migration Map
+
+Every existing `Page` type from `types/idea.ts` is explicitly mapped below. No page is left unmapped.
+
+| Current Page Type | Target Location | Migration Notes |
+|---|---|---|
+| `home` | **Chat Hub** (Smart Surface) | Dashboard widgets become Smart Surface cards |
+| `chat` | **Chat Hub** (core) | IS the Chat Hub |
+| `browser` | **Chat Hub** (intent: "Open URL...") | Browse history/bookmarks migrate to Wissen. 13 browser API endpoints remain active, invoked via chat intent or Cmd+K |
+| `ideas` | **Ideen** page | Core preserved |
+| `incubator` | **Ideen** page (filter chip) | Legacy redirect preserved |
+| `archive` | **Ideen** page (filter chip) | Legacy redirect preserved |
+| `triage` | **Ideen** page (quick-actions) | Swipe/quick-action on cards |
+| `workshop` | **Ideen** page (AI Panel) | Workshop features become slide panel |
+| `proactive` | **Ideen** page (AI Panel tab) | Proactive suggestions within AI panel |
+| `evolution` | **Ideen** page (AI Panel tab) | Idea evolution within AI panel |
+| `agent-teams` | **Chat Hub** (intent + result panel) | "Start agent team for..." triggers agent workflow |
+| `calendar` | **Planer** page | Core preserved |
+| `tasks` | **Planer** page (List view) | View switcher |
+| `kanban` | **Planer** page (Board view) | View switcher |
+| `gantt` | **Planer** page (Timeline view) | View switcher |
+| `meetings` | **Planer** page (calendar events with protocol) | Meeting = event + protocol, not separate |
+| `contacts` | **Planer** page (dedicated Contacts view + slide panels) | Full CRM preserved as a view within Planer. Contact detail opens as slide panel. All 15 Contacts API endpoints remain active |
+| `email` | **Inbox** page | Core preserved |
+| `notifications` | **Inbox** page (filter tab) | Notifications ARE inbox items |
+| `documents` | **Wissen** page | Core preserved |
+| `canvas` | **Wissen** page (Canvas view) | Core preserved |
+| `media` | **Wissen** page (Media view) | Core preserved |
+| `knowledge-graph` | **Wissen** page (Connections view) | Visualization within Wissen |
+| `graphrag` | Backend-only (no user-facing page) | Retrieval strategy, API endpoints remain |
+| `learning` | **Wissen** page (Learning mode) | Learning goals = tasks in Planer. Learning material = documents in Wissen. "Explain X" = chat intent. `learning_tasks` table data migrates to `tasks` with a `source: 'learning'` tag |
+| `learning-tasks` | **Planer** page (tasks with learning tag) | Learning tasks are tasks — shown in Planer with "Learning" filter |
+| `insights` | **Cockpit** page (Trends tab) | Core preserved |
+| `analytics` | **Cockpit** page (Trends tab) | Sub-page of insights |
+| `digest` | **Cockpit** page (Trends tab) | AI-generated summaries |
+| `business` | **Cockpit** page (Business tab) | Core preserved |
+| `finance` | **Cockpit** page (Finance tab) | Core preserved |
+| `my-ai` | **Meine KI** page | Core preserved |
+| `voice-chat` | **Meine KI** page (Voice tab) | Core preserved |
+| `memory-insights` | **Meine KI** page (Memory tab) | Memory browser with insights |
+| `digital-twin` | **Meine KI** page (Persona tab, future) | Not differentiated enough for own tab yet |
+| `procedural-memory` | **Meine KI** page (Memory tab, sub-section) | Visible via Memory browser |
+| `personalization` | **Meine KI** page (Persona tab) | Legacy redirect |
+| `screen-memory` | **Chat Hub** (intent: "What was on my screen?") | Screen Memory API endpoints remain. Niche feature accessed via chat |
+| `settings` | **System** page | Core preserved |
+| `profile` | **System** page (Profile tab) | Legacy redirect |
+| `automations` | **System** page (Integrations tab) | Legacy redirect |
+| `integrations` | **System** page (Integrations tab) | Legacy redirect |
+| `export` | **System** page (Privacy tab) | Legacy redirect |
+| `sync` | **System** page (Privacy tab) | Legacy redirect |
+| `mcp-servers` | **System** page (Integrations tab) | MCP is an integration |
+| `system-admin` | **System** page (Admin tab) | Core preserved |
+| `stories` | Deprecated (remove) | Unused legacy page type |
+| `dashboard` | **Chat Hub** (Smart Surface) | Legacy redirect to Chat Hub |
+| `ai-workshop` | **Ideen** page (AI Panel) | Legacy redirect |
+
+**Browser Migration Detail:** The `browser` page currently has 13 API endpoints (history CRUD, bookmarks CRUD, AI analyze). These endpoints remain active. Bookmarks migrate to Wissen as a document source. History is accessible via chat ("Show my browsing history for yesterday"). The standalone browser page is removed but all data and APIs persist.
+
+**Learning Migration Detail:** The `learning` page has learning goals and `learning_tasks`. Learning goals migrate to Planer as tasks tagged with `source: 'learning'`. Learning material (documents, notes) stays in Wissen. The "Explain X" learning interaction is a natural chat intent. A "Learning" filter chip in both Planer and Wissen surfaces all learning-related items.
+
 ### Result
 
-- **Page types:** 40+ → 7 Smart Pages + 1 Chat Hub
+- **Page types:** 47 → 8 (7 Smart Pages + 1 Chat Hub). All 47 explicitly mapped above
 - **Navigation items:** 17 → 7 + 1
 - **Zero features lost:** Every capability remains accessible via direct page OR chat intent
+- **Zero API endpoints removed:** All backend routes remain active
 
 ---
 
@@ -445,11 +506,13 @@ Every Smart Page follows the same structural pattern:
 - **Board**: Kanban with 4 columns (Backlog → Todo → In Progress → Done). Drag-drop
 - **List**: Sortable task list, groupable by project/priority/due date
 - **Timeline**: Gantt-style horizontal timeline. Project grouping, dependencies
+- **Contacts**: Full CRM view. Contact list with search/filter, organization view, follow-up suggestions. All 15 Contacts API endpoints active. Contact detail opens as slide panel
 
-**Contact Integration:**
+**Contact Integration (cross-view):**
 - When a task/event references a contact, a small avatar appears
-- Click avatar → contact detail as slide panel (not separate page)
+- Click avatar → contact detail as slide panel
 - "Meeting with Sarah" shows Sarah's contact info, last interactions, notes
+- Contacts view is a full-featured CRM — not a downgrade from current ContactsPage
 
 **AI Features (inline):**
 - Auto-prioritization: AI suggests order based on deadlines, dependencies, energy level (time of day)
@@ -502,11 +565,13 @@ Every Smart Page follows the same structural pattern:
 - **Canvas**: Freeform editor (Markdown + Mermaid + Images). Notion-like pages
 - **Connections**: Knowledge graph visualization. Entities, relations, communities
 - **Media**: Images, videos, audio recordings in a media grid
+- **Learning**: Learning material, study notes, bookmarked resources. Filter chip "Learning" surfaces all learning-tagged documents. Browsing bookmarks (migrated from browser) also appear here
 
 **AI Features:**
 - Document analysis: Upload → automatic summary, keyword extraction, entity recognition
 - Knowledge synthesis: "Summarize everything I know about topic X" (RAG across all sources)
 - Learning mode: "Explain [topic] like I'm a beginner" → uses existing docs + memory
+- Learning goal tracking: Learning goals are tasks in Planer, material is here in Wissen. Cross-linked via tags
 
 ### 📊 Cockpit Page
 
@@ -570,7 +635,7 @@ Every design decision grounded in cognitive science:
 /* Surface System (Neutral Warm-Gray) */
 /* Light Mode */
 --surface-bg:       hsl(220, 14%, 97%);    /* Near-white */
---surface-1:        hsl(220, 14%, 100%);   /* Cards */
+--surface-1:        hsl(220, 14%, 99%);    /* Cards — subtle lift above bg */
 --surface-2:        hsl(220, 12%, 95%);    /* Elevated cards */
 --surface-3:        hsl(220, 10%, 91%);    /* Borders/Dividers */
 
@@ -729,10 +794,34 @@ Three glass levels for depth hierarchy:
 | P1 | Animations: Replace all individual `transition` declarations with presets | All CSS files |
 | P2 | Components: Migrate each page to DS components (Card, Button, Badge, Tabs, Input) | Per page |
 | P2 | Dark Mode: Unify via `[data-theme="dark"]` selector | index.css + all files |
-| P3 | CSS consolidation: Merge similar styles, remove dead CSS | Audit |
+| P3 | CSS consolidation: Merge similar styles, remove dead CSS. Target: ~159 → ~60-70 files (pages consolidate, DS components keep individual CSS) | Audit |
 
 **New DS Components needed (10 additions to current 10):**
 Tooltip, Dropdown, Switch, Progress, Alert, Dialog/Sheet, Popover, Chip/Tag, Divider, Spinner
+
+### 6.8 React Query Hook Migration Strategy
+
+The existing 9 hook files in `hooks/queries/` are organized per-page. With consolidation, hooks merge alongside pages:
+
+| Current Hook | Target | Action |
+|---|---|---|
+| `useIdeas.ts` | Ideen page | Keep as-is, add workshop query keys |
+| `useDashboard.ts` | Chat Hub Smart Surface | Rename to `useSmartSurface.ts`, adapt queries for card data |
+| `useContacts.ts` | Planer page hooks | Merge into `usePlaner.ts` alongside task/calendar queries |
+| `useTasks.ts` | Planer page hooks | Merge into `usePlaner.ts` |
+| `useCalendar.ts` | Planer page hooks | Merge into `usePlaner.ts` |
+| `useEmail.ts` | Inbox page hooks | Rename to `useInbox.ts`, add notification queries |
+| `useFinance.ts` | Cockpit page hooks | Merge into `useCockpit.ts` alongside business/insights queries |
+| `useChat.ts` | Chat Hub hooks | Keep as-is, extend for intent bar features |
+| `useBusinessData.ts` | Cockpit page hooks | Merge into `useCockpit.ts` |
+| `useInsightsData.ts` | Cockpit page hooks | Merge into `useCockpit.ts` |
+| `useLearningData.ts` | Split: tasks → `usePlaner.ts`, docs → `useWissen.ts` | Dissolve |
+| `useMyAI.ts` | Meine KI page hooks | Keep as-is |
+| `useSettings.ts` | System page hooks | Rename to `useSystem.ts` |
+
+**Query Key Factory** (`lib/query-keys.ts`): Consolidate 12 domains → 8 domains matching the new page structure. Old keys remain as aliases during migration for backward compatibility.
+
+**Migration approach:** Per-page — when a Smart Page is built (Phases 106-110), its hooks are consolidated in the same phase. No separate "hook migration" phase needed.
 
 ---
 
@@ -894,11 +983,13 @@ CREATE INDEX idx_analytics_events_data_gin
 | Phase | Name | Content | Key Deliverables |
 |-------|------|---------|-----------------|
 | 102 | **Design Token Consolidation** | Unified color system, typography scale, spacing scale, animation presets. Eliminate legacy tokens. Unify dark mode. | `tokens.ts` rewrite, `index.css` cleanup, CSS migration script |
-| 103 | **Component System Upgrade** | Expand DS to 20 components (+ Tooltip, Dropdown, Switch, Progress, Alert, Dialog, Popover, Sheet, Chip, Divider). Migrate all pages to DS. Consolidate CSS: 100+ → ~30. | 20 DS components, CSS audit report, per-page migration |
-| 104 | **Chat Hub MVP** | Chat as start page. Smart Surface with morning briefing. Intent Bar with suggestions + Cmd+K. Adaptive inline results (task cards, code blocks). Slide panel system. | New ChatHub page, SmartSurface v2, IntentBar, SlidePanel framework |
-| 105 | **Navigation Redesign** | 17 nav items → 7 Smart Pages + Chat Hub. New sidebar (minimalist). Mobile bottom tab bar (5 items). Legacy redirects. Page type refactoring. | New `navigation.ts`, new Sidebar, mobile redesign |
+| 103 | **Component System Upgrade** | Expand DS to 20 components (+ Tooltip, Dropdown, Switch, Progress, Alert, Dialog, Popover, Sheet, Chip, Divider). Migrate existing pages to DS components. CSS consolidation where pages merge. | 20 DS components, CSS audit report, per-page migration |
+| 104 | **Chat Hub MVP** | Chat as start page. Smart Surface with morning briefing. Intent Bar with suggestions + Cmd+K. Adaptive inline results (task cards, code blocks). Slide panel framework. | New ChatHub page, SmartSurface v2, IntentBar, SlidePanel framework |
+| 105 | **Navigation Scaffolding** | Update `navigation.ts` to 7+1 structure. New sidebar points to **existing pages initially** — each nav item links to the current page that will later become the Smart Page (e.g., "Planer" links to current `/calendar` until Phase 107 replaces it). Mobile bottom tab bar (5 items). Legacy redirects for all removed routes. Page type refactoring in `types/idea.ts`. | New `navigation.ts`, new Sidebar, mobile redesign, legacy redirect map |
 
-**Quality Gate I:** App is visually consistent. Chat Hub is start page. Navigation is clear and minimal.
+**Critical dependency note for Phase 105:** Navigation items point to existing pages as intermediaries. Each Smart Page phase (106-110) then replaces the intermediary with the consolidated page. This avoids dead links.
+
+**Quality Gate I:** App is visually consistent. Chat Hub is start page. Navigation is 7+1 items (pointing to existing pages as placeholders until Smart Pages land).
 
 ### Mega-Phase II: "Smart Pages" (Phases 106–110)
 
@@ -965,7 +1056,7 @@ Each phase ends with passing tests and a production-deployable state. No big-ban
 |--------|---------|--------|---------------|
 | Navigation items | 17 | 8 | Count sidebar items |
 | Page types | 40+ | 8 (7 Smart + Hub) | Count Page union type |
-| CSS files | 100+ | ~30 | `find frontend/src -name "*.css" \| wc -l` |
+| CSS files | ~159 | ~60-70 | `find frontend/src -name "*.css" \| wc -l` — pages consolidate (17→8 = ~50% fewer page CSS), but DS components retain individual CSS |
 | DS component usage | ~25% | 95%+ | Audit: components using DS vs custom |
 | Lighthouse Performance | ~70 | 95+ | Lighthouse CI |
 | RAG Accuracy (NDCG@10) | Unmeasured | ≥0.75 | Benchmark suite |
