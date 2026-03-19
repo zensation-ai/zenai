@@ -5,7 +5,7 @@
  * Reuses patterns from MobileNav: Portal, focus trap, body scroll lock, stagger animations.
  */
 
-import { useEffect, useRef, useState, type CSSProperties } from 'react';
+import { useEffect, useState, type CSSProperties } from 'react';
 import { createPortal } from 'react-dom';
 import type { Page } from '../../types';
 import type { AIContext } from '../ContextSwitcher';
@@ -16,6 +16,7 @@ import { AI_PERSONALITY } from '../../utils/aiPersonality';
 import { safeLocalStorage } from '../../utils/storage';
 import { getIconByName } from '../../utils/navIcons';
 import { BrainLogo } from './BrainLogo';
+import { useFocusTrap } from '../../hooks/useFocusTrap';
 import './MobileSidebarDrawer.css';
 
 /** Render a nav item icon from its Lucide name string */
@@ -56,7 +57,7 @@ export function MobileSidebarDrawer({
   favoritePages,
   toggleFavorite,
 }: MobileSidebarDrawerProps) {
-  const drawerRef = useRef<HTMLElement>(null);
+  const drawerRef = useFocusTrap<HTMLElement>({ isActive: isOpen, onEscape: onClose });
   const [expandedSections, setExpandedSections] = useState<Set<string>>(() => {
     try {
       const stored = safeLocalStorage('get', 'sidebar-expanded');
@@ -82,33 +83,6 @@ export function MobileSidebarDrawer({
       document.body.style.overflow = '';
     };
   }, [isOpen, onClose]);
-
-  // Focus trap
-  useEffect(() => {
-    if (!isOpen || !drawerRef.current) return;
-
-    const focusable = drawerRef.current.querySelectorAll(
-      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
-    );
-    const first = focusable[0] as HTMLElement;
-    const last = focusable[focusable.length - 1] as HTMLElement;
-
-    const handleTab = (e: KeyboardEvent) => {
-      if (e.key !== 'Tab') return;
-      if (e.shiftKey && document.activeElement === first) {
-        e.preventDefault();
-        last.focus();
-      } else if (!e.shiftKey && document.activeElement === last) {
-        e.preventDefault();
-        first.focus();
-      }
-    };
-
-    first?.focus();
-    document.addEventListener('keydown', handleTab);
-
-    return () => document.removeEventListener('keydown', handleTab);
-  }, [isOpen]);
 
   const handleNavigate = (page: Page) => {
     onNavigate(page);

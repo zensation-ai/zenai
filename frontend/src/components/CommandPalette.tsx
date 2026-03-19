@@ -9,6 +9,7 @@ import { getGKeyLabel } from '../hooks/useKeyboardNavigation';
 import { scaleIn, springs, durations, usePrefersReducedMotion } from '../utils/animations';
 import { BottomSheet } from './ui';
 import { useBreakpoint } from '../hooks/useBreakpoint';
+import { useFocusTrap } from '../hooks/useFocusTrap';
 import './CommandPalette.css';
 
 // ============================================
@@ -152,6 +153,7 @@ export const CommandPalette = memo(function CommandPalette({
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
   const { isMobile } = useBreakpoint();
+  const trapRef = useFocusTrap({ isActive: isOpen, onEscape: onClose });
 
   // Consume page-registered commands
   const registeredCommands = useRegisteredCommands();
@@ -504,6 +506,7 @@ export const CommandPalette = memo(function CommandPalette({
       transition={{ duration: durations.fast }}
     >
       <motion.div
+        ref={trapRef}
         className="command-palette"
         onClick={e => e.stopPropagation()}
         role="dialog"
