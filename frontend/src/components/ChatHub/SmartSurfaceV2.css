@@ -1,0 +1,146 @@
+/* frontend/src/components/ChatHub/SmartSurfaceV2.css */
+
+/* ===== SmartSurfaceV2 — Phase 104 ===== */
+
+.smart-surface-v2 {
+  padding: var(--space-3) var(--space-4);
+  overflow: visible;
+}
+
+.smart-surface-v2__track {
+  display: flex;
+  gap: var(--space-3);
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  padding-bottom: var(--space-1);
+}
+
+.smart-surface-v2__track::-webkit-scrollbar {
+  display: none;
+}
+
+.smart-surface-v2__card {
+  flex: 1 1 0;
+  min-width: 220px;
+  max-width: 340px;
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  border: 1px solid var(--glass-border);
+  border-radius: 14px;
+  box-shadow: var(--glass-l1-shadow);
+  scroll-snap-align: start;
+  animation: ssv2-enter var(--duration-smooth) var(--ease-spring) both;
+  cursor: default;
+  transition: transform var(--duration-fast) var(--ease-default),
+              box-shadow var(--duration-fast) var(--ease-default);
+}
+
+.smart-surface-v2__card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--glass-l2-shadow);
+}
+
+.smart-surface-v2__card:active {
+  transform: var(--haptic-press);
+}
+
+@keyframes ssv2-enter {
+  from {
+    opacity: 0;
+    transform: translateY(-12px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.smart-surface-v2__card-icon {
+  font-size: var(--text-xl);
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.smart-surface-v2__card-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.smart-surface-v2__card-title {
+  font-size: var(--text-sm);
+  font-weight: var(--font-semibold);
+  color: var(--text-primary);
+  line-height: var(--leading-tight);
+  margin: 0 0 var(--space-1) 0;
+}
+
+.smart-surface-v2__card-desc {
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+  line-height: var(--leading-normal);
+  margin: 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.smart-surface-v2__card-actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  flex-shrink: 0;
+}
+
+.smart-surface-v2__action {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background var(--duration-instant) var(--ease-default);
+  color: var(--text-tertiary);
+  background: transparent;
+}
+
+.smart-surface-v2__action:hover {
+  background: var(--surface-2);
+  color: var(--text-primary);
+}
+
+.smart-surface-v2__action--accept {
+  color: var(--card-accent, var(--color-accent));
+}
+
+.smart-surface-v2__action--accept:hover {
+  background: var(--color-accent-glow);
+  color: var(--color-accent);
+}
+
+/* ===== Mobile: horizontal scroll, fixed card width ===== */
+@media (max-width: 768px) {
+  .smart-surface-v2 {
+    padding: var(--space-2) var(--space-3);
+  }
+
+  .smart-surface-v2__card {
+    flex: 0 0 260px;
+  }
+}
+
+/* ===== Reduced motion ===== */
+@media (prefers-reduced-motion: reduce) {
+  .smart-surface-v2__card {
+    animation: none;
+  }
+}

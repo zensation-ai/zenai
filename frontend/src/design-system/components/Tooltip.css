@@ -1,0 +1,52 @@
+/* Design System: Tooltip */
+
+.ds-tooltip-wrapper {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.ds-tooltip {
+  position: absolute;
+  z-index: var(--z-tooltip, 500);
+  padding: 5px 10px;
+  background: var(--tooltip-bg, #0f1f2a);
+  color: var(--tooltip-text, #ffffff);
+  font-size: 12px;
+  line-height: 1.4;
+  border-radius: var(--radius-sm, 6px);
+  white-space: nowrap;
+  pointer-events: none;
+  box-shadow: var(--shadow-md, 0 4px 12px rgba(0,0,0,0.18));
+  animation: ds-tooltip-in 0.12s ease;
+}
+
+/* Placements */
+.ds-tooltip--top {
+  bottom: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.ds-tooltip--bottom {
+  top: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.ds-tooltip--left {
+  right: calc(100% + 6px);
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.ds-tooltip--right {
+  left: calc(100% + 6px);
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+@keyframes ds-tooltip-in {
+  from { opacity: 0; transform: translateX(-50%) translateY(2px); }
+  to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+}

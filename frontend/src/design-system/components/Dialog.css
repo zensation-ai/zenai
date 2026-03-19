@@ -1,0 +1,88 @@
+/* Design System: Dialog */
+
+.ds-dialog__backdrop {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  z-index: var(--z-dialog, 450);
+  padding: 24px;
+  animation: ds-dialog-backdrop-in 0.18s ease;
+}
+
+.ds-dialog__panel {
+  background: var(--surface-solid, #edf2f5);
+  border-radius: var(--radius-lg, 16px);
+  box-shadow: var(--shadow-xl, 0 20px 60px rgba(0,0,0,0.22));
+  display: flex;
+  flex-direction: column;
+  max-height: calc(100vh - 48px);
+  overflow: hidden;
+  outline: none;
+  animation: ds-dialog-panel-in 0.22s ease;
+}
+
+/* Sizes */
+.ds-dialog__panel--sm { width: 400px; max-width: 100%; }
+.ds-dialog__panel--md { width: 560px; max-width: 100%; }
+.ds-dialog__panel--lg { width: 720px; max-width: 100%; }
+
+.ds-dialog__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--border-light, rgba(20, 50, 70, 0.08));
+  flex-shrink: 0;
+}
+
+.ds-dialog__title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-primary, #0f1f2a);
+}
+
+.ds-dialog__close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: var(--radius-sm, 8px);
+  background: transparent;
+  color: var(--text-secondary, #3a4d5a);
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.ds-dialog__close:hover {
+  background: var(--bg-secondary, rgba(20, 60, 80, 0.08));
+}
+
+.ds-dialog__close:focus-visible {
+  outline: 2px solid var(--primary, #ff6b35);
+  outline-offset: 2px;
+}
+
+.ds-dialog__body {
+  padding: 24px;
+  overflow-y: auto;
+  flex: 1;
+  color: var(--text-primary, #0f1f2a);
+}
+
+@keyframes ds-dialog-backdrop-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes ds-dialog-panel-in {
+  from { opacity: 0; transform: scale(0.96) translateY(8px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
+}

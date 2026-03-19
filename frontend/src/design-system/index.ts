@@ -67,8 +67,16 @@ export {
 } from './colors';
 export type { Colors } from './colors';
 
+// New Calm Neurodesign color exports (Phase 102)
+export {
+  accent, calmSuccess, calmWarning, calmDanger, context, calmSurface, calmText, calmGlass,
+} from './colors';
+
 // Granular spacing exports
 export type { Spacing, Space, Layout } from './spacing';
+
+// New Calm Neurodesign spacing exports (Phase 102)
+export { scale, gestalt } from './spacing';
 
 // Granular typography exports
 export {
@@ -81,9 +89,15 @@ export {
 } from './typography';
 export type { Typography } from './typography';
 
+// New Calm Neurodesign typography exports (Phase 102)
+export { family, size, weight, leading, tracking } from './typography';
+
 // Granular shadow exports
 export { shadowLight, shadowDark, shadowGlass2026 } from './shadows';
 export type { Shadows } from './shadows';
+
+// New Calm Neurodesign shadow exports (Phase 102)
+export { glassLevel, elevation, elevationDark } from './shadows';
 
 // Granular animation exports
 export {
@@ -94,6 +108,9 @@ export {
   keyframes,
 } from './animations';
 export type { Animations } from './animations';
+
+// New Calm Neurodesign animation exports (Phase 102)
+export { ease, dur, preset } from './animations';
 
 // Spring physics system (Phase 101-C1)
 export {
@@ -134,6 +151,16 @@ export {
   Skeleton,
   EmptyState,
   Avatar,
+  Spinner,
+  Divider,
+  Chip,
+  Switch,
+  Progress,
+  Alert,
+  Tooltip,
+  Dropdown,
+  Popover,
+  Dialog,
 } from './components';
 export type {
   ButtonProps, ButtonVariant, ButtonSize,
@@ -146,4 +173,14 @@ export type {
   SkeletonProps, SkeletonVariant,
   EmptyStateProps,
   AvatarProps, AvatarVariant, AvatarSize, AvatarStatus,
+  SpinnerProps, SpinnerSize,
+  DividerProps, DividerOrientation,
+  ChipProps, ChipColor,
+  SwitchProps,
+  ProgressProps, ProgressColor,
+  AlertProps, AlertVariant,
+  TooltipProps,
+  DropdownProps, DropdownItem,
+  PopoverProps,
+  DialogProps, DialogSize,
 } from './components';

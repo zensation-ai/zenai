@@ -1,6 +1,12 @@
 /**
  * ChatPage - Unified Chat mit Kontext-Steuerung
  *
+ * NOTE (Phase 104): ChatHub is now the primary entry point at route "/".
+ * ChatPage remains accessible at "/chat" for its additional features:
+ * - Context switcher (4 tiles)
+ * - Quick-Actions
+ * - Session-Sidebar
+ *
  * Zentrales Chat-Interface mit:
  * - Kontext-Leiste (4 Kacheln: Privat, Arbeit, Lernen, Kreativ)
  * - Quick-Actions (kontextabhaengige Schnellaktionen, klappbar)

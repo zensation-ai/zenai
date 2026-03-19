@@ -1,20 +1,22 @@
 import { useState, useEffect, useMemo, useCallback, Suspense } from 'react';
-import { useNavigate, useLocation, Routes, Route, Navigate } from 'react-router-dom';
+import { useNavigate, useLocation, Routes, Route } from 'react-router-dom';
 import axios from 'axios';
 
 // Types and constants
 import type { Page } from './types';
 
 // Route definitions (centralized)
-import { resolvePathToPage, resolvePagePath, LEGACY_REDIRECTS } from './routes';
+import { resolvePathToPage, resolvePagePath, createLegacyRedirects } from './routes';
 
 // Lazy-loaded page components (centralized)
 import {
-  Dashboard, ChatPage, BrowserPage, ContactsPage, FinancePage,
-  ScreenMemoryPage, IdeasPage, AIWorkshop, InsightsDashboard,
+  ContactsPage, FinancePage,
+  IdeasPage, AIWorkshop, InsightsDashboard,
   DocumentVaultPage, BusinessDashboard, PlannerPage, EmailPage,
   LearningDashboard, MyAIPage, SettingsDashboard, NotificationsPage,
   MemoryInsightsPage, SystemAdminPage,
+  // Phase 104: ChatHub is the new primary start page
+  ChatHub,
 } from './routes/LazyPages';
 
 // Onboarding (Phase 86)
@@ -213,30 +215,22 @@ function AuthenticatedApp() {
   // ROUTE-BASED PAGE RENDERER
   // ============================================
 
+  // Pre-compute legacy redirect route elements
+  const legacyRedirectRoutes = useMemo(() => createLegacyRedirects(), []);
+
   const renderRoutes = () => (
     <Routes>
-      {/* Dashboard */}
+      {/* Phase 104: ChatHub is the primary start page at / */}
       <Route path="/" element={
         <Suspense fallback={<PageLoader />}>
-          <Dashboard
-            context={context}
-            onNavigate={navigateToPage}
-            isAIActive={isAIActive}
-            ideasCount={ideas.length}
-            apiStatus={apiStatus}
-          />
+          <ChatHub context={context} />
         </Suspense>
       } />
 
-      {/* Chat */}
-      <Route path="/chat" element={
-        <Suspense fallback={<PageLoader />}>
-          <ChatPage context={context} onContextChange={setContext} />
-        </Suspense>
-      } />
+      {/* ── 7 Smart Page German Slug Routes ── */}
 
-      {/* Ideas (with tabs) */}
-      <Route path="/ideas" element={
+      {/* Ideen (Ideas) */}
+      <Route path="/ideen" element={
         <NeuroFeedbackProvider>
           <Suspense fallback={<PageLoader />}>
             <IdeasPage
@@ -247,7 +241,7 @@ function AuthenticatedApp() {
           </Suspense>
         </NeuroFeedbackProvider>
       } />
-      <Route path="/ideas/:tab" element={
+      <Route path="/ideen/:tab" element={
         <NeuroFeedbackProvider>
           <Suspense fallback={<PageLoader />}>
             <IdeasPage
@@ -259,189 +253,23 @@ function AuthenticatedApp() {
         </NeuroFeedbackProvider>
       } />
 
-      {/* Browser */}
-      <Route path="/browser" element={
+      {/* Planer (Calendar/Planner) */}
+      <Route path="/planer" element={
         <Suspense fallback={<PageLoader />}>
-          <BrowserPage context={context} initialTab="browse" onBack={() => navigateToPage('home')} />
+          <PlannerPage context={context} initialTab="calendar" onBack={() => navigateToPage('hub')} />
         </Suspense>
       } />
-      <Route path="/browser/:tab" element={
-        <Suspense fallback={<PageLoader />}>
-          <BrowserPage
-            context={context}
-            initialTab={(tabParam || 'browse') as 'browse' | 'history' | 'bookmarks'}
-            onBack={() => navigateToPage('home')}
-          />
-        </Suspense>
-      } />
-
-      {/* Contacts */}
-      <Route path="/contacts" element={
-        <Suspense fallback={<PageLoader />}>
-          <ContactsPage context={context} initialTab="all" onBack={() => navigateToPage('home')} />
-        </Suspense>
-      } />
-      <Route path="/contacts/:tab" element={
-        <Suspense fallback={<PageLoader />}>
-          <ContactsPage
-            context={context}
-            initialTab={(tabParam || 'all') as 'all' | 'favorites' | 'organizations'}
-            onBack={() => navigateToPage('home')}
-          />
-        </Suspense>
-      } />
-
-      {/* Finance */}
-      <Route path="/finance" element={
-        <Suspense fallback={<PageLoader />}>
-          <FinancePage context={context} initialTab="overview" onBack={() => navigateToPage('home')} />
-        </Suspense>
-      } />
-      <Route path="/finance/:tab" element={
-        <Suspense fallback={<PageLoader />}>
-          <FinancePage
-            context={context}
-            initialTab={(tabParam || 'overview') as 'overview' | 'transactions' | 'budgets' | 'goals'}
-            onBack={() => navigateToPage('home')}
-          />
-        </Suspense>
-      } />
-
-      {/* Screen Memory */}
-      <Route path="/screen-memory" element={
-        <Suspense fallback={<PageLoader />}>
-          <ScreenMemoryPage context={context} initialTab="timeline" onBack={() => navigateToPage('home')} />
-        </Suspense>
-      } />
-      <Route path="/screen-memory/:tab" element={
-        <Suspense fallback={<PageLoader />}>
-          <ScreenMemoryPage
-            context={context}
-            initialTab={(tabParam || 'timeline') as 'timeline' | 'search' | 'settings'}
-            onBack={() => navigateToPage('home')}
-          />
-        </Suspense>
-      } />
-
-      {/* Insights */}
-      <Route path="/insights" element={
-        <Suspense fallback={<PageLoader />}>
-          <InsightsDashboard
-            context={context}
-            onBack={() => navigateToPage('home')}
-            onSelectIdea={() => navigateToPage('ideas')}
-            initialTab="analytics"
-          />
-        </Suspense>
-      } />
-      <Route path="/insights/:tab" element={
-        <Suspense fallback={<PageLoader />}>
-          <InsightsDashboard
-            context={context}
-            onBack={() => navigateToPage('home')}
-            onSelectIdea={() => navigateToPage('ideas')}
-            initialTab={(tabParam || 'analytics') as 'analytics' | 'digest' | 'connections' | 'graphrag' | 'sleep' | 'ai-traces'}
-          />
-        </Suspense>
-      } />
-
-      {/* Workshop */}
-      <Route path="/workshop" element={
-        <Suspense fallback={<PageLoader />}>
-          <AIWorkshop context={context} onBack={() => navigateToPage('home')} initialTab="proactive" />
-        </Suspense>
-      } />
-      <Route path="/workshop/:tab" element={
-        <Suspense fallback={<PageLoader />}>
-          <AIWorkshop
-            context={context}
-            onBack={() => navigateToPage('home')}
-            initialTab={(tabParam || 'proactive') as 'proactive' | 'evolution' | 'agent-teams' | 'automations'}
-          />
-        </Suspense>
-      } />
-
-      {/* Learning */}
-      <Route path="/learning" element={
-        <Suspense fallback={<PageLoader />}>
-          <LearningDashboard context={context} onBack={() => navigateToPage('home')} initialTab="overview" />
-        </Suspense>
-      } />
-      <Route path="/learning/:tab" element={
-        <Suspense fallback={<PageLoader />}>
-          <LearningDashboard
-            context={context}
-            onBack={() => navigateToPage('home')}
-            initialTab={(tabParam || 'overview') as 'overview' | 'focus' | 'suggestions' | 'research' | 'feedback' | 'profile'}
-          />
-        </Suspense>
-      } />
-
-      {/* My AI */}
-      <Route path="/my-ai/memory-insights" element={
-        <Suspense fallback={<PageLoader />}>
-          <MemoryInsightsPage context={context} onBack={() => navigateToPage('my-ai')} />
-        </Suspense>
-      } />
-      <Route path="/my-ai" element={
-        <Suspense fallback={<PageLoader />}>
-          <MyAIPage context={context} onBack={() => navigateToPage('home')} initialTab="personalize" />
-        </Suspense>
-      } />
-      <Route path="/my-ai/:tab" element={
-        <Suspense fallback={<PageLoader />}>
-          <MyAIPage
-            context={context}
-            onBack={() => navigateToPage('home')}
-            initialTab={(tabParam || 'personalize') as 'personalize' | 'memory' | 'procedures' | 'digital-twin' | 'voice-chat'}
-          />
-        </Suspense>
-      } />
-
-      {/* System Admin */}
-      <Route path="/admin" element={
-        <Suspense fallback={<PageLoader />}>
-          <SystemAdminPage context={context} onBack={() => navigateToPage('home')} initialTab="overview" />
-        </Suspense>
-      } />
-      <Route path="/admin/:tab" element={
-        <Suspense fallback={<PageLoader />}>
-          <SystemAdminPage
-            context={context}
-            onBack={() => navigateToPage('home')}
-            initialTab={(tabParam || 'overview') as 'overview' | 'queues' | 'security' | 'sleep'}
-          />
-        </Suspense>
-      } />
-
-      {/* Notifications */}
-      <Route path="/notifications" element={
-        <Suspense fallback={<PageLoader />}>
-          <NotificationsPage
-            context={context}
-            onBack={() => navigateToPage('home')}
-            onNavigate={(page) => navigateToPage(page as Page)}
-          />
-        </Suspense>
-      } />
-
-      {/* Calendar / Planner */}
-      <Route path="/calendar" element={
-        <Suspense fallback={<PageLoader />}>
-          <PlannerPage context={context} initialTab="calendar" onBack={() => navigateToPage('home')} />
-        </Suspense>
-      } />
-      <Route path="/calendar/:tab" element={
+      <Route path="/planer/:tab" element={
         <CalendarRouteHandler context={context} tabParam={tabParam} navigateToPage={navigateToPage} />
       } />
 
-      {/* Email */}
-      <Route path="/email" element={
+      {/* Inbox (Email) */}
+      <Route path="/inbox" element={
         <Suspense fallback={<PageLoader />}>
           <EmailPage context={context} initialTab="inbox" />
         </Suspense>
       } />
-      <Route path="/email/:tab" element={
+      <Route path="/inbox/:tab" element={
         <Suspense fallback={<PageLoader />}>
           <EmailPage
             context={context}
@@ -450,73 +278,209 @@ function AuthenticatedApp() {
         </Suspense>
       } />
 
-      {/* Business */}
-      <Route path="/business" element={
+      {/* Wissen (Documents/Knowledge) */}
+      <Route path="/wissen" element={
         <Suspense fallback={<PageLoader />}>
-          <BusinessDashboard context={context} onBack={() => navigateToPage('home')} />
+          <DocumentVaultPage context={context} onBack={() => navigateToPage('hub')} initialTab="documents" />
         </Suspense>
       } />
-      <Route path="/business/:tab" element={
-        <Suspense fallback={<PageLoader />}>
-          <BusinessDashboard
-            context={context}
-            onBack={() => navigateToPage('home')}
-            initialTab={tabParam as 'overview' | 'revenue' | 'traffic' | 'seo' | 'health' | 'insights' | 'reports' | 'connectors' | 'intelligence' | undefined}
-          />
-        </Suspense>
-      } />
-
-      {/* Documents */}
-      <Route path="/documents" element={
-        <Suspense fallback={<PageLoader />}>
-          <DocumentVaultPage context={context} onBack={() => navigateToPage('home')} initialTab="documents" />
-        </Suspense>
-      } />
-      <Route path="/documents/:tab" element={
+      <Route path="/wissen/:tab" element={
         <Suspense fallback={<PageLoader />}>
           <DocumentVaultPage
             context={context}
-            onBack={() => navigateToPage('home')}
+            onBack={() => navigateToPage('hub')}
             initialTab={(tabParam || 'documents') as 'documents' | 'editor' | 'media'}
           />
         </Suspense>
       } />
 
-      {/* Settings */}
-      <Route path="/settings" element={
+      {/* Cockpit (Business) */}
+      <Route path="/cockpit" element={
+        <Suspense fallback={<PageLoader />}>
+          <BusinessDashboard context={context} onBack={() => navigateToPage('hub')} />
+        </Suspense>
+      } />
+      <Route path="/cockpit/:tab" element={
+        <Suspense fallback={<PageLoader />}>
+          <BusinessDashboard
+            context={context}
+            onBack={() => navigateToPage('hub')}
+            initialTab={tabParam as 'overview' | 'revenue' | 'traffic' | 'seo' | 'health' | 'insights' | 'reports' | 'connectors' | 'intelligence' | undefined}
+          />
+        </Suspense>
+      } />
+
+      {/* Meine KI (My AI) */}
+      <Route path="/meine-ki/memory-insights" element={
+        <Suspense fallback={<PageLoader />}>
+          <MemoryInsightsPage context={context} onBack={() => navigateToPage('my-ai')} />
+        </Suspense>
+      } />
+      <Route path="/meine-ki" element={
+        <Suspense fallback={<PageLoader />}>
+          <MyAIPage context={context} onBack={() => navigateToPage('hub')} initialTab="personalize" />
+        </Suspense>
+      } />
+      <Route path="/meine-ki/:tab" element={
+        <Suspense fallback={<PageLoader />}>
+          <MyAIPage
+            context={context}
+            onBack={() => navigateToPage('hub')}
+            initialTab={(tabParam || 'personalize') as 'personalize' | 'memory' | 'procedures' | 'digital-twin' | 'voice-chat'}
+          />
+        </Suspense>
+      } />
+
+      {/* System (Settings) */}
+      <Route path="/system" element={
         <Suspense fallback={<PageLoader />}>
           <SettingsDashboard
             context={context}
-            onBack={() => navigateToPage('home')}
+            onBack={() => navigateToPage('hub')}
             onNavigate={(page) => navigateToPage(page as Page)}
             initialTab="general"
           />
         </Suspense>
       } />
-      <Route path="/settings/:tab" element={
+      <Route path="/system/:tab" element={
         <Suspense fallback={<PageLoader />}>
           <SettingsDashboard
             context={context}
-            onBack={() => navigateToPage('home')}
+            onBack={() => navigateToPage('hub')}
             onNavigate={(page) => navigateToPage(page as Page)}
             initialTab={(tabParam || 'general') as 'profile' | 'account' | 'general' | 'ai' | 'privacy' | 'automations' | 'proactive-rules' | 'governance' | 'context-rules' | 'security' | 'integrations' | 'mcp-servers' | 'extensions' | 'on-device-ai' | 'system' | 'data'}
           />
         </Suspense>
       } />
-      <Route path="/settings/:tab/:subtab" element={
+      <Route path="/system/:tab/:subtab" element={
         <Suspense fallback={<PageLoader />}>
           <SettingsDashboard
             context={context}
-            onBack={() => navigateToPage('home')}
+            onBack={() => navigateToPage('hub')}
             onNavigate={(page) => navigateToPage(page as Page)}
             initialTab={(tabParam || 'general') as 'profile' | 'account' | 'general' | 'ai' | 'privacy' | 'automations' | 'proactive-rules' | 'governance' | 'context-rules' | 'security' | 'integrations' | 'mcp-servers' | 'extensions' | 'on-device-ai' | 'system' | 'data'}
           />
         </Suspense>
       } />
 
-      {/* Legacy Redirects */}
-      {LEGACY_REDIRECTS.map(({ from, to }) => (
-        <Route key={from} path={from} element={<Navigate to={to} replace />} />
+      {/* ── Sub-page routes (intermediary: standalone components at new URLs) ── */}
+
+      {/* Contacts → sub-page of Planer */}
+      <Route path="/planer/kontakte" element={
+        <Suspense fallback={<PageLoader />}>
+          <ContactsPage context={context} initialTab="all" onBack={() => navigateToPage('calendar')} />
+        </Suspense>
+      } />
+      <Route path="/planer/kontakte/:tab" element={
+        <Suspense fallback={<PageLoader />}>
+          <ContactsPage
+            context={context}
+            initialTab={(tabParam || 'all') as 'all' | 'favorites' | 'organizations'}
+            onBack={() => navigateToPage('calendar')}
+          />
+        </Suspense>
+      } />
+
+      {/* Finance → sub-page of Cockpit */}
+      <Route path="/cockpit/finanzen" element={
+        <Suspense fallback={<PageLoader />}>
+          <FinancePage context={context} initialTab="overview" onBack={() => navigateToPage('business')} />
+        </Suspense>
+      } />
+      <Route path="/cockpit/finanzen/:tab" element={
+        <Suspense fallback={<PageLoader />}>
+          <FinancePage
+            context={context}
+            initialTab={(tabParam || 'overview') as 'overview' | 'transactions' | 'budgets' | 'goals'}
+            onBack={() => navigateToPage('business')}
+          />
+        </Suspense>
+      } />
+
+      {/* Insights → sub-page of Cockpit */}
+      <Route path="/cockpit/trends" element={
+        <Suspense fallback={<PageLoader />}>
+          <InsightsDashboard
+            context={context}
+            onBack={() => navigateToPage('business')}
+            onSelectIdea={() => navigateToPage('ideas')}
+            initialTab="analytics"
+          />
+        </Suspense>
+      } />
+      <Route path="/cockpit/trends/:tab" element={
+        <Suspense fallback={<PageLoader />}>
+          <InsightsDashboard
+            context={context}
+            onBack={() => navigateToPage('business')}
+            onSelectIdea={() => navigateToPage('ideas')}
+            initialTab={(tabParam || 'analytics') as 'analytics' | 'digest' | 'connections' | 'graphrag' | 'sleep' | 'ai-traces'}
+          />
+        </Suspense>
+      } />
+
+      {/* Learning → sub-page of Wissen */}
+      <Route path="/wissen/lernen" element={
+        <Suspense fallback={<PageLoader />}>
+          <LearningDashboard context={context} onBack={() => navigateToPage('documents')} initialTab="overview" />
+        </Suspense>
+      } />
+      <Route path="/wissen/lernen/:tab" element={
+        <Suspense fallback={<PageLoader />}>
+          <LearningDashboard
+            context={context}
+            onBack={() => navigateToPage('documents')}
+            initialTab={(tabParam || 'overview') as 'overview' | 'focus' | 'suggestions' | 'research' | 'feedback' | 'profile'}
+          />
+        </Suspense>
+      } />
+
+      {/* Notifications → sub-page of Inbox */}
+      <Route path="/inbox/benachrichtigungen" element={
+        <Suspense fallback={<PageLoader />}>
+          <NotificationsPage
+            context={context}
+            onBack={() => navigateToPage('email')}
+            onNavigate={(page) => navigateToPage(page as Page)}
+          />
+        </Suspense>
+      } />
+
+      {/* System Admin → sub-page of System */}
+      <Route path="/system/admin" element={
+        <Suspense fallback={<PageLoader />}>
+          <SystemAdminPage context={context} onBack={() => navigateToPage('settings')} initialTab="overview" />
+        </Suspense>
+      } />
+      <Route path="/system/admin/:tab" element={
+        <Suspense fallback={<PageLoader />}>
+          <SystemAdminPage
+            context={context}
+            onBack={() => navigateToPage('settings')}
+            initialTab={(tabParam || 'overview') as 'overview' | 'queues' | 'security' | 'sleep'}
+          />
+        </Suspense>
+      } />
+
+      {/* Workshop → sub-page of Ideen (intermediary) */}
+      <Route path="/ideen/workshop" element={
+        <Suspense fallback={<PageLoader />}>
+          <AIWorkshop context={context} onBack={() => navigateToPage('ideas')} initialTab="proactive" />
+        </Suspense>
+      } />
+      <Route path="/ideen/workshop/:tab" element={
+        <Suspense fallback={<PageLoader />}>
+          <AIWorkshop
+            context={context}
+            onBack={() => navigateToPage('ideas')}
+            initialTab={(tabParam || 'proactive') as 'proactive' | 'evolution' | 'agent-teams' | 'automations'}
+          />
+        </Suspense>
+      } />
+
+      {/* ── Legacy Redirects (with rewritePrefix support) ── */}
+      {legacyRedirectRoutes.map(({ path, element }) => (
+        <Route key={path} path={path} element={element} />
       ))}
 
       {/* 404 Catch-all */}
@@ -529,9 +493,9 @@ function AuthenticatedApp() {
             <button
               type="button"
               className="not-found-cta neuro-press-effect neuro-focus-ring"
-              onClick={() => navigateToPage('home')}
+              onClick={() => navigateToPage('hub')}
             >
-              Zum Dashboard
+              Zum Chat Hub
             </button>
           </div>
         </div>
@@ -591,7 +555,7 @@ function AuthenticatedApp() {
                   <button
                     type="button"
                     className="neuro-button neuro-focus-ring"
-                    onClick={() => navigateToPage('home')}
+                    onClick={() => navigateToPage('hub')}
                   >
                     Zum Dashboard
                   </button>
@@ -671,7 +635,7 @@ function CalendarRouteHandler({ context, tabParam, navigateToPage }: {
 
   return (
     <Suspense fallback={<PageLoader />}>
-      <PlannerPage context={context} initialTab={plannerTab} onBack={() => navigateToPage('home')} />
+      <PlannerPage context={context} initialTab={plannerTab} onBack={() => navigateToPage('hub')} />
     </Suspense>
   );
 }

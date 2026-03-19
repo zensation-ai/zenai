@@ -1,0 +1,48 @@
+/* Design System: Spinner */
+
+@keyframes ds-spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+.ds-spinner {
+  display: inline-block;
+  flex-shrink: 0;
+  animation: ds-spin 0.75s linear infinite;
+  color: var(--color-accent, hsl(250, 65%, 58%));
+}
+
+/* Track (background ring) */
+.ds-spinner__track {
+  stroke: var(--surface-2, hsl(220, 12%, 95%));
+}
+
+/* Arc (moving segment) */
+.ds-spinner__arc {
+  stroke: currentColor;
+}
+
+/* Sizes — width/height set via SVG attrs; class names exist for selector tests */
+.ds-spinner--sm {
+  /* 16px set via SVG width/height */
+}
+
+.ds-spinner--md {
+  /* 24px set via SVG width/height */
+}
+
+.ds-spinner--lg {
+  /* 36px set via SVG width/height */
+}
+
+/* Dark mode track */
+[data-theme="dark"] .ds-spinner__track {
+  stroke: var(--surface-2-dark, hsl(220, 12%, 20%));
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .ds-spinner {
+    animation-duration: 2s;
+  }
+}

@@ -1,23 +1,21 @@
 /**
- * Sidebar - Premium Navigation
+ * Sidebar — Phase 105 Flat 7+1 Navigation
  *
  * Linear-quality sidebar with lucide-react icons.
  * Features:
- * - Clean icon-based navigation (no emojis)
- * - Active item: left accent bar + subtle background tint
+ * - Flat 7+1 nav: Chat Hub + 7 Smart Pages (no sections)
+ * - Active item: left accent bar + subtle background tint + aria-current="page"
  * - Hover: smooth 150ms background transition
- * - Section headers: uppercase, letter-spaced, muted
  * - Collapsed state: icons only with tooltip
  * - WCAG 2.1 AA Compliant
  */
 
-import { memo, useState, useCallback, useEffect, useRef, useMemo } from 'react';
+import { memo, useCallback, useRef, useMemo } from 'react';
 import type { Page, ApiStatus } from '../../types';
-import { NAV_SECTIONS, NAV_FOOTER_ITEMS, NAV_CHAT_ITEM, NAV_BROWSER_ITEM, isNavItemActive, getNavItemByPage, type NavItem, type NavSection } from '../../navigation';
+import { NAV_ITEMS, NAV_HUB_ITEM, isNavItemActive, type NavItem } from '../../navigation';
 import { AI_PERSONALITY } from '../../utils/aiPersonality';
-import { getPageIcon, LogOut, Star, ChevronDown } from '../../utils/navIcons';
+import { getPageIcon, LogOut } from '../../utils/navIcons';
 
-import { safeLocalStorage } from '../../utils/storage';
 import { useAuth } from '../../contexts/AuthContext';
 import { BrainLogo } from './BrainLogo';
 import './Sidebar.css';
@@ -46,68 +44,34 @@ export const Sidebar = memo(function Sidebar({
   apiStatus,
   isAIActive,
   aiActivityMessage,
-  archivedCount,
-  notificationCount,
   emailUnreadCount = 0,
-  favoritePages,
-  toggleFavorite,
-  isFavorited,
 }: SidebarProps) {
-  // Track which sections are expanded (all expanded by default)
-  const [expandedSections, setExpandedSections] = useState<Set<string>>(() => {
-    try {
-      const stored = safeLocalStorage('get', 'sidebar-expanded');
-      return stored ? new Set(JSON.parse(stored)) : new Set([...NAV_SECTIONS.map(s => s.id), 'favorites', 'recents']);
-    } catch {
-      return new Set([...NAV_SECTIONS.map(s => s.id), 'favorites', 'recents']);
-    }
-  });
-
   const { signOut } = useAuth();
   const sidebarRef = useRef<HTMLElement>(null);
-
-  // Persist expanded sections
-  useEffect(() => {
-    safeLocalStorage('set', 'sidebar-expanded', JSON.stringify([...expandedSections]));
-  }, [expandedSections]);
-
-  const toggleSection = useCallback((sectionId: string) => {
-    setExpandedSections(prev => {
-      const next = new Set(prev);
-      if (next.has(sectionId)) {
-        next.delete(sectionId);
-      } else {
-        next.add(sectionId);
-      }
-      return next;
-    });
-  }, []);
 
   const handleNavigate = useCallback((page: Page) => {
     onNavigate(page);
   }, [onNavigate]);
 
-  // Resolve badge values — memoized to avoid recalculating on every render
+  // Resolve badge values
   const badgeValues = useMemo(() => {
     const values: Record<string, number | undefined> = {};
-    const allItems = [...NAV_SECTIONS.flatMap(s => s.items), ...NAV_FOOTER_ITEMS];
-    for (const item of allItems) {
+    for (const item of NAV_ITEMS) {
       if (!item.badge) continue;
-      if (item.badge === 'archived') values[item.page] = archivedCount > 0 ? archivedCount : undefined;
-      else if (item.badge === 'notifications') values[item.page] = notificationCount > 0 ? notificationCount : undefined;
-      else if (item.badge === 'email_unread') values[item.page] = emailUnreadCount > 0 ? emailUnreadCount : undefined;
+      if (item.badge === 'email_unread') values[item.page] = emailUnreadCount > 0 ? emailUnreadCount : undefined;
     }
     return values;
-  }, [archivedCount, notificationCount, emailUnreadCount]);
+  }, [emailUnreadCount]);
 
   const getBadgeValue = (item: NavItem): number | undefined => {
     return badgeValues[item.page];
   };
 
-  // Check if section contains active page
-  const isSectionActive = (section: NavSection): boolean => {
-    return section.items.some(item => isNavItemActive(item, currentPage));
-  };
+  // Check if hub is active (hub, home, chat, dashboard, browser, screen-memory, agent-teams)
+  const isHubActive = useMemo(() => {
+    const hubPages: Page[] = ['hub', 'home', 'chat', 'dashboard', 'browser', 'screen-memory', 'agent-teams'];
+    return hubPages.includes(currentPage);
+  }, [currentPage]);
 
   /** Keyboard navigation: ArrowUp/ArrowDown between nav items, Home/End for first/last */
   const handleNavKeyDown = useCallback((e: React.KeyboardEvent) => {
@@ -117,7 +81,7 @@ export const Sidebar = memo(function Sidebar({
     const nav = sidebarRef.current;
     if (!nav) return;
     const items = Array.from(nav.querySelectorAll<HTMLElement>(
-      '.sidebar-item, .sidebar-footer-item'
+      '.sidebar-nav-item'
     ));
     if (items.length === 0) return;
     const idx = items.indexOf(document.activeElement as HTMLElement);
@@ -148,9 +112,9 @@ export const Sidebar = memo(function Sidebar({
         <button
           type="button"
           className="sidebar-logo-btn"
-          onClick={() => handleNavigate('home')}
-          title="Dashboard"
-          aria-label="Zum Dashboard"
+          onClick={() => handleNavigate('hub')}
+          title="Chat Hub"
+          aria-label="Zum Chat Hub"
         >
           <BrainLogo size={32} className="sidebar-logo-svg" />
           <span
@@ -182,181 +146,58 @@ export const Sidebar = memo(function Sidebar({
         </button>
       </div>
 
-      {/* Dashboard Link */}
-      <div className="sidebar-dashboard">
+      {/* Hub Item — prominent */}
+      <div className="sidebar-hub">
         <button
           type="button"
-          className={`sidebar-item neuro-focus-ring ${currentPage === 'home' ? 'active' : ''}`}
-          onClick={() => handleNavigate('home')}
-          title="Dashboard"
-          aria-current={currentPage === 'home' ? 'page' : undefined}
+          className={`sidebar-nav-item sidebar-hub-item neuro-focus-ring ${isHubActive ? 'active' : ''}`}
+          onClick={() => handleNavigate('hub')}
+          title={collapsed ? `${NAV_HUB_ITEM.label}: ${NAV_HUB_ITEM.description}` : undefined}
+          aria-current={isHubActive ? 'page' : undefined}
+          aria-label={NAV_HUB_ITEM.label}
         >
-          <span className="sidebar-item-icon" aria-hidden="true">{renderIcon('home')}</span>
-          {!collapsed && <span className="sidebar-item-label">Dashboard</span>}
+          <span className="sidebar-item-icon" aria-hidden="true">{renderIcon('hub')}</span>
+          {!collapsed && <span className="sidebar-item-label">{NAV_HUB_ITEM.label}</span>}
         </button>
       </div>
 
-      {/* Chat - Prominent */}
-      <div className="sidebar-chat">
-        <button
-          type="button"
-          className={`sidebar-item sidebar-chat-item neuro-focus-ring ${currentPage === 'chat' ? 'active' : ''}`}
-          onClick={() => handleNavigate('chat')}
-          title={NAV_CHAT_ITEM.description}
-          aria-current={currentPage === 'chat' ? 'page' : undefined}
-        >
-          <span className="sidebar-item-icon" aria-hidden="true">{renderIcon('chat')}</span>
-          {!collapsed && <span className="sidebar-item-label">{NAV_CHAT_ITEM.label}</span>}
-        </button>
-        <button
-          type="button"
-          className={`sidebar-item sidebar-browser-item neuro-focus-ring ${currentPage === 'browser' ? 'active' : ''}`}
-          onClick={() => handleNavigate('browser')}
-          title={NAV_BROWSER_ITEM.description}
-          aria-current={currentPage === 'browser' ? 'page' : undefined}
-        >
-          <span className="sidebar-item-icon" aria-hidden="true">{renderIcon('browser')}</span>
-          {!collapsed && <span className="sidebar-item-label">{NAV_BROWSER_ITEM.label}</span>}
-        </button>
-      </div>
+      {/* Divider */}
+      <div className="sidebar-divider" aria-hidden="true" />
 
-      {/* Scrollable Navigation Sections */}
+      {/* 7 Smart Page Nav Items — flat list */}
       <div className="sidebar-nav">
-        {/* Favorites Section */}
-        {!collapsed && favoritePages && favoritePages.length > 0 && (
-          <div className="sidebar-section sidebar-favorites">
-            <button
-              type="button"
-              className="sidebar-section-header neuro-focus-ring"
-              onClick={() => toggleSection('favorites')}
-              aria-expanded={expandedSections.has('favorites')}
-            >
-              <span className="sidebar-section-label">Favoriten</span>
-              <ChevronDown
-                size={12}
-                strokeWidth={1.5}
-                className={`sidebar-section-chevron-icon ${expandedSections.has('favorites') ? 'expanded' : ''}`}
-              />
-            </button>
-            <div className={`sidebar-section-items ${expandedSections.has('favorites') ? 'expanded' : ''}`}>
-              {favoritePages.map(page => {
-                const navItem = getNavItemByPage(page);
-                if (!navItem) return null;
-                const isActive = currentPage === page;
-                return (
-                  <div key={`fav-${page}`} className="sidebar-item-wrapper">
-                    <button
-                      type="button"
-                      className={`sidebar-item neuro-focus-ring ${isActive ? 'active' : ''}`}
-                      onClick={() => handleNavigate(page)}
-                      aria-current={isActive ? 'page' : undefined}
-                    >
-                      <span className="sidebar-item-icon" aria-hidden="true">{renderIcon(page)}</span>
-                      <span className="sidebar-item-label">{navItem.label}</span>
-                    </button>
-                    {toggleFavorite && (
-                      <button
-                        type="button"
-                        className="sidebar-favorite-btn favorited neuro-focus-ring"
-                        onClick={() => toggleFavorite(page)}
-                        aria-label={`${navItem.label} aus Favoriten entfernen`}
-                        aria-pressed={true}
-                        title="Aus Favoriten entfernen"
-                      >
-                        <Star size={12} strokeWidth={1.5} fill="currentColor" />
-                      </button>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
-        {NAV_SECTIONS.map((section) => {
-          const isExpanded = expandedSections.has(section.id);
-          const hasActive = isSectionActive(section);
+        {NAV_ITEMS.map((item) => {
+          const isActive = isNavItemActive(item, currentPage);
+          const badge = getBadgeValue(item);
 
           return (
-            <div
-              key={section.id}
-              className={`sidebar-section ${hasActive ? 'has-active' : ''}`}
+            <button
+              key={item.page}
+              type="button"
+              className={`sidebar-nav-item neuro-focus-ring ${isActive ? 'active' : ''}`}
+              onClick={() => handleNavigate(item.page)}
+              title={collapsed ? `${item.label}${item.description ? ': ' + item.description : ''}` : undefined}
+              aria-current={isActive ? 'page' : undefined}
+              aria-label={item.label}
             >
-              {/* Section Header */}
-              {!collapsed ? (
-                <button
-                  type="button"
-                  className="sidebar-section-header neuro-focus-ring"
-                  onClick={() => toggleSection(section.id)}
-                  aria-expanded={isExpanded}
-                >
-                  <span className="sidebar-section-label">{section.label}</span>
-                  <ChevronDown
-                    size={12}
-                    strokeWidth={1.5}
-                    className={`sidebar-section-chevron-icon ${isExpanded ? 'expanded' : ''}`}
-                  />
-                </button>
-              ) : (
-                <div className="sidebar-section-divider" aria-hidden="true" />
+              <span className="sidebar-item-icon" aria-hidden="true">{renderIcon(item.page)}</span>
+              {!collapsed && (
+                <>
+                  <span className="sidebar-item-label">{item.label}</span>
+                  {badge !== undefined && (
+                    <span className="sidebar-item-badge" aria-label={`${badge} Eintraege`}>{badge}</span>
+                  )}
+                </>
               )}
-
-              {/* Section Items */}
-              <div className={`sidebar-section-items ${isExpanded || collapsed ? 'expanded' : ''}`}>
-                {section.items.map((item) => {
-                  const isActive = isNavItemActive(item, currentPage);
-                  const badge = getBadgeValue(item);
-
-                  return (
-                    <div key={item.page} className="sidebar-item-wrapper">
-                      <button
-                        type="button"
-                        className={`sidebar-item neuro-focus-ring ${isActive ? 'active' : ''}`}
-                        onClick={() => handleNavigate(item.page)}
-                        title={collapsed ? `${item.label}${item.description ? ': ' + item.description : ''}` : undefined}
-                        aria-current={isActive ? 'page' : undefined}
-                        aria-label={item.label}
-                      >
-                        <span className="sidebar-item-icon" aria-hidden="true">{renderIcon(item.page)}</span>
-                        {!collapsed && (
-                          <>
-                            <span className="sidebar-item-text">
-                              <span className="sidebar-item-label">{item.label}</span>
-                              {item.description && (
-                                <span className="sidebar-item-description">{item.description}</span>
-                              )}
-                            </span>
-                            {badge !== undefined && (
-                              <span className="sidebar-item-badge" aria-label={`${badge} Eintraege`}>{badge}</span>
-                            )}
-                          </>
-                        )}
-                        {collapsed && badge !== undefined && (
-                          <span className="sidebar-item-badge-dot" aria-hidden="true" />
-                        )}
-                      </button>
-                      {!collapsed && toggleFavorite && (
-                        <button
-                          type="button"
-                          className={`sidebar-favorite-btn neuro-focus-ring ${isFavorited?.(item.page) ? 'favorited' : ''}`}
-                          onClick={() => toggleFavorite(item.page)}
-                          aria-label={isFavorited?.(item.page) ? `${item.label} aus Favoriten entfernen` : `${item.label} zu Favoriten hinzufuegen`}
-                          aria-pressed={!!isFavorited?.(item.page)}
-                          title={isFavorited?.(item.page) ? 'Aus Favoriten entfernen' : 'Zu Favoriten hinzufuegen'}
-                        >
-                          <Star size={12} strokeWidth={1.5} fill={isFavorited?.(item.page) ? 'currentColor' : 'none'} />
-                        </button>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
+              {collapsed && badge !== undefined && (
+                <span className="sidebar-item-badge-dot" aria-hidden="true" />
+              )}
+            </button>
           );
         })}
       </div>
 
-      {/* Footer: Profile, Notifications, Settings */}
+      {/* Footer: Status + Logout */}
       <div className="sidebar-footer">
         {/* Status Indicators */}
         <div className="sidebar-status" aria-label="Systemstatus">
@@ -381,26 +222,8 @@ export const Sidebar = memo(function Sidebar({
           </span>}
         </div>
 
-        {/* Footer Nav Items */}
+        {/* Logout */}
         <div className="sidebar-footer-items">
-          {NAV_FOOTER_ITEMS.map((item) => {
-            const isActive = isNavItemActive(item, currentPage);
-
-            return (
-              <button
-                key={item.page}
-                type="button"
-                className={`sidebar-footer-item neuro-focus-ring ${isActive ? 'active' : ''}`}
-                onClick={() => handleNavigate(item.page)}
-                title={item.label}
-                aria-current={isActive ? 'page' : undefined}
-                aria-label={item.label}
-              >
-                <span className="sidebar-footer-icon" aria-hidden="true">{renderIcon(item.page, 16)}</span>
-                {!collapsed && <span className="sidebar-footer-label">{item.label}</span>}
-              </button>
-            );
-          })}
           <button
             type="button"
             className="sidebar-footer-item sidebar-logout-btn neuro-focus-ring"

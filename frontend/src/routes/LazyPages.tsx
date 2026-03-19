@@ -87,3 +87,7 @@ export const SystemAdminPage = lazy(() =>
 export const Onboarding = lazy(() =>
   import('../components/Onboarding').then(m => ({ default: m.Onboarding }))
 );
+
+export const ChatHub = lazy(() =>
+  import('../components/ChatHub/ChatHub').then(m => ({ default: m.ChatHub }))
+);

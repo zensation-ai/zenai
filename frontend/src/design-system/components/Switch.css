@@ -1,0 +1,109 @@
+/* Design System: Switch */
+
+.ds-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  user-select: none;
+}
+
+/* Visually hidden input — remains focusable and screen-reader accessible */
+.ds-switch__input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+/* Track */
+.ds-switch__track {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  width: 40px;
+  height: 22px;
+  border-radius: 11px;
+  background: var(--surface-2, hsl(220, 12%, 88%));
+  border: 1.5px solid var(--border-color, hsl(220, 13%, 80%));
+  transition: background 0.2s ease, border-color 0.2s ease;
+  flex-shrink: 0;
+}
+
+/* Thumb */
+.ds-switch__thumb {
+  position: absolute;
+  left: 2px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: white;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* Checked state */
+.ds-switch--checked .ds-switch__track {
+  background: var(--color-accent, hsl(250, 65%, 58%));
+  border-color: var(--color-accent, hsl(250, 65%, 58%));
+}
+
+.ds-switch--checked .ds-switch__thumb {
+  transform: translateX(18px);
+}
+
+/* Disabled state */
+.ds-switch--disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+/* Focus-visible ring on the track when input is focused */
+.ds-switch__input:focus-visible ~ .ds-switch__track {
+  outline: 2px solid var(--color-accent, hsl(250, 65%, 58%));
+  outline-offset: 2px;
+}
+
+/* Label text */
+.ds-switch__label {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text, hsl(220, 15%, 20%));
+  line-height: 1.4;
+}
+
+/* Dark mode */
+[data-theme="dark"] .ds-switch__track {
+  background: var(--surface-2-dark, hsl(220, 12%, 25%));
+  border-color: hsl(220, 13%, 35%);
+}
+
+[data-theme="dark"] .ds-switch__thumb {
+  background: hsl(220, 10%, 85%);
+}
+
+[data-theme="dark"] .ds-switch--checked .ds-switch__track {
+  background: var(--color-accent, hsl(250, 65%, 58%));
+  border-color: var(--color-accent, hsl(250, 65%, 58%));
+}
+
+[data-theme="dark"] .ds-switch--checked .ds-switch__thumb {
+  background: white;
+}
+
+[data-theme="dark"] .ds-switch__label {
+  color: var(--text-dark, hsl(220, 15%, 85%));
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .ds-switch__track,
+  .ds-switch__thumb {
+    transition: none;
+  }
+}

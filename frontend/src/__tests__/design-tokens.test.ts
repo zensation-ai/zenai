@@ -1,5 +1,7 @@
+import { describe, it, expect, test } from 'vitest';
 import { opacity } from '../design-system/tokens';
 import { springs, springCSS, springFallback } from '../design-system/springs';
+import { colors } from '../design-system/colors';
 
 describe('Design Tokens', () => {
   test('opacity tokens are between 0 and 1', () => {
@@ -36,5 +38,207 @@ describe('Design Tokens', () => {
       expect(typeof value).toBe('string');
       expect(value).toMatch(/cubic-bezier/);
     });
+  });
+});
+
+describe('Calm Neurodesign Color Tokens', () => {
+  it('exports new accent colors (5 semantic hues)', () => {
+    expect(colors.accent).toBeDefined();
+    expect(colors.accent.primary).toMatch(/^hsl\(/);
+    expect(colors.accent.secondary).toMatch(/^hsl\(/);
+    expect(colors.calmSuccess).toBeDefined();
+    expect(colors.calmWarning).toBeDefined();
+    expect(colors.calmDanger).toBeDefined();
+  });
+
+  it('exports 4 context colors', () => {
+    expect(colors.context.personal).toMatch(/^hsl\(/);
+    expect(colors.context.work).toMatch(/^hsl\(/);
+    expect(colors.context.learning).toMatch(/^hsl\(/);
+    expect(colors.context.creative).toMatch(/^hsl\(/);
+  });
+
+  it('exports light and dark surface scales', () => {
+    expect(colors.calmSurface.light.bg).toMatch(/^hsl\(/);
+    expect(colors.calmSurface.light.s1).toMatch(/^hsl\(/);
+    expect(colors.calmSurface.dark.bg).toMatch(/^hsl\(/);
+  });
+
+  it('exports new text color scales', () => {
+    expect(colors.calmText.light.primary).toMatch(/^hsl\(/);
+    expect(colors.calmText.dark.primary).toMatch(/^hsl\(/);
+  });
+
+  it('exports new glass tokens', () => {
+    expect(colors.calmGlass.light.bg).toMatch(/^rgba\(/);
+    expect(colors.calmGlass.dark.bg).toMatch(/^rgba\(/);
+  });
+
+  // CRITICAL: backward compatibility — ALL old aggregate properties still exist
+  it('preserves ALL legacy aggregate properties', () => {
+    expect(colors.brand).toBeDefined();
+    expect(colors.brand.primary).toBe('#ff6b35');
+    expect(colors.brandDark).toBeDefined();
+    expect(colors.surfaceLight).toBeDefined();
+    expect(colors.surfaceLight.background).toBe('#dce5eb');
+    expect(colors.surfaceDark).toBeDefined();
+    expect(colors.glassLight).toBeDefined();
+    expect(colors.glassDark).toBeDefined();
+    expect(colors.textLight).toBeDefined();
+    expect(colors.textDark).toBeDefined();
+    expect(colors.textOnDark).toBeDefined();
+    expect(colors.borderLight).toBeDefined();
+    expect(colors.borderDark).toBeDefined();
+    expect(colors.semantic).toBeDefined();
+    expect(colors.warm).toBeDefined();
+    expect(colors.petrol).toBeDefined();
+    expect(colors.header).toBeDefined();
+    expect(colors.sidebar).toBeDefined();
+    expect(colors.neuro).toBeDefined();
+    expect(colors.gradients).toBeDefined();
+  });
+});
+
+import { typography } from '../design-system/typography';
+
+import { spacing, scale, gestalt } from '../design-system/spacing';
+
+describe('Calm Neurodesign Spacing Tokens', () => {
+  it('exports 4px base scale as string px values', () => {
+    expect(scale[1]).toBe('4px');
+    expect(scale[2]).toBe('8px');
+    expect(scale[4]).toBe('16px');
+    expect(scale[6]).toBe('24px');
+    expect(scale[8]).toBe('32px');
+    expect(scale[12]).toBe('48px');
+    expect(scale[16]).toBe('64px');
+  });
+
+  it('exports gestalt proximity aliases', () => {
+    expect(gestalt.intraGroup).toBe('8px');
+    expect(gestalt.interGroup).toBe('24px');
+  });
+
+  it('preserves legacy spacing as numeric object', () => {
+    expect(spacing.xs).toBe(4);
+    expect(spacing.sm).toBe(8);
+    expect(spacing.md).toBe(12);
+    expect(spacing.lg).toBe(16);
+    expect(spacing.xl).toBe(20);
+    expect(spacing['2xl']).toBe(24);
+    expect(spacing['3xl']).toBe(32);
+    expect(spacing['4xl']).toBe(48);
+  });
+
+  it('preserves legacy space, layout, px exports', async () => {
+    const { space, layout, px } = await import('../design-system/spacing');
+    expect(space[1]).toBe(4);
+    expect(layout.sidebarWidth).toBe(260);
+    expect(px(16)).toBe('16px');
+  });
+});
+
+describe('Calm Neurodesign Typography Tokens', () => {
+  it('exports modular scale sizes', () => {
+    expect(typography.size.xs).toBe('0.75rem');
+    expect(typography.size.sm).toBe('0.875rem');
+    expect(typography.size.base).toBe('1rem');
+    expect(typography.size.lg).toBe('1.125rem');
+    expect(typography.size.xl).toBe('1.25rem');
+    expect(typography.size['2xl']).toBe('1.5rem');
+    expect(typography.size['3xl']).toBe('1.875rem');
+  });
+
+  it('exports font weights', () => {
+    expect(typography.weight.normal).toBe(400);
+    expect(typography.weight.medium).toBe(500);
+    expect(typography.weight.semibold).toBe(600);
+    expect(typography.weight.bold).toBe(700);
+  });
+
+  it('exports line heights', () => {
+    expect(typography.leading.tight).toBe(1.3);
+    expect(typography.leading.normal).toBe(1.55);
+    expect(typography.leading.relaxed).toBe(1.7);
+  });
+
+  it('exports font families', () => {
+    expect(typography.family.sans).toContain('Inter');
+    expect(typography.family.mono).toContain('JetBrains Mono');
+  });
+
+  // CRITICAL: backward compat
+  it('preserves ALL legacy aggregate properties', () => {
+    expect(typography.fontFamily).toBeDefined();
+    expect(typography.fontFamily.sans).toContain('Inter');
+    expect(typography.fontSize).toBeDefined();
+    expect(typography.fontSize.base).toBe('0.875rem');
+    expect(typography.fontWeight).toBeDefined();
+    expect(typography.fontWeight.bold).toBe(700);
+    expect(typography.lineHeight).toBeDefined();
+    expect(typography.lineHeight.base).toBe(1.6);
+    expect(typography.letterSpacing).toBeDefined();
+    expect(typography.fontFeatureSettings).toBeDefined();
+  });
+});
+
+import { animations } from '../design-system/animations';
+
+describe('Calm Neurodesign Animation Tokens', () => {
+  it('exports new spring easing curves', () => {
+    expect(animations.ease.default).toContain('cubic-bezier');
+    expect(animations.ease.spring).toContain('1.56');
+    expect(animations.ease.outExpo).toContain('cubic-bezier');
+    expect(animations.ease.exit).toContain('cubic-bezier');
+  });
+
+  it('exports new string durations', () => {
+    expect(animations.dur.instant).toBe('80ms');
+    expect(animations.dur.fast).toBe('150ms');
+    expect(animations.dur.base).toBe('250ms');
+    expect(animations.dur.smooth).toBe('350ms');
+    expect(animations.dur.layout).toBe('450ms');
+  });
+
+  it('exports preset transition combinations', () => {
+    expect(animations.preset.enter).toContain('350ms');
+    expect(animations.preset.exit).toContain('250ms');
+    expect(animations.preset.layout).toContain('450ms');
+  });
+
+  it('preserves ALL legacy aggregate properties', () => {
+    expect(animations.easing).toBeDefined();
+    expect(animations.easing.default).toContain('cubic-bezier');
+    expect(animations.duration).toBeDefined();
+    expect(animations.duration.instant).toBe(80);
+    expect(animations.duration.fast).toBe(150);
+    expect(animations.transition).toBeDefined();
+    expect(animations.neuroTransition).toBeDefined();
+    expect(animations.keyframes).toBeDefined();
+  });
+});
+
+import { shadows } from '../design-system/shadows';
+
+describe('Calm Neurodesign Shadow Tokens', () => {
+  it('exports new glass levels', () => {
+    expect(shadows.glassLevel.level1).toBeDefined();
+    expect(shadows.glassLevel.level2).toBeDefined();
+    expect(shadows.glassLevel.backdrop).toBeDefined();
+  });
+
+  it('exports new elevation shadows', () => {
+    expect(shadows.elevation.sm).toBeDefined();
+    expect(shadows.elevation.md).toBeDefined();
+    expect(shadows.elevation.lg).toBeDefined();
+  });
+
+  it('preserves ALL legacy aggregate properties', () => {
+    expect(shadows.light).toBeDefined();
+    expect(shadows.light.sm).toBeDefined();
+    expect(shadows.light.card).toBeDefined();
+    expect(shadows.dark).toBeDefined();
+    expect(shadows.dark.sm).toBeDefined();
+    expect(shadows.glass2026).toBeDefined();
   });
 });
