@@ -1,120 +1,39 @@
 /**
- * ZenAI Design System - Animation & Transition Tokens
- * Phase 68.1 - Mirrors --transition-*, --ease-*, and neuro timing from index.css
+ * ZenAI Design System — Animation Tokens
+ * Phase 102 — Spring physics presets ADDED alongside legacy.
  */
 
-// ---------------------------------------------------------------------------
-// Easing curves (from index.css :root)
-// ---------------------------------------------------------------------------
+// Re-export ALL legacy named exports
+export { easing, duration, transition, neuroTransition, keyframes } from './animations-legacy';
 
-export const easing = {
-  /** Standard Material-style ease - used for most transitions */
+import { animations as legacyAnimations } from './animations-legacy';
+
+// ── NEW: Spring physics easings ────────────────────────────────
+export const ease = {
   default: 'cubic-bezier(0.4, 0, 0.2, 1)',
-  /** Expo ease-out - smooth deceleration (layout transitions) */
-  outExpo: 'cubic-bezier(0.22, 1, 0.36, 1)',
-  /** Bounce overshoot - playful micro-interactions */
-  bounce: 'cubic-bezier(0.34, 1.56, 0.64, 1)',
-  /** Linear */
-  linear: 'linear',
+  spring: 'cubic-bezier(0.34, 1.56, 0.64, 1)',
+  outExpo: 'cubic-bezier(0.16, 1, 0.3, 1)',
+  exit: 'cubic-bezier(0.4, 0, 1, 1)',
 } as const;
 
-// ---------------------------------------------------------------------------
-// Duration constants (ms)
-// ---------------------------------------------------------------------------
-
-export const duration = {
-  /** Instant feedback (neuro-timing-instant: 80ms) */
-  instant: 80,
-  /** Fast transitions (--transition-fast: 150ms) */
-  fast: 150,
-  /** Exit transitions (--transition-exit: 200ms) */
-  exit: 200,
-  /** Base transitions (--transition-base: 250ms) */
-  base: 250,
-  /** Natural (neuro-timing-natural: 280ms) */
-  natural: 280,
-  /** Layout transition (--layout-transition: 280ms) */
-  layout: 280,
-  /** Slow transitions (--transition-slow: 400ms) */
-  slow: 400,
-  /** Deliberate (neuro-timing-deliberate: 450ms) */
-  deliberate: 450,
-  /** Bounce (--transition-bounce: 500ms) */
-  bouncy: 500,
+// ── NEW: String durations (named `dur` to avoid collision with legacy `duration`) ──
+export const dur = {
+  instant: '80ms', fast: '150ms', base: '250ms', smooth: '350ms', layout: '450ms',
 } as const;
 
-// ---------------------------------------------------------------------------
-// Composite transition presets (matching CSS custom properties)
-// ---------------------------------------------------------------------------
-
-export const transition = {
-  /** --transition-fast: 0.15s cubic-bezier(0.4, 0, 0.2, 1) */
-  fast: '0.15s cubic-bezier(0.4, 0, 0.2, 1)',
-  /** --transition-base: 0.25s cubic-bezier(0.4, 0, 0.2, 1) */
-  base: '0.25s cubic-bezier(0.4, 0, 0.2, 1)',
-  /** --transition-slow: 0.4s cubic-bezier(0.4, 0, 0.2, 1) */
-  slow: '0.4s cubic-bezier(0.4, 0, 0.2, 1)',
-  /** --transition-bounce: 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) */
-  bounce: '0.5s cubic-bezier(0.34, 1.56, 0.64, 1)',
-  /** --transition-exit: 0.2s cubic-bezier(0.4, 0, 0.2, 1) */
-  exit: '0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-  /** --layout-transition: 0.28s cubic-bezier(0.22, 1, 0.36, 1) */
-  layout: '0.28s cubic-bezier(0.22, 1, 0.36, 1)',
+// ── NEW: Transition presets ────────────────────────────────────
+export const preset = {
+  enter: `${dur.smooth} ${ease.spring}`,
+  exit: `${dur.base} ${ease.exit}`,
+  layout: `${dur.layout} ${ease.outExpo}`,
+  hover: `${dur.instant} ${ease.default}`,
+  micro: `${dur.fast} ${ease.default}`,
 } as const;
 
-// ---------------------------------------------------------------------------
-// Neuro transitions (from neurodesign.css)
-// ---------------------------------------------------------------------------
-
-export const neuroTransition = {
-  /** Cognitive load reduction */
-  cognitive: '0.25s cubic-bezier(0.4, 0, 0.2, 1)',
-  /** Reward feedback */
-  reward: '0.35s cubic-bezier(0.34, 1.56, 0.64, 1)',
-  /** Flow-state (no abrupt interruptions) */
-  flow: '0.5s cubic-bezier(0.22, 1, 0.36, 1)',
-} as const;
-
-// ---------------------------------------------------------------------------
-// Keyframe definitions (CSS keyframe names from index.css)
-// These are the names used in CSS; components can reference them.
-// ---------------------------------------------------------------------------
-
-export const keyframes = {
-  /** Badge pulse scale animation */
-  badgePulse: 'badgePulse',
-  /** Simple opacity fade */
-  fadeIn: 'fadeIn',
-  /** Slide down with fade */
-  slideIn: 'slideIn',
-  /** Skeleton loading shimmer */
-  shimmer: 'shimmer',
-  /** Rotate 360deg */
-  spin: 'spin',
-  /** Scale + opacity pulse */
-  pulse: 'pulse',
-  /** Floating particles */
-  particleFloat: 'particleFloat',
-  /** Blob organic floats */
-  blobFloat1: 'blobFloat1',
-  blobFloat2: 'blobFloat2',
-  blobFloat3: 'blobFloat3',
-  blobFloat4: 'blobFloat4',
-  blobFloat5: 'blobFloat5',
-  /** Neuro dopamine burst (from neurodesign.css) */
-  dopamineBurst: 'dopamineBurst',
-} as const;
-
-// ---------------------------------------------------------------------------
-// Aggregate
-// ---------------------------------------------------------------------------
-
+// ── EXTENDED Aggregate ─────────────────────────────────────────
 export const animations = {
-  easing,
-  duration,
-  transition,
-  neuroTransition,
-  keyframes,
+  ...legacyAnimations, // easing, duration (numbers), transition, neuroTransition, keyframes
+  ease, dur, preset,
 } as const;
 
 export type Animations = typeof animations;

@@ -181,3 +181,39 @@ describe('Calm Neurodesign Typography Tokens', () => {
     expect(typography.fontFeatureSettings).toBeDefined();
   });
 });
+
+import { animations } from '../design-system/animations';
+
+describe('Calm Neurodesign Animation Tokens', () => {
+  it('exports new spring easing curves', () => {
+    expect(animations.ease.default).toContain('cubic-bezier');
+    expect(animations.ease.spring).toContain('1.56');
+    expect(animations.ease.outExpo).toContain('cubic-bezier');
+    expect(animations.ease.exit).toContain('cubic-bezier');
+  });
+
+  it('exports new string durations', () => {
+    expect(animations.dur.instant).toBe('80ms');
+    expect(animations.dur.fast).toBe('150ms');
+    expect(animations.dur.base).toBe('250ms');
+    expect(animations.dur.smooth).toBe('350ms');
+    expect(animations.dur.layout).toBe('450ms');
+  });
+
+  it('exports preset transition combinations', () => {
+    expect(animations.preset.enter).toContain('350ms');
+    expect(animations.preset.exit).toContain('250ms');
+    expect(animations.preset.layout).toContain('450ms');
+  });
+
+  it('preserves ALL legacy aggregate properties', () => {
+    expect(animations.easing).toBeDefined();
+    expect(animations.easing.default).toContain('cubic-bezier');
+    expect(animations.duration).toBeDefined();
+    expect(animations.duration.instant).toBe(80);
+    expect(animations.duration.fast).toBe(150);
+    expect(animations.transition).toBeDefined();
+    expect(animations.neuroTransition).toBeDefined();
+    expect(animations.keyframes).toBeDefined();
+  });
+});
