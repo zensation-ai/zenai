@@ -1252,24 +1252,20 @@ export const TOOL_MCP_LIST_TOOLS: ToolDefinition = {
 export const TOOL_MEMORY_RETHINK: ToolDefinition = {
   name: 'memory_rethink',
   description:
-    'Ueberdenkt und korrigiert einen bestehenden Fakt im Langzeitgedaechtnis. Nutze dies wenn du erkennst, dass ein gespeicherter Fakt veraltet, ungenau oder falsch geworden ist und eine neue Einschaetzung noetig ist. Speichert den Korrekturgrund als Audit-Trail.',
+    'Reflektiert ueber eine bestehende Erinnerung und revidiert sie im neuen Kontext. Anders als memory_replace wird der alte Inhalt mit neuem Kontext synthetisiert — die KI fusioniert beide zu einem reichhaltigen, aktualisierten Fakt. Ideal wenn neue Informationen das bestehende Wissen ergaenzen statt ersetzen.',
   input_schema: {
     type: 'object',
     properties: {
       fact_id: {
         type: 'string',
-        description: 'ID des zu korrigierenden Fakts (aus memory_introspect oder recall)',
+        description: 'ID des zu revidierenden Fakts (aus memory_introspect oder recall)',
       },
-      new_understanding: {
+      new_context: {
         type: 'string',
-        description: 'Neue, korrigierte Formulierung des Fakts',
-      },
-      reason: {
-        type: 'string',
-        description: 'Begruendung fuer die Korrektur (z.B. "Nutzer hat neue Information gegeben", "Widerspruch mit neuerem Fakt")',
+        description: 'Neuer Kontext oder Information die in den bestehenden Fakt eingearbeitet werden soll',
       },
     },
-    required: ['fact_id', 'new_understanding', 'reason'],
+    required: ['fact_id', 'new_context'],
   },
 };
 

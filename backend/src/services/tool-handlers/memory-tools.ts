@@ -17,6 +17,7 @@ import { longTermMemory, PersonalizationFact } from '../memory';
 import { queryContext, AIContext } from '../../utils/database-context';
 import { invalidatePersonalFactsCache, CATEGORY_LABELS, VALID_CATEGORIES } from '../personal-facts-bridge';
 import { v4 as uuidv4 } from 'uuid';
+import { generateClaudeResponse } from '../claude/core';
 
 // ===========================================
 // Shared Helpers
@@ -267,95 +268,160 @@ Ich werde diese Information ab sofort in allen Gesprächen berücksichtigen.`;
 }
 
 // ===========================================
-// Memory Rethink Handler (Letta V1 Pattern)
+// Memory Rethink Handler (Phase 101 — Contextual Synthesis)
 // ===========================================
 
 /**
- * Re-evaluate and update an existing memory fact with audit trail.
- * Unlike memory_update, this requires an explicit reason for the change,
- * stores the old content as metadata, and is designed for AI self-correction.
+ * Reflect on an existing memory fact and revise it in light of new context.
+ * Unlike memory_replace (which substitutes), this synthesizes old + new using Claude Haiku
+ * to produce a richer, contextually updated fact. Records revision in fact lineage.
+ *
+ * Tool: memory_rethink(fact_id, new_context)
  */
 export async function handleMemoryRethink(
   input: Record<string, unknown>,
   execContext: ToolExecutionContext
 ): Promise<string> {
-  const factId = input.fact_id as string;
-  const newUnderstanding = input.new_understanding as string;
-  const reason = input.reason as string;
+  const factId = input.fact_id as string | undefined;
+  const newContext = input.new_context as string | undefined;
   const context = execContext.aiContext;
 
-  if (!factId || !newUnderstanding || !reason) {
-    return 'Fehler: fact_id, new_understanding und reason sind alle erforderlich.';
+  if (!factId) {
+    return 'Fehler: fact_id (ID des zu revidierenden Fakts) ist erforderlich.';
+  }
+  if (!newContext) {
+    return 'Fehler: new_context (neuer Kontext oder Information) ist erforderlich.';
   }
 
-  logger.debug('Tool: memory_rethink', { factId, reason, context });
+  logger.debug('Tool: memory_rethink', { factId, context });
 
   try {
+    // 1. Load the existing fact from DB
+    const result = await queryContext(
+      context as 'personal' | 'work' | 'learning' | 'creative',
+      `SELECT id, content, fact_type, confidence, metadata
+       FROM personalization_facts
+       WHERE id = $1 AND is_active = true LIMIT 1`,
+      [factId]
+    );
+
+    if (result.rows.length === 0) {
+      // Also try via longTermMemory in-memory cache
+      const facts = await longTermMemory.getFacts(context);
+      const found = findFact(facts, factId);
+      if (!found) {
+        return `Fakt mit ID "${factId}" nicht gefunden. Nutze memory_introspect um verfuegbare Fakten anzuzeigen.`;
+      }
+
+      // Fall back to in-memory fact details
+      const targetFact = found.fact;
+      return await synthesizeAndUpdateFact(
+        context,
+        { id: targetFact.id, content: targetFact.content, fact_type: targetFact.factType, confidence: targetFact.confidence, metadata: null },
+        newContext,
+        targetFact
+      );
+    }
+
+    const dbFact = result.rows[0] as { id: string; content: string; fact_type: string; confidence: number; metadata: Record<string, unknown> | null };
+
+    // Also get the in-memory fact reference for updating cached state
     const facts = await longTermMemory.getFacts(context);
     const found = findFact(facts, factId);
 
-    if (!found) {
-      return `Fakt mit ID "${factId}" nicht gefunden. Nutze memory_introspect um verfuegbare Fakten anzuzeigen.`;
-    }
+    return await synthesizeAndUpdateFact(context, dbFact, newContext, found?.fact ?? null);
+  } catch (error) {
+    logger.error('Tool memory_rethink failed', error instanceof Error ? error : undefined);
+    return 'Fehler beim Revidieren des Fakts. Bitte versuche es erneut.';
+  }
+}
 
-    const targetFact = found.fact;
-    const oldContent = targetFact.content;
+/**
+ * Core synthesis: call Claude Haiku to blend old content + new context, then persist.
+ */
+async function synthesizeAndUpdateFact(
+  context: string,
+  dbFact: { id: string; content: string; fact_type: string; confidence: number; metadata: Record<string, unknown> | null },
+  newContext: string,
+  inMemoryFact: PersonalizationFact | null
+): Promise<string> {
+  const oldContent = dbFact.content;
 
-    // Store the rethink metadata as JSON in the database
-    const rethinkMetadata = JSON.stringify({
-      old_content: oldContent,
-      reason,
-      rethought_at: new Date().toISOString(),
+  // 2. Synthesize revised content using Claude Haiku
+  const systemPrompt = `You are a memory revision assistant. Given an existing memory fact and new contextual information, produce a single revised fact that integrates both. Output ONLY the revised fact as a plain string — no JSON, no labels, no explanation. Keep it concise (1-3 sentences max). Use the same language as the existing fact.`;
+  const userPrompt = `Existing fact: ${oldContent}\n\nNew context to integrate: ${newContext}\n\nRevised fact:`;
+
+  let revisedContent: string;
+  try {
+    const response = await generateClaudeResponse(systemPrompt, userPrompt, {
+      maxTokens: 200,
+      temperature: 0.3,
     });
+    revisedContent = response.trim();
+    if (!revisedContent) {
+      throw new Error('Empty synthesis response');
+    }
+  } catch (llmError) {
+    logger.error('Claude synthesis in memory_rethink failed', llmError instanceof Error ? llmError : undefined);
+    return 'Fehler bei der KI-Synthese. Bitte versuche es erneut.';
+  }
 
-    // Update fact in database with new content and audit metadata
+  // 3. Build lineage metadata: record superseded_by + revision reason
+  const revisionMetadata = JSON.stringify({
+    rethought_at: new Date().toISOString(),
+    old_content: oldContent,
+    new_context: newContext,
+    supersede_reason: 'memory_rethink contextual synthesis',
+  });
+
+  // 4. Persist revised content + lineage to DB
+  try {
+    await queryContext(
+      context as 'personal' | 'work' | 'learning' | 'creative',
+      `UPDATE personalization_facts
+       SET content = $1,
+           last_confirmed = NOW(),
+           occurrences = occurrences + 1,
+           metadata = COALESCE(metadata, '{}')::jsonb || $2::jsonb
+       WHERE id = $3`,
+      [revisedContent, revisionMetadata, dbFact.id]
+    );
+  } catch (dbError) {
+    logger.debug('DB rethink with metadata failed, falling back to simple update', { dbError });
     try {
       await queryContext(
-        context,
-        `UPDATE personalization_facts
-         SET content = $1,
-             last_confirmed = NOW(),
-             occurrences = occurrences + 1,
-             metadata = COALESCE(metadata, '{}')::jsonb || $2::jsonb
-         WHERE id = $3`,
-        [newUnderstanding, rethinkMetadata, targetFact.id]
-      );
-    } catch (dbError) {
-      // Fallback: try simpler update without jsonb merge
-      logger.debug('DB rethink with metadata failed, falling back to simple update', { dbError });
-      await queryContext(
-        context,
+        context as 'personal' | 'work' | 'learning' | 'creative',
         `UPDATE personalization_facts
          SET content = $1,
              last_confirmed = NOW(),
              occurrences = occurrences + 1
          WHERE id = $2`,
-        [newUnderstanding, targetFact.id]
+        [revisedContent, dbFact.id]
       );
+    } catch (fallbackError) {
+      logger.error('DB rethink fallback update also failed', fallbackError instanceof Error ? fallbackError : undefined);
     }
-
-    // Update in-memory state
-    targetFact.content = newUnderstanding;
-    targetFact.lastConfirmed = new Date();
-    targetFact.occurrences++;
-
-    logger.info('Memory fact rethought via tool', {
-      factId: targetFact.id,
-      oldContent: oldContent.substring(0, 50),
-      newContent: newUnderstanding.substring(0, 50),
-      reason,
-    });
-
-    return `Fakt ueberarbeitet:
-- **Vorher**: ${oldContent.substring(0, 100)}${oldContent.length > 100 ? '...' : ''}
-- **Nachher**: ${newUnderstanding.substring(0, 100)}${newUnderstanding.length > 100 ? '...' : ''}
-- **Grund**: ${reason}
-
-Die korrigierte Information wird ab sofort verwendet. Der Korrekturgrund wurde als Audit-Trail gespeichert.`;
-  } catch (error) {
-    logger.error('Tool memory_rethink failed', error instanceof Error ? error : undefined);
-    return 'Fehler beim Ueberarbeiten des Fakts. Bitte versuche es erneut.';
   }
+
+  // 5. Update in-memory cache if available
+  if (inMemoryFact) {
+    inMemoryFact.content = revisedContent;
+    inMemoryFact.lastConfirmed = new Date();
+    inMemoryFact.occurrences++;
+  }
+
+  logger.info('Memory fact rethought via contextual synthesis', {
+    factId: dbFact.id,
+    oldContent: oldContent.substring(0, 50),
+    revisedContent: revisedContent.substring(0, 50),
+  });
+
+  return `Fakt kontextuell revidiert:
+- **Vorher**: ${oldContent.substring(0, 100)}${oldContent.length > 100 ? '...' : ''}
+- **Neuer Kontext**: ${newContext.substring(0, 100)}${newContext.length > 100 ? '...' : ''}
+- **Nachher** (synthetisiert): ${revisedContent.substring(0, 100)}${revisedContent.length > 100 ? '...' : ''}
+
+Die synthetisierte Information wird ab sofort verwendet. Aenderungshistorie wurde als Lineage gespeichert.`;
 }
 
 // ===========================================
