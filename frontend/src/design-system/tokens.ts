@@ -169,3 +169,10 @@ export { spacing, space, layout, px } from './spacing';
 export { typography } from './typography';
 export { shadows } from './shadows';
 export { animations } from './animations';
+
+// Phase 102: Calm Neurodesign named exports
+export { accent, calmSuccess, calmWarning, calmDanger, context, calmSurface, calmText, calmGlass } from './colors';
+export { family, size, weight, leading, tracking } from './typography';
+export { scale, gestalt } from './spacing';
+export { ease, dur, preset } from './animations';
+export { glassLevel, elevation, elevationDark } from './shadows';
