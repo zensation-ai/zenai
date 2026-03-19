@@ -37,7 +37,7 @@ function TaskCardResult({ content, metadata }: { content: string; metadata?: Rec
         <span className={`adaptive-result__task-title ${done ? 'adaptive-result__task-title--done' : ''}`}>
           {content}
         </span>
-        {metadata?.due && (
+        {metadata?.due != null && (
           <span className="adaptive-result__task-due">{String(metadata.due)}</span>
         )}
       </div>
