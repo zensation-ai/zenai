@@ -129,7 +129,7 @@ export const NAV_SECTIONS: NavSection[] = [
         icon: 'BarChart3',
         label: 'Insights',
         description: 'Muster & Trends in deinen Gedanken',
-        subPages: ['analytics', 'digest', 'knowledge-graph'],
+        subPages: ['analytics', 'digest', 'knowledge-graph', 'graphrag'],
       },
       {
         page: 'finance',
@@ -155,7 +155,7 @@ export const NAV_SECTIONS: NavSection[] = [
         icon: 'Brain',
         label: 'Meine KI',
         description: 'KI auf dich abstimmen',
-        subPages: ['voice-chat', 'memory-insights'],
+        subPages: ['voice-chat', 'memory-insights', 'digital-twin', 'procedural-memory'],
       },
       {
         page: 'learning',

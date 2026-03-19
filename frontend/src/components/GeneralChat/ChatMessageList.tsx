@@ -17,7 +17,7 @@ import { ToolResultRenderer } from './ToolResultRenderer';
 import { ThinkingBlock } from './ThinkingBlock';
 import { ToolDisclosure } from './ToolDisclosure';
 import { ConfidenceBadge } from './ConfidenceBadge';
-import { Brain, User, BookOpen, Link, Pencil } from 'lucide-react';
+import { Brain, User, BookOpen, Link, Pencil, RotateCcw } from 'lucide-react';
 import { slideUp, springs, usePrefersReducedMotion } from '../../utils/animations';
 
 /* ------------------------------------------------------------------ */
@@ -296,6 +296,8 @@ interface ChatMessageListProps {
   renderContent: (content: string, messageId?: string) => React.ReactNode;
   messagesEndRef: RefObject<HTMLDivElement>;
   onStopGenerating?: () => void;
+  onEditMessage?: (messageId: string, content: string) => void;
+  onRegenerateMessage?: (messageId: string) => void;
 }
 
 function formatTime(dateStr: string | null | undefined): string {
@@ -319,6 +321,8 @@ export function ChatMessageList({
   renderContent,
   messagesEndRef,
   onStopGenerating,
+  onEditMessage,
+  onRegenerateMessage,
 }: ChatMessageListProps) {
   // Phase-based AI status messages
   const aiPhase = useAIPhase(sending && !isStreaming);
@@ -414,6 +418,33 @@ export function ChatMessageList({
                   {/* Source citations — only renders when backend provides sources array */}
                   {message.role === 'assistant' && (message as ChatMessage & { sources?: SourceCitation[] }).sources && (
                     <SourceCitations sources={(message as ChatMessage & { sources: SourceCitation[] }).sources} />
+                  )}
+                  {/* Edit & Regenerate actions */}
+                  {!isStreaming && (
+                    <div className="chat-message-actions">
+                      {message.role === 'user' && onEditMessage && (
+                        <button
+                          type="button"
+                          className="chat-action-btn"
+                          title="Nachricht bearbeiten"
+                          aria-label="Nachricht bearbeiten"
+                          onClick={() => onEditMessage(message.id, message.content)}
+                        >
+                          <Pencil size={14} />
+                        </button>
+                      )}
+                      {message.role === 'assistant' && onRegenerateMessage && (
+                        <button
+                          type="button"
+                          className="chat-action-btn"
+                          title="Antwort neu generieren"
+                          aria-label="Antwort neu generieren"
+                          onClick={() => onRegenerateMessage(message.id)}
+                        >
+                          <RotateCcw size={14} />
+                        </button>
+                      )}
+                    </div>
                   )}
                 </div>
               </MessageWrapper>

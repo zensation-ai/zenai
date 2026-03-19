@@ -286,6 +286,40 @@ export function GeneralChat({ context, isCompact = false, assistantMode = false,
   };
 
   /**
+   * Edit a user message: puts content back into input for re-sending
+   */
+  const handleEditMessage = useCallback((messageId: string, content: string) => {
+    dispatchChat({ type: 'EDIT_MESSAGE', messageId, newContent: content });
+    setInputValue(content);
+  }, []);
+
+  /**
+   * Regenerate an assistant message: re-sends the preceding user message
+   */
+  const handleRegenerateMessage = useCallback(async (messageId: string) => {
+    if (sending || !sessionId) return;
+    // Find the user message that preceded this assistant message
+    const msgIndex = messages.findIndex(m => m.id === messageId);
+    if (msgIndex < 0) return;
+    // Look backwards for the user message
+    let userContent = '';
+    for (let i = msgIndex - 1; i >= 0; i--) {
+      if (messages[i].role === 'user') {
+        userContent = messages[i].content;
+        break;
+      }
+    }
+    if (!userContent) return;
+    dispatchChat({ type: 'REGENERATE_MESSAGE', messageId });
+    setInputValue(userContent);
+    // Small delay then auto-send
+    setTimeout(() => {
+      const sendBtn = document.querySelector('.chat-send-button') as HTMLButtonElement;
+      sendBtn?.click();
+    }, 100);
+  }, [sending, sessionId, messages]);
+
+  /**
    * Send message with SSE streaming support
    * Uses Server-Sent Events for real-time token-by-token display
    */
@@ -1001,6 +1035,8 @@ export function GeneralChat({ context, isCompact = false, assistantMode = false,
         renderContent={renderContent}
         messagesEndRef={messagesEndRef}
         onStopGenerating={handleStopGenerating}
+        onEditMessage={handleEditMessage}
+        onRegenerateMessage={handleRegenerateMessage}
       />
 
       {/* Input Area with Thinking Mode and Error Display */}

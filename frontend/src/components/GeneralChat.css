@@ -294,6 +294,40 @@
   text-align: right;
 }
 
+/* Edit & Regenerate action buttons */
+.chat-message-actions {
+  display: flex;
+  gap: 4px;
+  margin-top: 4px;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+.chat-message:hover .chat-message-actions,
+.chat-message:focus-within .chat-message-actions {
+  opacity: 1;
+}
+.chat-action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: 6px;
+  background: var(--surface-secondary, rgba(128, 128, 128, 0.1));
+  color: var(--text-secondary, #888);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+.chat-action-btn:hover {
+  background: var(--surface-hover, rgba(128, 128, 128, 0.2));
+  color: var(--text-primary, #333);
+}
+@media (pointer: coarse) {
+  .chat-message-actions { opacity: 1; }
+  .chat-action-btn { min-width: 44px; min-height: 44px; }
+}
+
 /* Code Blocks */
 .code-block {
   background: #0e1e26;

@@ -664,8 +664,8 @@ function CalendarRouteHandler({ context, tabParam, navigateToPage }: {
   tabParam: string | undefined;
   navigateToPage: (page: Page) => void;
 }) {
-  const calendarTabMap: Record<string, 'calendar' | 'tasks' | 'projects' | 'meetings'> = {
-    'tasks': 'tasks', 'kanban': 'tasks', 'gantt': 'projects', 'meetings': 'meetings',
+  const calendarTabMap: Record<string, 'calendar' | 'tasks' | 'projects' | 'meetings' | 'map'> = {
+    'tasks': 'tasks', 'kanban': 'tasks', 'gantt': 'projects', 'meetings': 'meetings', 'map': 'map',
   };
   const plannerTab = tabParam ? calendarTabMap[tabParam] || 'calendar' : 'calendar';
 
