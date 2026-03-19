@@ -45,3 +45,45 @@ export type { EmptyStateProps } from './EmptyState';
 // Avatar
 export { Avatar } from './Avatar';
 export type { AvatarProps, AvatarVariant, AvatarSize, AvatarStatus } from './Avatar';
+
+// Phase 103: New Components
+
+// Spinner
+export { Spinner } from './Spinner';
+export type { SpinnerProps, SpinnerSize } from './Spinner';
+
+// Divider
+export { Divider } from './Divider';
+export type { DividerProps, DividerOrientation } from './Divider';
+
+// Chip
+export { Chip } from './Chip';
+export type { ChipProps, ChipColor } from './Chip';
+
+// Switch
+export { Switch } from './Switch';
+export type { SwitchProps } from './Switch';
+
+// Progress
+export { Progress } from './Progress';
+export type { ProgressProps, ProgressColor } from './Progress';
+
+// Alert
+export { Alert } from './Alert';
+export type { AlertProps, AlertVariant } from './Alert';
+
+// Tooltip
+export { Tooltip } from './Tooltip';
+export type { TooltipProps } from './Tooltip';
+
+// Dropdown
+export { Dropdown } from './Dropdown';
+export type { DropdownProps, DropdownItem } from './Dropdown';
+
+// Popover
+export { Popover } from './Popover';
+export type { PopoverProps } from './Popover';
+
+// Dialog
+export { Dialog } from './Dialog';
+export type { DialogProps, DialogSize } from './Dialog';
