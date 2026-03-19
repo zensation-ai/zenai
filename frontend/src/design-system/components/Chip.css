@@ -1,0 +1,104 @@
+/* Design System: Chip */
+
+.ds-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: var(--radius-full, 9999px);
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.4;
+  white-space: nowrap;
+  cursor: default;
+  border: 1px solid transparent;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.ds-chip__label {
+  /* purely structural */
+}
+
+/* Dismiss button */
+.ds-chip__dismiss {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border: none;
+  background: none;
+  padding: 0;
+  margin-left: 2px;
+  cursor: pointer;
+  color: inherit;
+  opacity: 0.6;
+  border-radius: 50%;
+  transition: opacity 0.15s ease, background 0.15s ease;
+}
+
+.ds-chip__dismiss:hover {
+  opacity: 1;
+  background: rgba(0, 0, 0, 0.08);
+}
+
+/* Color: default */
+.ds-chip--default {
+  background: var(--surface-2, hsl(220, 12%, 95%));
+  color: var(--text-secondary, hsl(220, 10%, 35%));
+  border-color: var(--border-color, hsl(220, 13%, 86%));
+}
+
+/* Color: accent */
+.ds-chip--accent {
+  background: var(--accent-light, hsl(250, 65%, 94%));
+  color: var(--color-accent, hsl(250, 65%, 48%));
+  border-color: var(--accent-light, hsl(250, 65%, 88%));
+}
+
+/* Color: success */
+.ds-chip--success {
+  background: var(--success-light, rgba(16, 185, 129, 0.12));
+  color: var(--success, hsl(161, 84%, 39%));
+  border-color: rgba(16, 185, 129, 0.25);
+}
+
+/* Color: warning */
+.ds-chip--warning {
+  background: var(--warning-glow, rgba(245, 158, 11, 0.12));
+  color: hsl(38, 92%, 38%);
+  border-color: rgba(245, 158, 11, 0.25);
+}
+
+/* Color: danger */
+.ds-chip--danger {
+  background: var(--danger-light, rgba(239, 68, 68, 0.12));
+  color: var(--danger, hsl(0, 84%, 60%));
+  border-color: rgba(239, 68, 68, 0.25);
+}
+
+/* Selected state */
+.ds-chip--selected {
+  border-color: var(--color-accent, hsl(250, 65%, 58%));
+  box-shadow: 0 0 0 1px var(--color-accent, hsl(250, 65%, 58%));
+}
+
+.ds-chip--default.ds-chip--selected {
+  background: var(--accent-light, hsl(250, 65%, 94%));
+  color: var(--color-accent, hsl(250, 65%, 48%));
+}
+
+/* Dark mode */
+[data-theme="dark"] .ds-chip--default {
+  background: var(--surface-2-dark, hsl(220, 12%, 18%));
+  color: var(--text-secondary-dark, hsl(220, 10%, 65%));
+  border-color: hsl(220, 13%, 28%);
+}
+
+[data-theme="dark"] .ds-chip__dismiss:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .ds-chip--warning {
+  color: hsl(38, 92%, 62%);
+}
