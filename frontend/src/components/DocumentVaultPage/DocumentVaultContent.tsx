@@ -6,6 +6,7 @@
  */
 
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { FileText } from 'lucide-react';
 import axios from 'axios';
 import { logError } from '../../utils/errors';
 import { useEscapeKey } from '../../hooks/useClickOutside';
@@ -501,18 +502,20 @@ export function DocumentVaultContent({ context }: DocumentVaultContentProps) {
               </button>
             </div>
           ) : documents.length === 0 ? (
-            <div className="empty-state neuro-empty-state">
-              <div className="empty-icon">📭</div>
-              <h3>Keine Dokumente</h3>
-              <p>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '48px 24px', textAlign: 'center', color: 'var(--text-secondary)' }}>
+              <FileText size={40} strokeWidth={1.5} style={{ marginBottom: '16px', opacity: 0.6 }} />
+              <h3 style={{ margin: '0 0 8px', fontSize: '18px', color: 'var(--text-primary)' }}>
+                {searchQuery ? 'Keine Dokumente gefunden' : 'Deine Wissensbasis ist leer'}
+              </h3>
+              <p style={{ margin: '0 0 16px', fontSize: '14px', maxWidth: '360px' }}>
                 {searchQuery
-                  ? 'Keine Dokumente gefunden. Versuche eine andere Suche.'
-                  : 'Lade dein erstes Dokument hoch!'}
+                  ? 'Versuche eine andere Suchanfrage.'
+                  : 'Lade Dokumente hoch und die KI macht sie durchsuchbar.'}
               </p>
               {!searchQuery && (
                 <button
                   type="button"
-                  className="empty-action neuro-hover-lift"
+                  className="ds-button ds-button--primary ds-button--sm"
                   onClick={() => setShowUpload(true)}
                 >
                   Dokument hochladen

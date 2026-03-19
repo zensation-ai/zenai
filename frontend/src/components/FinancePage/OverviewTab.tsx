@@ -2,19 +2,21 @@
  * Finance Overview Tab - Phase 4
  */
 
+import { Wallet } from 'lucide-react';
 import type { FinancialOverview } from './types';
 import { ACCOUNT_TYPE_LABELS } from './types';
 
 interface OverviewTabProps {
   overview: FinancialOverview | null;
   loading: boolean;
+  onCreateAccount?: () => void;
 }
 
 function formatCurrency(amount: number, currency = 'EUR'): string {
   return new Intl.NumberFormat('de-DE', { style: 'currency', currency }).format(amount);
 }
 
-export function OverviewTab({ overview, loading }: OverviewTabProps) {
+export function OverviewTab({ overview, loading, onCreateAccount }: OverviewTabProps) {
   if (loading || !overview) {
     return <div className="finance-loading">Lade Finanzen...</div>;
   }
@@ -127,10 +129,15 @@ export function OverviewTab({ overview, loading }: OverviewTabProps) {
 
       {/* Empty state */}
       {overview.accounts.length === 0 && overview.top_categories.length === 0 && (
-        <div className="finance-empty">
-          <span className="finance-empty-icon">💰</span>
-          <p>Noch keine Finanzdaten</p>
-          <p className="finance-empty-sub">Erstelle ein Konto und füge Transaktionen hinzu</p>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '48px 24px', textAlign: 'center', color: 'var(--text-secondary)' }}>
+          <Wallet size={40} strokeWidth={1.5} style={{ marginBottom: '16px', opacity: 0.6 }} />
+          <h3 style={{ margin: '0 0 8px', fontSize: '18px', color: 'var(--text-primary)' }}>Keine Finanzdaten</h3>
+          <p style={{ margin: '0 0 16px', fontSize: '14px', maxWidth: '360px' }}>Erstelle dein erstes Konto um Finanzen zu tracken.</p>
+          {onCreateAccount && (
+            <button className="ds-button ds-button--primary ds-button--sm" type="button" onClick={onCreateAccount}>
+              Konto erstellen
+            </button>
+          )}
         </div>
       )}
     </div>

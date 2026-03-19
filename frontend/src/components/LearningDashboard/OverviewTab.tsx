@@ -1,4 +1,5 @@
 import React from 'react';
+import { GraduationCap } from 'lucide-react';
 import { DashboardData } from './types';
 import { getSuggestionIcon, formatDate, getActivityStatusLabel } from './helpers';
 
@@ -6,9 +7,13 @@ interface OverviewTabProps {
   data: DashboardData;
   handleRespondToSuggestion: (id: string, response: 'accepted' | 'dismissed') => void;
   handleViewResearch: (id: string) => void;
+  onExploreTopic?: () => void;
 }
 
-export function OverviewTab({ data, handleRespondToSuggestion, handleViewResearch }: OverviewTabProps) {
+export function OverviewTab({ data, handleRespondToSuggestion, handleViewResearch, onExploreTopic }: OverviewTabProps) {
+  const hasContent = data.focus.stats.active_focus_areas > 0
+    || data.suggestions.active.length > 0
+    || data.learning.recent_logs.length > 0;
   return (
     <div className="overview-tab">
       <div className="stats-grid neuro-flow-list">
@@ -133,6 +138,19 @@ export function OverviewTab({ data, handleRespondToSuggestion, handleViewResearc
               </div>
             ))}
           </div>
+        </div>
+      )}
+
+      {!hasContent && (
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '48px 24px', textAlign: 'center', color: 'var(--text-secondary)' }}>
+          <GraduationCap size={40} strokeWidth={1.5} style={{ marginBottom: '16px', opacity: 0.6 }} />
+          <h3 style={{ margin: '0 0 8px', fontSize: '18px', color: 'var(--text-primary)' }}>Lernreise beginnen</h3>
+          <p style={{ margin: '0 0 16px', fontSize: '14px', maxWidth: '360px' }}>Die KI erkennt Wissenslucken und schlaegt Lernpfade vor.</p>
+          {onExploreTopic && (
+            <button className="ds-button ds-button--primary ds-button--sm" type="button" onClick={onExploreTopic}>
+              Thema erkunden
+            </button>
+          )}
         </div>
       )}
     </div>

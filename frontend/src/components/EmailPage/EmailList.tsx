@@ -3,6 +3,7 @@
  */
 
 import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
+import { Mail } from 'lucide-react';
 import type { Email, EmailTab } from './types';
 import { CATEGORY_LABELS, PRIORITY_LABELS, stringToColor, getInitials, formatEmailDate, truncateText } from './types';
 import './EmailList.css';
@@ -190,10 +191,20 @@ export function EmailList({
         {/* Empty */}
         {!loading && !error && emails.length === 0 && (
           <div className="el-state el-state--empty" role="status">
-            <span className="el-empty-icon" aria-hidden="true">
-              {activeFolder === 'inbox' ? '📭' : activeFolder === 'sent' ? '📤' : activeFolder === 'drafts' ? '📝' : '📦'}
-            </span>
-            <p>{searchQuery ? `Keine Ergebnisse fuer "${searchQuery}"` : 'Keine E-Mails'}</p>
+            {activeFolder === 'inbox' && !searchQuery ? (
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '32px 16px', textAlign: 'center', color: 'var(--text-secondary)' }}>
+                <Mail size={36} strokeWidth={1.5} style={{ marginBottom: '12px', opacity: 0.6 }} />
+                <p style={{ margin: '0 0 4px', fontSize: '16px', fontWeight: 600, color: 'var(--text-primary)' }}>Posteingang leer</p>
+                <p style={{ margin: '0', fontSize: '13px', maxWidth: '280px' }}>Verbinde ein E-Mail-Konto um loszulegen.</p>
+              </div>
+            ) : (
+              <>
+                <span className="el-empty-icon" aria-hidden="true">
+                  {activeFolder === 'sent' ? '📤' : activeFolder === 'drafts' ? '📝' : '📦'}
+                </span>
+                <p>{searchQuery ? `Keine Ergebnisse fuer "${searchQuery}"` : 'Keine E-Mails'}</p>
+              </>
+            )}
           </div>
         )}
 

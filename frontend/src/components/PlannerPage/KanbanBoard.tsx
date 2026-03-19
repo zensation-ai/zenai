@@ -6,6 +6,7 @@
  */
 
 import { useState, useCallback, useRef } from 'react';
+import { CheckSquare } from 'lucide-react';
 import type { Task, TaskStatus, Project } from './types';
 import { KANBAN_COLUMNS, PRIORITY_COLORS, PRIORITY_LABELS } from './types';
 import { useAnnounce } from '../../hooks/useAnnounce';
@@ -148,6 +149,18 @@ export function KanbanBoard({
           + Neue Aufgabe
         </button>
       </div>
+
+      {/* Empty state when no tasks at all */}
+      {tasks.length === 0 && (
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '48px 24px', textAlign: 'center', color: 'var(--text-secondary)' }}>
+          <CheckSquare size={40} strokeWidth={1.5} style={{ marginBottom: '16px', opacity: 0.6 }} />
+          <h3 style={{ margin: '0 0 8px', fontSize: '18px', color: 'var(--text-primary)' }}>Keine Aufgaben vorhanden</h3>
+          <p style={{ margin: '0 0 16px', fontSize: '14px', maxWidth: '360px' }}>Erstelle Aufgaben oder konvertiere Ideen in konkrete Schritte.</p>
+          <button className="ds-button ds-button--primary ds-button--sm" type="button" onClick={onCreateTask}>
+            Neue Aufgabe
+          </button>
+        </div>
+      )}
 
       {/* Columns */}
       <div className="kanban-columns">

@@ -233,6 +233,7 @@ export function LearningDashboard({ context, onBack, initialTab = 'overview' }: 
             data={data}
             handleRespondToSuggestion={handleRespondToSuggestion}
             handleViewResearch={handleViewResearch}
+            onExploreTopic={() => handleTabChange('focus')}
           />
         )}
 

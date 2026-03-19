@@ -9,6 +9,7 @@
  */
 
 import { useState, useRef, useEffect, useCallback } from 'react';
+import { Bot } from 'lucide-react';
 import axios from 'axios';
 import { AIContext } from './ContextSwitcher';
 import { showToast } from './Toast';
@@ -789,6 +790,18 @@ export function AgentTeamsPage({ context, onBack, embedded }: AgentTeamsPageProp
             }}
           >
             + Neue Aufgabe
+          </button>
+        </div>
+      )}
+
+      {/* Empty state when no history and no result */}
+      {history.length === 0 && !result && !loading && (
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '48px 24px', textAlign: 'center', color: 'var(--text-secondary)' }}>
+          <Bot size={40} strokeWidth={1.5} style={{ marginBottom: '16px', opacity: 0.6 }} />
+          <h3 style={{ margin: '0 0 8px', fontSize: '18px', color: 'var(--text-primary)' }}>Keine Ausfuehrungen</h3>
+          <p style={{ margin: '0 0 16px', fontSize: '14px', maxWidth: '360px' }}>Starte dein erstes KI-Team um komplexe Aufgaben zu loesen.</p>
+          <button className="ds-button ds-button--primary ds-button--sm" type="button" onClick={() => { setTask(''); window.scrollTo({ top: 0, behavior: 'smooth' }); }}>
+            Team starten
           </button>
         </div>
       )}

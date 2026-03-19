@@ -75,7 +75,7 @@ export function FinancePage({ context, initialTab = 'overview', onBack }: Financ
         <QueryErrorState error={error} refetch={() => fetchTransactions()} />
       )}
       {activeTab === 'overview' && (
-        <OverviewTab overview={overview} loading={loading} />
+        <OverviewTab overview={overview} loading={loading} onCreateAccount={() => handleTabChange('transactions')} />
       )}
       {activeTab === 'transactions' && (
         <TransactionsTab

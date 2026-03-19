@@ -3,6 +3,7 @@
  */
 
 import { useState } from 'react';
+import { Users } from 'lucide-react';
 import type { Contact } from './types';
 import { RELATIONSHIP_LABELS } from './types';
 import type { RelationshipType } from './types';
@@ -98,10 +99,10 @@ export function ContactList({
       {loading ? (
         <div className="contacts-loading">Lade Kontakte...</div>
       ) : contacts.length === 0 ? (
-        <div className="contacts-empty">
-          <span className="contacts-empty-icon">👥</span>
-          <p>Keine Kontakte gefunden</p>
-          <p className="contacts-empty-sub">Erstelle deinen ersten Kontakt</p>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '48px 24px', textAlign: 'center', color: 'var(--text-secondary)' }}>
+          <Users size={40} strokeWidth={1.5} style={{ marginBottom: '16px', opacity: 0.6 }} />
+          <h3 style={{ margin: '0 0 8px', fontSize: '18px', color: 'var(--text-primary)' }}>Noch keine Kontakte</h3>
+          <p style={{ margin: '0 0 16px', fontSize: '14px', maxWidth: '360px' }}>Fuege Kontakte hinzu und die KI hilft dir, Beziehungen zu pflegen.</p>
         </div>
       ) : (
         <div className="contacts-items">

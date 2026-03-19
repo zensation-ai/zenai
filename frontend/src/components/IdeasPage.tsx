@@ -6,6 +6,7 @@
  */
 
 import { lazy, Suspense, useMemo, memo, useState, useEffect, useCallback, useRef } from 'react';
+import { Lightbulb } from 'lucide-react';
 import { useTabNavigation } from '../hooks/useTabNavigation';
 import axios from 'axios';
 import type { StructuredIdea } from '../types';
@@ -841,8 +842,14 @@ const IdeasPageComponent: React.FC<IdeasPageProps> = ({
               />
             ) : (
               <EmptyState
-                title="Noch keine Gedanken"
-                description="Nutze das Eingabefeld oben, um deinen ersten Gedanken festzuhalten."
+                icon={<Lightbulb size={40} strokeWidth={1.5} style={{ opacity: 0.6 }} />}
+                title="Dein erster Gedanke wartet"
+                description="Halte Ideen fest, entwickle sie weiter und lass die KI Verbindungen entdecken."
+                action={
+                  <Button variant="primary" size="sm" onClick={() => setInputMode('chat')}>
+                    Neue Idee erstellen
+                  </Button>
+                }
               />
             )
           ) : (
