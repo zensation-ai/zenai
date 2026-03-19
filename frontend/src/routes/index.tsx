@@ -19,6 +19,8 @@ import type { Page } from '../types';
 
 /** Maps Page identifiers to their canonical URL paths */
 export const PAGE_PATHS: Record<Page, string> = {
+  // Chat Hub (Phase 105)
+  'hub': '/',
   // Primary pages (active routes)
   'home': '/',
   'chat': '/chat',

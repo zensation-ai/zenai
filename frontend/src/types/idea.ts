@@ -34,83 +34,65 @@ export interface ApiStatus {
 // Note: Filters type is defined in SearchFilterBar.tsx to match component requirements
 
 /**
- * Page Types - Navigation Reorganisation 2026
+ * Page Types — Phase 105 (Zenith Navigation)
  *
- * 4 Sektionen:
- * - Ideen: ideas (Aktiv + Inkubator + Archiv + Sortieren), workshop (Proaktiv + Evolution + Agenten)
- * - Organisieren: calendar (Kalender + Aufgaben + Kanban + Gantt), documents (Dokumente + Editor + Medien)
- * - Auswerten: insights (Analytics + Digest + Verbindungen), business
- * - KI & Lernen: my-ai (Personalisierung + KI-Wissen + Sprach-Chat), learning
+ * 7+1 Smart Pages + legacy types for backward compat.
+ * Smart Pages are intermediaries pointing to existing components.
+ * Phases 106-110 replace intermediaries with consolidated Smart Page components.
  *
- * Chat: chat (eigene Seite + Floating-Bubble)
- * Browser: browser (eingebetteter Browser mit Tabs)
- * Footer: settings (Profil + Allgemein + KI + Datenschutz + Automationen + Integrationen + Daten), notifications
- * Dashboard: home (Startseite)
+ * Legacy types are kept for:
+ * 1. Redirect support (old URLs still work)
+ * 2. Existing component references (gradual migration)
  */
 export type Page =
-  // Dashboard
-  | 'home'
-  // Chat (eigene Seite)
-  | 'chat'
-  // Browser (eingebetteter Browser)
-  | 'browser'
-  // Ideen
-  | 'ideas'
-  | 'workshop'
-  // Organisieren
-  | 'contacts'
-  | 'calendar'
-  | 'tasks'
-  | 'kanban'
-  | 'gantt'
-  | 'email'
-  | 'documents'
-  // Finanzen
-  | 'finance'
-  // Auswerten
-  | 'insights'
-  | 'business'
-  // KI & Lernen
-  | 'my-ai'
-  | 'learning'
-  // Screen Memory
-  | 'screen-memory'
-  // Memory Insights (sub-page of my-ai)
-  | 'memory-insights'
-  // Footer
-  | 'notifications'
-  | 'settings'
-  // Legacy-Seiten (intern weitergeleitet auf neue Routen)
-  | 'incubator'        // → /ideas/incubator
-  | 'ai-workshop'      // → /workshop
-  | 'meetings'         // → /calendar/meetings
-  | 'automations'      // → /settings/automations
-  | 'integrations'     // → /settings/integrations
-  | 'export'           // → /settings/data
-  | 'sync'             // → /settings/data
-  | 'profile'          // → /settings/profile
-  | 'archive'          // → /ideas/archive
-  | 'triage'           // → /ideas/triage
-  | 'stories'
-  | 'media'
-  | 'canvas'
-  | 'personalization'
-  | 'proactive'
-  | 'evolution'
-  | 'dashboard'
-  | 'analytics'
-  | 'digest'
-  | 'knowledge-graph'
-  | 'learning-tasks'
-  | 'voice-chat'
-  | 'agent-teams'
-  | 'mcp-servers'
-  // System Admin (Phase 61-63)
+  // ── Smart Pages (7+1) ──────────────────────────────
+  | 'hub'            // Chat Hub (start page, Phase 104)
+  | 'ideas'          // Ideen (intermediary: IdeasPage)
+  | 'calendar'       // Planer (intermediary: PlannerPage)
+  | 'email'          // Inbox (intermediary: EmailPage)
+  | 'documents'      // Wissen (intermediary: DocumentVaultPage)
+  | 'business'       // Cockpit (intermediary: BusinessDashboard)
+  | 'my-ai'          // Meine KI (intermediary: MyAIPage)
+  | 'settings'       // System (intermediary: SettingsDashboard)
+
+  // ── Active sub-pages (rendered within parent Smart Page) ──
+  | 'contacts'       // Within Planer
+  | 'finance'        // Within Cockpit
+  | 'insights'       // Within Cockpit
+  | 'learning'       // Within Wissen
+  | 'notifications'  // Within Inbox
+  | 'screen-memory'  // Accessible via Chat Hub intent
+  | 'memory-insights' // Within Meine KI
+
+  // ── Sub-tabs (URL routing within Smart Pages) ─────
+  | 'tasks' | 'kanban' | 'gantt' | 'meetings'
+  | 'canvas' | 'media'
+  | 'analytics' | 'digest' | 'knowledge-graph' | 'graphrag'
+  | 'voice-chat' | 'procedural-memory' | 'digital-twin'
   | 'system-admin'
-  // Sub-tabs
-  | 'graphrag'
-  | 'procedural-memory'
-  // Phase 92: Digital Twin
-  | 'digital-twin';
+
+  // ── Legacy redirect-only types ────────────────────
+  // @deprecated Phase 105 — kept for redirect support, remove in Phase 110
+  | 'home'           // → hub
+  | 'chat'           // → hub
+  | 'browser'        // → hub (intent: "Open URL...")
+  | 'workshop'       // → ideas (AI Panel)
+  | 'incubator'      // → ideas (filter chip)
+  | 'archive'        // → ideas (filter chip)
+  | 'triage'         // → ideas (quick-actions)
+  | 'proactive'      // → ideas (AI Panel tab)
+  | 'evolution'      // → ideas (AI Panel tab)
+  | 'agent-teams'    // → hub (intent + result panel)
+  | 'learning-tasks' // → calendar (tasks with learning tag)
+  | 'personalization'// → my-ai (Persona tab)
+  | 'stories'        // → deprecated (unused)
+  | 'dashboard'      // → hub
+  | 'ai-workshop'    // → ideas
+  | 'mcp-servers'    // → settings (Integrations tab)
+  | 'automations'    // → settings
+  | 'integrations'   // → settings
+  | 'export'         // → settings
+  | 'sync'           // → settings
+  | 'profile';       // → settings
 
 export type { AIContext as Context } from '../components/ContextSwitcher';

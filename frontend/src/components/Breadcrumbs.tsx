@@ -69,6 +69,9 @@ export const Breadcrumbs = memo(function Breadcrumbs({
 const ROOT: BreadcrumbItem = { label: 'Dashboard', page: 'home', icon: 'LayoutDashboard' };
 
 export const BREADCRUMB_MAP: Record<Page, BreadcrumbItem[]> = {
+  // Chat Hub (Phase 105)
+  'hub': [ROOT],
+
   // Dashboard root
   'home': [ROOT],
 
