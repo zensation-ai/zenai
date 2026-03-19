@@ -98,3 +98,49 @@ describe('Calm Neurodesign Color Tokens', () => {
     expect(colors.gradients).toBeDefined();
   });
 });
+
+import { typography } from '../design-system/typography';
+
+describe('Calm Neurodesign Typography Tokens', () => {
+  it('exports modular scale sizes', () => {
+    expect(typography.size.xs).toBe('0.75rem');
+    expect(typography.size.sm).toBe('0.875rem');
+    expect(typography.size.base).toBe('1rem');
+    expect(typography.size.lg).toBe('1.125rem');
+    expect(typography.size.xl).toBe('1.25rem');
+    expect(typography.size['2xl']).toBe('1.5rem');
+    expect(typography.size['3xl']).toBe('1.875rem');
+  });
+
+  it('exports font weights', () => {
+    expect(typography.weight.normal).toBe(400);
+    expect(typography.weight.medium).toBe(500);
+    expect(typography.weight.semibold).toBe(600);
+    expect(typography.weight.bold).toBe(700);
+  });
+
+  it('exports line heights', () => {
+    expect(typography.leading.tight).toBe(1.3);
+    expect(typography.leading.normal).toBe(1.55);
+    expect(typography.leading.relaxed).toBe(1.7);
+  });
+
+  it('exports font families', () => {
+    expect(typography.family.sans).toContain('Inter');
+    expect(typography.family.mono).toContain('JetBrains Mono');
+  });
+
+  // CRITICAL: backward compat
+  it('preserves ALL legacy aggregate properties', () => {
+    expect(typography.fontFamily).toBeDefined();
+    expect(typography.fontFamily.sans).toContain('Inter');
+    expect(typography.fontSize).toBeDefined();
+    expect(typography.fontSize.base).toBe('0.875rem');
+    expect(typography.fontWeight).toBeDefined();
+    expect(typography.fontWeight.bold).toBe(700);
+    expect(typography.lineHeight).toBeDefined();
+    expect(typography.lineHeight.base).toBe(1.6);
+    expect(typography.letterSpacing).toBeDefined();
+    expect(typography.fontFeatureSettings).toBeDefined();
+  });
+});
