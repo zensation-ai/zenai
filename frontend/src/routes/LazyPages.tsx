@@ -56,6 +56,14 @@ export const CockpitPage = lazy(() =>
   import('../components/CockpitPage/CockpitSmartPage').then(m => ({ default: m.CockpitSmartPage }))
 );
 
+export const MeineKIPage = lazy(() =>
+  import('../components/MeineKIPage/MeineKISmartPage').then(m => ({ default: m.MeineKISmartPage }))
+);
+
+export const SystemPage = lazy(() =>
+  import('../components/SystemPage/SystemSmartPage').then(m => ({ default: m.SystemSmartPage }))
+);
+
 export const BusinessDashboard = lazy(() =>
   import('../components/BusinessDashboard').then(m => ({ default: m.BusinessDashboard }))
 );

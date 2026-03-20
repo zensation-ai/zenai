@@ -1,0 +1,51 @@
+.meine-ki-view-toggle {
+  display: inline-flex;
+  border-radius: 8px;
+  border: 1px solid var(--border, rgba(255,255,255,0.15));
+  overflow: hidden;
+}
+
+.meine-ki-view-toggle__btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 14px;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary, #999);
+  font-size: 0.8125rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.meine-ki-view-toggle__btn:not(:last-child) {
+  border-right: 1px solid var(--border, rgba(255,255,255,0.15));
+}
+
+.meine-ki-view-toggle__btn:hover {
+  background: rgba(108, 99, 255, 0.1);
+  color: var(--text, #fff);
+}
+
+.meine-ki-view-toggle__btn--active {
+  background: var(--accent, #6C63FF);
+  color: #fff;
+}
+
+.meine-ki-view-toggle__btn--active:hover {
+  background: var(--accent, #6C63FF);
+}
+
+.meine-ki-view-toggle__label {
+  font-size: 0.8125rem;
+}
+
+@media (max-width: 640px) {
+  .meine-ki-view-toggle__btn {
+    padding: 6px 8px;
+  }
+  .meine-ki-view-toggle__label {
+    font-size: 0.75rem;
+  }
+}
