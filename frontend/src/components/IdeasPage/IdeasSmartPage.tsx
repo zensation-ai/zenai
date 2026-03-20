@@ -111,15 +111,21 @@ export function IdeasSmartPage({ context, initialTab, onNavigate: _onNavigate }:
   }, []);
 
   const handleBatchArchive = useCallback(() => {
-    selectedIds.forEach(id => archiveMutation.mutate(id));
+    const ids = [...selectedIds];
     setSelectedIds(new Set());
     setSelectionMode(false);
+    ids.forEach(id => archiveMutation.mutate(id, {
+      onError: () => setSelectedIds(prev => new Set([...prev, id])),
+    }));
   }, [selectedIds, archiveMutation]);
 
   const handleBatchDelete = useCallback(() => {
-    selectedIds.forEach(id => deleteMutation.mutate(id));
+    const ids = [...selectedIds];
     setSelectedIds(new Set());
     setSelectionMode(false);
+    ids.forEach(id => deleteMutation.mutate(id, {
+      onError: () => setSelectedIds(prev => new Set([...prev, id])),
+    }));
   }, [selectedIds, deleteMutation]);
 
   if (error) {

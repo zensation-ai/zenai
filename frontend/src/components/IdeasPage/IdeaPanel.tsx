@@ -12,7 +12,7 @@ interface IdeaPanelProps {
   context: AIContext;
 }
 
-export function IdeaPanel({ open, idea, onClose, context: _context }: IdeaPanelProps) {
+export function IdeaPanel({ open, idea, onClose }: IdeaPanelProps) {
   useEffect(() => {
     if (!open) return;
     const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
