@@ -34,6 +34,10 @@
   border-color: var(--accent, #6C63FF);
   color: var(--text, #fff);
 }
+.inbox-chip:focus-visible {
+  outline: 2px solid var(--accent, #6C63FF);
+  outline-offset: 2px;
+}
 .inbox-chip--active {
   background: var(--accent, #6C63FF);
   border-color: var(--accent, #6C63FF);

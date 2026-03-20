@@ -53,6 +53,11 @@
   color: var(--text, #e0e6ed);
 }
 
+.filter-chip-bar__chip:focus-visible {
+  outline: 2px solid var(--accent, #6c8ebf);
+  outline-offset: 2px;
+}
+
 .filter-chip-bar__chip--active {
   background: var(--accent, #6c8ebf);
   color: #fff;

@@ -6,6 +6,7 @@
  */
 import { useState, useEffect, Suspense } from 'react';
 import { SystemNav } from './SystemNav';
+import { SmartPageSkeleton } from '../skeletons/PageSkeletons';
 import type { SystemTab, SystemSmartPageProps } from './types';
 import { ALL_SYSTEM_TABS } from './types';
 import './SystemSmartPage.css';
@@ -40,13 +41,13 @@ export function SystemSmartPage({ context, initialTab }: SystemSmartPageProps) {
   }, [initialTab]);
 
   return (
-    <div className="system-smart-page">
+    <div className="system-smart-page" role="main" aria-label="System">
       <div className="system-smart-page__nav">
         <SystemNav value={activeTab} onChange={setActiveTab} />
       </div>
 
       <div className="system-smart-page__content">
-        <Suspense fallback={<div className="system-smart-page__loading" aria-label="Wird geladen…" />}>
+        <Suspense fallback={<SmartPageSkeleton />}>
           <div data-testid={`system-view-${activeTab}`} data-context={context}>
             {activeTab}
           </div>

@@ -37,6 +37,12 @@
   background: var(--accent, #6C63FF);
 }
 
+.cockpit-view-toggle__btn:focus-visible {
+  outline: 2px solid var(--accent, #6C63FF);
+  outline-offset: -2px;
+  z-index: 1;
+}
+
 .cockpit-view-toggle__label {
   font-size: 0.8125rem;
 }

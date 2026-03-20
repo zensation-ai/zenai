@@ -118,7 +118,7 @@ export function InboxSmartPage({ context, initialTab: _initialTab }: InboxSmartP
   }, []);
 
   return (
-    <div className="inbox-smart-page">
+    <div className="inbox-smart-page" role="main" aria-label="Posteingang">
       <FilterChipBar
         chips={chipDefs}
         filters={filters}

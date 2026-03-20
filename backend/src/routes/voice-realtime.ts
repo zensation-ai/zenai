@@ -310,6 +310,37 @@ voiceRealtimeRouter.put(
 );
 
 /**
+ * GET /api/:context/voice/briefing
+ * Generate a proactive morning briefing (text + optional audio)
+ *
+ * Phase 116: Voice Experience
+ */
+voiceRealtimeRouter.get(
+  '/:context/voice/briefing',
+  apiKeyAuth,
+  asyncHandler(async (req: Request, res: Response) => {
+    const userId = getUserId(req);
+    const { context } = req.params;
+    validateContext(context);
+
+    const withAudio = req.query.audio === 'true';
+
+    const briefing = await voicePipeline.generateMorningBriefing(context, userId, withAudio);
+
+    if (withAudio && briefing.audioBuffer) {
+      res.setHeader('Content-Type', 'audio/mpeg');
+      res.setHeader('X-Briefing-Text', encodeURIComponent(briefing.text));
+      res.send(briefing.audioBuffer);
+    } else {
+      res.json({
+        success: true,
+        data: { text: briefing.text },
+      });
+    }
+  })
+);
+
+/**
  * GET /api/:context/voice/providers
  * Available STT/TTS providers
  */

@@ -1,0 +1,108 @@
+/**
+ * VoiceInputButton Styles
+ *
+ * Phase 116: Compact toolbar mic button
+ */
+
+.voice-input-toolbar-btn {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-secondary, #6b7280);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+}
+
+.voice-input-toolbar-btn:hover:not(:disabled) {
+  background: var(--surface-hover, rgba(0, 0, 0, 0.05));
+  color: var(--text, #1f2937);
+}
+
+.voice-input-toolbar-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.voice-input-toolbar-btn:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 1px;
+}
+
+/* Size: sm */
+.voice-input-toolbar-btn--sm {
+  width: 32px;
+  height: 32px;
+  min-width: 32px;
+}
+
+/* Size: md */
+.voice-input-toolbar-btn--md {
+  width: 36px;
+  height: 36px;
+  min-width: 36px;
+}
+
+/* Recording state */
+.voice-input-toolbar-btn--recording {
+  background: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+}
+
+.voice-input-toolbar-btn--recording:hover:not(:disabled) {
+  background: rgba(239, 68, 68, 0.25);
+  color: #dc2626;
+}
+
+/* Processing state */
+.voice-input-toolbar-btn--processing {
+  color: var(--primary, #3b82f6);
+}
+
+/* Spinner animation */
+.voice-input-toolbar-btn__spinner {
+  animation: voice-toolbar-spin 1s linear infinite;
+}
+
+@keyframes voice-toolbar-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* Pulse dot for recording */
+.voice-input-toolbar-btn__pulse {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #ef4444;
+  animation: voice-toolbar-pulse 1s ease-in-out infinite;
+}
+
+@keyframes voice-toolbar-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+/* Touch target on mobile */
+@media (pointer: coarse) {
+  .voice-input-toolbar-btn--sm {
+    width: 40px;
+    height: 40px;
+    min-width: 40px;
+  }
+}
+
+/* Dark mode */
+@media (prefers-color-scheme: dark) {
+  .voice-input-toolbar-btn:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--text, #e5e7eb);
+  }
+}

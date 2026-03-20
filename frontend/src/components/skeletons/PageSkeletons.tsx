@@ -66,6 +66,42 @@ export function DashboardSkeleton() {
   );
 }
 
+/** Smart Page skeleton: toolbar + filter chips + card grid */
+export function SmartPageSkeleton() {
+  return (
+    <div className="skeleton-smart-page" role="status" aria-busy="true" aria-label="Seite wird geladen">
+      {/* Filter chip bar */}
+      <div className="skeleton-smart-page__chips">
+        <Skeleton variant="rectangle" width={72} height={32} />
+        <Skeleton variant="rectangle" width={88} height={32} />
+        <Skeleton variant="rectangle" width={64} height={32} />
+        <Skeleton variant="rectangle" width={96} height={32} />
+        <Skeleton variant="rectangle" width={56} height={32} />
+      </div>
+
+      {/* Toolbar */}
+      <div className="skeleton-smart-page__toolbar">
+        <Skeleton variant="rectangle" width="100%" height={44} />
+      </div>
+
+      {/* Card grid */}
+      <div className="skeleton-smart-page__grid">
+        {Array.from({ length: 6 }, (_, i) => (
+          <div key={i} className="skeleton-smart-page__card">
+            <Skeleton variant="text" count={1} width="70%" />
+            <Skeleton variant="text" count={2} />
+            <div className="skeleton-smart-page__card-footer">
+              <Skeleton variant="rectangle" width={48} height={20} />
+              <Skeleton variant="rectangle" width={48} height={20} />
+            </div>
+          </div>
+        ))}
+      </div>
+      <span className="visually-hidden">Seite wird geladen</span>
+    </div>
+  );
+}
+
 /** Generic list page: 5 row outlines */
 export function ListSkeleton({ rows = 5 }: { rows?: number }) {
   return (
