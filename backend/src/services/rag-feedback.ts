@@ -260,6 +260,154 @@ export async function getRAGStrategyPerformance(
   }));
 }
 
+// ===========================================
+// Active Learning: Micro-Questions (Phase 113)
+// ===========================================
+
+export interface MicroQuestion {
+  question: string;
+  reason: string;
+  missingTerm: string;
+}
+
+export interface MicroQuestionsResult {
+  query: string;
+  microQuestions: MicroQuestion[];
+  coveredTerms: string[];
+  missingTerms: string[];
+  generatedAt: string;
+}
+
+/**
+ * Generate micro-questions to fill knowledge gaps in retrieval results.
+ *
+ * Given a query and retrieved results, this function identifies query terms
+ * that were not covered by the results and generates 1-3 short clarifying
+ * questions. These questions can be used to guide follow-up retrieval or
+ * improve future queries via active learning.
+ *
+ * This is a heuristic approach (no LLM needed): it analyzes term coverage
+ * and generates structured questions based on the missing concepts.
+ *
+ * @param query - The original user query
+ * @param results - Retrieved result items (title + content)
+ * @returns Micro-questions targeting knowledge gaps, plus coverage analysis
+ */
+export function generateMicroQuestions(
+  query: string,
+  results: Array<{ title?: string; content: string; score?: number }>
+): MicroQuestionsResult {
+  const generatedAt = new Date().toISOString();
+
+  // Tokenize query into meaningful terms (skip stop words and very short words)
+  const STOP_WORDS = new Set([
+    'the', 'a', 'an', 'is', 'are', 'was', 'were', 'be', 'been', 'being',
+    'have', 'has', 'had', 'do', 'does', 'did', 'will', 'would', 'could',
+    'should', 'may', 'might', 'shall', 'can', 'need', 'dare', 'ought',
+    'and', 'or', 'but', 'so', 'yet', 'for', 'nor', 'with', 'at', 'by',
+    'from', 'to', 'in', 'on', 'of', 'as', 'into', 'through', 'during',
+    'what', 'how', 'why', 'when', 'where', 'who', 'which', 'that', 'this',
+    'about', 'like', 'after', 'before', 'over', 'under', 'again', 'then',
+    'was', 'tell', 'me', 'show', 'give', 'find', 'get', 'more', 'than',
+    'ich', 'die', 'der', 'das', 'und', 'ist', 'ein', 'eine', 'von', 'zu',
+    'mit', 'auf', 'für', 'nicht', 'bei', 'nach', 'aus', 'sie', 'er', 'es',
+  ]);
+
+  const queryTerms = query
+    .toLowerCase()
+    .replace(/[^\w\s]/g, ' ')
+    .split(/\s+/)
+    .filter(t => t.length > 3 && !STOP_WORDS.has(t));
+
+  if (queryTerms.length === 0) {
+    return {
+      query,
+      microQuestions: [],
+      coveredTerms: [],
+      missingTerms: [],
+      generatedAt,
+    };
+  }
+
+  // Build combined content string from results
+  const allContent = results
+    .map(r => `${r.title || ''} ${r.content}`)
+    .join(' ')
+    .toLowerCase();
+
+  // Identify covered vs missing terms
+  const coveredTerms: string[] = [];
+  const missingTerms: string[] = [];
+
+  for (const term of queryTerms) {
+    if (allContent.includes(term)) {
+      coveredTerms.push(term);
+    } else {
+      missingTerms.push(term);
+    }
+  }
+
+  // Generate micro-questions for missing terms (up to 3)
+  const microQuestions: MicroQuestion[] = missingTerms.slice(0, 3).map(term => {
+    const question = buildMicroQuestion(term, query);
+    return {
+      question,
+      reason: `No results contained the term "${term}"`,
+      missingTerm: term,
+    };
+  });
+
+  logger.debug('Generated micro-questions for knowledge gaps', {
+    query,
+    totalTerms: queryTerms.length,
+    coveredCount: coveredTerms.length,
+    missingCount: missingTerms.length,
+    microQuestionCount: microQuestions.length,
+  });
+
+  return {
+    query,
+    microQuestions,
+    coveredTerms,
+    missingTerms,
+    generatedAt,
+  };
+}
+
+/**
+ * Build a short clarifying micro-question for a missing term.
+ * Uses pattern matching to generate contextually appropriate questions.
+ */
+function buildMicroQuestion(missingTerm: string, originalQuery: string): string {
+  const q = originalQuery.toLowerCase();
+
+  // Detect question type from the original query context
+  if (/\b(how|wie)\b/i.test(q)) {
+    return `How does "${missingTerm}" work in this context?`;
+  }
+  if (/\b(why|warum)\b/i.test(q)) {
+    return `Why is "${missingTerm}" relevant here?`;
+  }
+  if (/\b(when|wann)\b/i.test(q)) {
+    return `When does "${missingTerm}" apply?`;
+  }
+  if (/\b(where|wo)\b/i.test(q)) {
+    return `Where can "${missingTerm}" be found?`;
+  }
+  if (/\b(who|wer)\b/i.test(q)) {
+    return `Who is involved with "${missingTerm}"?`;
+  }
+  if (/\b(compare|vergleich|vs|versus|difference|unterschied)\b/i.test(q)) {
+    return `How does "${missingTerm}" compare to related concepts?`;
+  }
+  if (/\b(list|zeige|show|alle|all)\b/i.test(q)) {
+    return `What are the key aspects of "${missingTerm}"?`;
+  }
+
+  // Default: definition-style question
+  return `What is "${missingTerm}" and how does it relate to the query?`;
+}
+
 /**
  * Get recent RAG query history
  */

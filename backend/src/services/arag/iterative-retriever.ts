@@ -15,7 +15,7 @@ import { generateEmbedding } from '../ai';
 import { hybridRetriever } from '../knowledge-graph/hybrid-retriever';
 import { logger } from '../../utils/logger';
 import { evaluateResults } from './strategy-evaluator';
-import { planRetrieval, buildDefaultPlan } from './strategy-agent';
+import { planRetrieval, buildDefaultPlan, expandQueryWithGraphContext } from './strategy-agent';
 import type {
   RetrievalInterface,
   RetrievalPlan,
@@ -32,10 +32,16 @@ import type {
 /** Maximum number of retrieval iterations */
 const MAX_ITERATIONS = 3;
 
-/** Confidence threshold for early exit */
-const EARLY_EXIT_CONFIDENCE = 0.75;
+/**
+ * Confidence threshold for early exit.
+ * Phase 113: Raised to 0.8 per quality gate requirements.
+ */
+const EARLY_EXIT_CONFIDENCE = 0.8;
 
-/** Confidence threshold triggering strategy revision */
+/**
+ * Confidence threshold triggering query reformulation and strategy revision.
+ * Phase 113: Lowered to 0.5 to trigger reformulation earlier.
+ */
 const REVISION_THRESHOLD = 0.5;
 
 /** Maximum results per interface call */
@@ -319,16 +325,35 @@ export async function executeRetrievalPlan(
   const stepTimings: ARAGExecutionMetadata['stepTimings'] = [];
   const interfacesUsed = new Set<RetrievalInterface>();
   let currentPlan = initialPlan;
+  let currentQuery = query;
   let iteration = 0;
   let lastEvaluation = { confidence: 0, completeness: 0, shouldRetry: true, reason: 'Initial' };
 
   while (iteration < MAX_ITERATIONS) {
     iteration++;
 
+    // Phase 113: On second iteration, try graph-aware query expansion to improve recall
+    if (iteration === 2 && lastEvaluation.confidence < REVISION_THRESHOLD) {
+      try {
+        const expanded = await expandQueryWithGraphContext(query, context);
+        if (expanded !== query) {
+          currentQuery = expanded;
+          logger.debug('A-RAG graph-expanded query', {
+            iteration,
+            original: query,
+            expanded: currentQuery,
+          });
+        }
+      } catch {
+        // Non-fatal: continue with original query
+      }
+    }
+
     logger.debug('A-RAG iteration starting', {
       iteration,
       planSteps: currentPlan.steps.length,
       existingResults: allResults.length,
+      qualityGate: { earlyExit: EARLY_EXIT_CONFIDENCE, reformulate: REVISION_THRESHOLD },
     });
 
     // Execute plan steps
@@ -341,22 +366,30 @@ export async function executeRetrievalPlan(
       stepTimings.push({ interface: iface, durationMs });
     }
 
-    // Evaluate results
-    lastEvaluation = evaluateResults(query, allResults);
+    // Evaluate results using the current (possibly expanded) query for term coverage
+    lastEvaluation = evaluateResults(currentQuery, allResults);
 
-    logger.debug('A-RAG evaluation', {
+    logger.debug('A-RAG evaluation (quality gate)', {
       iteration,
       confidence: lastEvaluation.confidence,
       completeness: lastEvaluation.completeness,
       shouldRetry: lastEvaluation.shouldRetry,
       resultCount: allResults.length,
+      reason: lastEvaluation.reason,
+      qualityGate: {
+        earlyExit: EARLY_EXIT_CONFIDENCE,
+        reformulate: REVISION_THRESHOLD,
+        willExit: lastEvaluation.confidence >= EARLY_EXIT_CONFIDENCE,
+        willReformulate: lastEvaluation.confidence < REVISION_THRESHOLD && iteration < MAX_ITERATIONS,
+      },
     });
 
-    // Early exit on high confidence
+    // Phase 113: Early exit when quality gate threshold (0.8) is met
     if (lastEvaluation.confidence >= EARLY_EXIT_CONFIDENCE) {
-      logger.info('A-RAG early exit on high confidence', {
+      logger.info('A-RAG quality gate: early exit on high confidence', {
         iteration,
         confidence: lastEvaluation.confidence,
+        threshold: EARLY_EXIT_CONFIDENCE,
       });
       break;
     }
@@ -366,26 +399,34 @@ export async function executeRetrievalPlan(
       break;
     }
 
-    // Escalation: get a revised plan from the strategy agent
+    // Phase 113: Quality gate — reformulate query and get a revised plan when confidence < 0.5
     if (lastEvaluation.confidence < REVISION_THRESHOLD) {
+      logger.info('A-RAG quality gate: reformulating query due to low confidence', {
+        iteration,
+        confidence: lastEvaluation.confidence,
+        threshold: REVISION_THRESHOLD,
+        expandedQuery: currentQuery !== query,
+      });
+
       try {
         // Exclude already-used interfaces to try new approaches
         const unusedInterfaces = ALL_INTERFACES.filter(i => !interfacesUsed.has(i));
         const revisedPlan = unusedInterfaces.length > 0
-          ? await planRetrieval(query, context, unusedInterfaces)
-          : buildDefaultPlan(query, ALL_INTERFACES);
+          ? await planRetrieval(currentQuery, context, unusedInterfaces)
+          : buildDefaultPlan(currentQuery, ALL_INTERFACES);
 
         currentPlan = revisedPlan;
 
         logger.debug('A-RAG strategy revised', {
           iteration,
           newSteps: revisedPlan.steps.map(s => s.interface),
+          queryUsed: currentQuery,
         });
       } catch {
         // If revision fails, build a simple fallback plan with unused interfaces
         const unused = ALL_INTERFACES.filter(i => !interfacesUsed.has(i));
         if (unused.length > 0) {
-          currentPlan = buildDefaultPlan(query, unused);
+          currentPlan = buildDefaultPlan(currentQuery, unused);
         } else {
           break; // Nothing left to try
         }
