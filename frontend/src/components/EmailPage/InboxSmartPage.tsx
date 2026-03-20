@@ -38,7 +38,8 @@ export function InboxSmartPage({ context, initialTab: _initialTab }: InboxSmartP
   const [selectedEmailId, setSelectedEmailId] = useState<string | null>(null);
   const [panelMode, setPanelMode] = useState<'detail' | 'compose' | 'reply'>('detail');
 
-  // Data fetching
+  // Data fetching — backend accepts single folder/category, so we send the first
+  // selected value as a server-side filter and apply remaining selections client-side.
   const queryFilters = useMemo(() => {
     const f: Record<string, unknown> = {};
     if (filters.folders.size > 0) f.folder = [...filters.folders][0];
@@ -56,7 +57,7 @@ export function InboxSmartPage({ context, initialTab: _initialTab }: InboxSmartP
   // Bridge hook Email type to local Email type (API returns full objects)
   const allEmails = emails as unknown as Email[];
 
-  // Client-side filtering for statuses (unread/starred)
+  // Client-side filtering for statuses, and multi-folder/category (server only supports one)
   const filteredEmails = useMemo(() => {
     let result = allEmails;
     if (filters.statuses.has('unread')) {
@@ -65,8 +66,12 @@ export function InboxSmartPage({ context, initialTab: _initialTab }: InboxSmartP
     if (filters.statuses.has('starred')) {
       result = result.filter(e => e.is_starred);
     }
+    // Multi-category: server filters by first, client filters remaining
+    if (filters.categories.size > 1) {
+      result = result.filter(e => e.ai_category && filters.categories.has(e.ai_category));
+    }
     return result;
-  }, [allEmails, filters.statuses]);
+  }, [allEmails, filters.statuses, filters.categories]);
 
   // Handlers
   const handleEmailSelect = useCallback((id: string) => {

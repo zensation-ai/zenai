@@ -41,6 +41,8 @@ export function InboxPanel({ open, emailId, mode: _mode, onClose, context: _cont
         className={`inbox-panel ${open ? 'inbox-panel--open' : ''}`}
         role="complementary"
         aria-label="E-Mail-Details"
+        aria-hidden={!open}
+        {...(!open ? { inert: '' as unknown as boolean } : {})}
       >
         <div className="inbox-panel__header">
           <button

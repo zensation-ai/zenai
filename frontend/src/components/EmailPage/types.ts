@@ -236,13 +236,19 @@ export interface InboxFilters {
   accountId: string | null;
 }
 
-export const DEFAULT_INBOX_FILTERS: InboxFilters = {
-  folders: new Set<EmailTab>(),
-  statuses: new Set<'unread' | 'starred'>(),
-  categories: new Set<EmailCategory>(),
-  search: '',
-  accountId: null,
-};
+/** Factory to create fresh default filters (avoids shared mutable Set references) */
+export function createDefaultInboxFilters(): InboxFilters {
+  return {
+    folders: new Set<EmailTab>(),
+    statuses: new Set<'unread' | 'starred'>(),
+    categories: new Set<EmailCategory>(),
+    search: '',
+    accountId: null,
+  };
+}
+
+/** @deprecated Use createDefaultInboxFilters() for safe independent copies */
+export const DEFAULT_INBOX_FILTERS: InboxFilters = createDefaultInboxFilters();
 
 export interface InboxPanelState {
   open: boolean;

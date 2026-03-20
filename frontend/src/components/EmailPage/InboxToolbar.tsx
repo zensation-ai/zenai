@@ -56,6 +56,7 @@ export function InboxToolbar({
               className="inbox-toolbar__input"
               type="text"
               placeholder="E-Mails suchen..."
+              aria-label="E-Mails suchen"
               value={search}
               onChange={e => onSearchChange(e.target.value)}
             />

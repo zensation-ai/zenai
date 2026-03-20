@@ -5,9 +5,9 @@
  * Follows the same pattern as PlannerPage/usePlannerFilters.
  */
 import { useState, useMemo, useCallback } from 'react';
-import type { InboxFilters, InboxFilterChipDef } from './types';
+import type { InboxFilters, InboxFilterChipDef, EmailTab, EmailCategory } from './types';
 import {
-  DEFAULT_INBOX_FILTERS,
+  createDefaultInboxFilters,
   INBOX_FOLDER_CHIPS,
   INBOX_STATUS_CHIPS,
   INBOX_CATEGORY_CHIPS,
@@ -24,7 +24,7 @@ export interface InboxSort {
 const DEFAULT_SORT: InboxSort = { key: 'date', direction: 'desc' };
 
 export function useInboxFilters() {
-  const [filters, setFilters] = useState<InboxFilters>({ ...DEFAULT_INBOX_FILTERS });
+  const [filters, setFilters] = useState<InboxFilters>(createDefaultInboxFilters);
   const [sort, setSort] = useState<InboxSort>(DEFAULT_SORT);
 
   const toggleFilter = useCallback((chip: InboxFilterChipDef) => {
@@ -32,18 +32,18 @@ export function useInboxFilters() {
       const next = { ...prev };
       if (chip.group === 'folder') {
         const s = new Set(prev.folders);
-        if (s.has(chip.value as any)) s.delete(chip.value as any);
-        else s.add(chip.value as any);
+        const v = chip.value as EmailTab;
+        if (s.has(v)) s.delete(v); else s.add(v);
         next.folders = s;
       } else if (chip.group === 'status') {
         const s = new Set(prev.statuses);
-        if (s.has(chip.value as any)) s.delete(chip.value as any);
-        else s.add(chip.value as any);
+        const v = chip.value as 'unread' | 'starred';
+        if (s.has(v)) s.delete(v); else s.add(v);
         next.statuses = s;
       } else if (chip.group === 'category') {
         const s = new Set(prev.categories);
-        if (s.has(chip.value as any)) s.delete(chip.value as any);
-        else s.add(chip.value as any);
+        const v = chip.value as EmailCategory;
+        if (s.has(v)) s.delete(v); else s.add(v);
         next.categories = s;
       }
       return next;
@@ -55,7 +55,7 @@ export function useInboxFilters() {
   }, []);
 
   const clearAll = useCallback(() => {
-    setFilters({ ...DEFAULT_INBOX_FILTERS, folders: new Set(), statuses: new Set(), categories: new Set() });
+    setFilters(createDefaultInboxFilters());
   }, []);
 
   const activeFilterCount = useMemo(
