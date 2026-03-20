@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { X } from 'lucide-react';
 import { IdeaDetail } from '../IdeaDetail';
+import type { Idea } from '../IdeaDetailTypes';
 import type { StructuredIdea } from '../../types';
 import type { AIContext } from '../ContextSwitcher';
 import './IdeaPanel.css';
@@ -46,7 +47,7 @@ export function IdeaPanel({ open, idea, onClose }: IdeaPanelProps) {
         </div>
         <div className="idea-panel__content">
           {open && idea && (
-            <IdeaDetail idea={idea as any} onClose={onClose} />
+            <IdeaDetail idea={idea as unknown as Idea} onClose={onClose} />
           )}
         </div>
       </aside>

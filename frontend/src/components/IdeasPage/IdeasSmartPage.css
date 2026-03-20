@@ -23,3 +23,16 @@
 .ideas-smart-page__error {
   flex: 1;
 }
+
+/* Responsive grid: 2 cols on tablet, 1 on mobile */
+@media (max-width: 900px) {
+  .ideas-smart-page .idea-grid-view > div > div {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+}
+
+@media (max-width: 560px) {
+  .ideas-smart-page .idea-grid-view > div > div {
+    grid-template-columns: 1fr !important;
+  }
+}
