@@ -56,7 +56,7 @@ import { safeParseResponse, IdeaCreationResponseSchema, SearchResponseSchema, Pr
 import { AI_PROCESSING_STEP_DELAY_MS, AI_PROCESSING_INITIAL_DELAY_MS } from '../constants';
 import { Button, Badge, EmptyState } from '../design-system';
 import { QueryErrorState } from './QueryErrorState';
-import './IdeasPage.css';
+import './IdeasPage-legacy.css';
 
 const IdeaDetail = lazy(() => import('./IdeaDetail').then(m => ({ default: m.IdeaDetail })));
 const InboxTriage = lazy(() => import('./InboxTriage').then(m => ({ default: m.InboxTriage })));
