@@ -278,5 +278,142 @@ export function batchCalculateRetention(
   return results;
 }
 
+// ===========================================
+// Phase 112: User-Specific Decay Curves
+// ===========================================
+
+/**
+ * A user's personalized decay profile, learned from their access patterns.
+ *
+ * Inspired by individual differences in memory retention (Rubin & Wenzel, 1996):
+ * some users naturally retain information longer than others.
+ */
+export interface UserDecayProfile {
+  /** The user this profile belongs to */
+  userId: string;
+  /** Average interval between accesses (in days) */
+  avgAccessInterval: number;
+  /** Fraction of reviews where the fact was successfully recalled (0-1) */
+  retentionAtReview: number;
+  /** Personalized multiplier applied to stability (0.5-3.0) */
+  personalStabilityMultiplier: number;
+}
+
+/**
+ * A single access event in a user's history.
+ */
+export interface AccessEvent {
+  /** When the access occurred */
+  accessedAt: Date;
+  /** Whether the user successfully recalled the information */
+  wasRecalled: boolean;
+}
+
+/**
+ * Learn a user's personalized decay profile from their access history.
+ *
+ * Analyzes access intervals and recall success rates to compute a
+ * personalized stability multiplier that adjusts the Ebbinghaus curve
+ * to match the individual's retention characteristics.
+ *
+ * @param accessHistory - Chronologically ordered access events
+ * @returns A UserDecayProfile, or null if insufficient data
+ */
+export function learnDecayProfile(accessHistory: AccessEvent[]): UserDecayProfile | null {
+  if (accessHistory.length < 2) {
+    return null;
+  }
+
+  // Sort by time (oldest first)
+  const sorted = [...accessHistory].sort(
+    (a, b) => a.accessedAt.getTime() - b.accessedAt.getTime()
+  );
+
+  // Compute average access interval
+  let totalInterval = 0;
+  let intervalCount = 0;
+  for (let i = 1; i < sorted.length; i++) {
+    const intervalDays = (sorted[i].accessedAt.getTime() - sorted[i - 1].accessedAt.getTime())
+      / (1000 * 60 * 60 * 24);
+    if (intervalDays > 0) {
+      totalInterval += intervalDays;
+      intervalCount++;
+    }
+  }
+
+  const avgAccessInterval = intervalCount > 0 ? totalInterval / intervalCount : 1.0;
+
+  // Compute recall success rate
+  const recalledCount = sorted.filter(e => e.wasRecalled).length;
+  const retentionAtReview = recalledCount / sorted.length;
+
+  // Compute personalized stability multiplier
+  // High recall rate + long intervals = strong memory → higher multiplier
+  // Low recall rate + short intervals = weak memory → lower multiplier
+  let multiplier = 1.0;
+
+  // Factor 1: Recall success rate (0-1 → 0.6-1.8)
+  multiplier *= 0.6 + retentionAtReview * 1.2;
+
+  // Factor 2: Access interval length (longer intervals with good recall = stronger memory)
+  // Normalize around 7 days as "typical"
+  if (retentionAtReview > 0.5) {
+    const intervalFactor = Math.min(avgAccessInterval / 7.0, 2.0);
+    multiplier *= 0.8 + intervalFactor * 0.2;
+  }
+
+  // Clamp to valid range
+  const personalStabilityMultiplier = Math.max(0.5, Math.min(3.0, multiplier));
+
+  return {
+    userId: '', // To be filled by caller
+    avgAccessInterval,
+    retentionAtReview,
+    personalStabilityMultiplier: Math.round(personalStabilityMultiplier * 1000) / 1000,
+  };
+}
+
+/**
+ * Calculate retention using a user's personalized decay profile.
+ *
+ * Same Ebbinghaus formula R = e^(-t/S), but with the user's personal
+ * stability multiplier applied. Falls back to default behavior if no profile.
+ *
+ * @param lastAccess - When the fact was last accessed
+ * @param stability - Base stability value (in days)
+ * @param profile - Optional user decay profile (null = use defaults)
+ * @returns RetentionResult with personalized decay
+ */
+export function calculatePersonalizedRetention(
+  lastAccess: Date,
+  stability: number,
+  profile: UserDecayProfile | null
+): RetentionResult {
+  if (!profile) {
+    // No profile: fall back to standard calculation
+    return calculateRetention(lastAccess, stability);
+  }
+
+  const now = new Date();
+  const daysSinceAccess = Math.max(0, (now.getTime() - lastAccess.getTime()) / (1000 * 60 * 60 * 24));
+
+  // Apply personalized multiplier to stability
+  const effectiveStability = Math.max(
+    CONFIG.MIN_STABILITY,
+    Math.min(CONFIG.MAX_STABILITY, stability * profile.personalStabilityMultiplier)
+  );
+
+  // Ebbinghaus formula with personalized stability
+  const retention = Math.exp(-daysSinceAccess / effectiveStability);
+
+  return {
+    retention: Math.max(0, Math.min(1, retention)),
+    daysSinceAccess,
+    stability: effectiveStability,
+    needsReview: retention <= CONFIG.REVIEW_THRESHOLD && retention > CONFIG.ARCHIVE_THRESHOLD,
+    shouldArchive: retention <= CONFIG.ARCHIVE_THRESHOLD,
+  };
+}
+
 // Export config for testing
 export const EBBINGHAUS_CONFIG = CONFIG;
