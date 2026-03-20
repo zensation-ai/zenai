@@ -48,6 +48,14 @@ export const DocumentVaultPage = lazy(() =>
   import('../components/DocumentVaultPage').then(m => ({ default: m.DocumentVaultPage }))
 );
 
+export const WissenPage = lazy(() =>
+  import('../components/WissenPage/WissenSmartPage').then(m => ({ default: m.WissenSmartPage }))
+);
+
+export const CockpitPage = lazy(() =>
+  import('../components/CockpitPage/CockpitSmartPage').then(m => ({ default: m.CockpitSmartPage }))
+);
+
 export const BusinessDashboard = lazy(() =>
   import('../components/BusinessDashboard').then(m => ({ default: m.BusinessDashboard }))
 );
