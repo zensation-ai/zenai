@@ -30,7 +30,7 @@
   - Short-Term Memory (Session-Kontext)
   - Long-Term Memory (persistentes Wissen)
 
-## Current Phase: 100
+## Current Phase: 118
 
 ### Phase 31 Features (AI State-of-the-Art)
 
@@ -1178,6 +1178,85 @@ mockQueryContext
 - API Docs: `/api-docs` (Swagger)
 
 ## Changelog
+
+### 2026-03-20: Phases 115-118 — Polish & Differentiation (Project Zenith Chunk 6)
+
+**Finaler Chunk des Zenith Frontend-Transformationsprojekts: Proaktive Intelligenz, Voice UX, DB-Cleanup, Performance.**
+
+**Phase 115: Proactive Intelligence 2.0**
+
+| Feature | Details |
+|---------|---------|
+| **Relevance Scoring** | `computeRelevanceScore()` mit 3 Faktoren: Type Weight (8 Typen, 30-90), Recency Decay (24h Halbwertszeit), Interaction Boost (akzeptierte Typen +20%) |
+| **Personalized Timing** | In-Memory User-Activity-Tracking (Stunde + akzeptierte Typen), `getPersonalizedSuggestions()` filtert nach aktiven Stunden |
+| **Dedup & Merge** | Jaccard-Similarity auf normalisierten Wort-Sets, >70% + gleicher Typ = Merge, Max 10 aktive Suggestions |
+| **Tests** | 80 neue Tests (Scoring, Decay, Boost, Patterns, Similarity, Merge, Edge Cases) |
+
+**Phase 116: Voice Experience**
+
+| Feature | Details |
+|---------|---------|
+| **VoiceInputButton** | Wiederverwendbare Kompakt-Mic-Komponente (sm/md), MediaRecorder API, Pulsing-Red Recording State |
+| **Toolbar Integration** | VoiceInputButton in IdeasToolbar + InboxToolbar neben Suchfeld |
+| **Emotion Detection** | Heuristisch: RMS Energy + Speaking Rate → Mood-Matrix (calm/excited/tense/energetic), Confidence 0.4-0.7 |
+| **Morning Briefing** | `generateMorningBriefing()`: Pending Tasks + Unread Emails + Today Events, deutscher Text, optional TTS Audio |
+| **Briefing API** | `GET /api/:context/voice/briefing?audio=true` → audio/mpeg + X-Briefing-Text Header |
+| **Tests** | 28 neue Tests (20 Emotion Detection + 8 Voice Briefing) |
+
+**Phase 117: Database Cleanup**
+
+| Feature | Details |
+|---------|---------|
+| **RLS Activation** | Row-Level Security auf 6 Tabellen x4 Schemas (ideas, tasks, emails, chat_sessions, learned_facts, contacts) |
+| **RLS Policies** | `_user_isolation_v2` mit `current_setting('app.current_user_id', true)` + SYSTEM_USER_ID Bypass |
+| **HNSW Indexes** | IVFFlat → HNSW (m=16, ef_construction=64) auf 8 Tabellen x4 Schemas (ideas, learned_facts, knowledge_entities, etc.) |
+| **Schema Cleanup** | 3 ungenutzte Tabellen x4 Schemas → `_deprecated` Schema verschoben |
+| **ENUM Preparation** | 5 ENUM-Typen erstellt (idea_status, task_status, task_priority, email_status, suggestion_status) |
+
+**Phase 118: Performance & Polish**
+
+| Feature | Details |
+|---------|---------|
+| **Code Splitting** | 7 manuelle Vite-Chunks: smart-ideas, smart-cockpit, smart-wissen, smart-meine-ki, smart-system, smart-chat-hub, smart-memory |
+| **SmartPageSkeleton** | Chip-Bar (5 Pills) + Toolbar + 2x3 Card Grid Skeleton fuer alle Smart Pages |
+| **Spring Animations** | 3 Keyframes (spring-in, spring-slide-up, spring-fade) mit `cubic-bezier(0.34, 1.56, 0.64, 1)`, Stagger bis 12 Children |
+| **Accessibility** | `role="main"` + `aria-label` auf 6 Smart Pages, `:focus-visible` Outlines auf Chips + ViewToggle |
+| **Reduced Motion** | `prefers-reduced-motion` Support fuer alle Spring-Animationen |
+
+**Neue Dateien:**
+
+| Datei | Zweck |
+|-------|-------|
+| `frontend/src/components/shared/VoiceInputButton.tsx` | Wiederverwendbare Mic-Komponente |
+| `frontend/src/components/shared/VoiceInputButton.css` | Voice Button Styles |
+| `frontend/src/styles/animations.css` | Spring-Physics Animationen + Utilities |
+| `backend/sql/migrations/phase117_rls_activation.sql` | RLS Policies auf 6 Tabellen x4 Schemas |
+| `backend/sql/migrations/phase117_hnsw_optimization.sql` | HNSW Index Migration |
+| `backend/sql/migrations/phase117_schema_cleanup.sql` | Deprecated Table Cleanup |
+| `backend/sql/migrations/phase117_enum_migration.sql` | ENUM Type Preparation |
+| `backend/src/__tests__/unit/services/smart-suggestions.test.ts` | 80 Smart Suggestions Tests |
+| `backend/src/__tests__/unit/services/voice/emotion-detection.test.ts` | 20 Emotion Detection Tests |
+| `backend/src/__tests__/unit/services/voice/voice-briefing.test.ts` | 8 Voice Briefing Tests |
+
+**Geaenderte Dateien:**
+
+| Datei | Aenderung |
+|-------|-----------|
+| `backend/src/services/smart-suggestions.ts` | Scoring-Algorithmus, Timing, Dedup, Merge, Activity Tracking |
+| `backend/src/services/voice/audio-processor.ts` | Emotion Analysis (RMS, Pace, Mood) |
+| `backend/src/services/voice/voice-pipeline.ts` | Morning Briefing Generator |
+| `backend/src/routes/voice-realtime.ts` | Briefing API Endpoint |
+| `frontend/src/components/IdeasPage/IdeasToolbar.tsx` | VoiceInputButton Integration |
+| `frontend/src/components/EmailPage/InboxToolbar.tsx` | VoiceInputButton Integration |
+| `frontend/src/components/skeletons/PageSkeletons.tsx` | SmartPageSkeleton |
+| `frontend/src/components/skeletons/PageSkeletons.css` | Smart Page Skeleton Styles |
+| `frontend/vite.config.ts` | 7 Manual Chunks fuer Code Splitting |
+| `frontend/src/main.tsx` | animations.css Import |
+| 6 Smart Page Dateien | role="main", aria-label, focus-visible |
+
+**Tests:** 89 neue Tests (80 Smart Suggestions + 20 Emotion + 8 Briefing, teilweise Overlap), Backend + Frontend TypeScript 0 Fehler, Build erfolgreich
+
+---
 
 ### 2026-03-18: Phase 100 - Deep Excellence (20 Fixes, 4 parallele Worker, Research-basiert)
 

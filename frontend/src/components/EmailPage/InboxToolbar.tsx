@@ -5,6 +5,7 @@
  */
 import { Search, Plus, Archive, Trash2, CheckSquare } from 'lucide-react';
 import { ViewToggle } from './ViewToggle';
+import { VoiceInputButton } from '../shared/VoiceInputButton';
 import type { InboxViewMode } from './types';
 import './InboxToolbar.css';
 
@@ -60,6 +61,7 @@ export function InboxToolbar({
               value={search}
               onChange={e => onSearchChange(e.target.value)}
             />
+            <VoiceInputButton onTranscript={onSearchChange} size="sm" />
           </div>
           <div className="inbox-toolbar__actions">
             <button

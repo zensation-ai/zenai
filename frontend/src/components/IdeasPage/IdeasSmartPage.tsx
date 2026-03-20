@@ -141,7 +141,7 @@ export function IdeasSmartPage({ context, initialTab, onNavigate: _onNavigate }:
   const showEmpty = !isLoading && filteredIdeas.length === 0;
 
   return (
-    <div className="ideas-smart-page">
+    <div className="ideas-smart-page" role="main" aria-label="Ideen">
       <FilterChipBar
         chips={chipDefs}
         filters={filters}

@@ -161,6 +161,15 @@ export default defineConfig({
           if (id.includes('src/components/BrowserPage/')) return 'feature-browser';
           if (id.includes('src/components/ContactsPage/')) return 'feature-contacts';
           if (id.includes('src/components/AgentTeamsPage')) return 'feature-agents';
+
+          // === Smart Page chunks (Phase 118) ===
+          if (id.includes('src/components/IdeasPage/')) return 'smart-ideas';
+          if (id.includes('src/components/CockpitPage/')) return 'smart-cockpit';
+          if (id.includes('src/components/WissenPage/')) return 'smart-wissen';
+          if (id.includes('src/components/MeineKIPage/')) return 'smart-meine-ki';
+          if (id.includes('src/components/SystemPage/')) return 'smart-system';
+          if (id.includes('src/components/ChatHub/')) return 'smart-chat-hub';
+          if (id.includes('src/components/MemoryInsightsPage/')) return 'smart-memory';
         },
       },
     },

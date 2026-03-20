@@ -614,6 +614,123 @@ export class VoicePipeline {
       totalDuration_ms: session.totalAudioDuration_ms,
     };
   }
+
+  /**
+   * Generate a proactive morning briefing.
+   *
+   * Phase 116: Collects pending tasks, unread emails, and today's events
+   * to generate a German-language audio briefing.
+   *
+   * @param context AI context
+   * @param userId User ID
+   * @param withAudio Whether to also generate TTS audio
+   */
+  async generateMorningBriefing(
+    context: 'personal' | 'work' | 'learning' | 'creative',
+    userId: string,
+    withAudio: boolean = false
+  ): Promise<{ text: string; audioBuffer?: Buffer }> {
+    // Collect data from the database
+    let pendingTasks = 0;
+    let unreadEmails = 0;
+    let todayEvents: Array<{ title: string; start_time: string }> = [];
+
+    try {
+      const tasksResult = await queryContext(context,
+        `SELECT COUNT(*) as count FROM tasks WHERE user_id = $1 AND status IN ('todo', 'in_progress')`,
+        [userId]
+      );
+      pendingTasks = parseInt(tasksResult.rows[0]?.count || '0', 10);
+    } catch {
+      // Table may not exist in all contexts
+    }
+
+    try {
+      const emailsResult = await queryContext(context,
+        `SELECT COUNT(*) as count FROM emails WHERE user_id = $1 AND status = 'unread'`,
+        [userId]
+      );
+      unreadEmails = parseInt(emailsResult.rows[0]?.count || '0', 10);
+    } catch {
+      // Table may not exist
+    }
+
+    try {
+      const eventsResult = await queryContext(context,
+        `SELECT title, start_time FROM calendar_events
+         WHERE user_id = $1
+           AND start_time >= CURRENT_DATE
+           AND start_time < CURRENT_DATE + INTERVAL '1 day'
+         ORDER BY start_time ASC
+         LIMIT 5`,
+        [userId]
+      );
+      todayEvents = eventsResult.rows;
+    } catch {
+      // Table may not exist
+    }
+
+    // Build German briefing text
+    const parts: string[] = ['Guten Morgen!'];
+
+    if (pendingTasks > 0) {
+      parts.push(`Du hast ${pendingTasks} offene ${pendingTasks === 1 ? 'Aufgabe' : 'Aufgaben'}.`);
+    }
+
+    if (unreadEmails > 0) {
+      parts.push(`${unreadEmails} ungelesene ${unreadEmails === 1 ? 'E-Mail' : 'E-Mails'} ${unreadEmails === 1 ? 'wartet' : 'warten'} auf dich.`);
+    }
+
+    if (todayEvents.length > 0) {
+      if (todayEvents.length === 1) {
+        const event = todayEvents[0];
+        const time = new Date(event.start_time).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
+        parts.push(`Heute steht ein Termin an: ${event.title} um ${time}.`);
+      } else {
+        parts.push(`Heute hast du ${todayEvents.length} Termine.`);
+        for (const event of todayEvents.slice(0, 3)) {
+          const time = new Date(event.start_time).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
+          parts.push(`${event.title} um ${time}.`);
+        }
+        if (todayEvents.length > 3) {
+          parts.push(`Und ${todayEvents.length - 3} weitere.`);
+        }
+      }
+    }
+
+    if (pendingTasks === 0 && unreadEmails === 0 && todayEvents.length === 0) {
+      parts.push('Dein Tag sieht ruhig aus. Keine offenen Aufgaben, keine ungelesenen E-Mails und keine Termine.');
+    }
+
+    const text = parts.join(' ');
+
+    logger.info('Morning briefing generated', {
+      context,
+      pendingTasks,
+      unreadEmails,
+      eventCount: todayEvents.length,
+      textLength: text.length,
+      operation: 'voice-briefing',
+    });
+
+    // Optionally generate audio
+    let audioBuffer: Buffer | undefined;
+    if (withAudio) {
+      try {
+        audioBuffer = await multiTTSService.synthesize(text, {
+          voice: 'de-DE-ConradNeural',
+          provider: 'edge-tts',
+        });
+      } catch (error) {
+        logger.warn('Failed to generate briefing audio', {
+          error: error instanceof Error ? error.message : String(error),
+          operation: 'voice-briefing',
+        });
+      }
+    }
+
+    return { text, audioBuffer };
+  }
 }
 
 export const voicePipeline = new VoicePipeline();

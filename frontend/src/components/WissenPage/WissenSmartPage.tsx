@@ -6,6 +6,7 @@
  */
 import { useState, useEffect, Suspense } from 'react';
 import { ViewToggle } from './ViewToggle';
+import { SmartPageSkeleton } from '../skeletons/PageSkeletons';
 import type { WissenViewMode, WissenSmartPageProps } from './types';
 import './WissenSmartPage.css';
 
@@ -45,13 +46,13 @@ export function WissenSmartPage({ context, initialTab }: WissenSmartPageProps) {
   }, [initialTab]);
 
   return (
-    <div className="wissen-smart-page">
+    <div className="wissen-smart-page" role="main" aria-label="Wissen">
       <div className="wissen-smart-page__toolbar">
         <ViewToggle value={viewMode} onChange={setViewMode} />
       </div>
 
       <div className="wissen-smart-page__content">
-        <Suspense fallback={<div className="wissen-smart-page__loading" aria-label="Wird geladen…" />}>
+        <Suspense fallback={<SmartPageSkeleton />}>
           {viewMode === 'dokumente' && (
             <div data-testid="wissen-view-dokumente" data-context={context}>
               Dokumente

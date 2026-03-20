@@ -1,5 +1,6 @@
 import { Search, CheckSquare, Archive, Trash2 } from 'lucide-react';
 import { ViewToggle } from './ViewToggle';
+import { VoiceInputButton } from '../shared/VoiceInputButton';
 import type { ViewMode, IdeaSort } from './types';
 import './IdeasToolbar.css';
 
@@ -55,7 +56,9 @@ export function IdeasToolbar({
               placeholder="Ideen suchen..."
               value={search}
               onChange={e => onSearchChange(e.target.value)}
+              aria-label="Ideen durchsuchen"
             />
+            <VoiceInputButton onTranscript={onSearchChange} size="sm" />
           </div>
           <div className="ideas-toolbar__actions">
             <button

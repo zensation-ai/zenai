@@ -7,6 +7,7 @@
 import { useState, useEffect, Suspense } from 'react';
 import { ViewToggle } from './ViewToggle';
 import { TimeRangeChips } from './TimeRangeChips';
+import { SmartPageSkeleton } from '../skeletons/PageSkeletons';
 import type { CockpitViewMode, TimeRange, CockpitSmartPageProps } from './types';
 import './CockpitSmartPage.css';
 
@@ -42,14 +43,14 @@ export function CockpitSmartPage({ context, initialTab }: CockpitSmartPageProps)
   }, [initialTab]);
 
   return (
-    <div className="cockpit-smart-page">
+    <div className="cockpit-smart-page" role="main" aria-label="Cockpit">
       <div className="cockpit-smart-page__toolbar">
         <ViewToggle value={viewMode} onChange={setViewMode} />
         <TimeRangeChips value={timeRange} onChange={setTimeRange} />
       </div>
 
       <div className="cockpit-smart-page__content">
-        <Suspense fallback={<div className="cockpit-smart-page__loading" aria-label="Wird geladen…" />}>
+        <Suspense fallback={<SmartPageSkeleton />}>
           {viewMode === 'uebersicht' && (
             <div data-testid="cockpit-view-uebersicht" data-context={context} data-range={timeRange}>
               Übersicht
