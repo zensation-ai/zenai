@@ -52,3 +52,7 @@ stats.html
 .vercel/
 .claude/
 .turbo/
+
+# Worktrees & Superpowers
+.worktrees/
+.superpowers/
