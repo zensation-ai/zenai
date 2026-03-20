@@ -53,9 +53,12 @@ export function InboxSmartPage({ context, initialTab: _initialTab }: InboxSmartP
   );
   const starMutation = useToggleEmailStarMutation(context as AIContext);
 
+  // Bridge hook Email type to local Email type (API returns full objects)
+  const allEmails = emails as unknown as Email[];
+
   // Client-side filtering for statuses (unread/starred)
   const filteredEmails = useMemo(() => {
-    let result = emails as Email[];
+    let result = allEmails;
     if (filters.statuses.has('unread')) {
       result = result.filter(e => e.status === 'received');
     }
@@ -63,7 +66,7 @@ export function InboxSmartPage({ context, initialTab: _initialTab }: InboxSmartP
       result = result.filter(e => e.is_starred);
     }
     return result;
-  }, [emails, filters.statuses]);
+  }, [allEmails, filters.statuses]);
 
   // Handlers
   const handleEmailSelect = useCallback((id: string) => {
@@ -81,11 +84,11 @@ export function InboxSmartPage({ context, initialTab: _initialTab }: InboxSmartP
   }, [selectionMode]);
 
   const handleStar = useCallback((id: string) => {
-    const email = (emails as Email[]).find(e => e.id === id);
+    const email = allEmails.find(e => e.id === id);
     if (email) {
       starMutation.mutate({ id, starred: !email.is_starred });
     }
-  }, [emails, starMutation]);
+  }, [allEmails, starMutation]);
 
   const handleCompose = useCallback(() => {
     setSelectedEmailId(null);

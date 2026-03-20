@@ -68,7 +68,7 @@ export function InboxToolbar({
             >
               <CheckSquare size={16} />
             </button>
-            <ViewToggle active={viewMode} onChange={onViewChange} />
+            <ViewToggle value={viewMode} onChange={onViewChange} />
             <button className="inbox-toolbar__compose" onClick={onCompose}>
               <Plus size={16} />
               <span>Verfassen</span>

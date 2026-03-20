@@ -7,8 +7,8 @@ import { InboxToolbar } from '../InboxToolbar';
 
 // Mock ViewToggle to isolate toolbar tests
 vi.mock('../ViewToggle', () => ({
-  ViewToggle: ({ active, onChange }: any) => (
-    <div data-testid="view-toggle" data-active={active} onClick={() => onChange('grid')}>
+  ViewToggle: ({ value, onChange }: any) => (
+    <div data-testid="view-toggle" data-active={value} onClick={() => onChange('grid')}>
       ViewToggle
     </div>
   ),
