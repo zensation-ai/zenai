@@ -151,6 +151,97 @@ export function buildDefaultPlan(query: string, availableInterfaces: RetrievalIn
 // Strategy Agent
 // ===========================================
 
+// ===========================================
+// Graph-Aware Query Expansion (Phase 113)
+// ===========================================
+
+/**
+ * Expand a query using knowledge graph entity relations.
+ *
+ * Given a query, looks up related entities and their relation labels
+ * from the knowledge graph, then appends them to improve recall.
+ * This helps surface results where the user didn't explicitly
+ * mention related concepts.
+ *
+ * Falls back gracefully to the original query on any DB error.
+ */
+export async function expandQueryWithGraphContext(
+  query: string,
+  context: string,
+  maxEntities: number = 5
+): Promise<string> {
+  try {
+    // Dynamically import to avoid circular deps in tests
+    const { queryContext } = await import('../../utils/database-context');
+
+    // Extract candidate entity names from the query (simple heuristic: capitalized words or quoted phrases)
+    const words = query.split(/\s+/).filter(w => w.length > 3);
+    if (words.length === 0) return query;
+
+    // Look up entities that match query terms and fetch their relations
+    const searchTerms = words.slice(0, 5).join(' | ');
+    const sanitized = searchTerms.replace(/['"]/g, '').trim();
+    if (!sanitized) return query;
+
+    const result = await queryContext(
+      context as import('../../utils/database-context').AIContext,
+      `SELECT DISTINCT
+         ke.name as entity_name,
+         er.relation_type,
+         ke2.name as related_name
+       FROM knowledge_entities ke
+       JOIN entity_relations er ON er.source_id = ke.id OR er.target_id = ke.id
+       JOIN knowledge_entities ke2 ON (
+         er.source_id = ke.id AND er.target_id = ke2.id
+         OR er.target_id = ke.id AND er.source_id = ke2.id
+       )
+       WHERE ke.name ILIKE ANY($1::text[])
+         AND ke2.name != ke.name
+       ORDER BY ke.name
+       LIMIT $2`,
+      [words.slice(0, 5).map(w => `%${w}%`), maxEntities * 2]
+    );
+
+    if (!result.rows || result.rows.length === 0) {
+      return query;
+    }
+
+    // Collect unique related entity names and relation types
+    const expansions = new Set<string>();
+    for (const row of result.rows) {
+      if (row.related_name && typeof row.related_name === 'string') {
+        expansions.add(row.related_name);
+      }
+      if (row.relation_type && typeof row.relation_type === 'string') {
+        expansions.add(row.relation_type.replace(/_/g, ' '));
+      }
+    }
+
+    if (expansions.size === 0) return query;
+
+    const expansionTerms = Array.from(expansions).slice(0, maxEntities).join(', ');
+    const expandedQuery = `${query} ${expansionTerms}`;
+
+    logger.debug('Graph-expanded query', {
+      original: query,
+      addedTerms: expansionTerms,
+      entityCount: expansions.size,
+    });
+
+    return expandedQuery;
+  } catch (error) {
+    // Graceful degradation: return original query if graph lookup fails
+    logger.debug('Graph query expansion failed, using original query', {
+      error: error instanceof Error ? error.message : 'Unknown',
+    });
+    return query;
+  }
+}
+
+// ===========================================
+// Strategy Agent
+// ===========================================
+
 /**
  * Use Claude to create an optimized retrieval plan.
  * Falls back to heuristic plan on any failure.

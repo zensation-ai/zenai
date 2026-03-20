@@ -1,0 +1,49 @@
+.inbox-chip-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.inbox-chip-bar::-webkit-scrollbar {
+  display: none;
+}
+.inbox-chip-separator {
+  width: 1px;
+  height: 20px;
+  background: var(--border, rgba(255,255,255,0.1));
+  flex-shrink: 0;
+  margin: 0 4px;
+}
+.inbox-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 12px;
+  border-radius: 16px;
+  border: 1px solid var(--border, rgba(255,255,255,0.15));
+  background: transparent;
+  color: var(--text-secondary, #999);
+  font-size: 0.8125rem;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+}
+.inbox-chip:hover {
+  border-color: var(--accent, #6C63FF);
+  color: var(--text, #fff);
+}
+.inbox-chip--active {
+  background: var(--accent, #6C63FF);
+  border-color: var(--accent, #6C63FF);
+  color: #fff;
+}
+.inbox-chip--clear {
+  border-color: var(--error, #ff4444);
+  color: var(--error, #ff4444);
+}
+.inbox-chip--clear:hover {
+  background: var(--error, #ff4444);
+  color: #fff;
+}

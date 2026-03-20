@@ -1,11 +1,17 @@
 /**
- * Phase 63: Advanced Context Engine V2
+ * Phase 63 + Phase 111: Advanced Context Engine V2
  *
- * Improvements over V1:
+ * Phase 63 improvements over V1:
  * - Keyword-scored domain classification (with confidence)
  * - Multi-model routing based on complexity
  * - Minimum Viable Context (MVC) assembly
  * - Context caching with TTL
+ *
+ * Phase 111 additions (Context Engineering 2.0):
+ * - Semantic relevance scoring via TF-IDF cosine similarity
+ * - Context filtering by relevance threshold
+ * - LLM-based domain detection fallback for ambiguous queries
+ * - In-memory LLM domain cache with 5-minute TTL
  */
 
 import { AIContext, queryContext } from '../utils/database-context';
@@ -49,6 +55,183 @@ const DOMAIN_KEYWORDS: Record<ContextDomain, string[]> = {
   general: [],
 };
 
+// ===========================================
+// Semantic Relevance Scoring (Phase 111)
+// ===========================================
+
+/**
+ * Build a TF-IDF-style term frequency vector from text.
+ * Splits on whitespace and punctuation, lowercases, filters short words.
+ *
+ * @param text - Input text
+ * @returns Map of term -> normalized frequency
+ */
+export function buildTermVector(text: string): Map<string, number> {
+  if (!text || text.length === 0) return new Map();
+
+  const words = text
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N}\s]/gu, ' ')
+    .split(/\s+/)
+    .filter(w => w.length > 2);
+
+  if (words.length === 0) return new Map();
+
+  const freq = new Map<string, number>();
+  for (const word of words) {
+    freq.set(word, (freq.get(word) || 0) + 1);
+  }
+
+  // Normalize by total word count
+  const total = words.length;
+  for (const [term, count] of freq) {
+    freq.set(term, count / total);
+  }
+
+  return freq;
+}
+
+/**
+ * Calculate cosine similarity between two term frequency vectors.
+ *
+ * @param vecA - First term vector
+ * @param vecB - Second term vector
+ * @returns Cosine similarity 0-1
+ */
+export function cosineSimilarity(vecA: Map<string, number>, vecB: Map<string, number>): number {
+  if (vecA.size === 0 || vecB.size === 0) return 0;
+
+  let dotProduct = 0;
+  let normA = 0;
+  let normB = 0;
+
+  for (const [term, weightA] of vecA) {
+    normA += weightA * weightA;
+    const weightB = vecB.get(term);
+    if (weightB !== undefined) {
+      dotProduct += weightA * weightB;
+    }
+  }
+
+  for (const [, weightB] of vecB) {
+    normB += weightB * weightB;
+  }
+
+  const denominator = Math.sqrt(normA) * Math.sqrt(normB);
+  if (denominator === 0) return 0;
+
+  return dotProduct / denominator;
+}
+
+/**
+ * Score the semantic relevance of a context section to a query.
+ * Uses TF-IDF cosine similarity (no LLM call, fast).
+ *
+ * @param query - The user query
+ * @param contextSection - A context section to score
+ * @returns Relevance score 0-1
+ */
+export function scoreSemanticRelevance(query: string, contextSection: string): number {
+  if (!query || !contextSection) return 0;
+
+  const queryVec = buildTermVector(query);
+  const contextVec = buildTermVector(contextSection);
+
+  return cosineSimilarity(queryVec, contextVec);
+}
+
+/**
+ * Filter context parts by semantic relevance to the query.
+ * Removes parts below the threshold.
+ *
+ * @param query - The user query
+ * @param parts - Context parts to filter
+ * @param threshold - Minimum relevance score (default 0.3)
+ * @returns Filtered parts above threshold
+ */
+export function filterContextByRelevance(
+  query: string,
+  parts: ContextPartV2[],
+  threshold: number = 0.3
+): ContextPartV2[] {
+  if (!query || parts.length === 0) return parts;
+
+  return parts.filter(part => {
+    const relevance = scoreSemanticRelevance(query, part.content);
+    if (relevance < threshold) {
+      logger.debug('Context part filtered by relevance', {
+        source: part.source,
+        relevance: relevance.toFixed(3),
+        threshold,
+      });
+      return false;
+    }
+    return true;
+  });
+}
+
+// ===========================================
+// LLM Domain Detection Cache (Phase 111)
+// ===========================================
+
+const LLM_DOMAIN_CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+
+interface CachedDomainResult {
+  domain: ContextDomain;
+  confidence: number;
+  timestamp: number;
+}
+
+/** In-memory cache for LLM domain classification results. */
+const llmDomainCache = new Map<string, CachedDomainResult>();
+
+/**
+ * Get a cached LLM domain result if not expired.
+ *
+ * @param cacheKey - Normalized query key
+ * @returns Cached result or null
+ */
+export function getLLMDomainFromCache(cacheKey: string): CachedDomainResult | null {
+  const cached = llmDomainCache.get(cacheKey);
+  if (!cached) return null;
+
+  if (Date.now() - cached.timestamp > LLM_DOMAIN_CACHE_TTL_MS) {
+    llmDomainCache.delete(cacheKey);
+    return null;
+  }
+
+  return cached;
+}
+
+/**
+ * Store an LLM domain result in the cache.
+ *
+ * @param cacheKey - Normalized query key
+ * @param domain - Classified domain
+ * @param confidence - Classification confidence
+ */
+export function setLLMDomainCache(cacheKey: string, domain: ContextDomain, confidence: number): void {
+  llmDomainCache.set(cacheKey, {
+    domain,
+    confidence,
+    timestamp: Date.now(),
+  });
+}
+
+/**
+ * Clear the LLM domain cache. Used for testing.
+ */
+export function clearLLMDomainCache(): void {
+  llmDomainCache.clear();
+}
+
+/**
+ * Get the current size of the LLM domain cache.
+ */
+export function getLLMDomainCacheSize(): number {
+  return llmDomainCache.size;
+}
+
 // Complexity indicators
 const COMPLEXITY_INDICATORS = {
   high: ['vergleich', 'analysier', 'warum', 'erkläre ausführlich', 'unterschied zwischen', 'zusammenhang', 'strategie', 'architektur'],
@@ -56,7 +239,7 @@ const COMPLEXITY_INDICATORS = {
   low: ['was ist', 'definiere', 'liste', 'zeig', 'öffne', 'status'],
 };
 
-class ContextEngineV2 {
+export class ContextEngineV2 {
   /**
    * Classify the domain of a query using keyword scoring
    */
@@ -79,7 +262,8 @@ class ContextEngineV2 {
     const maxDomain = sorted[0];
 
     if (!maxDomain || maxDomain[1] === 0) {
-      return { domain: 'general', confidence: 0.5 };
+      // No keywords matched - low confidence for LLM fallback to trigger
+      return { domain: 'general', confidence: 0.3 };
     }
 
     const totalKeywords = DOMAIN_KEYWORDS[maxDomain[0] as ContextDomain].length;
@@ -87,8 +271,75 @@ class ContextEngineV2 {
 
     return {
       domain: maxDomain[0] as ContextDomain,
-      confidence: Math.max(confidence, 0.4),
+      confidence,
     };
+  }
+
+  /**
+   * Classify domain with LLM fallback for ambiguous queries (Phase 111).
+   *
+   * When keyword-based classification returns confidence < 0.4,
+   * falls back to a Claude Haiku LLM call for classification.
+   * Results are cached in-memory for 5 minutes.
+   *
+   * @param query - The user query
+   * @returns Domain and confidence
+   */
+  async classifyDomainWithFallback(query: string): Promise<{ domain: ContextDomain; confidence: number }> {
+    // First try keyword-based
+    const keywordResult = this.classifyDomain(query);
+
+    // If confidence is >= 0.4, trust the keyword result
+    if (keywordResult.confidence >= 0.4) {
+      return keywordResult;
+    }
+
+    // Check cache before LLM call
+    const cacheKey = query.toLowerCase().trim().substring(0, 100);
+    const cached = getLLMDomainFromCache(cacheKey);
+    if (cached) {
+      logger.debug('LLM domain cache hit', { domain: cached.domain, confidence: cached.confidence });
+      return { domain: cached.domain, confidence: cached.confidence };
+    }
+
+    // LLM fallback using Claude Haiku (~200 token prompt)
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      const { generateClaudeResponse } = require('./claude/core');
+      const response = await generateClaudeResponse({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 50,
+        messages: [{
+          role: 'user',
+          content: `Classify this query into exactly one domain: finance, email, code, learning, or general.\nQuery: "${query.substring(0, 200)}"\nRespond with ONLY the domain name, nothing else.`,
+        }],
+      });
+
+      const responseText = (response.content[0] as { type: string; text?: string })?.text?.trim().toLowerCase() || '';
+      const validDomains: ContextDomain[] = ['finance', 'email', 'code', 'learning', 'general'];
+      const detectedDomain = validDomains.find(d => responseText.includes(d)) || 'general';
+      const llmConfidence = detectedDomain === 'general' ? 0.5 : 0.75;
+
+      // Cache the result
+      setLLMDomainCache(cacheKey, detectedDomain, llmConfidence);
+
+      logger.debug('LLM domain fallback', {
+        query: query.substring(0, 50),
+        keywordDomain: keywordResult.domain,
+        keywordConfidence: keywordResult.confidence,
+        llmDomain: detectedDomain,
+        llmConfidence,
+      });
+
+      return { domain: detectedDomain, confidence: llmConfidence };
+    } catch (error) {
+      // If LLM fails, use the low-confidence keyword result
+      logger.debug('LLM domain fallback failed, using keyword result', {
+        error: error instanceof Error ? error.message : String(error),
+        fallbackDomain: keywordResult.domain,
+      });
+      return keywordResult;
+    }
   }
 
   /**
@@ -228,12 +479,24 @@ class ContextEngineV2 {
       usedTokens = basicContext.reduce((sum, p) => sum + p.tokens, 0);
     }
 
+    // Phase 111: Filter context parts by semantic relevance
+    const filteredParts = filterContextByRelevance(query, parts);
+    const filteredTokens = filteredParts.reduce((sum, p) => sum + p.tokens, 0);
+
+    if (filteredParts.length < parts.length) {
+      logger.debug('Context parts filtered by relevance', {
+        original: parts.length,
+        filtered: filteredParts.length,
+        tokensSaved: usedTokens - filteredTokens,
+      });
+    }
+
     const assembled: AssembledContext = {
       domain: domain.domain,
       domainConfidence: domain.confidence,
       model,
-      parts,
-      totalTokens: usedTokens,
+      parts: filteredParts,
+      totalTokens: filteredTokens,
       fromCache: false,
       buildTimeMs: Date.now() - startTime,
     };

@@ -16,13 +16,24 @@ import { logError } from '../../utils/errors';
 
 export interface Email {
   id: string;
-  subject: string;
+  subject: string | null;
   from_address: string;
+  from_name?: string | null;
   to_address: string;
   status: string;
   direction: string;
   category?: string;
   created_at: string;
+  received_at?: string | null;
+  body_text?: string | null;
+  body_html?: string | null;
+  is_starred?: boolean;
+  has_attachments?: boolean;
+  thread_count?: number;
+  ai_summary?: string | null;
+  ai_category?: string | null;
+  ai_priority?: string | null;
+  ai_sentiment?: string | null;
 }
 
 export interface EmailStats {

@@ -513,6 +513,136 @@ export class AgentGraph {
 }
 
 // ===========================================
+// Dynamic Model Routing (Phase 114, Task 50)
+// ===========================================
+
+/**
+ * Model tiers for dynamic routing based on task complexity.
+ * - fast: Claude Haiku (cheap, fast) — simple tasks
+ * - standard: Claude Sonnet (balanced) — general tasks
+ * - powerful: Claude Opus (most capable) — critical/complex tasks
+ */
+export type ModelTier = 'fast' | 'standard' | 'powerful';
+
+export interface ModelRoutingDecision {
+  tier: ModelTier;
+  model: string;
+  reason: string;
+}
+
+/** Model names mapped from tiers */
+const MODEL_TIER_MAP: Record<ModelTier, string> = {
+  fast: 'claude-haiku-4-5',
+  standard: 'claude-sonnet-4-5',
+  powerful: 'claude-opus-4-5',
+};
+
+/**
+ * Complexity signals used to determine model tier.
+ */
+interface ComplexitySignals {
+  wordCount: number;
+  toolCountNeeded: number;
+  domainComplexity: 'low' | 'medium' | 'high';
+}
+
+/**
+ * Extract complexity signals from a task description.
+ */
+function extractComplexitySignals(task: string, toolCount = 0): ComplexitySignals {
+  const words = task.trim().split(/\s+/).filter(Boolean);
+  const wordCount = words.length;
+
+  // Detect domain complexity from keywords
+  const highComplexityKeywords = [
+    'architecture', 'refactor', 'strategy', 'analyze', 'synthesize', 'optimize',
+    'research', 'compare', 'evaluate', 'comprehensive', 'complex', 'advanced',
+    // German
+    'architektur', 'strategisch', 'analysiere', 'synthetisiere', 'optimiere',
+    'recherchiere', 'vergleiche', 'bewerte', 'umfassend', 'komplex', 'fortgeschritten',
+  ];
+  const lowComplexityKeywords = [
+    'summarize', 'list', 'count', 'simple', 'quick', 'brief', 'basic',
+    'translate', 'convert', 'format', 'check',
+    // German
+    'zusammenfassen', 'auflisten', 'zählen', 'einfach', 'schnell', 'kurz', 'einfache',
+    'übersetzen', 'konvertieren', 'formatieren', 'prüfen',
+  ];
+
+  const taskLower = task.toLowerCase();
+  const highMatches = highComplexityKeywords.filter(kw => taskLower.includes(kw)).length;
+  const lowMatches = lowComplexityKeywords.filter(kw => taskLower.includes(kw)).length;
+
+  let domainComplexity: 'low' | 'medium' | 'high';
+  if (highMatches >= 2 || (highMatches >= 1 && wordCount > 50)) {
+    domainComplexity = 'high';
+  } else if (lowMatches >= 1 && wordCount <= 20) {
+    domainComplexity = 'low';
+  } else {
+    domainComplexity = 'medium';
+  }
+
+  return { wordCount, toolCountNeeded: toolCount, domainComplexity };
+}
+
+/**
+ * Select the appropriate model tier based on task complexity.
+ *
+ * Heuristic rules:
+ * - simple (short, low-complexity, no tools) → fast (haiku)
+ * - complex (long, high-complexity, many tools) → powerful (opus)
+ * - everything else → standard (sonnet)
+ */
+export function selectModelForTask(
+  task: string,
+  toolCount = 0,
+  overrideTier?: ModelTier,
+): ModelRoutingDecision {
+  if (overrideTier) {
+    return {
+      tier: overrideTier,
+      model: MODEL_TIER_MAP[overrideTier],
+      reason: 'override provided',
+    };
+  }
+
+  const signals = extractComplexitySignals(task, toolCount);
+
+  // Criteria for 'fast' tier
+  const isFast =
+    signals.wordCount <= 15 &&
+    signals.toolCountNeeded === 0 &&
+    signals.domainComplexity === 'low';
+
+  // Criteria for 'powerful' tier
+  const isPowerful =
+    signals.domainComplexity === 'high' &&
+    (signals.wordCount > 50 || signals.toolCountNeeded >= 3);
+
+  if (isFast) {
+    return {
+      tier: 'fast',
+      model: MODEL_TIER_MAP.fast,
+      reason: `short task (${signals.wordCount} words), no tools, low complexity`,
+    };
+  }
+
+  if (isPowerful) {
+    return {
+      tier: 'powerful',
+      model: MODEL_TIER_MAP.powerful,
+      reason: `high complexity task (${signals.wordCount} words, ${signals.toolCountNeeded} tools)`,
+    };
+  }
+
+  return {
+    tier: 'standard',
+    model: MODEL_TIER_MAP.standard,
+    reason: `standard task (${signals.wordCount} words, ${signals.domainComplexity} complexity)`,
+  };
+}
+
+// ===========================================
 // Pre-built Workflow Templates
 // ===========================================
 

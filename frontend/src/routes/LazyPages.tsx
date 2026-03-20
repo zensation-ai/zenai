@@ -48,6 +48,22 @@ export const DocumentVaultPage = lazy(() =>
   import('../components/DocumentVaultPage').then(m => ({ default: m.DocumentVaultPage }))
 );
 
+export const WissenPage = lazy(() =>
+  import('../components/WissenPage/WissenSmartPage').then(m => ({ default: m.WissenSmartPage }))
+);
+
+export const CockpitPage = lazy(() =>
+  import('../components/CockpitPage/CockpitSmartPage').then(m => ({ default: m.CockpitSmartPage }))
+);
+
+export const MeineKIPage = lazy(() =>
+  import('../components/MeineKIPage/MeineKISmartPage').then(m => ({ default: m.MeineKISmartPage }))
+);
+
+export const SystemPage = lazy(() =>
+  import('../components/SystemPage/SystemSmartPage').then(m => ({ default: m.SystemSmartPage }))
+);
+
 export const BusinessDashboard = lazy(() =>
   import('../components/BusinessDashboard').then(m => ({ default: m.BusinessDashboard }))
 );
@@ -57,7 +73,7 @@ export const PlannerPage = lazy(() =>
 );
 
 export const EmailPage = lazy(() =>
-  import('../components/EmailPage/EmailPage').then(m => ({ default: m.EmailPage }))
+  import('../components/EmailPage/InboxSmartPage').then(m => ({ default: m.InboxSmartPage }))
 );
 
 export const LearningDashboard = lazy(() =>

@@ -1,0 +1,32 @@
+.cockpit-time-chips {
+  display: inline-flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.cockpit-time-chips__chip {
+  padding: 4px 12px;
+  border-radius: 16px;
+  border: 1px solid var(--border, rgba(255,255,255,0.15));
+  background: transparent;
+  color: var(--text-secondary, #999);
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.cockpit-time-chips__chip:hover {
+  border-color: var(--accent, #6C63FF);
+  color: var(--text, #fff);
+}
+
+.cockpit-time-chips__chip--active {
+  background: var(--accent, #6C63FF);
+  border-color: var(--accent, #6C63FF);
+  color: #fff;
+}
+
+.cockpit-time-chips__chip--active:hover {
+  background: var(--accent, #6C63FF);
+}

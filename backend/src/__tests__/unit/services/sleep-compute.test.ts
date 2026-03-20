@@ -340,7 +340,7 @@ describe('Phase 63: Sleep-Time Compute + Context Engine V2', () => {
         const engine = getContextEngineV2();
         const result = engine.classifyDomain('Hallo, wie geht es dir?');
         expect(result.domain).toBe('general');
-        expect(result.confidence).toBe(0.5);
+        expect(result.confidence).toBe(0.3); // Phase 111: lowered default confidence for unclassifiable queries
       });
 
       it('should handle empty query', () => {
@@ -413,7 +413,7 @@ describe('Phase 63: Sleep-Time Compute + Context Engine V2', () => {
           .mockRejectedValueOnce(new Error('table not found'))
           // Fallback: learned_facts
           .mockResolvedValueOnce({
-            rows: [{ content: 'User likes TypeScript', confidence: 0.9 }],
+            rows: [{ content: 'Hilf Programmieren TypeScript JavaScript Code programmieren hilf', confidence: 0.9 }],
             rowCount: 1,
           } as any)
           // Cache save
@@ -461,7 +461,7 @@ describe('Phase 63: Sleep-Time Compute + Context Engine V2', () => {
           .mockResolvedValueOnce({
             rows: [{
               name: 'finance-rule',
-              data_sources: JSON.stringify([{ type: 'static', content: 'Finance context data' }]),
+              data_sources: JSON.stringify([{ type: 'static', content: 'Zeig Budget mein Finanzen Kontostand zeigen' }]),
               token_budget: 500,
               priority: 10,
             }],

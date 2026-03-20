@@ -26,6 +26,8 @@ export interface EmotionalTag {
   valence: number;
   /** Subjective significance / importance: 0 (trivial) to 1 (life-changing) */
   significance: number;
+  /** Phase 112: Optional context-adjusted valence (populated when contextDomain is provided) */
+  contextualValence?: ContextualValence;
 }
 
 export interface EmotionalWeight {
@@ -33,6 +35,106 @@ export interface EmotionalWeight {
   consolidationWeight: number;
   /** Decay multiplier: factor applied to decay half-life (>1 means slower decay) */
   decayMultiplier: number;
+}
+
+/**
+ * Phase 112: Contextual valence adjusts emotional valence based on the domain context.
+ *
+ * - Work: urgency words get higher arousal but neutral valence
+ * - Personal: emotional words get amplified valence
+ * - Learning: difficulty words get neutral valence (challenges are expected)
+ * - Creative: emotional intensity gets moderate amplification
+ */
+export interface ContextualValence {
+  /** Base valence (0-1, from tagEmotion) */
+  valence: number;
+  /** Modifier applied by context domain (-1 to +1) */
+  contextModifier: number;
+  /** Final valence after context adjustment (clamped 0-1) */
+  effectiveValence: number;
+  /** The context domain used */
+  context: string;
+}
+
+/** Context modifier ranges: how much the domain adjusts valence */
+const CONTEXT_MODIFIER_RANGES: Record<string, number> = {
+  work: 0.1,
+  personal: 0.2,
+  learning: 0.05,
+  creative: 0.15,
+} as const;
+
+/** Words that indicate urgency (dampened valence shift in work context) */
+const URGENCY_WORDS = new Set([
+  'urgent', 'dringend', 'deadline', 'asap', 'sofort', 'immediately',
+  'critical', 'wichtig', 'important', 'priority', 'prioritaet',
+]);
+
+/** Words that indicate difficulty (neutral valence in learning context) */
+const DIFFICULTY_WORDS = new Set([
+  'difficult', 'schwierig', 'hard', 'challenging', 'complex', 'komplex',
+  'complicated', 'tough', 'struggle', 'confused', 'verwirrend', 'struggle',
+]);
+
+/**
+ * Compute context-adjusted valence for a given text and domain.
+ *
+ * Different domains interpret emotional signals differently:
+ * - Work context: urgency is not negative, just high-arousal neutral
+ * - Personal context: emotions are amplified (personal relevance)
+ * - Learning context: difficulty is expected, not negative
+ * - Creative context: moderate emotional amplification
+ *
+ * @param text - The text to analyze
+ * @param contextDomain - The domain: 'work', 'personal', 'learning', 'creative'
+ * @returns ContextualValence with adjusted values
+ */
+export function computeContextualValence(text: string, contextDomain: string): ContextualValence {
+  const tag = tagEmotion(text);
+  const baseValence = tag.valence;
+  const modifierRange = CONTEXT_MODIFIER_RANGES[contextDomain] ?? 0.1;
+
+  if (!text || text.trim().length === 0) {
+    return { valence: 0.5, contextModifier: 0, effectiveValence: 0.5, context: contextDomain };
+  }
+
+  const lowerText = text.toLowerCase();
+  const words = lowerText.split(/\s+/);
+
+  let contextModifier = 0;
+
+  if (contextDomain === 'work') {
+    // In work context, urgency words should push valence toward neutral (0.5)
+    const hasUrgency = words.some(w => URGENCY_WORDS.has(w.replace(/[.,!?]/g, '')));
+    if (hasUrgency) {
+      // Push valence toward 0.5 (neutral) by the modifier range
+      contextModifier = (0.5 - baseValence) * modifierRange * 2;
+    }
+  } else if (contextDomain === 'personal') {
+    // In personal context, amplify emotional deviation from neutral
+    const deviation = baseValence - 0.5;
+    contextModifier = deviation * modifierRange * 2;
+  } else if (contextDomain === 'learning') {
+    // In learning context, difficulty words should not lower valence
+    const hasDifficulty = words.some(w => DIFFICULTY_WORDS.has(w.replace(/[.,!?]/g, '')));
+    if (hasDifficulty && baseValence < 0.5) {
+      // Push negative valence toward neutral
+      contextModifier = (0.5 - baseValence) * modifierRange * 2;
+    }
+  } else if (contextDomain === 'creative') {
+    // Creative context: moderate amplification of emotional signals
+    const deviation = baseValence - 0.5;
+    contextModifier = deviation * modifierRange;
+  }
+
+  const effectiveValence = Math.max(0, Math.min(1, baseValence + contextModifier));
+
+  return {
+    valence: baseValence,
+    contextModifier: Math.round(contextModifier * 1000) / 1000,
+    effectiveValence: Math.round(effectiveValence * 1000) / 1000,
+    context: contextDomain,
+  };
 }
 
 // ===========================================
@@ -137,7 +239,7 @@ const SIGNIFICANCE_WORDS: ReadonlyMap<string, number> = new Map([
  * - valence: pleasantness (mapped from sentiment to 0-1)
  * - significance: personal importance/relevance
  */
-export function tagEmotion(text: string): EmotionalTag {
+export function tagEmotion(text: string, contextDomain?: string): EmotionalTag {
   if (!text || text.trim().length === 0) {
     return { sentiment: 0, arousal: 0, valence: 0.5, significance: 0 };
   }
@@ -245,6 +347,11 @@ export function tagEmotion(text: string): EmotionalTag {
     valence: Math.max(0, Math.min(1, valence)),
     significance: Math.max(0, Math.min(1, significance)),
   };
+
+  // Phase 112: Attach contextual valence if domain is provided
+  if (contextDomain) {
+    result.contextualValence = computeContextualValence(text, contextDomain);
+  }
 
   logger.debug('Emotional tagging complete', {
     textLength: text.length,

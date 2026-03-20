@@ -55,6 +55,82 @@ function cosineSimilarity(a: number[], b: number[]): number {
 // Tool Search Service
 // ===========================================
 
+// ===========================================
+// Tool Specialization (Phase 114, Task 51)
+// ===========================================
+
+/**
+ * Agent roles that can be used for tool specialization.
+ */
+export type AgentRole = 'researcher' | 'writer' | 'coder' | 'reviewer' | 'general';
+
+/**
+ * Tool-role affinity mappings.
+ * Each role gets a curated set of tool names it works best with.
+ * These match the registered tool names in the tool registry.
+ */
+const TOOL_ROLE_AFFINITY: Record<AgentRole, string[]> = {
+  researcher: [
+    'web_search',
+    'fetch_url',
+    'search_ideas',
+    'recall',
+    'search_documents',
+    'synthesize_knowledge',
+    'github_search',
+    'github_list_issues',
+    'analyze_project',
+    'get_project_summary',
+    'search_tools',
+    'get_related_ideas',
+    'memory_introspect',
+  ],
+  writer: [
+    'search_ideas',
+    'create_idea',
+    'update_idea',
+    'recall',
+    'synthesize_knowledge',
+    'draft_email',
+    'create_meeting',
+    'create_calendar_event',
+    'remember',
+    'app_help',
+    'navigate_to',
+  ],
+  coder: [
+    'execute_code',
+    'web_search',
+    'fetch_url',
+    'github_search',
+    'github_create_issue',
+    'github_repo_info',
+    'github_list_issues',
+    'github_pr_summary',
+    'analyze_project',
+    'get_project_summary',
+    'list_project_files',
+    'search_ideas',
+    'recall',
+  ],
+  reviewer: [
+    'search_ideas',
+    'recall',
+    'memory_introspect',
+    'synthesize_knowledge',
+    'search_documents',
+    'analyze_document',
+    'get_related_ideas',
+    'web_search',
+    'analyze_project',
+  ],
+  general: [], // empty means all tools
+};
+
+// ===========================================
+// Tool Search Service
+// ===========================================
+
 export class ToolSearchService {
   private toolEmbeddings: Map<string, ToolEmbeddingEntry> = new Map();
   private embeddingsReady = false;
@@ -189,6 +265,61 @@ export class ToolSearchService {
     }
 
     return results;
+  }
+
+  /**
+   * Get tools specialized for a given agent role.
+   *
+   * Returns a filtered list of tools matching the role's affinity,
+   * ordered by the affinity list's priority. Falls back to all tools
+   * for the 'general' role or unknown roles.
+   *
+   * @param role - The agent role (researcher, writer, coder, reviewer, general)
+   * @param limit - Maximum number of tools to return (default: all)
+   */
+  getSpecializedTools(role: AgentRole, limit?: number): ToolSearchResult[] {
+    const defs = toolRegistry.getDefinitions();
+    const affinity = TOOL_ROLE_AFFINITY[role] ?? [];
+
+    // 'general' role or unknown role → return all tools
+    if (affinity.length === 0) {
+      const allTools = defs.map(def => ({
+        name: def.name,
+        description: def.description,
+        score: 0.5,
+        matchSource: 'keyword' as const,
+      }));
+      return limit !== undefined ? allTools.slice(0, limit) : allTools;
+    }
+
+    // Build a lookup map for fast scoring
+    const affinityIndex = new Map(affinity.map((name, idx) => [name, idx]));
+
+    const specialized: ToolSearchResult[] = [];
+    for (const def of defs) {
+      const idx = affinityIndex.get(def.name);
+      if (idx !== undefined) {
+        // Score: tools earlier in the affinity list score higher
+        const score = 1.0 - (idx / affinity.length) * 0.5; // range 0.5–1.0
+        specialized.push({
+          name: def.name,
+          description: def.description,
+          score,
+          matchSource: 'keyword',
+        });
+      }
+    }
+
+    // Sort by affinity order (higher score = earlier in list)
+    specialized.sort((a, b) => b.score - a.score);
+
+    logger.debug('Specialized tools for role', {
+      role,
+      total: specialized.length,
+      limit,
+    });
+
+    return limit !== undefined ? specialized.slice(0, limit) : specialized;
   }
 
   /**

@@ -349,6 +349,136 @@ export function getAgentPipeline(strategy: TeamStrategy, skipReview?: boolean): 
 }
 
 // ===========================================
+// Graceful Degradation — Fallback Chains (Phase 114, Task 52)
+// ===========================================
+
+/**
+ * A fallback chain defines an ordered list of models to try on failure.
+ * When the primary model fails, the next in the chain is used, and so on.
+ */
+export interface FallbackChain {
+  /** Ordered list of model names (primary first, cheapest last) */
+  models: string[];
+  /** Current index in the chain (0 = primary) */
+  currentIndex: number;
+}
+
+/** Default model fallback chain: powerful → standard → fast */
+export const DEFAULT_MODEL_FALLBACK_CHAIN: string[] = [
+  'claude-opus-4-5',
+  'claude-sonnet-4-5',
+  'claude-haiku-4-5',
+];
+
+/** Fast model fallback chain: standard → fast (skip opus) */
+export const FAST_MODEL_FALLBACK_CHAIN: string[] = [
+  'claude-sonnet-4-5',
+  'claude-haiku-4-5',
+];
+
+/**
+ * Create a new fallback chain starting at a given model.
+ * If the model is not in the chain, returns the full default chain.
+ */
+export function createFallbackChain(primaryModel?: string, chain?: string[]): FallbackChain {
+  const models = chain ?? DEFAULT_MODEL_FALLBACK_CHAIN;
+  const idx = primaryModel ? models.indexOf(primaryModel) : 0;
+  return {
+    models,
+    currentIndex: idx >= 0 ? idx : 0,
+  };
+}
+
+/**
+ * Execute a function with fallback chain logic.
+ *
+ * Tries the executor function with each model in the chain.
+ * On failure, logs the event and advances to the next model.
+ * Returns the first successful result, or throws if all models fail.
+ *
+ * @param chain - Fallback chain to use
+ * @param executor - Function that receives the current model name and executes
+ * @param label - Human-readable label for logging (e.g., agent role)
+ */
+export async function executeWithFallback<T>(
+  chain: FallbackChain,
+  executor: (model: string) => Promise<T>,
+  label = 'operation',
+): Promise<T> {
+  const modelsToTry = chain.models.slice(chain.currentIndex);
+
+  let lastError: Error | null = null;
+
+  for (let i = 0; i < modelsToTry.length; i++) {
+    const model = modelsToTry[i];
+    try {
+      if (i > 0) {
+        logger.info('Fallback chain: trying next model', {
+          operation: 'fallback-chain',
+          label,
+          model,
+          attempt: i + 1,
+          totalModels: modelsToTry.length,
+        });
+      }
+      return await executor(model);
+    } catch (error) {
+      lastError = error instanceof Error ? error : new Error(String(error));
+      logger.warn('Fallback chain: model failed, trying next', {
+        operation: 'fallback-chain',
+        label,
+        model,
+        error: lastError.message,
+        hasNext: i < modelsToTry.length - 1,
+      });
+    }
+  }
+
+  const finalError = lastError ?? new Error('All fallback models failed');
+  logger.error('Fallback chain exhausted: all models failed', finalError, {
+    operation: 'fallback-chain',
+    label,
+    modelsAttempted: modelsToTry.join(','),
+  });
+  throw finalError;
+}
+
+/**
+ * Execute a list of tool calls with graceful degradation.
+ * If a tool fails, it is skipped and execution continues with remaining tools.
+ * Returns an array of successful results.
+ *
+ * @param tools - List of tool names to try
+ * @param executor - Function that receives a tool name and executes it
+ * @param label - Human-readable label for logging
+ */
+export async function executeToolsWithFallback<T>(
+  tools: string[],
+  executor: (toolName: string) => Promise<T>,
+  label = 'tools',
+): Promise<Array<{ toolName: string; result: T }>> {
+  const results: Array<{ toolName: string; result: T }> = [];
+
+  for (const toolName of tools) {
+    try {
+      const result = await executor(toolName);
+      results.push({ toolName, result });
+    } catch (error) {
+      const errMsg = error instanceof Error ? error.message : String(error);
+      logger.warn('Tool failed in fallback execution, skipping', {
+        operation: 'tool-fallback',
+        label,
+        toolName,
+        error: errMsg,
+      });
+      // Continue with next tool
+    }
+  }
+
+  return results;
+}
+
+// ===========================================
 // Agent Factory
 // ===========================================
 

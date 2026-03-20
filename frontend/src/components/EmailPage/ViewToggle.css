@@ -1,0 +1,44 @@
+.inbox-view-toggle {
+  display: inline-flex;
+  border-radius: 8px;
+  border: 1px solid var(--border, rgba(255,255,255,0.15));
+  overflow: hidden;
+}
+.inbox-view-toggle__btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 12px;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary, #999);
+  font-size: 0.8125rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.inbox-view-toggle__btn:not(:last-child) {
+  border-right: 1px solid var(--border, rgba(255,255,255,0.15));
+}
+.inbox-view-toggle__btn:hover {
+  background: rgba(108, 99, 255, 0.1);
+  color: var(--text, #fff);
+}
+.inbox-view-toggle__btn--active {
+  background: var(--accent, #6C63FF);
+  color: #fff;
+}
+.inbox-view-toggle__btn--active:hover {
+  background: var(--accent, #6C63FF);
+}
+.inbox-view-toggle__icon {
+  font-size: 1rem;
+  line-height: 1;
+}
+.inbox-view-toggle__label {
+  font-size: 0.75rem;
+}
+@media (max-width: 640px) {
+  .inbox-view-toggle__label {
+    display: none;
+  }
+}

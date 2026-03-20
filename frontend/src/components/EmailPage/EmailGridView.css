@@ -1,0 +1,26 @@
+.email-grid-container {
+  padding: 8px;
+}
+.email-grid-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  padding: 0 4px;
+}
+.email-grid-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 200px;
+  color: var(--text-secondary, #999);
+}
+@media (max-width: 900px) {
+  .email-grid-row {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+@media (max-width: 600px) {
+  .email-grid-row {
+    grid-template-columns: 1fr;
+  }
+}
