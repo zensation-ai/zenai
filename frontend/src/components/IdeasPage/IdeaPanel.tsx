@@ -13,7 +13,7 @@ interface IdeaPanelProps {
   context: AIContext;
 }
 
-export function IdeaPanel({ open, idea, onClose }: IdeaPanelProps) {
+export function IdeaPanel({ open, idea, onClose, context: _context }: IdeaPanelProps) {
   useEffect(() => {
     if (!open) return;
     const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
@@ -35,6 +35,8 @@ export function IdeaPanel({ open, idea, onClose }: IdeaPanelProps) {
         className={`idea-panel ${open ? 'idea-panel--open' : ''}`}
         role="complementary"
         aria-label="Idee-Details"
+        aria-hidden={!open}
+        {...(!open ? { inert: '' as unknown as boolean } : {})}
       >
         <div className="idea-panel__header">
           <button

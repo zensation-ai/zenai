@@ -89,6 +89,7 @@ interface ActivityRecord {
  * Key: `${context}:${userId}`
  */
 const userActivityMap = new Map<string, ActivityRecord>();
+const MAX_ACTIVITY_ENTRIES = 1000;
 
 function getActivityKey(context: AIContext, userId: string): string {
   return `${context}:${userId}`;
@@ -98,6 +99,11 @@ function getOrCreateActivity(context: AIContext, userId: string): ActivityRecord
   const key = getActivityKey(context, userId);
   let record = userActivityMap.get(key);
   if (!record) {
+    // Evict oldest entries if map exceeds limit
+    if (userActivityMap.size >= MAX_ACTIVITY_ENTRIES) {
+      const firstKey = userActivityMap.keys().next().value;
+      if (firstKey !== undefined) userActivityMap.delete(firstKey);
+    }
     record = {
       hourCounts: new Array(24).fill(0),
       acceptedTypeCounts: {},
@@ -491,7 +497,7 @@ export async function createSuggestion(
           ? `${input.description} (auch: ${existingTitle})`
           : `${existingTitle} (zusammengefuehrt)`;
 
-        await queryContext(
+        const mergeResult = await queryContext(
           context,
           `UPDATE smart_suggestions
            SET title = $3, description = $4, metadata = $5, priority = GREATEST(priority, $6), updated_at = NOW()
@@ -506,6 +512,9 @@ export async function createSuggestion(
             input.priority ?? 50,
           ]
         );
+        if (mergeResult.rowCount === 0) {
+          logger.warn('Suggestion merge UPDATE matched 0 rows', { suggestionId: row.id, userId: input.userId });
+        }
         // Return null to indicate merge happened (no new row)
         return null;
       }
@@ -577,31 +586,40 @@ export async function mergeRelatedSuggestions(
         );
 
         if (similarity >= SIMILARITY_THRESHOLD) {
-          // Keep newer (i), dismiss older (j)
+          // Keep newer (i), dismiss older (j) — atomic transaction
           const mergedDescription = suggestions[i].description
             ? `${suggestions[i].description} (auch: ${suggestions[j].title})`
             : `${suggestions[i].title} (zusammengefuehrt mit: ${suggestions[j].title})`;
 
-          await queryContext(
-            context,
-            `UPDATE smart_suggestions
-             SET description = $3, priority = GREATEST(priority, $4), updated_at = NOW()
-             WHERE id = $1 AND user_id = $2`,
-            [
-              suggestions[i].id,
-              userId,
-              mergedDescription,
-              suggestions[j].priority,
-            ]
-          );
+          try {
+            await queryContext(context, 'BEGIN', []);
 
-          await queryContext(
-            context,
-            `UPDATE smart_suggestions
-             SET status = 'dismissed', dismissed_at = NOW(), updated_at = NOW()
-             WHERE id = $1 AND user_id = $2`,
-            [suggestions[j].id, userId]
-          );
+            await queryContext(
+              context,
+              `UPDATE smart_suggestions
+               SET description = $3, priority = GREATEST(priority, $4), updated_at = NOW()
+               WHERE id = $1 AND user_id = $2`,
+              [
+                suggestions[i].id,
+                userId,
+                mergedDescription,
+                suggestions[j].priority,
+              ]
+            );
+
+            await queryContext(
+              context,
+              `UPDATE smart_suggestions
+               SET status = 'dismissed', dismissed_at = NOW(), updated_at = NOW()
+               WHERE id = $1 AND user_id = $2`,
+              [suggestions[j].id, userId]
+            );
+
+            await queryContext(context, 'COMMIT', []);
+          } catch (txErr) {
+            await queryContext(context, 'ROLLBACK', []).catch(() => {});
+            throw txErr;
+          }
 
           merged.add(suggestions[j].id);
           mergeCount++;

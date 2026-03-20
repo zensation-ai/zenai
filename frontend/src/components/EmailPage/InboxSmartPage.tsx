@@ -11,6 +11,7 @@ import { EmailListView } from './EmailListView';
 import { EmailGridView } from './EmailGridView';
 import { InboxPanel } from './InboxPanel';
 import { useInboxFilters } from './useInboxFilters';
+import { QueryErrorState } from '../QueryErrorState';
 import { useEmailsQuery, useToggleEmailStarMutation } from '../../hooks/queries/useEmail';
 import type { Email, InboxViewMode } from './types';
 import type { AIContext } from '../ContextSwitcher';
@@ -48,7 +49,7 @@ export function InboxSmartPage({ context, initialTab: _initialTab }: InboxSmartP
     return f;
   }, [filters]);
 
-  const { data: emails = [], isLoading: _isLoading, error: _error } = useEmailsQuery(
+  const { data: emails = [], isLoading: _isLoading, error, refetch } = useEmailsQuery(
     context as AIContext,
     queryFilters,
   );
@@ -116,6 +117,16 @@ export function InboxSmartPage({ context, initialTab: _initialTab }: InboxSmartP
     setSelectedIds(new Set());
     setSelectionMode(false);
   }, []);
+
+  if (error) {
+    return (
+      <QueryErrorState
+        error={error as Error}
+        refetch={refetch}
+        className="inbox-smart-page__error"
+      />
+    );
+  }
 
   return (
     <div className="inbox-smart-page" role="main" aria-label="Posteingang">

@@ -42,7 +42,7 @@ export const EmailListView: React.FC<EmailListViewProps> = ({
     <div
       ref={parentRef}
       data-view="list"
-      style={{ height: '100%', overflow: 'auto' }}
+      style={{ height: '100%', minHeight: 200, overflow: 'auto' }}
       role="list"
       aria-label="E-Mail Liste"
     >

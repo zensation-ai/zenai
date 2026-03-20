@@ -71,31 +71,13 @@ BEGIN
 END $$;
 
 -- =====================================================
--- PART 2: Old graph_communities table (replaced by graph_communities_v2 in Phase 58)
+-- PART 2: REMOVED — graph_communities is actively used
 -- =====================================================
--- Phase 48 created graph_communities, Phase 58 created graph_communities_v2.
--- All code references graph_communities_v2. The original is unused.
-
-DO $$
-DECLARE
-  s TEXT;
-  schemas TEXT[] := ARRAY['personal', 'work', 'learning', 'creative'];
-BEGIN
-  FOREACH s IN ARRAY schemas LOOP
-    BEGIN
-      IF EXISTS (
-        SELECT 1 FROM information_schema.tables
-        WHERE table_schema = s AND table_name = 'graph_communities'
-      ) THEN
-        EXECUTE format('ALTER TABLE %I.graph_communities SET SCHEMA _deprecated', s);
-        EXECUTE format('ALTER TABLE _deprecated.graph_communities RENAME TO %I', s || '_graph_communities');
-        RAISE NOTICE 'Deprecated %.graph_communities (replaced by graph_communities_v2)', s;
-      END IF;
-    EXCEPTION WHEN OTHERS THEN
-      RAISE NOTICE 'Error deprecating %.graph_communities: %', s, SQLERRM;
-    END;
-  END LOOP;
-END $$;
+-- Originally planned to deprecate graph_communities (Phase 48), but
+-- graph-reasoning.ts actively writes to and reads from graph_communities.
+-- Despite graph_communities_v2 existing (Phase 58), the original table
+-- is still referenced in community detection and listing endpoints.
+-- DO NOT MOVE THIS TABLE.
 
 -- =====================================================
 -- PART 3: Verification

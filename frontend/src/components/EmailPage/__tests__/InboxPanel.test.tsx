@@ -5,17 +5,6 @@ import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { InboxPanel } from '../InboxPanel';
 
-// Mock inner components
-vi.mock('../EmailDetail', () => ({
-  default: ({ emailId }: any) => <div data-testid="email-detail">Detail: {emailId}</div>,
-  EmailDetail: ({ emailId }: any) => <div data-testid="email-detail">Detail: {emailId}</div>,
-}));
-
-vi.mock('../EmailCompose', () => ({
-  default: () => <div data-testid="email-compose">Compose</div>,
-  EmailCompose: () => <div data-testid="email-compose">Compose</div>,
-}));
-
 const defaultProps = {
   open: false,
   emailId: null as string | null,

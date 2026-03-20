@@ -29,11 +29,13 @@
 -- ENUMs are created in public schema so they're accessible from all 4 context schemas.
 
 -- idea_status_enum
+-- NOTE: The ideas table currently uses is_archived BOOLEAN, not a status column.
+-- This ENUM is aspirational for a future schema redesign. Not currently applicable.
 DO $$
 BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'idea_status_enum') THEN
     CREATE TYPE idea_status_enum AS ENUM ('active', 'incubating', 'archived', 'deleted');
-    RAISE NOTICE 'Created type idea_status_enum';
+    RAISE NOTICE 'Created type idea_status_enum (aspirational — ideas table uses is_archived BOOLEAN)';
   ELSE
     RAISE NOTICE 'Type idea_status_enum already exists';
   END IF;
@@ -65,7 +67,7 @@ END $$;
 DO $$
 BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'email_status_enum') THEN
-    CREATE TYPE email_status_enum AS ENUM ('unread', 'read', 'archived', 'trash');
+    CREATE TYPE email_status_enum AS ENUM ('received', 'read', 'draft', 'sending', 'sent', 'failed', 'archived', 'trash');
     RAISE NOTICE 'Created type email_status_enum';
   ELSE
     RAISE NOTICE 'Type email_status_enum already exists';

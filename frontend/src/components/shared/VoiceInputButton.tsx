@@ -92,6 +92,10 @@ export function VoiceInputButton({
 
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      if (!isMountedRef.current) {
+        stream.getTracks().forEach(t => t.stop());
+        return;
+      }
       streamRef.current = stream;
 
       const mimeType = MediaRecorder.isTypeSupported('audio/webm') ? 'audio/webm'

@@ -41,11 +41,10 @@ export function IdeasSmartPage({ context, initialTab, onNavigate: _onNavigate }:
   const filteredIdeas = useMemo<StructuredIdea[]>(() => {
     let result = ideas as StructuredIdea[];
 
-    // Status filter
-    if (filters.status.size > 0) {
-      // active ideas don't have an explicit status field in StructuredIdea
-      // we filter based on status chip selections
-      // For now, active = all non-archived ideas
+    // Status filter — StructuredIdea has no status field; fetched ideas are "active".
+    // If the user selected statuses that don't include "active", no ideas match.
+    if (filters.status.size > 0 && !filters.status.has('active')) {
+      result = [];
     }
 
     // Type filter
@@ -72,9 +71,9 @@ export function IdeasSmartPage({ context, initialTab, onNavigate: _onNavigate }:
     if (filters.search.trim()) {
       const q = filters.search.toLowerCase();
       result = result.filter(idea =>
-        idea.title.toLowerCase().includes(q) ||
-        idea.summary.toLowerCase().includes(q) ||
-        idea.keywords.some(k => k.toLowerCase().includes(q))
+        (idea.title ?? '').toLowerCase().includes(q) ||
+        (idea.summary ?? '').toLowerCase().includes(q) ||
+        (idea.keywords ?? []).some(k => k.toLowerCase().includes(q))
       );
     }
 

@@ -199,7 +199,7 @@ export async function expandQueryWithGraphContext(
          AND ke2.name != ke.name
        ORDER BY ke.name
        LIMIT $2`,
-      [words.slice(0, 5).map(w => `%${w}%`), maxEntities * 2]
+      [words.slice(0, 5).map(w => `%${w.replace(/%/g, '\\%').replace(/_/g, '\\_')}%`), maxEntities * 2]
     );
 
     if (!result.rows || result.rows.length === 0) {

@@ -466,6 +466,7 @@ export class VoicePipeline {
     }
 
     // Get conversation history for context
+    // Note: general_chat_messages is in the public schema, so query() is correct here
     const historyResult = await query(`
       SELECT role, content
       FROM general_chat_messages
@@ -544,16 +545,10 @@ export class VoicePipeline {
 
         // Skip abbreviations (Dr., Nr., z.B., etc.)
         if (ABBREVIATION_PATTERN.test(candidate)) {
-          // This is an abbreviation - skip past this match and keep looking
-          // We need to advance past this period to avoid infinite loop
+          // Advance the buffer past the abbreviation match to avoid infinite loop
           const skipTo = match.index + match[0].length;
-          // Look for the next match after this one
-          const remainder = textBuffer.substring(skipTo);
-          const nextMatch = remainder.match(/[.!?]\s+/);
-          if (!nextMatch) break;
-          // Continue the loop - the next iteration will find it
-          // Actually, let's just break and wait for more text
-          break;
+          textBuffer = textBuffer.substring(skipTo);
+          continue;
         }
 
         // Valid sentence boundary found

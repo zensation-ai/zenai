@@ -47,7 +47,7 @@ export const IdeaCard2 = memo(function IdeaCard2({
       onKeyDown={e => {
         if (e.key === 'Enter' || e.key === ' ') {
           e.preventDefault();
-          onClick(idea);
+          selectionMode && onSelect ? onSelect(idea.id, !isSelected) : onClick(idea);
         }
       }}
     >

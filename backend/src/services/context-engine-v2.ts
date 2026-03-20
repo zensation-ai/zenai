@@ -502,7 +502,7 @@ export class ContextEngineV2 {
     };
 
     // Cache the result
-    await this.saveToCache(context, cacheKey, domain.domain, parts, usedTokens);
+    await this.saveToCache(context, cacheKey, domain.domain, filteredParts, filteredTokens);
 
     return assembled;
   }
@@ -521,7 +521,17 @@ export class ContextEngineV2 {
           return source.content || null;
         case 'db_query': {
           if (!source.query) return null;
-          const result = await queryContext(context, source.query, []);
+          // Whitelist validation: only allow safe SELECT queries
+          const trimmedQuery = source.query.trim();
+          const upperQuery = trimmedQuery.toUpperCase();
+          if (!upperQuery.startsWith('SELECT')) return null;
+          const DANGEROUS_KEYWORDS = ['DROP', 'DELETE', 'UPDATE', 'INSERT', 'ALTER', 'TRUNCATE', 'GRANT', 'CREATE'];
+          for (const keyword of DANGEROUS_KEYWORDS) {
+            if (upperQuery.includes(keyword)) return null;
+          }
+          // Reject multi-statement queries
+          if (trimmedQuery.replace(/;[\s]*$/, '').includes(';')) return null;
+          const result = await queryContext(context, trimmedQuery, []);
           return result.rows.length > 0 ? JSON.stringify(result.rows.slice(0, source.limit || 5)) : null;
         }
         default:

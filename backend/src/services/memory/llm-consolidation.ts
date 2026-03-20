@@ -172,11 +172,17 @@ function cosineSimilarity(a: TfIdfVector, b: TfIdfVector): number {
  * @param threshold - Minimum cosine similarity to join a cluster (default: 0.5)
  * @returns Array of SemanticClusters
  */
+const MAX_CLUSTER_EPISODES = 50;
+
 export function clusterEpisodesSemantic(
   episodes: EpisodeInput[],
   threshold = 0.5
 ): SemanticCluster[] {
   if (episodes.length === 0) return [];
+  // Cap episodes to avoid O(n^2) pairwise similarity computation
+  if (episodes.length > MAX_CLUSTER_EPISODES) {
+    episodes = episodes.slice(0, MAX_CLUSTER_EPISODES);
+  }
   if (episodes.length === 1) {
     return [{
       centroid: episodes[0].trigger,

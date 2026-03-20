@@ -46,7 +46,7 @@ export const EmailGridView: React.FC<EmailGridViewProps> = ({
       ref={parentRef}
       data-view="grid"
       className="email-grid-container"
-      style={{ height: '100%', overflow: 'auto' }}
+      style={{ height: '100%', minHeight: 200, overflow: 'auto' }}
       aria-label="E-Mail Kacheln"
     >
       <div style={{ height: `${virtualizer.getTotalSize()}px`, width: '100%', position: 'relative' }}>
