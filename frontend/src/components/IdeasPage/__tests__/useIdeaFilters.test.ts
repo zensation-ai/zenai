@@ -1,7 +1,7 @@
 import { renderHook, act } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import { useIdeaFilters } from '../useIdeaFilters';
-import type { IdeaStatus } from '../types';
+
 
 const mockNavigate = vi.fn();
 vi.mock('react-router-dom', () => ({
