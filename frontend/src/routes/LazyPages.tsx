@@ -57,7 +57,7 @@ export const PlannerPage = lazy(() =>
 );
 
 export const EmailPage = lazy(() =>
-  import('../components/EmailPage/EmailPage').then(m => ({ default: m.EmailPage }))
+  import('../components/EmailPage/InboxSmartPage').then(m => ({ default: m.InboxSmartPage }))
 );
 
 export const LearningDashboard = lazy(() =>
