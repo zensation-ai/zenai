@@ -221,3 +221,58 @@ export function truncateText(text: string | null, maxLen: number): string {
   if (!text) return '';
   return text.length > maxLen ? text.substring(0, maxLen) + '...' : text;
 }
+
+// ===========================================
+// Smart Page Types (Phase 108)
+// ===========================================
+
+export type InboxViewMode = 'list' | 'grid' | 'conversation';
+
+export interface InboxFilters {
+  folders: Set<EmailTab>;
+  statuses: Set<'unread' | 'starred'>;
+  categories: Set<EmailCategory>;
+  search: string;
+  accountId: string | null;
+}
+
+export const DEFAULT_INBOX_FILTERS: InboxFilters = {
+  folders: new Set<EmailTab>(),
+  statuses: new Set<'unread' | 'starred'>(),
+  categories: new Set<EmailCategory>(),
+  search: '',
+  accountId: null,
+};
+
+export interface InboxPanelState {
+  open: boolean;
+  emailId: string | null;
+  mode: 'detail' | 'compose' | 'reply';
+}
+
+export interface InboxFilterChipDef {
+  id: string;
+  label: string;
+  group: 'folder' | 'status' | 'category';
+  value: string;
+}
+
+export const INBOX_FOLDER_CHIPS: InboxFilterChipDef[] = [
+  { id: 'folder-inbox', label: 'Eingang', group: 'folder', value: 'inbox' },
+  { id: 'folder-sent', label: 'Gesendet', group: 'folder', value: 'sent' },
+  { id: 'folder-drafts', label: 'Entwuerfe', group: 'folder', value: 'drafts' },
+  { id: 'folder-archived', label: 'Archiv', group: 'folder', value: 'archived' },
+  { id: 'folder-trash', label: 'Papierkorb', group: 'folder', value: 'trash' },
+];
+
+export const INBOX_STATUS_CHIPS: InboxFilterChipDef[] = [
+  { id: 'status-unread', label: 'Ungelesen', group: 'status', value: 'unread' },
+  { id: 'status-starred', label: 'Markiert', group: 'status', value: 'starred' },
+];
+
+export const INBOX_CATEGORY_CHIPS: InboxFilterChipDef[] = [
+  { id: 'cat-business', label: 'Geschaeftlich', group: 'category', value: 'business' },
+  { id: 'cat-personal', label: 'Persoenlich', group: 'category', value: 'personal' },
+  { id: 'cat-newsletter', label: 'Newsletter', group: 'category', value: 'newsletter' },
+  { id: 'cat-notification', label: 'Benachrichtigung', group: 'category', value: 'notification' },
+];
