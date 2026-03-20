@@ -1,0 +1,36 @@
+.view-toggle {
+  display: flex;
+  border: 1px solid var(--border, rgba(255,255,255,0.1));
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.view-toggle__btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary, #8a919e);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.view-toggle__btn:not(:last-child) {
+  border-right: 1px solid var(--border, rgba(255,255,255,0.1));
+}
+
+.view-toggle__btn:hover {
+  background: var(--calmGlass-bg, rgba(255,255,255,0.06));
+}
+
+.view-toggle__btn--active {
+  background: var(--accent, #6c8ebf);
+  color: #fff;
+}
+
+.view-toggle__btn--active:hover {
+  background: var(--accent-hover, #5a7dab);
+}

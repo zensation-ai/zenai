@@ -1,0 +1,102 @@
+.filter-chip-bar {
+  padding: 0 var(--spacing-4, 16px);
+  overflow: hidden;
+}
+
+.filter-chip-bar__scroll {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+  padding: 4px 0;
+}
+
+.filter-chip-bar__scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.filter-chip-bar__group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.filter-chip-bar__separator {
+  width: 1px;
+  height: 20px;
+  background: var(--border, rgba(255,255,255,0.1));
+  margin: 0 4px;
+  flex-shrink: 0;
+}
+
+.filter-chip-bar__chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 12px;
+  border-radius: 16px;
+  border: 1px solid var(--border, rgba(255,255,255,0.12));
+  background: transparent;
+  color: var(--text-secondary, #8a919e);
+  font-size: 0.8125rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.filter-chip-bar__chip:hover {
+  background: var(--calmGlass-bg, rgba(255,255,255,0.06));
+  color: var(--text, #e0e6ed);
+}
+
+.filter-chip-bar__chip--active {
+  background: var(--accent, #6c8ebf);
+  color: #fff;
+  border-color: var(--accent, #6c8ebf);
+}
+
+.filter-chip-bar__chip--active:hover {
+  background: var(--accent-hover, #5a7dab);
+  color: #fff;
+}
+
+.filter-chip-bar__count {
+  font-size: 0.6875rem;
+  opacity: 0.7;
+}
+
+.filter-chip-bar__clear {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 1px solid var(--border, rgba(255,255,255,0.12));
+  background: transparent;
+  color: var(--text-secondary, #8a919e);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: all 0.15s ease;
+}
+
+.filter-chip-bar__clear:hover {
+  background: var(--danger, #e74c3c);
+  color: #fff;
+  border-color: var(--danger, #e74c3c);
+}
+
+@media (pointer: coarse) {
+  .filter-chip-bar__chip {
+    min-height: 36px;
+    padding: 8px 14px;
+  }
+  .filter-chip-bar__clear {
+    width: 36px;
+    height: 36px;
+  }
+}
