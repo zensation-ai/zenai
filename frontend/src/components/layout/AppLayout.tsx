@@ -224,11 +224,12 @@ export function AppLayout({
       {/* Main Content Area */}
       <div
         className={`flex flex-1 flex-col min-w-0 min-h-0 max-w-[100vw] overflow-hidden transition-[margin-left] duration-300 ease-smooth
-          max-md:ml-0 max-md:pb-bottombar
-          max-[1200px]:ml-sidebar-collapsed
-          ${sidebarCollapsed ? 'ml-sidebar-collapsed' : 'ml-sidebar'}
           ${isMobile ? 'no-sidebar' : ''}
           print:ml-0 print:pb-0`}
+        style={{
+          marginLeft: isMobile ? 0 : (sidebarCollapsed || isTablet ? 'var(--sidebar-collapsed-width, 64px)' : 'var(--sidebar-width, 260px)'),
+          paddingBottom: isMobile ? 'var(--spacing-bottombar, 64px)' : undefined,
+        }}
       >
         <div className="relative flex items-stretch">
           <TopBar
