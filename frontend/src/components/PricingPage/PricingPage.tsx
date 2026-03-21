@@ -33,8 +33,7 @@ const TIERS: PricingTier[] = [
     subtitle: 'Für den Einstieg',
     highlighted: false,
     features: [
-      '5 Ideen',
-      '10 Chat-Nachrichten / Tag',
+      '50 AI-Credits/Monat',
       '1 Kontext',
       'Basic RAG',
       'Standard-Antwortzeit',
@@ -46,20 +45,20 @@ const TIERS: PricingTier[] = [
   {
     id: 'pro',
     name: 'Pro',
-    monthlyPrice: '19',
-    yearlyPrice: '15',
+    monthlyPrice: '29',
+    yearlyPrice: '23',
     subtitle: 'Für Profis & Teams',
     highlighted: true,
     badge: 'Empfohlen',
     features: [
-      'Unbegrenzte Ideen',
-      'Unbegrenzter Chat',
+      '2.000 AI-Credits/Monat',
       '4 Kontexte (Privat, Arbeit, Lernen, Kreativ)',
       'Advanced RAG + Knowledge Graph',
-      'Multi-Agent Teams',
-      'Voice Chat',
-      'Code-Ausführung',
+      'Multi-Agent Teams (5 Credits/Aufruf)',
+      'Voice Chat (2 Credits/Minute)',
+      'Code-Ausführung (3 Credits/Aufruf)',
       'Priority-Antwortzeit',
+      'Zusätzliche Credits: 500 für €9',
     ],
     cta: 'Pro testen',
     ctaVariant: 'primary',
@@ -73,7 +72,7 @@ const TIERS: PricingTier[] = [
     subtitle: 'Für Unternehmen',
     highlighted: false,
     features: [
-      'Alles in Pro',
+      'Unbegrenzte Credits',
       'Team Management',
       'Single Sign-On (SSO)',
       'SLA-Garantie',
@@ -96,8 +95,8 @@ interface FeatureRow {
 }
 
 const FEATURE_TABLE: FeatureRow[] = [
-  { label: 'Ideen', free: '5', pro: 'Unbegrenzt', enterprise: 'Unbegrenzt' },
-  { label: 'Chat-Nachrichten / Tag', free: '10', pro: 'Unbegrenzt', enterprise: 'Unbegrenzt' },
+  { label: 'AI-Credits / Monat', free: '50', pro: '2.000', enterprise: 'Unbegrenzt' },
+  { label: 'Zusatz-Credits kaufbar', free: false, pro: true, enterprise: 'Inklusive' },
   { label: 'Kontexte', free: '1', pro: '4', enterprise: '4' },
   { label: 'Basic RAG', free: true, pro: true, enterprise: true },
   { label: 'Advanced RAG', free: false, pro: true, enterprise: true },
@@ -220,6 +219,24 @@ export function PricingPage() {
             </div>
           </div>
         ))}
+      </div>
+
+      {/* Credits Info Box */}
+      <div className="pricing-credits-info">
+        <h3 className="pricing-credits-title">Credits erklärt</h3>
+        <p className="pricing-credits-text">
+          1 Credit = 1 einfache Nachricht. Komplexere Anfragen (RAG, Tools, Agenten) kosten 2–5 Credits.
+        </p>
+        <ul className="pricing-credits-list">
+          <li>Einfache Nachricht: <strong>1 Credit</strong></li>
+          <li>Nachricht mit RAG/Tools: <strong>2–3 Credits</strong></li>
+          <li>Multi-Agent Aufruf: <strong>5 Credits</strong></li>
+          <li>Voice Chat: <strong>2 Credits/Minute</strong></li>
+          <li>Code-Ausführung: <strong>3 Credits</strong></li>
+        </ul>
+        <p className="pricing-credits-addon">
+          Zusätzliche Credits (nur Pro): <strong>500 für €9</strong>
+        </p>
       </div>
 
       {/* Feature Comparison Table */}

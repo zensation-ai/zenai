@@ -5,8 +5,7 @@
 export type PlanTier = 'free' | 'pro' | 'enterprise';
 
 export interface PlanFeatures {
-  maxIdeas: number | 'unlimited';
-  maxChatPerDay: number | 'unlimited';
+  monthlyCredits: number | 'unlimited';
   contexts: number;
   advancedRag: boolean;
   multiAgent: boolean;
@@ -17,8 +16,7 @@ export interface PlanFeatures {
 
 export const PLAN_FEATURES: Record<PlanTier, PlanFeatures> = {
   free: {
-    maxIdeas: 5,
-    maxChatPerDay: 10,
+    monthlyCredits: 50,
     contexts: 1,
     advancedRag: false,
     multiAgent: false,
@@ -27,8 +25,7 @@ export const PLAN_FEATURES: Record<PlanTier, PlanFeatures> = {
     codeExecution: false,
   },
   pro: {
-    maxIdeas: 'unlimited',
-    maxChatPerDay: 'unlimited',
+    monthlyCredits: 2000,
     contexts: 4,
     advancedRag: true,
     multiAgent: true,
@@ -37,8 +34,7 @@ export const PLAN_FEATURES: Record<PlanTier, PlanFeatures> = {
     codeExecution: true,
   },
   enterprise: {
-    maxIdeas: 'unlimited',
-    maxChatPerDay: 'unlimited',
+    monthlyCredits: 'unlimited',
     contexts: 4,
     advancedRag: true,
     multiAgent: true,
@@ -47,3 +43,12 @@ export const PLAN_FEATURES: Record<PlanTier, PlanFeatures> = {
     codeExecution: true,
   },
 };
+
+export const CREDIT_COSTS = {
+  simpleMessage: 1,
+  ragMessage: 2,
+  toolMessage: 3,
+  multiAgent: 5,
+  voicePerMinute: 2,
+  codeExecution: 3,
+} as const;
