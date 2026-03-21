@@ -312,7 +312,7 @@ class EnhancedRAGService {
         if (aragResult) {
           // Phase 67.1: Cache the A-RAG result (async, non-blocking)
           if (!cfg.skipCache) {
-            ragResultCache.set(query, context, aragResult).catch(() => {/* non-critical */});
+            ragResultCache.set(query, context, aragResult).catch((err) => logger.debug('Non-critical: RAG cache write failed', { error: err }));
           }
           return aragResult;
         }
@@ -523,7 +523,7 @@ class EnhancedRAGService {
       hydeUsed: useHyDE,
       crossEncoderUsed: cfg.enableCrossEncoder && finalResults.length > 0,
       reformulationCount: 0,
-    }).catch(() => {/* non-critical */});
+    }).catch((err) => logger.debug('Non-critical: RAG analytics recording failed', { error: err }));
 
     const result: EnhancedRAGResult = {
       results: finalResults,
@@ -539,7 +539,7 @@ class EnhancedRAGService {
 
     // Phase 67.1: Cache the result (async, non-blocking)
     if (!cfg.skipCache) {
-      ragResultCache.set(query, context, result).catch(() => {/* non-critical */});
+      ragResultCache.set(query, context, result).catch((err) => logger.debug('Non-critical: RAG result cache write failed', { error: err }));
     }
 
     return result;
@@ -873,7 +873,7 @@ class EnhancedRAGService {
       hydeUsed: false,
       crossEncoderUsed: crossEncoderTime !== undefined,
       reformulationCount: metadata.iterations - 1,
-    }).catch(() => {/* non-critical */});
+    }).catch((err) => logger.debug('Non-critical: RAG analytics recording failed', { error: err }));
 
     return {
       results: finalResults,

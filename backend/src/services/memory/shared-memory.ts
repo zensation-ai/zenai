@@ -92,10 +92,10 @@ class SharedMemoryService {
           return this.restoreFromDB(teamId);
         }
       })
-      .catch(() => {
-        // If Redis fails, fall back to DB directly
-        this.restoreFromDB(teamId).catch(() => {
-          // Non-critical: both restore paths failed silently
+      .catch((err) => {
+        logger.debug('Non-critical: Redis restore failed, falling back to DB', { error: err, teamId });
+        this.restoreFromDB(teamId).catch((dbErr) => {
+          logger.debug('Non-critical: both Redis and DB restore failed', { error: dbErr, teamId });
         });
       });
   }
@@ -296,10 +296,10 @@ class SharedMemoryService {
     });
 
     // Persist to Redis in background for durability
-    this.persistToRedis(teamId).catch(() => { /* non-critical */ });
+    this.persistToRedis(teamId).catch((err) => logger.debug('Non-critical: Redis persist failed', { error: err, teamId }));
 
     // L3: Fire-and-forget DB persistence
-    this.persistToDB(teamId, entry).catch(() => { /* non-critical */ });
+    this.persistToDB(teamId, entry).catch((err) => logger.debug('Non-critical: DB persist failed', { error: err, teamId }));
 
     return entry;
   }
@@ -444,7 +444,7 @@ class SharedMemoryService {
   clear(teamId: string): void {
     this.stores.delete(teamId);
     // Clean up Redis key
-    cache.del(`${CONFIG.REDIS_PREFIX}${teamId}`).catch(() => { /* non-critical */ });
+    cache.del(`${CONFIG.REDIS_PREFIX}${teamId}`).catch((err) => logger.debug('Non-critical: Redis cache delete failed', { error: err, teamId }));
   }
 
   /**

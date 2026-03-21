@@ -153,7 +153,7 @@ class MCPConnectionManager {
     this.clients.set(conn.id, client);
 
     // Test connection in background
-    this.checkConnection(context, conn.id).catch(() => {/* non-critical */});
+    this.checkConnection(context, conn.id).catch((err) => logger.debug('Non-critical: MCP connection health check failed', { error: err, connId: conn.id }));
 
     logger.info('MCP connection created', { id: conn.id, name: conn.name, url: conn.url });
     return conn;
@@ -221,7 +221,7 @@ class MCPConnectionManager {
 
     // Re-check connection if URL changed
     if (data.url) {
-      this.checkConnection(context, conn.id).catch(() => {/* non-critical */});
+      this.checkConnection(context, conn.id).catch((err) => logger.debug('Non-critical: MCP connection health check failed', { error: err, connId: conn.id }));
     }
 
     return conn;

@@ -192,7 +192,7 @@ export class MCPToolBridge {
           bridgedTool.serverId,
           bridgedTool.originalName,
           latencyMs
-        ).catch(() => { /* non-critical */ });
+        ).catch((err) => logger.debug('Non-critical: MCP tool usage recording failed', { error: err }));
       }
 
       const text = result.content

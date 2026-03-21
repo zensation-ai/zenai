@@ -190,8 +190,8 @@ export class WorkingMemoryService {
    * Delete state from Redis.
    */
   private deleteFromRedis(sessionId: string): void {
-    cache.del(this.redisKey(sessionId)).catch(() => {
-      // Silently ignore - cleanup is best-effort
+    cache.del(this.redisKey(sessionId)).catch((err) => {
+      logger.debug('Non-critical: Redis working memory cleanup failed', { error: err, sessionId });
     });
   }
 

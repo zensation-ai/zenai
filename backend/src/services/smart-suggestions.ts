@@ -617,7 +617,7 @@ export async function mergeRelatedSuggestions(
 
             await queryContext(context, 'COMMIT', []);
           } catch (txErr) {
-            await queryContext(context, 'ROLLBACK', []).catch(() => {});
+            await queryContext(context, 'ROLLBACK', []).catch((err) => logger.debug('Rollback failed during suggestion merge', { error: err }));
             throw txErr;
           }
 

@@ -237,7 +237,7 @@ class AgentRuntime {
         title: `Agent "${def.name}" wartet auf Genehmigung`,
         body: `Trigger: ${event.type}. Tippen zum Pruefen.`,
         data: { executionId, agentId: def.id },
-      }).catch(() => {/* non-critical */});
+      }).catch((err) => logger.debug('Non-critical: agent approval notification failed', { error: err }));
 
       return {
         id: executionId,

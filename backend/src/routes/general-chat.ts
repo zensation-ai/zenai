@@ -1163,7 +1163,7 @@ generalChatRouter.post('/sessions/:id/messages/stream', apiKeyAuth, requireScope
 
       // Fire-and-forget: generate AI-quality session title (Phase 100 C5)
       // Only triggers on first response (when title is still NULL)
-      generateSessionTitle(id, message, fullResponse).catch(() => {/* swallowed */});
+      generateSessionTitle(id, message, fullResponse).catch((err) => logger.debug('Non-critical: session title generation failed', { error: err, sessionId: id }));
 
       logger.info('Streaming chat complete', {
         sessionId: id,

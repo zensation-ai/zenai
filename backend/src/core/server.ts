@@ -262,7 +262,7 @@ const gracefulShutdown = async (signal: string) => {
 
   // Close database connections last
   stopConnectionHealthCheck();
-  await closeAllPools().catch(() => {});
+  await closeAllPools().catch((err) => logger.debug('Pool cleanup failed during shutdown', { error: err }));
   logger.info('Graceful shutdown complete');
   process.exit(0);
 };

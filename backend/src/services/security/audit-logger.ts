@@ -129,8 +129,8 @@ class SecurityAuditLogger {
         });
 
         // Try to emit to event system (fire-and-forget)
-        this.emitSecurityEvent(context as AIContext, event.eventType, event).catch(() => {
-          // Silent - event system integration is best-effort
+        this.emitSecurityEvent(context as AIContext, event.eventType, event).catch((err) => {
+          logger.debug('Non-critical: security event emission failed', { error: err, eventType: event.eventType });
         });
       }
 

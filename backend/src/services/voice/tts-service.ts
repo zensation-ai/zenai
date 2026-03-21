@@ -311,8 +311,8 @@ export class MultiTTSService {
           'Das schaue ich mir an.', 'Hier ist, was ich gefunden habe.',
         ];
         for (const phrase of commonPhrases) {
-          this.synthesize(phrase).catch(() => {
-            // Ignore pre-warm failures — cache miss is acceptable fallback
+          this.synthesize(phrase).catch((err) => {
+            logger.debug('Non-critical: TTS pre-warm failed for phrase', { error: err, phrase });
           });
         }
       }, 5000);

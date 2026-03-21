@@ -502,7 +502,7 @@ export async function addMessage(
     UPDATE general_chat_sessions
     SET updated_at = NOW()
     WHERE id = $1
-  `, [sessionId]).catch(() => {/* non-critical */});
+  `, [sessionId]).catch((err) => logger.debug('Non-critical: session updated_at update failed', { error: err, sessionId }));
 
   const row = result.rows[0];
 

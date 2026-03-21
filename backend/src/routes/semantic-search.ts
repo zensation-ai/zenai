@@ -64,7 +64,7 @@ semanticSearchRouter.post(
       });
 
       // Record search in history (fire-and-forget)
-      recordSearchHistory(context, userId, query.trim(), result.totalResults).catch(() => {});
+      recordSearchHistory(context, userId, query.trim(), result.totalResults).catch((err) => logger.debug('Non-critical: search history recording failed', { error: err }));
 
       res.json({ success: true, data: result });
     } catch (error) {

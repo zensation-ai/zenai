@@ -143,7 +143,7 @@ export const ragResultCache = {
     // Store reverse mapping: idea ID -> set of cache keys (for targeted invalidation)
     for (const ideaId of ideaIds) {
       const mappingKey = `${RAG_CACHE_PREFIX}:idea-keys:${context}:${ideaId}`;
-      cache.sAdd(mappingKey, key, ttlSeconds).catch(() => {/* non-critical */});
+      cache.sAdd(mappingKey, key, ttlSeconds).catch((err) => logger.debug('Non-critical: RAG cache mapping write failed', { error: err }));
     }
 
     // Layer 2: Semantic cache — tag with context and individual idea IDs

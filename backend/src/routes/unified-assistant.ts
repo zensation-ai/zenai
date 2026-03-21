@@ -47,7 +47,7 @@ unifiedAssistantRouter.post(
         result: { actionCount: result.actions.length, confidence: result.confidence },
         pageContext: pageContext ?? null,
         responseTimeMs,
-      }).catch(() => { /* swallow */ });
+      }).catch((err) => logger.debug('Non-critical: assistant interaction recording failed', { error: err }));
 
       res.json({
         success: true,
@@ -117,7 +117,7 @@ unifiedAssistantRouter.post(
         result: actionInstructions,
         pageContext: null,
         responseTimeMs: 0,
-      }).catch(() => { /* swallow */ });
+      }).catch((err) => logger.debug('Non-critical: assistant interaction recording failed', { error: err }));
 
       res.json({ success: true, data: actionInstructions });
     } catch (error) {
