@@ -28,6 +28,8 @@ import { UnifiedAssistant } from '../UnifiedAssistant/UnifiedAssistant';
 import { FocusMode } from '../FocusMode';
 import { CognitiveLoadIndicator } from './CognitiveLoadIndicator';
 import { ErrorBoundary } from '../ErrorBoundary';
+import { useGuidedTour } from '../../hooks/useGuidedTour';
+import { GuidedTour } from '../GuidedTour/GuidedTour';
 import './AppLayout.css';
 
 interface AppLayoutProps {
@@ -104,6 +106,15 @@ export function AppLayout({
 
   // Proactive panel state
   const [proactivePanelOpen, setProactivePanelOpen] = useState(false);
+
+  // Guided tour — auto-start for demo users who haven't completed the tour
+  const tour = useGuidedTour();
+  useEffect(() => {
+    if (localStorage.getItem('zenai_demo') === 'true' && !tour.isCompleted) {
+      tour.start();
+    }
+  // Only run once on mount
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleToggleSidebar = useCallback(() => {
     setSidebarCollapsed(prev => {
@@ -361,6 +372,20 @@ export function AppLayout({
             <span>+ Taste druecken...</span>
           </div>
         </div>
+      )}
+
+      {/* Guided Tour — demo mode spotlight overlay */}
+      {tour.isActive && (
+        <GuidedTour
+          isActive={tour.isActive}
+          currentStep={tour.currentStep}
+          totalSteps={tour.totalSteps}
+          step={tour.step}
+          next={tour.next}
+          back={tour.back}
+          skip={tour.skip}
+          onNavigate={(page) => onNavigate(page as Page)}
+        />
       )}
     </div>
   );
