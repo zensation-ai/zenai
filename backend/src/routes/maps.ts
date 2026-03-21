@@ -44,7 +44,7 @@ const router = Router();
 // Helpers
 // ============================================================
 
-type ValidContext = 'personal' | 'work' | 'learning' | 'creative';
+type ValidContext = 'personal' | 'work' | 'learning' | 'creative' | 'demo';
 
 function extractContext(req: Request): ValidContext {
   const context = req.params.context;

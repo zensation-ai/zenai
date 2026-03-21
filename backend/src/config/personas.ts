@@ -361,6 +361,10 @@ export const CONTEXT_PERSONAS: Record<AIContext, ContextPersonas> = {
     default: 'companion',
     personas: PERSONAL_PERSONAS,
   },
+  demo: {
+    default: 'companion',
+    personas: PERSONAL_PERSONAS,
+  },
 };
 
 // ===========================================

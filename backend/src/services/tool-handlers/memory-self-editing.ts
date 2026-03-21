@@ -31,7 +31,7 @@ async function findFactByKeyOrContent(
 ): Promise<{ id: string; content: string; fact_type: string; confidence: number } | null> {
   // Try by ID first
   const byId = await queryContext(
-    context as 'personal' | 'work' | 'learning' | 'creative',
+    context as 'personal' | 'work' | 'learning' | 'creative' | 'demo',
     `SELECT id, content, fact_type, confidence FROM personalization_facts
      WHERE id = $1 AND is_active = true LIMIT 1`,
     [key]
@@ -40,7 +40,7 @@ async function findFactByKeyOrContent(
 
   // Fall back to content search
   const byContent = await queryContext(
-    context as 'personal' | 'work' | 'learning' | 'creative',
+    context as 'personal' | 'work' | 'learning' | 'creative' | 'demo',
     `SELECT id, content, fact_type, confidence FROM personalization_facts
      WHERE is_active = true AND content ILIKE '%' || $1 || '%'
      ORDER BY confidence DESC LIMIT 1`,

@@ -16,6 +16,7 @@ const SEARCH_PATH_SQL: Record<AIContext, string> = {
   work: 'SET search_path TO work, public',
   learning: 'SET search_path TO learning, public',
   creative: 'SET search_path TO creative, public',
+  demo: 'SET search_path TO demo, public',
 };
 
 /**

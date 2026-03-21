@@ -109,7 +109,7 @@ export function getWorkerHealth(): WorkerHealthReport {
  */
 async function processMemoryConsolidation(job: BullJob): Promise<Record<string, unknown>> {
   const data = job.data;
-  const context = (data.context as 'personal' | 'work' | 'learning' | 'creative') || 'personal';
+  const context = (data.context as 'personal' | 'work' | 'learning' | 'creative' | 'demo') || 'personal';
   logger.info('Processing memory consolidation job', {
     operation: 'worker',
     queue: 'memory-consolidation',
@@ -143,7 +143,7 @@ async function processMemoryConsolidation(job: BullJob): Promise<Record<string, 
  */
 async function processRagIndexing(job: BullJob): Promise<Record<string, unknown>> {
   const data = job.data;
-  const context = (data.context as 'personal' | 'work' | 'learning' | 'creative') || 'personal';
+  const context = (data.context as 'personal' | 'work' | 'learning' | 'creative' | 'demo') || 'personal';
   const ideaId = data.ideaId as string | undefined;
   logger.info('Processing RAG indexing job', {
     operation: 'worker',
@@ -199,7 +199,7 @@ async function processRagIndexing(job: BullJob): Promise<Record<string, unknown>
 async function processEmailProcessing(job: BullJob): Promise<Record<string, unknown>> {
   const data = job.data;
   const emailId = data.emailId as string | undefined;
-  const context = (data.context as 'personal' | 'work' | 'learning' | 'creative') || 'work';
+  const context = (data.context as 'personal' | 'work' | 'learning' | 'creative' | 'demo') || 'work';
   logger.info('Processing email analysis job', {
     operation: 'worker',
     queue: 'email-processing',
@@ -242,7 +242,7 @@ async function processEmailProcessing(job: BullJob): Promise<Record<string, unkn
  */
 async function processGraphIndexing(job: BullJob): Promise<Record<string, unknown>> {
   const data = job.data;
-  const context = (data.context as 'personal' | 'work' | 'learning' | 'creative') || 'personal';
+  const context = (data.context as 'personal' | 'work' | 'learning' | 'creative' | 'demo') || 'personal';
   logger.info('Processing graph indexing job', {
     operation: 'worker',
     queue: 'graph-indexing',

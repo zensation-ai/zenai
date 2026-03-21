@@ -85,7 +85,7 @@ async function checkClaudeHealth(): Promise<{
  * Phase 7.3: Measure database query latency per context.
  * Runs a simple SELECT 1 and reports the round-trip time.
  */
-async function measureDbLatency(context: 'personal' | 'work' | 'learning' | 'creative'): Promise<{
+async function measureDbLatency(context: 'personal' | 'work' | 'learning' | 'creative' | 'demo'): Promise<{
   connected: boolean;
   latencyMs?: number;
   error?: string;

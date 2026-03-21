@@ -1,6 +1,6 @@
-export type AIContext = 'personal' | 'work' | 'learning' | 'creative';
+export type AIContext = 'personal' | 'work' | 'learning' | 'creative' | 'demo';
 
-const VALID_CONTEXTS: AIContext[] = ['personal', 'work', 'learning', 'creative'];
+const VALID_CONTEXTS: AIContext[] = ['personal', 'work', 'learning', 'creative', 'demo'];
 
 export function validateContext(value: string): AIContext {
   if (!VALID_CONTEXTS.includes(value as AIContext)) {

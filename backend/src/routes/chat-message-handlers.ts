@@ -123,14 +123,14 @@ export async function handleSendMessage(req: Request, res: Response): Promise<vo
   const result = await sendMessage(
     id,
     message,
-    session.context as 'personal' | 'work' | 'learning' | 'creative',
+    session.context as 'personal' | 'work' | 'learning' | 'creative' | 'demo',
     includeMetadata,
     thinkingMode,
     userId
   );
 
   // Track activity for evolution timeline + suggestions (non-blocking)
-  trackActivity(session.context as 'personal' | 'work' | 'learning' | 'creative', {
+  trackActivity(session.context as 'personal' | 'work' | 'learning' | 'creative' | 'demo', {
     eventType: 'behavior_adapted',
     title: `Chat: ${message.substring(0, 50)}${message.length > 50 ? '...' : ''}`,
     description: `Chat-Nachricht in Session ${id}`,
@@ -265,7 +265,7 @@ export async function handleVisionMessage(req: Request, res: Response): Promise<
     message || '',
     visionImages,
     visionTask,
-    session.context as 'personal' | 'work' | 'learning' | 'creative',
+    session.context as 'personal' | 'work' | 'learning' | 'creative' | 'demo',
     includeMetadata,
     userId
   );
@@ -542,7 +542,7 @@ export async function handleStreamMessage(req: Request, res: Response): Promise<
   await updateSessionTitle(id, message);
 
   // Get context type from session for memory integration
-  const contextType = (session.context as 'personal' | 'work' | 'learning' | 'creative') || 'personal';
+  const contextType = (session.context as 'personal' | 'work' | 'learning' | 'creative' | 'demo') || 'personal';
 
   // Add user interaction to short-term memory (non-blocking)
   try {

@@ -54,7 +54,7 @@ const VoiceSettingsSchema = z.object({
 // Context Validation Helper
 // ============================================================
 
-function validateContext(context: string): asserts context is 'personal' | 'work' | 'learning' | 'creative' {
+function validateContext(context: string): asserts context is 'personal' | 'work' | 'learning' | 'creative' | 'demo' {
   if (!isValidContext(context)) {
     throw new ValidationError(`Invalid context: ${context}. Must be personal, work, learning, or creative.`);
   }

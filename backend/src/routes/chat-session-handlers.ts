@@ -55,7 +55,7 @@ export async function handleListSessions(req: Request, res: Response): Promise<v
 
   const typeFilter = req.query.type as string | undefined;
   const sessionType = typeFilter === 'assistant' ? 'assistant' as const : undefined;
-  const sessions = await getSessions(context as 'personal' | 'work' | 'learning' | 'creative', limit, sessionType, userId);
+  const sessions = await getSessions(context as 'personal' | 'work' | 'learning' | 'creative' | 'demo', limit, sessionType, userId);
 
   res.json({
     success: true,

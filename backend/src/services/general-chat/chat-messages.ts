@@ -75,7 +75,7 @@ Speichere NICHT: Triviale Gespraechsinhalte, temporaere Infos ("Ich bin gerade m
 export async function generateResponse(
   sessionId: string,
   userMessage: string,
-  contextType: 'personal' | 'work' | 'learning' | 'creative' = 'personal',
+  contextType: 'personal' | 'work' | 'learning' | 'creative' | 'demo' = 'personal',
   thinkingMode: ThinkingMode = 'assist'
 ): Promise<string> {
   const enhanced = await generateEnhancedResponse(sessionId, userMessage, contextType, thinkingMode);
@@ -89,7 +89,7 @@ export async function generateResponse(
 export async function generateEnhancedResponse(
   sessionId: string,
   userMessage: string,
-  contextType: 'personal' | 'work' | 'learning' | 'creative' = 'personal',
+  contextType: 'personal' | 'work' | 'learning' | 'creative' | 'demo' = 'personal',
   thinkingMode: ThinkingMode = 'assist'
 ): Promise<EnhancedResponse> {
   const startTime = Date.now();
@@ -539,7 +539,7 @@ export async function generateEnhancedResponse(
 export async function sendMessage(
   sessionId: string,
   userMessage: string,
-  contextType: 'personal' | 'work' | 'learning' | 'creative' = 'personal',
+  contextType: 'personal' | 'work' | 'learning' | 'creative' | 'demo' = 'personal',
   includeMetadata: boolean = false,
   thinkingMode: ThinkingMode = 'assist',
   userId?: string
@@ -618,7 +618,7 @@ async function recordEpisode(
   sessionId: string,
   trigger: string,
   response: string,
-  context: 'personal' | 'work' | 'learning' | 'creative'
+  context: 'personal' | 'work' | 'learning' | 'creative' | 'demo'
 ): Promise<void> {
   try {
     await episodicMemory.store(trigger, response, sessionId, context);
