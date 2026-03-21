@@ -647,7 +647,8 @@ export async function getContactStats(
   const userFilterAnd = userId ? ` AND user_id = $1` : '';
   const params: QueryParam[] = userId ? [userId] : [];
 
-  const [contactsResult, orgsResult, relResult, favResult, recentResult] = await Promise.all([
+  // Use Promise.allSettled to gracefully handle missing tables (e.g. organizations)
+  const [contactsResult, orgsResult, relResult, favResult, recentResult] = await Promise.allSettled([
     queryContext(context, `SELECT COUNT(*) as total FROM contacts${userFilter}`, params),
     queryContext(context, `SELECT COUNT(*) as total FROM organizations${userFilter}`, params),
     queryContext(context, `
@@ -663,14 +664,16 @@ export async function getContactStats(
     `, params),
   ]);
 
+  const val = (r: PromiseSettledResult<{ rows: Array<Record<string, string>> }>, field = 'total') =>
+    r.status === 'fulfilled' ? parseInt(r.value.rows[0]?.[field] || '0', 10) : 0;
+
   return {
-    total_contacts: parseInt(contactsResult.rows[0]?.total || '0', 10),
-    total_organizations: parseInt(orgsResult.rows[0]?.total || '0', 10),
-    by_relationship: relResult.rows.map(r => ({
-      relationship_type: r.relationship_type,
-      count: parseInt(r.count, 10),
-    })),
-    favorites: parseInt(favResult.rows[0]?.total || '0', 10),
-    recent_interactions: parseInt(recentResult.rows[0]?.total || '0', 10),
+    total_contacts: val(contactsResult),
+    total_organizations: val(orgsResult),
+    by_relationship: relResult.status === 'fulfilled'
+      ? relResult.value.rows.map(r => ({ relationship_type: r.relationship_type, count: parseInt(r.count, 10) }))
+      : [],
+    favorites: val(favResult),
+    recent_interactions: val(recentResult),
   };
 }

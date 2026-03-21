@@ -68,6 +68,10 @@ export function useSmartSuggestions(
   const timeContextRef = useRef({ timeOfDay: getTimeOfDay(), dayOfWeek: getDayOfWeek() });
   const { timeOfDay, dayOfWeek } = timeContextRef.current;
 
+  // Stable fetch function using ref to avoid effect re-triggers
+  const contextRef = useRef(context);
+  contextRef.current = context;
+
   const fetchSuggestions = useCallback(async () => {
     try {
       const params = new URLSearchParams({
@@ -75,7 +79,7 @@ export function useSmartSuggestions(
         timeOfDay,
         dayOfWeek,
       });
-      const response = await axios.get(`/api/${context}/suggestions?${params.toString()}`);
+      const response = await axios.get(`/api/${contextRef.current}/suggestions?${params.toString()}`);
       if (response.data?.success && Array.isArray(response.data.data)) {
         setSuggestions(response.data.data);
       }
@@ -84,13 +88,15 @@ export function useSmartSuggestions(
     } finally {
       setLoading(false);
     }
-  }, [context, timeOfDay, dayOfWeek]);
+  // timeOfDay/dayOfWeek come from a ref and never change
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [timeOfDay, dayOfWeek]);
 
-  // Initial fetch
+  // Initial fetch + refetch on context change
   useEffect(() => {
     setLoading(true);
     fetchSuggestions();
-  }, [fetchSuggestions]);
+  }, [context, fetchSuggestions]);
 
   // SSE subscription
   useEffect(() => {

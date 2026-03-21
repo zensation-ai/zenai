@@ -100,7 +100,7 @@ export const RevenueDashboard: React.FC = () => {
         <div className="business-section">
           <div className="business-section-title">📈 MRR-Verlauf</div>
           <div className="business-chart-container">
-            <ResponsiveContainer width="100%" height="100%">
+            <ResponsiveContainer width="100%" height={280}>
               <LineChart data={chartData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
                 <XAxis dataKey="date" stroke="rgba(255,255,255,0.4)" fontSize={12} />

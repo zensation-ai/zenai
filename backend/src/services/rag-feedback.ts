@@ -138,17 +138,31 @@ export async function getRAGAnalytics(
   strategyUsage: Record<string, number>;
   dailyTrend: Array<{ date: string; queries: number; avgConfidence: number }>;
 }> {
-  // Query analytics summary
-  const summaryResult = await queryContext(
-    context,
-    `SELECT
-       COUNT(*) as total_queries,
-       AVG(confidence) as avg_confidence,
-       AVG(response_time_ms) as avg_response_time
-     FROM rag_query_analytics
-     WHERE created_at > NOW() - INTERVAL '1 day' * $1`,
-    [days]
-  );
+  // Graceful fallback when rag_query_analytics table doesn't exist yet
+  let summaryResult: { rows: Array<Record<string, string>> };
+  try {
+    summaryResult = await queryContext(
+      context,
+      `SELECT
+         COUNT(*) as total_queries,
+         AVG(confidence) as avg_confidence,
+         AVG(response_time_ms) as avg_response_time
+       FROM rag_query_analytics
+       WHERE created_at > NOW() - INTERVAL '1 day' * $1`,
+      [days]
+    );
+  } catch (err) {
+    const pgCode = (err as { code?: string }).code;
+    if (pgCode === '42P01') {
+      // Table doesn't exist — return empty analytics
+      return {
+        totalQueries: 0, avgConfidence: 0, avgResponseTime: 0,
+        feedbackStats: { total: 0, helpful: 0, helpfulRate: 0, avgRating: 0 },
+        strategyUsage: {}, dailyTrend: [],
+      };
+    }
+    throw err;
+  }
 
   // Feedback stats
   const feedbackResult = await queryContext(
