@@ -430,7 +430,7 @@ importers:
         version: 6.8.3
     devDependencies:
       electron:
-        specifier: '>=35.7.5'
+        specifier: ^41.0.0
         version: 41.0.2
       electron-builder:
         specifier: ^25.0.0
