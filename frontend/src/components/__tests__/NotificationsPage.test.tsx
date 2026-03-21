@@ -11,14 +11,14 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 const mockAxiosGet = vi.fn();
 const mockAxiosPut = vi.fn();
 const mockAxiosDelete = vi.fn();
-const mockIsAxiosError = vi.fn(() => false);
+const mockIsAxiosError = vi.fn((_err?: unknown) => false);
 
 vi.mock('axios', () => ({
   default: {
     get: (...args: any[]) => mockAxiosGet(...args),
     put: (...args: any[]) => mockAxiosPut(...args),
     delete: (...args: any[]) => mockAxiosDelete(...args),
-    isAxiosError: (...args: any[]) => mockIsAxiosError(...args),
+    isAxiosError: (err: any) => mockIsAxiosError(err),
   },
 }));
 

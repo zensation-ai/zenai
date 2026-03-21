@@ -30,7 +30,7 @@ describe('GovernanceDashboard', () => {
     vi.clearAllMocks();
 
     // Default: pending actions returns empty, SSE stream returns ok body
-    mockFetch.mockImplementation((url: string, opts?: any) => {
+    mockFetch.mockImplementation((url: string, _opts?: any) => {
       const urlStr = typeof url === 'string' ? url : '';
 
       if (urlStr.includes('/governance/stream')) {

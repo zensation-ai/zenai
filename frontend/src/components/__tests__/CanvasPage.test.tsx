@@ -57,7 +57,7 @@ vi.mock('../canvas/CanvasDocumentList', () => ({
         <button key={d.id} onClick={() => onSelect(d.id)}>{d.title}</button>
       ))}
       <button onClick={onCreate}>Create</button>
-      <button onClick={onClose}>Close</button>
+      <button onClick={() => {}}>Close</button>
     </div>
   ),
 }));
