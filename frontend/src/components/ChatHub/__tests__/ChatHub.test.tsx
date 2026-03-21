@@ -9,13 +9,6 @@ vi.mock('../../GeneralChat', () => ({
   ),
 }));
 
-// Mock SmartSurfaceV2
-vi.mock('../SmartSurfaceV2', () => ({
-  SmartSurfaceV2: (props: Record<string, unknown>) => (
-    <div data-testid="smart-surface-v2" data-context={props.context as string}>SmartSurfaceV2 Mock</div>
-  ),
-}));
-
 // Mock useSmartSuggestions
 vi.mock('../../../hooks/useSmartSuggestions', () => ({
   useSmartSuggestions: vi.fn(() => ({
@@ -37,16 +30,13 @@ describe('ChatHub', () => {
     vi.clearAllMocks();
   });
 
-  it('renders the 3-layer layout: SmartSurface + chat + IntentBar', async () => {
+  it('renders GeneralChat as the conversation stream', async () => {
     render(<ChatHub context="personal" />);
-    expect(screen.getByTestId('smart-surface-v2')).toBeInTheDocument();
     await waitFor(() => expect(screen.getByTestId('general-chat')).toBeInTheDocument());
-    expect(screen.getByPlaceholderText(/frag mich|gib mir/i)).toBeInTheDocument();
   });
 
-  it('passes context to child components', async () => {
+  it('passes context to GeneralChat', async () => {
     render(<ChatHub context="work" />);
-    expect(screen.getByTestId('smart-surface-v2')).toHaveAttribute('data-context', 'work');
     await waitFor(() => expect(screen.getByTestId('general-chat')).toBeInTheDocument());
     expect(screen.getByTestId('general-chat')).toHaveAttribute('data-context', 'work');
   });
