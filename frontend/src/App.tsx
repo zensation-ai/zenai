@@ -19,6 +19,8 @@ import {
   ChatHub,
   // Original full-featured pages (Smart Page stubs not yet wired)
   DocumentVaultPage, BusinessDashboard, MyAIPage, SettingsDashboard,
+  // Demo entry page (public route)
+  DemoPage,
 } from './routes/LazyPages';
 
 // Onboarding (Phase 86)
@@ -96,6 +98,20 @@ function useUrlNavigation() {
 
 function App() {
   const { session, loading: authLoading } = useAuth();
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  // /demo is a public route — render before auth checks
+  if (location.pathname === '/demo') {
+    return (
+      <Suspense fallback={<div className="page-loader" role="status" aria-live="polite"><SkeletonLoader type="card" count={1} /><p className="loading-text">Wird geladen...</p></div>}>
+        <DemoPage
+          onDemoStart={() => navigate('/')}
+          onNavigateToAuth={() => navigate('/auth')}
+        />
+      </Suspense>
+    );
+  }
 
   if (authLoading) {
     return (

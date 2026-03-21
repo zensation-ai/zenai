@@ -378,3 +378,21 @@
     display: none;
   }
 }
+
+/* ── Demo Badge ─────────────────────────────── */
+
+.topbar-demo-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  background: linear-gradient(135deg, rgba(79, 195, 247, 0.2) 0%, rgba(124, 77, 255, 0.2) 100%);
+  border: 1px solid rgba(79, 195, 247, 0.35);
+  color: #4fc3f7;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
