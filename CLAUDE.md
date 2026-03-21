@@ -30,7 +30,7 @@
   - Short-Term Memory (Session-Kontext)
   - Long-Term Memory (persistentes Wissen)
 
-## Current Phase: 122
+## Current Phase: 124
 
 ### Phase 31 Features (AI State-of-the-Art)
 
@@ -1093,9 +1093,9 @@ cd frontend && npx vitest run
 
 | Kategorie | Bestanden | Übersprungen | Fehlgeschlagen |
 |-----------|-----------|--------------|----------------|
-| **Backend** | 5664 | 24 | 0 |
-| **Frontend** | 1240 | 0 | 0 |
-| **Gesamt** | 6904 | 24 | 0 |
+| **Backend** | 6445 | 24 | 0 |
+| **Frontend** | 1320 | 0 | 0 |
+| **Gesamt** | 7765 | 24 | 0 |
 
 **Absichtlich übersprungene Tests (24):**
 - 21x Code-Execution Sandbox (Docker nicht verfügbar)
@@ -1191,6 +1191,55 @@ mockQueryContext
 - API Docs: `/api-docs` (Swagger)
 
 ## Changelog
+
+### 2026-03-21: Phase 124 — Near-Complete Route Coverage + Security Fixes
+
+**351 neue Tests + alle 12 Dependabot-Vulnerabilities behoben.**
+
+| Worker | Scope | Ergebnis |
+|--------|-------|----------|
+| **W1** | Route Tests (auth, api-keys, topic-enhancement, project-context, sync, email-webhooks, contexts, interactions) | 95 Tests |
+| **W2** | Route Tests (analytics-v2/evolution/advanced, unified-assistant, productivity, proactive, proactive-intelligence, prospective-memory) | 91 Tests |
+| **W3** | Route Tests (agent-evolution, autonomy, business-narrative, digital-twin, integrations, on-device-ai, voice-advanced, mcp, mcp-server) | 88 Tests |
+| **W4** | Service Tests (meetings, global-search, tasks) + Frontend Tests (OfflineIndicator, Notifications, Governance, MCP) | 77 Tests |
+
+**Security Fixes:**
+- undici 7.19.2 → 7.24.2 (6 CVEs: 3 high, 3 medium)
+- flatted 3.3.3 → 3.4.1 (DoS CVE)
+- electron ^33.0.0 → ^41.0.0 (ASAR integrity bypass)
+- Alle 12 Dependabot-Alerts geschlossen (0 verbleibend)
+
+**Route Test Coverage:** 38% → 98%
+
+**Tests:** Backend 6445 + Frontend 1320 = **7765 bestanden**, 24 uebersprungen, 0 Failures
+
+---
+
+### 2026-03-21: Phase 123 — Massive Test Coverage Expansion (358 neue Tests)
+
+**Groesster reiner Test-Push: 358 Tests ueber 30 Dateien.**
+
+| Worker | Scope | Ergebnis |
+|--------|-------|----------|
+| **W1** | Route Tests (incubator, knowledge-graph, learning-tasks, memory-insights, personalization-chat, user-profile, drafts, digest, i18n) | 96 Tests |
+| **W2** | Route Tests (proactive-engine, context-rules, agent-identity, memory-procedures, voice-realtime, security, observability, mcp-connections, global-search, semantic-search) | 120 Tests |
+| **W3** | Service Tests (contacts, finance, github, google-maps, canvas) | 89 Tests |
+| **W4** | Frontend Tests (CommandPalette, CanvasPage, InsightsDashboard, LearningDashboard, BusinessDashboard, MyAIPage) | 53 Tests |
+
+---
+
+### 2026-03-21: Phase 122 — Handler Splits + Test Expansion + Docs Update
+
+**Handler-Dateien zerlegt + 163 neue Tests + CLAUDE.md aktualisiert.**
+
+| Worker | Scope | Ergebnis |
+|--------|-------|----------|
+| **W1** | ideas-handlers (1201→60 barrel), general-chat-handlers (1099→32 barrel), export (1074→87 routes) | 3 File Splits |
+| **W2** | Route Tests (canvas, graphrag, ai-traces, agent-teams, a2a, document-analysis) | 82 Tests |
+| **W3** | Service Tests (episodic-memory, evolution-analytics, email-ai) | 81 Tests |
+| **W4** | CLAUDE.md Update (Phase 122, Test-Zahlen, Key Files, Changelog) | Docs |
+
+---
 
 ### 2026-03-21: Phase 121 — Deep Decomposition & Test Coverage (Backend + Frontend Splits)
 
