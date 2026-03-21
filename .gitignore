@@ -56,3 +56,5 @@ stats.html
 # Worktrees & Superpowers
 .worktrees/
 .superpowers/
+.claire/
+.playwright-mcp/
