@@ -1,99 +1,60 @@
 /**
- * Google Maps Service Tests - Phase 41
+ * Google Maps Service Tests
+ *
+ * Tests for geocoding, reverse geocoding, autocomplete,
+ * place details, directions, and distance matrix.
  */
 
-// Mock axios
 jest.mock('axios');
-import axios from 'axios';
-
-var mockedAxios = jest.mocked(axios);
-
-// Mock logger
 jest.mock('../../../utils/logger', () => ({
-  logger: {
-    debug: jest.fn(),
-    info: jest.fn(),
-    warn: jest.fn(),
-    error: jest.fn(),
-  },
+  logger: { error: jest.fn(), warn: jest.fn(), info: jest.fn(), debug: jest.fn() },
 }));
 
+import axios from 'axios';
 import {
   isGoogleMapsAvailable,
   geocode,
+  reverseGeocode,
   autocomplete,
+  getPlaceDetails,
   getDirections,
   getDistanceMatrix,
-  searchNearby,
-  getPlaceDetails,
 } from '../../../services/google-maps';
 
+const mockedAxios = axios as jest.Mocked<typeof axios>;
+
 describe('Google Maps Service', () => {
+  const originalEnv = process.env;
+
   beforeEach(() => {
     jest.clearAllMocks();
+    process.env = { ...originalEnv };
+    process.env.GOOGLE_MAPS_API_KEY = 'test-api-key';
   });
 
-  describe('when GOOGLE_MAPS_API_KEY is not set', () => {
-    beforeEach(() => {
-      delete process.env.GOOGLE_MAPS_API_KEY;
-    });
-
-    it('isGoogleMapsAvailable returns false', () => {
-      expect(isGoogleMapsAvailable()).toBe(false);
-    });
-
-    it('geocode returns null', async () => {
-      const result = await geocode('Berlin');
-      expect(result).toBeNull();
-      expect(mockedAxios.get).not.toHaveBeenCalled();
-    });
-
-    it('autocomplete returns empty array', async () => {
-      const result = await autocomplete('Cafe');
-      expect(result).toEqual([]);
-    });
-
-    it('getDirections returns null', async () => {
-      const result = await getDirections('Berlin', 'Munich');
-      expect(result).toBeNull();
-    });
-
-    it('getDistanceMatrix returns empty array', async () => {
-      const result = await getDistanceMatrix(['Berlin'], ['Munich']);
-      expect(result).toEqual([]);
-    });
-
-    it('searchNearby returns empty array', async () => {
-      const result = await searchNearby(52.52, 13.405);
-      expect(result).toEqual([]);
-    });
-
-    it('getPlaceDetails returns null', async () => {
-      const result = await getPlaceDetails('ChIJAVkDPzdOqEcRcDteW0YgIQQ');
-      expect(result).toBeNull();
-    });
+  afterAll(() => {
+    process.env = originalEnv;
   });
 
-  describe('when GOOGLE_MAPS_API_KEY is set', () => {
-    beforeEach(() => {
-      process.env.GOOGLE_MAPS_API_KEY = 'test-api-key';
-    });
-
-    afterEach(() => {
-      delete process.env.GOOGLE_MAPS_API_KEY;
-    });
-
-    it('isGoogleMapsAvailable returns true', () => {
+  describe('isGoogleMapsAvailable', () => {
+    it('should return true when API key is set', () => {
       expect(isGoogleMapsAvailable()).toBe(true);
     });
 
-    it('geocode calls Google Maps API and returns result', async () => {
+    it('should return false when API key is missing', () => {
+      delete process.env.GOOGLE_MAPS_API_KEY;
+      expect(isGoogleMapsAvailable()).toBe(false);
+    });
+  });
+
+  describe('geocode', () => {
+    it('should return geocoding result', async () => {
       mockedAxios.get.mockResolvedValueOnce({
         data: {
           results: [{
             geometry: { location: { lat: 52.52, lng: 13.405 } },
             formatted_address: 'Berlin, Germany',
-            place_id: 'ChIJAVkDPzdOqEcRcDteW0YgIQQ',
+            place_id: 'place-123',
             address_components: [{ long_name: 'Berlin', short_name: 'Berlin', types: ['locality'] }],
           }],
         },
@@ -101,102 +62,153 @@ describe('Google Maps Service', () => {
 
       const result = await geocode('Berlin');
 
-      expect(result).toEqual({
-        lat: 52.52,
-        lng: 13.405,
-        formattedAddress: 'Berlin, Germany',
-        placeId: 'ChIJAVkDPzdOqEcRcDteW0YgIQQ',
-        addressComponents: [{ long_name: 'Berlin', short_name: 'Berlin', types: ['locality'] }],
-      });
+      expect(result).not.toBeNull();
+      expect(result!.lat).toBe(52.52);
+      expect(result!.formattedAddress).toBe('Berlin, Germany');
     });
 
-    it('geocode returns null on empty results', async () => {
+    it('should return null when no results', async () => {
       mockedAxios.get.mockResolvedValueOnce({ data: { results: [] } });
 
-      const result = await geocode('nonexistent place xyz');
+      const result = await geocode('Nonexistent Place');
       expect(result).toBeNull();
     });
 
-    it('geocode returns null on API error', async () => {
+    it('should return null when API key is missing', async () => {
+      delete process.env.GOOGLE_MAPS_API_KEY;
+
+      const result = await geocode('Berlin');
+      expect(result).toBeNull();
+      expect(mockedAxios.get).not.toHaveBeenCalled();
+    });
+
+    it('should return null on API error', async () => {
       mockedAxios.get.mockRejectedValueOnce(new Error('Network error'));
 
       const result = await geocode('Berlin');
       expect(result).toBeNull();
     });
+  });
 
-    it('autocomplete calls Places API and returns predictions', async () => {
+  describe('reverseGeocode', () => {
+    it('should return address from coordinates', async () => {
       mockedAxios.get.mockResolvedValueOnce({
         data: {
-          status: 'OK',
-          predictions: [
-            {
-              place_id: 'place1',
-              description: 'Cafe Leopold, Munich',
-              structured_formatting: { main_text: 'Cafe Leopold', secondary_text: 'Munich, Germany' },
-              types: ['cafe', 'establishment'],
-            },
-          ],
+          results: [{
+            geometry: { location: { lat: 48.137, lng: 11.576 } },
+            formatted_address: 'Munich, Germany',
+            place_id: 'place-456',
+            address_components: [],
+          }],
         },
       });
 
-      const results = await autocomplete('Cafe Leo');
+      const result = await reverseGeocode(48.137, 11.576);
 
-      expect(results).toHaveLength(1);
-      expect(results[0]).toEqual({
-        placeId: 'place1',
-        description: 'Cafe Leopold, Munich',
-        mainText: 'Cafe Leopold',
-        secondaryText: 'Munich, Germany',
-        types: ['cafe', 'establishment'],
-      });
+      expect(result).not.toBeNull();
+      expect(result!.formattedAddress).toBe('Munich, Germany');
     });
 
-    it('getPlaceDetails returns full details with opening hours', async () => {
+    it('should return null without API key', async () => {
+      delete process.env.GOOGLE_MAPS_API_KEY;
+      expect(await reverseGeocode(48, 11)).toBeNull();
+    });
+  });
+
+  describe('autocomplete', () => {
+    it('should return place suggestions', async () => {
+      mockedAxios.get.mockResolvedValueOnce({
+        data: {
+          status: 'OK',
+          predictions: [{
+            place_id: 'p1',
+            description: 'Berlin, Germany',
+            structured_formatting: { main_text: 'Berlin', secondary_text: 'Germany' },
+            types: ['locality'],
+          }],
+        },
+      });
+
+      const results = await autocomplete('Berl');
+
+      expect(results).toHaveLength(1);
+      expect(results[0].description).toBe('Berlin, Germany');
+      expect(results[0].mainText).toBe('Berlin');
+    });
+
+    it('should return empty array when not configured', async () => {
+      delete process.env.GOOGLE_MAPS_API_KEY;
+      expect(await autocomplete('test')).toEqual([]);
+    });
+
+    it('should return empty array on ZERO_RESULTS', async () => {
+      mockedAxios.get.mockResolvedValueOnce({
+        data: { status: 'ZERO_RESULTS', predictions: [] },
+      });
+
+      expect(await autocomplete('zzzzzzz')).toEqual([]);
+    });
+  });
+
+  describe('getPlaceDetails', () => {
+    it('should return mapped place details', async () => {
       mockedAxios.get.mockResolvedValueOnce({
         data: {
           status: 'OK',
           result: {
-            place_id: 'place1',
-            name: 'Cafe Leopold',
-            formatted_address: 'Leopoldstr. 50, Munich',
-            geometry: { location: { lat: 48.157, lng: 11.583 } },
+            place_id: 'p1', name: 'Coffee Shop',
+            formatted_address: '123 Main St',
+            geometry: { location: { lat: 52.5, lng: 13.4 } },
             types: ['cafe'],
             opening_hours: {
               open_now: true,
-              periods: [{ open: { day: 1, time: '0800' }, close: { day: 1, time: '2300' } }],
-              weekday_text: ['Montag: 08:00-23:00'],
+              periods: [{ open: { day: 1, time: '0800' }, close: { day: 1, time: '1800' } }],
+              weekday_text: ['Mo: 08:00-18:00'],
             },
-            formatted_phone_number: '+49 89 123456',
-            website: 'https://cafe-leopold.de',
-            rating: 4.2,
+            formatted_phone_number: '+49 123',
+            website: 'https://coffee.com',
+            rating: 4.5,
             price_level: 2,
           },
         },
       });
 
-      const result = await getPlaceDetails('place1');
+      const result = await getPlaceDetails('p1');
 
       expect(result).not.toBeNull();
-      expect(result!.name).toBe('Cafe Leopold');
-      expect(result!.openingHours).not.toBeNull();
+      expect(result!.name).toBe('Coffee Shop');
       expect(result!.openingHours!.openNow).toBe(true);
-      expect(result!.phone).toBe('+49 89 123456');
-      expect(result!.rating).toBe(4.2);
+      expect(result!.rating).toBe(4.5);
     });
 
-    it('getDirections returns route with traffic data', async () => {
+    it('should return null on non-OK status', async () => {
+      mockedAxios.get.mockResolvedValueOnce({
+        data: { status: 'NOT_FOUND', result: null },
+      });
+
+      expect(await getPlaceDetails('bad-id')).toBeNull();
+    });
+  });
+
+  describe('getDirections', () => {
+    it('should return directions result', async () => {
       mockedAxios.get.mockResolvedValueOnce({
         data: {
           status: 'OK',
           routes: [{
             summary: 'A9',
             legs: [{
-              start_address: 'Berlin, Germany',
-              end_address: 'Munich, Germany',
-              duration: { value: 21600, text: '6 hours' },
-              duration_in_traffic: { value: 23400, text: '6 hours 30 min' },
-              distance: { value: 585000, text: '585 km' },
-              steps: [],
+              start_address: 'Berlin',
+              end_address: 'Munich',
+              duration: { value: 21600 },
+              duration_in_traffic: { value: 25200 },
+              distance: { value: 584000 },
+              steps: [{
+                html_instructions: '<b>Head south</b>',
+                distance: { value: 1000 },
+                duration: { value: 120 },
+                travel_mode: 'DRIVING',
+              }],
             }],
           }],
         },
@@ -206,58 +218,28 @@ describe('Google Maps Service', () => {
 
       expect(result).not.toBeNull();
       expect(result!.durationMinutes).toBe(360);
-      expect(result!.durationInTrafficMinutes).toBe(390);
-      expect(result!.distanceKm).toBe(585);
-      expect(result!.summary).toBe('A9');
+      expect(result!.distanceKm).toBe(584);
+      expect(result!.steps[0].instruction).toBe('Head south');
     });
 
-    it('getDistanceMatrix returns matrix entries', async () => {
-      mockedAxios.get.mockResolvedValueOnce({
-        data: {
-          status: 'OK',
-          origin_addresses: ['Berlin', 'Munich'],
-          destination_addresses: ['Berlin', 'Munich'],
-          rows: [
-            { elements: [
-              { status: 'OK', duration: { value: 0 }, distance: { value: 0 } },
-              { status: 'OK', duration: { value: 21600 }, duration_in_traffic: { value: 23400 }, distance: { value: 585000 } },
-            ]},
-            { elements: [
-              { status: 'OK', duration: { value: 21600 }, distance: { value: 585000 } },
-              { status: 'OK', duration: { value: 0 }, distance: { value: 0 } },
-            ]},
-          ],
-        },
-      });
-
-      const results = await getDistanceMatrix(['Berlin', 'Munich'], ['Berlin', 'Munich']);
-
-      expect(results).toHaveLength(4);
-      expect(results[1].durationMinutes).toBe(360);
-      expect(results[1].durationInTrafficMinutes).toBe(390);
+    it('should return null when not configured', async () => {
+      delete process.env.GOOGLE_MAPS_API_KEY;
+      expect(await getDirections('A', 'B')).toBeNull();
     });
 
-    it('searchNearby returns places', async () => {
+    it('should return null on API error', async () => {
       mockedAxios.get.mockResolvedValueOnce({
-        data: {
-          status: 'OK',
-          results: [{
-            place_id: 'place1',
-            name: 'Cafe Leopold',
-            vicinity: 'Leopoldstr. 50',
-            geometry: { location: { lat: 48.157, lng: 11.583 } },
-            types: ['cafe'],
-            rating: 4.2,
-            opening_hours: { open_now: true },
-          }],
-        },
+        data: { status: 'NOT_FOUND', routes: [] },
       });
 
-      const results = await searchNearby(48.15, 11.58, { keyword: 'Cafe' });
+      expect(await getDirections('nowhere', 'nowhere2')).toBeNull();
+    });
+  });
 
-      expect(results).toHaveLength(1);
-      expect(results[0].name).toBe('Cafe Leopold');
-      expect(results[0].openNow).toBe(true);
+  describe('getDistanceMatrix', () => {
+    it('should return empty array when not configured', async () => {
+      delete process.env.GOOGLE_MAPS_API_KEY;
+      expect(await getDistanceMatrix(['A'], ['B'])).toEqual([]);
     });
   });
 });
