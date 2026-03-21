@@ -2,6 +2,39 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
+import fs from 'fs';
+
+// Resolve packages for pnpm workspace compatibility
+// Uses require.resolve to follow Node's module resolution (handles pnpm store, hoisting, symlinks)
+function resolvePackage(pkg: string): string {
+  try {
+    // require.resolve gives us the main entry point, we need the package directory
+    const resolved = require.resolve(pkg, { paths: [__dirname, path.resolve(__dirname, '..')] });
+    // Walk up from resolved entry to find the package root (directory containing package.json)
+    let dir = path.dirname(resolved);
+    while (dir !== path.dirname(dir)) {
+      if (fs.existsSync(path.join(dir, 'package.json'))) {
+        const pkgJson = JSON.parse(fs.readFileSync(path.join(dir, 'package.json'), 'utf8'));
+        if (pkgJson.name === pkg) return dir;
+      }
+      dir = path.dirname(dir);
+    }
+    return path.dirname(resolved);
+  } catch {
+    // Fallback to manual lookup
+    const candidates = [
+      path.resolve(__dirname, 'node_modules', pkg),
+      path.resolve(__dirname, '..', 'node_modules', pkg),
+    ];
+    for (const c of candidates) {
+      try {
+        const real = fs.realpathSync(c);
+        if (fs.existsSync(real)) return real;
+      } catch { /* skip */ }
+    }
+    return candidates[0];
+  }
+}
 
 export default defineConfig({
   plugins: [react()],
@@ -66,9 +99,11 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': '/src',
-      'react': path.resolve(__dirname, 'node_modules/react'),
-      'react-dom': path.resolve(__dirname, 'node_modules/react-dom'),
-      'react-dom/client': path.resolve(__dirname, 'node_modules/react-dom/client'),
+      'react/jsx-runtime': path.join(resolvePackage('react'), 'jsx-runtime'),
+      'react/jsx-dev-runtime': path.join(resolvePackage('react'), 'jsx-dev-runtime'),
+      'react': resolvePackage('react'),
+      'react-dom/client': path.join(resolvePackage('react-dom'), 'client'),
+      'react-dom': resolvePackage('react-dom'),
     },
   },
 });

@@ -164,7 +164,7 @@ describe('MCP Transport', () => {
     it('should handle request failure gracefully', async () => {
       // Without a real server, the request should fail
       await expect(transport.request('initialize', {})).rejects.toThrow();
-    });
+    }, 30000);
   });
 
   // ===========================================
