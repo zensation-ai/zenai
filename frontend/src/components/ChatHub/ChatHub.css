@@ -23,6 +23,8 @@
   min-height: 0;
   overflow: hidden;
   position: relative;
+  display: flex;
+  justify-content: center;
 }
 
 .chat-hub__loader {
