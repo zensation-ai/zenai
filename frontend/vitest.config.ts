@@ -2,6 +2,25 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
+import fs from 'fs';
+
+// Resolve symlinks for pnpm workspace compatibility
+// Checks local node_modules first, then root
+function resolvePackage(pkg: string): string {
+  const candidates = [
+    path.resolve(__dirname, 'node_modules', pkg),
+    path.resolve(__dirname, '..', 'node_modules', pkg),
+  ];
+  for (const candidate of candidates) {
+    try {
+      const real = fs.realpathSync(candidate);
+      if (fs.existsSync(real)) return real;
+    } catch {
+      // Symlink target doesn't exist, try next
+    }
+  }
+  return candidates[0]; // fallback
+}
 
 export default defineConfig({
   plugins: [react()],
@@ -66,9 +85,11 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': '/src',
-      'react': path.resolve(__dirname, 'node_modules/react'),
-      'react-dom': path.resolve(__dirname, 'node_modules/react-dom'),
-      'react-dom/client': path.resolve(__dirname, 'node_modules/react-dom/client'),
+      'react/jsx-runtime': path.join(resolvePackage('react'), 'jsx-runtime'),
+      'react/jsx-dev-runtime': path.join(resolvePackage('react'), 'jsx-dev-runtime'),
+      'react': resolvePackage('react'),
+      'react-dom/client': path.join(resolvePackage('react-dom'), 'client'),
+      'react-dom': resolvePackage('react-dom'),
     },
   },
 });
