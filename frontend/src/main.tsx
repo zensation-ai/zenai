@@ -16,14 +16,14 @@ import { logger } from './utils/logger';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { installResilienceInterceptors } from './utils/apiResilience';
 import { initWebVitals } from './utils/webVitals';
-// Phase 66: Sentry Error Tracking
-import { initSentry } from './services/sentry';
+// Phase 66: Sentry Error Tracking (lazy-loaded via requestIdleCallback)
+import { initSentryLazy } from './services/sentry-lazy';
 // Phase 76: React Query
 import { QueryClientProvider } from '@tanstack/react-query';
 import { queryClient } from './lib/query-client';
 
-// Phase 66: Initialize Sentry early (before any other code)
-initSentry();
+// Phase 66: Initialize Sentry after idle (keeps it off the critical path)
+initSentryLazy();
 
 // API configuration from environment
 const ENV_API_KEY = import.meta.env.VITE_API_KEY;

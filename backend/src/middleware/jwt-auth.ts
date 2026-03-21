@@ -26,6 +26,8 @@ declare global {
         id: string;
         email: string;
         role: string;
+        plan?: string;
+        isDemo?: boolean;
       };
     }
   }
@@ -95,6 +97,15 @@ export async function jwtAuth(req: Request, res: Response, next: NextFunction): 
       email: payload.email,
       role: payload.role,
     };
+
+    if ((payload as any).isDemo) {
+      req.jwtUser!.isDemo = true;
+      req.jwtUser!.plan = (payload as any).plan || 'pro';
+      // Force demo context
+      if (req.params.context) {
+        req.params.context = 'demo';
+      }
+    }
 
     // Also set the legacy req.user for backward compatibility
     req.user = {

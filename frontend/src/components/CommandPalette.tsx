@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef, memo, useMemo } from 'react';
+import { useState, useEffect, useCallback, useRef, memo, useMemo, useDeferredValue } from 'react';
 import { createPortal } from 'react-dom';
 import Fuse, { type IFuseOptions } from 'fuse.js';
 import { motion } from 'framer-motion';
@@ -150,6 +150,7 @@ export const CommandPalette = memo(function CommandPalette({
   currentPage,
 }: CommandPaletteProps) {
   const [query, setQuery] = useState('');
+  const deferredQuery = useDeferredValue(query);
   const [selectedIndex, setSelectedIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
@@ -159,16 +160,16 @@ export const CommandPalette = memo(function CommandPalette({
   // Consume page-registered commands
   const registeredCommands = useRegisteredCommands();
 
-  // Determine mode from prefix
+  // Determine mode from prefix — use deferredQuery for filtering to keep input responsive
   const { mode, cleanQuery } = useMemo(() => {
-    if (!query) return { mode: 'universal' as PaletteMode, cleanQuery: '' };
-    const firstChar = query[0];
+    if (!deferredQuery) return { mode: 'universal' as PaletteMode, cleanQuery: '' };
+    const firstChar = deferredQuery[0];
     const detectedMode = MODE_PREFIXES[firstChar];
     if (detectedMode) {
-      return { mode: detectedMode, cleanQuery: query.slice(1).trimStart() };
+      return { mode: detectedMode, cleanQuery: deferredQuery.slice(1).trimStart() };
     }
-    return { mode: 'universal' as PaletteMode, cleanQuery: query };
-  }, [query]);
+    return { mode: 'universal' as PaletteMode, cleanQuery: deferredQuery };
+  }, [deferredQuery]);
 
   const modeInfo = MODE_INFO[mode];
 

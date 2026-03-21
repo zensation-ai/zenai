@@ -90,6 +90,18 @@
   50% { opacity: 0.3; }
 }
 
+/* Respect reduced motion preference */
+@media (prefers-reduced-motion: reduce) {
+  .voice-input-toolbar-btn__spinner {
+    animation: none;
+  }
+
+  .voice-input-toolbar-btn__pulse {
+    animation: none;
+    opacity: 1;
+  }
+}
+
 /* Touch target on mobile */
 @media (pointer: coarse) {
   .voice-input-toolbar-btn--sm {

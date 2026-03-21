@@ -88,3 +88,11 @@ export const SystemAdminPage = lazy(() =>
 export const ChatHub = lazy(() =>
   import('../components/ChatHub/ChatHub').then(m => ({ default: m.ChatHub }))
 );
+
+export const DemoPage = lazy(() =>
+  import('../components/DemoPage/DemoPage').then(m => ({ default: m.DemoPage }))
+);
+
+export const PricingPage = lazy(() =>
+  import('../components/PricingPage/PricingPage').then(m => ({ default: m.PricingPage }))
+);

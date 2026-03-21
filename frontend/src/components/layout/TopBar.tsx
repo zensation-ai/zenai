@@ -6,6 +6,7 @@
  * - Seitentitel
  * - Suchfeld (öffnet CommandPalette)
  * - Context Switcher, Theme Toggle, Status
+ * - Demo badge (shown when zenai_demo=true in localStorage)
  */
 
 import { memo } from 'react';
@@ -92,6 +93,9 @@ export const TopBar = memo(function TopBar({
 
         {/* Right: Context (hidden on chat page - context tiles are integrated there), Theme, Status, Refresh */}
         <div className="topbar-right">
+          {localStorage.getItem('zenai_demo') === 'true' && (
+            <span className="topbar-demo-badge" aria-label="Demo-Modus aktiv">Demo</span>
+          )}
           {currentPage !== 'chat' && (
             <ContextSwitcher
               context={context}

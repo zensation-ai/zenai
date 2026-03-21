@@ -47,7 +47,7 @@ const EmotionSettingsSchema = z.object({
 // Context Validation
 // ============================================================
 
-function validateContext(context: string): asserts context is 'personal' | 'work' | 'learning' | 'creative' {
+function validateContext(context: string): asserts context is 'personal' | 'work' | 'learning' | 'creative' | 'demo' {
   if (!isValidContext(context)) {
     throw new ValidationError(`Invalid context: ${context}. Must be personal, work, learning, or creative.`);
   }
@@ -124,7 +124,7 @@ voiceAdvancedRouter.post(
       });
     } catch (error) {
     if (error instanceof ValidationError) { throw error; }
-    logger.error('Voice: Emotions-Erkennung fehlgeschlagen', error instanceof Error ? error : undefined, { context: req.params.context as 'personal' | 'work' | 'learning' | 'creative' });
+    logger.error('Voice: Emotions-Erkennung fehlgeschlagen', error instanceof Error ? error : undefined, { context: req.params.context as 'personal' | 'work' | 'learning' | 'creative' | 'demo' });
     res.status(500).json({ success: false, error: 'Emotions-Erkennung fehlgeschlagen' });
   }
   })

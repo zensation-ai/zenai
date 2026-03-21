@@ -58,7 +58,7 @@ router.get(
         },
       });
     } catch (error) {
-      logger.error('On-Device AI: Status-Abfrage fehlgeschlagen', error instanceof Error ? error : undefined, { context: context as 'personal' | 'work' | 'learning' | 'creative' });
+      logger.error('On-Device AI: Status-Abfrage fehlgeschlagen', error instanceof Error ? error : undefined, { context: context as 'personal' | 'work' | 'learning' | 'creative' | 'demo' });
       res.status(500).json({ success: false, error: 'On-Device-AI-Status konnte nicht abgerufen werden' });
     }
   }),
@@ -100,7 +100,7 @@ router.post(
         },
       });
     } catch (error) {
-      logger.error('On-Device AI: Vokabular-Sync fehlgeschlagen', error instanceof Error ? error : undefined, { context: context as 'personal' | 'work' | 'learning' | 'creative' });
+      logger.error('On-Device AI: Vokabular-Sync fehlgeschlagen', error instanceof Error ? error : undefined, { context: context as 'personal' | 'work' | 'learning' | 'creative' | 'demo' });
       res.status(500).json({ success: false, error: 'Vokabular-Synchronisierung fehlgeschlagen' });
     }
   }),
@@ -145,7 +145,7 @@ router.get(
         },
       });
     } catch (error) {
-      logger.error('On-Device AI: Konfiguration fehlgeschlagen', error instanceof Error ? error : undefined, { context: context as 'personal' | 'work' | 'learning' | 'creative' });
+      logger.error('On-Device AI: Konfiguration fehlgeschlagen', error instanceof Error ? error : undefined, { context: context as 'personal' | 'work' | 'learning' | 'creative' | 'demo' });
       res.status(500).json({ success: false, error: 'On-Device-AI-Konfiguration konnte nicht geladen werden' });
     }
   }),

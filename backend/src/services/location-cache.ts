@@ -11,7 +11,7 @@ import { queryContext } from '../utils/database-context';
 import { logger } from '../utils/logger';
 import type { GeocodingResult, PlaceDetails } from './google-maps';
 
-type AIContext = 'personal' | 'work' | 'learning' | 'creative';
+type AIContext = 'personal' | 'work' | 'learning' | 'creative' | 'demo';
 
 // ============================================================
 // Geocoding Cache

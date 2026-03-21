@@ -222,6 +222,13 @@ export const Sidebar = memo(function Sidebar({
           </span>}
         </div>
 
+        {/* Plan Badge */}
+        {!collapsed && (
+          <div className="sidebar-plan-badge">
+            {localStorage.getItem('zenai_demo') === 'true' ? 'Pro (Demo)' : 'Free Plan'}
+          </div>
+        )}
+
         {/* Logout */}
         <div className="sidebar-footer-items">
           <button

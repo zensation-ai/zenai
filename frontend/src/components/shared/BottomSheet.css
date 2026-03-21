@@ -1,0 +1,147 @@
+/**
+ * BottomSheet — mobile slide-up / desktop modal
+ *
+ * Mobile (< 768px): full-width panel slides up from the bottom.
+ * Desktop (≥ 768px): centered overlay modal with glass effect.
+ */
+
+.bottom-sheet__overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  z-index: var(--z-modal, 400);
+  display: flex;
+  align-items: flex-end;   /* mobile: pin to bottom */
+  justify-content: center;
+  animation: bs-overlay-in 0.2s ease;
+}
+
+.bottom-sheet {
+  background: var(--surface-glass, rgba(20, 35, 50, 0.9));
+  border: 1px solid var(--border-glass, rgba(255, 255, 255, 0.1));
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  box-shadow: 0 -8px 48px rgba(0, 0, 0, 0.4);
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-height: 90dvh;
+  border-radius: var(--radius-lg, 16px) var(--radius-lg, 16px) 0 0;
+  outline: none;
+  animation: bs-slide-up 0.28s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+/* Drag handle indicator */
+.bottom-sheet__handle {
+  width: 40px;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--text-tertiary, rgba(255, 255, 255, 0.2));
+  margin: 10px auto 0;
+  flex-shrink: 0;
+}
+
+.bottom-sheet__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px 12px;
+  flex-shrink: 0;
+}
+
+.bottom-sheet__title {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--text-primary, #f0f4f8);
+}
+
+.bottom-sheet__close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: var(--radius-sm, 8px);
+  background: transparent;
+  color: var(--text-secondary, #9ca3af);
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.bottom-sheet__close:hover {
+  background: var(--bg-secondary, rgba(255, 255, 255, 0.08));
+}
+
+.bottom-sheet__close:focus-visible {
+  outline: 2px solid var(--primary, #ff6b35);
+  outline-offset: 2px;
+}
+
+.bottom-sheet__body {
+  padding: 0 20px 20px;
+  overflow-y: auto;
+  flex: 1;
+  /* Add bottom safe-area padding for notched devices */
+  padding-bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+}
+
+/* ── Keyframes ─────────────────────────────────────────────── */
+
+@keyframes bs-overlay-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes bs-slide-up {
+  from { transform: translateY(100%); }
+  to   { transform: translateY(0); }
+}
+
+/* ── Desktop: centered modal ───────────────────────────────── */
+
+@media (min-width: 768px) {
+  .bottom-sheet__overlay {
+    align-items: center;  /* center vertically on desktop */
+    padding: 24px;
+  }
+
+  .bottom-sheet {
+    width: 480px;
+    max-width: 100%;
+    max-height: calc(100vh - 48px);
+    border-radius: var(--radius-lg, 16px);
+    animation: bs-modal-enter 0.22s ease;
+  }
+
+  /* Hide mobile drag handle on desktop */
+  .bottom-sheet__handle {
+    display: none;
+  }
+}
+
+@keyframes bs-modal-enter {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* ── Reduced motion ────────────────────────────────────────── */
+
+@media (prefers-reduced-motion: reduce) {
+  .bottom-sheet__overlay {
+    animation: none;
+  }
+
+  .bottom-sheet {
+    animation: none;
+  }
+}

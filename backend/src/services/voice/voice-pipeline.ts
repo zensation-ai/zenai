@@ -31,7 +31,7 @@ import { memoryCoordinator } from '../memory';
 // Types
 // ============================================================
 
-type AIContext = 'personal' | 'work' | 'learning' | 'creative';
+type AIContext = 'personal' | 'work' | 'learning' | 'creative' | 'demo';
 
 export interface VoicePipelineConfig {
   sttProvider?: string;
@@ -621,7 +621,7 @@ export class VoicePipeline {
    * @param withAudio Whether to also generate TTS audio
    */
   async generateMorningBriefing(
-    context: 'personal' | 'work' | 'learning' | 'creative',
+    context: 'personal' | 'work' | 'learning' | 'creative' | 'demo',
     userId: string,
     withAudio: boolean = false
   ): Promise<{ text: string; audioBuffer?: Buffer }> {

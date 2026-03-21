@@ -24,7 +24,7 @@ import { logger } from '../../utils/logger';
  */
 export interface ToolExecutionContext {
   /** The AI context (personal or work) */
-  aiContext: 'personal' | 'work' | 'learning' | 'creative';
+  aiContext: 'personal' | 'work' | 'learning' | 'creative' | 'demo';
   /** Optional session ID for tracking */
   sessionId?: string;
   /** Optional user ID for audit */

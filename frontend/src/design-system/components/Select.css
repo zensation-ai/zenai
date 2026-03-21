@@ -1,0 +1,198 @@
+/* Design System: Select / Combobox */
+
+.ds-select-wrapper {
+  position: relative;
+  display: inline-flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 200px;
+}
+
+.ds-select-wrapper--disabled {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.ds-select__label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-secondary, rgba(15, 31, 42, 0.7));
+}
+
+/* Trigger */
+.ds-select__trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  height: 40px;
+  padding: 0 12px;
+  border: 1px solid var(--border, rgba(20, 50, 70, 0.2));
+  border-radius: var(--radius-sm, 8px);
+  background: var(--surface, rgba(240, 245, 248, 0.8));
+  cursor: pointer;
+  font-size: 14px;
+  color: var(--text-primary, #0f1f2a);
+  transition: border-color 0.15s, box-shadow 0.15s;
+  user-select: none;
+}
+
+.ds-select__trigger:focus-visible,
+.ds-select__trigger--open {
+  outline: none;
+  border-color: var(--primary, #ff6b35);
+  box-shadow: 0 0 0 3px rgba(255, 107, 53, 0.12);
+}
+
+.ds-select__value {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ds-select__value--placeholder {
+  color: var(--text-secondary, rgba(15, 31, 42, 0.45));
+}
+
+.ds-select__chevron {
+  font-size: 14px;
+  color: var(--text-secondary, rgba(15, 31, 42, 0.5));
+  transition: transform 0.2s;
+  flex-shrink: 0;
+}
+
+.ds-select__chevron--open {
+  transform: rotate(180deg);
+}
+
+/* Dropdown */
+.ds-select__dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  z-index: 200;
+  background: var(--surface, rgba(248, 251, 254, 0.98));
+  border: 1px solid var(--border, rgba(20, 50, 70, 0.18));
+  border-radius: var(--radius-sm, 8px);
+  box-shadow: var(--shadow-md, 0 8px 24px rgba(0, 0, 0, 0.1));
+  overflow: hidden;
+}
+
+/* Search */
+.ds-select__search-wrap {
+  padding: 8px;
+  border-bottom: 1px solid var(--border, rgba(20, 50, 70, 0.1));
+}
+
+.ds-select__search {
+  width: 100%;
+  height: 32px;
+  padding: 0 10px;
+  border: 1px solid var(--border, rgba(20, 50, 70, 0.18));
+  border-radius: var(--radius-xs, 6px);
+  background: var(--bg, #fff);
+  font-size: 13px;
+  color: var(--text-primary, #0f1f2a);
+  outline: none;
+  box-sizing: border-box;
+}
+
+.ds-select__search:focus {
+  border-color: var(--primary, #ff6b35);
+}
+
+/* List */
+.ds-select__list {
+  list-style: none;
+  margin: 0;
+  padding: 4px 0;
+  max-height: 240px;
+  overflow-y: auto;
+}
+
+.ds-select__no-results {
+  padding: 10px 14px;
+  font-size: 13px;
+  color: var(--text-secondary, rgba(15, 31, 42, 0.5));
+  font-style: italic;
+}
+
+.ds-select__option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  font-size: 14px;
+  color: var(--text-primary, #0f1f2a);
+  cursor: pointer;
+  transition: background 0.1s;
+}
+
+.ds-select__option:hover,
+.ds-select__option--focused {
+  background: var(--bg-secondary, rgba(20, 60, 80, 0.06));
+}
+
+.ds-select__option--selected {
+  color: var(--primary, #ff6b35);
+  font-weight: 500;
+}
+
+.ds-select__option--disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.ds-select__check {
+  width: 16px;
+  font-size: 12px;
+  color: var(--primary, #ff6b35);
+  flex-shrink: 0;
+}
+
+/* Dark mode */
+@media (prefers-color-scheme: dark) {
+  .ds-select__trigger {
+    background: var(--surface, rgba(20, 30, 40, 0.7));
+    color: var(--text-primary, #e8f0f5);
+    border-color: rgba(255, 255, 255, 0.12);
+  }
+
+  .ds-select__trigger:focus-visible,
+  .ds-select__trigger--open {
+    border-color: var(--primary, #ff6b35);
+    box-shadow: 0 0 0 3px rgba(255, 107, 53, 0.15);
+  }
+
+  .ds-select__value--placeholder {
+    color: rgba(232, 240, 245, 0.4);
+  }
+
+  .ds-select__dropdown {
+    background: var(--surface, rgba(20, 32, 44, 0.98));
+    border-color: rgba(255, 255, 255, 0.1);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  }
+
+  .ds-select__search {
+    background: rgba(255, 255, 255, 0.06);
+    color: var(--text-primary, #e8f0f5);
+    border-color: rgba(255, 255, 255, 0.1);
+  }
+
+  .ds-select__option {
+    color: var(--text-primary, #e8f0f5);
+  }
+
+  .ds-select__option:hover,
+  .ds-select__option--focused {
+    background: rgba(255, 255, 255, 0.06);
+  }
+
+  .ds-select__label {
+    color: rgba(232, 240, 245, 0.65);
+  }
+}

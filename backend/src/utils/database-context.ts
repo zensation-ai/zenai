@@ -32,6 +32,7 @@ const SEARCH_PATH_SQL: Record<AIContext, string> = {
   work: 'SET search_path TO work, public',
   learning: 'SET search_path TO learning, public',
   creative: 'SET search_path TO creative, public',
+  demo: 'SET search_path TO demo, public',
 };
 
 // ===========================================
@@ -202,6 +203,7 @@ const pools: Record<AIContext, Pool> = {
   work: sharedPool,
   learning: sharedPool,
   creative: sharedPool,
+  demo: sharedPool,
 };
 
 // Track pool stats for monitoring
@@ -210,6 +212,7 @@ const poolStats: Record<AIContext, { queries: number; errors: number; slowQuerie
   work: { queries: 0, errors: 0, slowQueries: 0 },
   learning: { queries: 0, errors: 0, slowQueries: 0 },
   creative: { queries: 0, errors: 0, slowQueries: 0 },
+  demo: { queries: 0, errors: 0, slowQueries: 0 },
 };
 
 // Phase 67.3: Lazy import to avoid circular dependency (database-context loads before metrics)
@@ -523,6 +526,7 @@ const CREATE_SCHEMA_SQL: Record<AIContext, string> = {
   work: 'CREATE SCHEMA IF NOT EXISTS work',
   learning: 'CREATE SCHEMA IF NOT EXISTS learning',
   creative: 'CREATE SCHEMA IF NOT EXISTS creative',
+  demo: 'CREATE SCHEMA IF NOT EXISTS demo',
 };
 
 export async function ensureSchemas(): Promise<void> {
@@ -551,6 +555,7 @@ export async function testConnections(): Promise<Record<AIContext, boolean>> {
     work: false,
     learning: false,
     creative: false,
+    demo: false,
   };
 
   for (const ctx of VALID_CONTEXTS) {

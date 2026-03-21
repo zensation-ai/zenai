@@ -31,7 +31,7 @@ export async function sendMessageWithVision(
   userMessage: string,
   images: VisionImage[],
   task: string = 'qa',
-  contextType: 'personal' | 'work' | 'learning' | 'creative' = 'personal',
+  contextType: 'personal' | 'work' | 'learning' | 'creative' | 'demo' = 'personal',
   includeMetadata: boolean = false,
   userId?: string
 ): Promise<VisionMessageResult> {

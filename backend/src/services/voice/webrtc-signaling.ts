@@ -35,7 +35,7 @@ export interface SignalingMessage {
   data?: unknown;
 }
 
-type AIContext = 'personal' | 'work' | 'learning' | 'creative';
+type AIContext = 'personal' | 'work' | 'learning' | 'creative' | 'demo';
 
 // ============================================================
 // Voice Signaling Server

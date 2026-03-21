@@ -13,6 +13,7 @@ import { cacheControlMiddleware } from '../../middleware/cache-control';
 import { requestTimeoutMiddleware } from '../../middleware/request-timeout';
 import { requestLogger, logger } from '../../utils/logger';
 import { setupSwagger } from '../../utils/swagger';
+import { demoGuard } from '../../middleware/demo-guard';
 
 let rateLimitCleanupInterval: NodeJS.Timeout | null = null;
 let serverReady = false;
@@ -209,6 +210,9 @@ export class MiddlewareModule implements Module {
 
     // Swagger API Documentation
     setupSwagger(app);
+
+    // Demo guard — rate-limits and restricts demo JWT users after route-level auth sets req.jwtUser
+    app.use(demoGuard);
 
     // Start rate limit cleanup
     rateLimitCleanupInterval = setInterval(() => {

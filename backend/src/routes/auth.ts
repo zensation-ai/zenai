@@ -4,6 +4,7 @@
  */
 
 import { Router, Request, Response } from 'express';
+import jwt from 'jsonwebtoken';
 import { authenticator } from 'otplib';
 import QRCode from 'qrcode';
 import { asyncHandler } from '../middleware/errorHandler';
@@ -769,6 +770,40 @@ authRouter.delete('/sessions/:id', requireJwt, asyncHandler(async (req: Request,
   await sessionStore.revokeSession(id);
 
   return res.json({ success: true });
+}));
+
+// ===========================================
+// Demo Access
+// ===========================================
+
+/**
+ * POST /api/auth/demo
+ * Generate a short-lived demo access token for unauthenticated users.
+ * The token grants read-only, rate-limited access to a sandboxed demo context.
+ */
+authRouter.post('/demo', asyncHandler(async (_req: Request, res: Response) => {
+  const DEMO_USER_ID = '00000000-0000-0000-0000-000000000002';
+  const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret';
+
+  const accessToken = jwt.sign(
+    {
+      sub: DEMO_USER_ID,
+      email: 'demo@zensation.ai',
+      role: 'viewer',
+      plan: 'pro',
+      isDemo: true,
+    },
+    JWT_SECRET,
+    { expiresIn: '24h' }
+  );
+
+  return res.json({
+    success: true,
+    data: {
+      accessToken,
+      user: { id: DEMO_USER_ID, email: 'demo@zensation.ai', name: 'Demo User', plan: 'pro', isDemo: true },
+    },
+  });
 }));
 
 // ===========================================

@@ -208,7 +208,7 @@ voiceMemoRouter.post('/', apiKeyAuth, requireScope('write'), (req, res, next) =>
     }
     // Apply learned context if LLM didn't suggest one
     if (!structured.suggested_context && learnedSuggestion.suggested_context) {
-      structured.suggested_context = learnedSuggestion.suggested_context as 'personal' | 'work' | 'learning' | 'creative';
+      structured.suggested_context = learnedSuggestion.suggested_context as 'personal' | 'work' | 'learning' | 'creative' | 'demo';
     }
   }
 
