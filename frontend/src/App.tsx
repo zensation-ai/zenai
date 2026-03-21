@@ -21,6 +21,8 @@ import {
   DocumentVaultPage, BusinessDashboard, MyAIPage, SettingsDashboard,
   // Demo entry page (public route)
   DemoPage,
+  // Pricing page (public route)
+  PricingPage,
 } from './routes/LazyPages';
 
 // Onboarding (Phase 86)
@@ -109,6 +111,15 @@ function App() {
           onDemoStart={() => navigate('/')}
           onNavigateToAuth={() => navigate('/auth')}
         />
+      </Suspense>
+    );
+  }
+
+  // /pricing is a public route — visible without authentication
+  if (location.pathname === '/pricing') {
+    return (
+      <Suspense fallback={<div className="page-loader" role="status" aria-live="polite"><SkeletonLoader type="card" count={1} /><p className="loading-text">Wird geladen...</p></div>}>
+        <PricingPage />
       </Suspense>
     );
   }

@@ -92,3 +92,7 @@ export const ChatHub = lazy(() =>
 export const DemoPage = lazy(() =>
   import('../components/DemoPage/DemoPage').then(m => ({ default: m.DemoPage }))
 );
+
+export const PricingPage = lazy(() =>
+  import('../components/PricingPage/PricingPage').then(m => ({ default: m.PricingPage }))
+);
