@@ -87,3 +87,70 @@
     transform: none;
   }
 }
+
+/* ── View Transitions API ──────────────────────────────────── */
+
+@view-transition {
+  navigation: auto;
+}
+
+::view-transition-old(root) {
+  animation: fade-out 150ms ease-out;
+}
+
+::view-transition-new(root) {
+  animation: fade-in 150ms ease-in;
+}
+
+@keyframes fade-out {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* ── Hover lift for interactive cards ─────────────────────── */
+
+.hover-lift {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.hover-lift:hover {
+  transform: translateY(-2px) scale(1.01);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+/* ── Skeleton to content transition ───────────────────────── */
+
+.skeleton-fade-enter {
+  opacity: 0;
+}
+
+.skeleton-fade-enter-active {
+  opacity: 1;
+  transition: opacity 200ms ease;
+}
+
+/* Respect reduced motion — disable hover-lift and view transitions */
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation: none;
+  }
+
+  .hover-lift {
+    transition: none;
+  }
+
+  .hover-lift:hover {
+    transform: none;
+    box-shadow: none;
+  }
+
+  .skeleton-fade-enter-active {
+    transition: none;
+  }
+}
