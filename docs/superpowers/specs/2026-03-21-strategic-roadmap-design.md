@@ -8,10 +8,10 @@
 ## Context
 
 ZenAI is a feature-complete enterprise AI platform with:
-- 7,765 tests (Backend 6,445 + Frontend 1,320), 0 failures
+- 6,904 tests (Backend 5,664 + Frontend 1,240), 0 failures
 - 55 AI tools, 4-layer memory system, GraphRAG, multi-agent orchestration
 - Production deployment: Vercel (frontend), Railway (backend), Supabase (DB), Redis (cache)
-- 21 design system components, 4-step onboarding wizard, PWA manifest
+- 20 design system components, 4-step onboarding wizard, PWA manifest
 
 **What's missing for portfolio excellence:**
 1. Performance optimization (Sentry eager-load, chunk sizes)
@@ -39,10 +39,10 @@ ZenAI is a feature-complete enterprise AI platform with:
 
 ### A1: Sentry Lazy-Loading
 
-**Problem:** Sentry is eagerly loaded in `main.tsx` (~81KB gzip), blocking initial render.
+**Problem:** Sentry is already in its own vendor chunk (`vendor-sentry` via `manualChunks` in vite.config.ts), but the static `import` in `main.tsx` forces the chunk into the critical path at startup.
 
 **Solution:**
-- Replace `initSentry()` call in `main.tsx` with dynamic `import()` via `requestIdleCallback`
+- Replace the static `import { initSentry }` in `main.tsx` with a dynamic `import()` via `requestIdleCallback`
 - Fallback: 3-second timeout if `requestIdleCallback` not available
 - Pre-init error queue: `ErrorBoundary` catches errors before Sentry loads, flushes queue after init
 - No behavioral change — same sampling rates, filtering, replay config
@@ -59,11 +59,12 @@ ZenAI is a feature-complete enterprise AI platform with:
 - Run `npx vite-bundle-visualizer` to generate current chunk map
 - Verify Recharts, ReactFlow, react-syntax-highlighter are lazy-loaded (only when visible)
 - Apply `React.lazy()` + `Suspense` on remaining page-level components not yet lazy
-- Target: no chunk > 200KB gzip except core React runtime
+- Target: no application chunk > 200KB gzip (vendor chunks like ReactFlow exempt if lazy-loaded)
 
 **Files:**
 - `frontend/vite.config.ts` — adjust `manualChunks` if needed
-- `frontend/src/App.tsx` — wrap remaining pages in `React.lazy()`
+- `frontend/src/routes/LazyPages.tsx` — add new lazy-loaded pages here (existing lazy import location)
+- `frontend/src/App.tsx` — use lazy components from LazyPages
 
 ### A3: Asset Optimization
 
@@ -92,7 +93,7 @@ ZenAI is a feature-complete enterprise AI platform with:
 **Success Criteria:**
 - Lighthouse Performance: 95+
 - LCP < 2.5s, CLS < 0.1, INP < 200ms
-- No chunk > 200KB gzip
+- No application chunk > 200KB gzip (lazy-loaded vendor chunks exempt)
 - Sentry not in critical path
 
 ---
@@ -100,7 +101,7 @@ ZenAI is a feature-complete enterprise AI platform with:
 ## Phase B: Interactive Demo Mode (1-1.5 days)
 
 **Goal:** Any visitor can experience ZenAI immediately — no account, no setup.
-**Parallelizable:** Yes — B1+B2 (backend) parallel with B3+B4 (frontend).
+**Parallelizable:** B1 must complete before B2 (demo schema must exist for auth routing). B3+B4 (frontend) parallel with B1+B2 (backend).
 
 ### B1: Demo Data Seeding
 
@@ -119,10 +120,18 @@ ZenAI is a feature-complete enterprise AI platform with:
 - Idempotent: `seedDemoData()` can run multiple times safely (UPSERT pattern)
 - Cleanup: `clearDemoData()` for reset
 
+**Infrastructure changes for 5th schema:**
+- `backend/src/config/constants.ts` — add `'demo'` to `VALID_CONTEXTS` array, extends `AIContext` type union
+- `backend/src/utils/database-context.ts` — add `demo` entry to `SEARCH_PATH_SQL` record
+- Demo context routing: JWT middleware reads `isDemo: true` from token and forces `req.params.context = 'demo'` (no context switching for demo users)
+- Migration replicates ~95 tables from existing schema structure into `demo` schema
+
 **Files:**
 - `backend/src/services/demo/demo-seed.ts` — seed data generation
 - `backend/src/services/demo/demo-data.ts` — static demo data definitions
-- `backend/sql/migrations/phase_demo_schema.sql` — create `demo` schema with same table structure
+- `backend/sql/migrations/phase_demo_schema.sql` — create `demo` schema with full table structure (~95 tables)
+- `backend/src/config/constants.ts` — add demo to VALID_CONTEXTS
+- `backend/src/utils/database-context.ts` — add demo search path
 
 ### B2: Demo Session Logic
 
@@ -217,7 +226,8 @@ ZenAI is a feature-complete enterprise AI platform with:
    - Used by: Task due dates, calendar event creation, filter ranges
    - Props: value, onChange, range, minDate, maxDate, locale
 
-4. **Breadcrumb** — formalize existing ad-hoc implementation as DS component
+4. **Breadcrumb** — formalize existing `Breadcrumbs.tsx` component as a proper DS component
+   - Migrates existing ad-hoc implementation, not greenfield
    - Props: items (label + href), separator, maxItems (collapse with ellipsis)
 
 **All components:** Dark mode support, `ds-` CSS prefix, ARIA-compliant, keyboard navigable, unit tested.
@@ -239,8 +249,7 @@ ZenAI is a feature-complete enterprise AI platform with:
 - Toast notifications: slide-in from top-right with auto-dismiss progress bar
 
 **Files:**
-- `frontend/src/styles/animations.css` — extend existing spring animations
-- `frontend/src/styles/transitions.css` — page transition + hover utilities
+- `frontend/src/styles/animations.css` — extend existing spring animations with page transitions + hover utilities (consolidate into existing file)
 - Component-specific CSS files — add hover/transition classes
 
 ### C3: Dark Mode Audit
@@ -288,7 +297,7 @@ ZenAI is a feature-complete enterprise AI platform with:
 - Consistent spacing, typography, loading/error/empty states
 - Smooth animations that respect `prefers-reduced-motion`
 - Mobile experience feels native (swipe, bottom sheet, pull-to-refresh)
-- 25 design system components (21 existing + 4 new)
+- 24 design system components (20 existing + 4 new)
 
 ---
 
@@ -314,7 +323,7 @@ ZenAI is a feature-complete enterprise AI platform with:
 **Files:**
 - `frontend/src/components/PricingPage/PricingPage.tsx` — tier cards + comparison table
 - `frontend/src/components/PricingPage/PricingPage.css` — styles with glass effects
-- `frontend/src/navigation.ts` — add pricing route
+- `frontend/src/App.tsx` — add `/pricing` and `/demo` as public routes (pre-auth, not in sidebar navigation)
 
 ### D2: Plan Badge in App
 
@@ -403,7 +412,7 @@ ZenAI is a feature-complete enterprise AI platform with:
 **Solution:**
 - Lighthouse reports: save as PDF in `docs/quality/`
 - Bundle size report: before/after comparison table
-- Test coverage summary: 7,765+ tests, 0 failures
+- Test coverage summary: 6,904+ tests, 0 failures
 - Core Web Vitals comparison: before/after Phase A
 - Architecture diagram: update with demo mode + billing infrastructure
 
@@ -428,7 +437,7 @@ ZenAI is a feature-complete enterprise AI platform with:
 | Functional Stripe Checkout | Portfolio doesn't need real payment flow |
 | Separate landing page (zensation.ai) | Demo mode serves as the product showcase |
 | New AI features | Codebase is already feature-complete (55 tools) |
-| Database migrations for new features | Demo schema is the only new schema needed |
+| Database migrations for new features | Demo schema (~95 tables) is the only new schema needed |
 
 ## Risk Mitigation
 
