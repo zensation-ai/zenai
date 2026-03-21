@@ -252,3 +252,42 @@ export function useSwipeGesture(
 }
 
 export default useSwipeGesture;
+
+/**
+ * useSwipeHandlers — lightweight inline swipe detection.
+ *
+ * Returns onTouchStart/onTouchEnd props to spread onto any element.
+ * Fires callbacks only when horizontal motion dominates and exceeds threshold.
+ *
+ * Usage:
+ *   const swipe = useSwipeHandlers({ onSwipeLeft: goNext });
+ *   return <div {...swipe}>...</div>;
+ */
+export interface SwipeHandlersOptions {
+  onSwipeLeft?: () => void;
+  onSwipeRight?: () => void;
+}
+
+export function useSwipeHandlers(handlers: SwipeHandlersOptions, threshold = 80) {
+  const touchStart = useRef<{ x: number; y: number } | null>(null);
+
+  const onTouchStart = useCallback((e: React.TouchEvent) => {
+    touchStart.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+  }, []);
+
+  const onTouchEnd = useCallback(
+    (e: React.TouchEvent) => {
+      if (!touchStart.current) return;
+      const dx = e.changedTouches[0].clientX - touchStart.current.x;
+      const dy = e.changedTouches[0].clientY - touchStart.current.y;
+      if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > threshold) {
+        if (dx > 0) handlers.onSwipeRight?.();
+        else handlers.onSwipeLeft?.();
+      }
+      touchStart.current = null;
+    },
+    [handlers, threshold]
+  );
+
+  return { onTouchStart, onTouchEnd };
+}
