@@ -326,7 +326,7 @@ async function executeAutonomousAction(
           autonomyLevel: level,
           actionConfig: rule.actionConfig,
         },
-      }).catch(() => {});
+      }).catch((err) => logger.debug('Non-critical: notification event emission failed', { error: err, ruleId: rule.id }));
       return 'auto_executed_notified';
 
     case 'auto':
@@ -390,7 +390,7 @@ async function executeAgentTrigger(
         ruleName: rule.name,
         error: error instanceof Error ? error.message : String(error),
       },
-    }).catch(() => {});
+    }).catch((err) => logger.debug('Non-critical: agent trigger failure event emission failed', { error: err, ruleId: rule.id }));
   }
 }
 
@@ -436,7 +436,7 @@ async function emitSuggestion(
         decisionType,
         actionConfig: rule.actionConfig,
       },
-    }).catch(() => {});
+    }).catch((err) => logger.debug('Non-critical: suggestion fallback event emission failed', { error: err, ruleId: rule.id }));
   }
 }
 

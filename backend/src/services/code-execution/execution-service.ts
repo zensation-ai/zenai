@@ -267,6 +267,7 @@ export async function executeCodeDirect(
 
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
+    logger.warn('Code execution failed', { error, language });
     return {
       success: false,
       code,
@@ -316,6 +317,7 @@ export async function checkCodeExecutionHealth(): Promise<{
       error: info.available ? undefined : 'No execution provider available',
     };
   } catch (error) {
+    logger.warn('Code execution health check failed', { error });
     return {
       available: false,
       enabled: true,
