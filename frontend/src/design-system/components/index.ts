@@ -87,3 +87,19 @@ export type { PopoverProps } from './Popover';
 // Dialog
 export { Dialog } from './Dialog';
 export type { DialogProps, DialogSize } from './Dialog';
+
+// Table (Task 10)
+export { Table } from './Table';
+export type { TableProps, TableColumn } from './Table';
+
+// Select / Combobox (Task 11)
+export { Select } from './Select';
+export type { SelectProps, SelectOption } from './Select';
+
+// DatePicker (Task 12)
+export { DatePicker } from './DatePicker';
+export type { DatePickerProps } from './DatePicker';
+
+// Breadcrumb (Task 13)
+export { Breadcrumb } from './Breadcrumb';
+export type { BreadcrumbProps, BreadcrumbItem } from './Breadcrumb';
