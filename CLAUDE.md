@@ -30,7 +30,7 @@
   - Short-Term Memory (Session-Kontext)
   - Long-Term Memory (persistentes Wissen)
 
-## Current Phase: 119
+## Current Phase: 122
 
 ### Phase 31 Features (AI State-of-the-Art)
 
@@ -292,6 +292,15 @@
 - Embedding Drift: `backend/src/services/embedding-drift.ts`
 - Tool Search: `backend/src/services/tool-handlers/tool-search.ts`
 - Memory Management Tools: `backend/src/services/tool-handlers/memory-management.ts`
+- Idea Tools: `backend/src/services/tool-handlers/idea-tools.ts`
+- Memory Recall Tools: `backend/src/services/tool-handlers/memory-recall-tools.ts`
+- Assistant Tools: `backend/src/services/tool-handlers/assistant-tools.ts`
+- Ideas Route Handlers: `backend/src/routes/ideas-handlers.ts`
+- General Chat Handlers: `backend/src/routes/general-chat-handlers.ts`
+- LTM Search: `backend/src/services/memory/ltm-search.ts`
+- LTM Consolidation: `backend/src/services/memory/ltm-consolidation.ts`
+- Memory Query Router: `backend/src/services/memory/memory-query-router.ts`
+- Memory Stats: `backend/src/services/memory/memory-stats.ts`
 - Request Timeout: `backend/src/middleware/request-timeout.ts`
 - Error Sanitization: `backend/src/utils/sanitize-error.ts`
 - Safe JSON Stringify: `backend/src/utils/safe-stringify.ts`
@@ -352,6 +361,10 @@
 - Error Handler: `frontend/src/utils/error-handler.ts`
 - Chat Config: `frontend/src/config/chat.ts`
 - Page Skeletons: `frontend/src/components/skeletons/PageSkeletons.tsx`
+- Chat Content Renderer: `frontend/src/components/GeneralChat/ChatContentRenderer.tsx`
+- System Admin Page: `frontend/src/components/SystemAdminPage/` (6 files)
+- Procedural Memory Panel: `frontend/src/components/ProceduralMemoryPanel/` (7 files)
+- Agent Teams Page: `frontend/src/components/AgentTeamsPage/` (3 files)
 
 ### Tests
 
@@ -1080,9 +1093,9 @@ cd frontend && npx vitest run
 
 | Kategorie | Bestanden | Übersprungen | Fehlgeschlagen |
 |-----------|-----------|--------------|----------------|
-| **Backend** | 5287 | 24 | 0 |
-| **Frontend** | 1191 | 0 | 0 |
-| **Gesamt** | 6478 | 24 | 0 |
+| **Backend** | 5664 | 24 | 0 |
+| **Frontend** | 1240 | 0 | 0 |
+| **Gesamt** | 6904 | 24 | 0 |
 
 **Absichtlich übersprungene Tests (24):**
 - 21x Code-Execution Sandbox (Docker nicht verfügbar)
@@ -1178,6 +1191,63 @@ mockQueryContext
 - API Docs: `/api-docs` (Swagger)
 
 ## Changelog
+
+### 2026-03-21: Phase 121 — Deep Decomposition & Test Coverage (Backend + Frontend Splits)
+
+**Grosse Dateien zerlegt + 215 neue Tests fuer Services und Routes.**
+
+| Worker | Scope | Ergebnis |
+|--------|-------|----------|
+| **Backend Splits** | 3 grosse Dateien zerlegt | general-chat.ts (1222→127), long-term-memory.ts (1548→1333), memory-coordinator.ts (1265→1087) |
+| **Frontend Splits** | 3 grosse Komponenten zerlegt | GeneralChat.tsx (1139→855), ProceduralMemoryPanel (1065→7 files), AgentTeamsPage (987→3 files) |
+| **Service Tests** | 138 neue Tests | memory-scheduler 23, safety-validator 71, document-analysis 44 |
+| **Route Tests** | 77 neue Tests | export 17, documents 15, sleep-compute 14, smart-suggestions 14, notifications 17 |
+
+**Neue Dateien:**
+
+| Datei | Zweck |
+|-------|-------|
+| `backend/src/services/memory/ltm-search.ts` | LTM Search-Funktionen (aus long-term-memory.ts extrahiert) |
+| `backend/src/services/memory/ltm-consolidation.ts` | LTM Consolidation-Funktionen (aus long-term-memory.ts extrahiert) |
+| `backend/src/services/memory/memory-query-router.ts` | Memory Query Router (aus memory-coordinator.ts extrahiert) |
+| `backend/src/services/memory/memory-stats.ts` | Memory Stats (aus memory-coordinator.ts extrahiert) |
+| `backend/src/routes/general-chat-handlers.ts` | Chat Route Handlers (aus general-chat.ts extrahiert) |
+| `frontend/src/components/GeneralChat/ChatContentRenderer.tsx` | Chat Content Rendering (aus GeneralChat.tsx extrahiert) |
+| `frontend/src/components/ProceduralMemoryPanel/` | 7 Dateien (aus monolithischer Komponente zerlegt) |
+| `frontend/src/components/AgentTeamsPage/` | 3 Dateien (aus monolithischer Komponente zerlegt) |
+| 8 Backend-Test-Dateien | Service + Route Tests |
+
+**Tests:** Backend 5664 + Frontend 1240 = **6904 bestanden**, 24 uebersprungen, 0 Failures. TypeScript 0 Fehler, Build erfolgreich.
+
+---
+
+### 2026-03-21: Phase 120 — File Decomposition & Test Coverage Sprint
+
+**Grosse Dateien zerlegt + 211 neue Tests (87 Service + 75 Route + 49 Frontend).**
+
+| Worker | Scope | Ergebnis |
+|--------|-------|----------|
+| **File Splits** | 3 grosse Dateien zerlegt | ideas.ts (1358→170), tool-handlers/index.ts (1222→175), SystemAdminPage.tsx (1046→6 files) |
+| **Service Tests** | 87 neue Tests | streaming 16, email 34, document-service 37 |
+| **Console Cleanup** | 8 console.* Aufrufe | console.* → logger, MCP stdio dokumentiert |
+| **Route Tests** | 75 neue Tests | canvas 13, extensions 16, governance 17, code-exec 15, general-chat 14 |
+| **Frontend Tests** | 49 neue Tests | Dashboard 16, ChatPage 10, AgentTeamsPage 12, SettingsDashboard 11 |
+
+**Neue Dateien:**
+
+| Datei | Zweck |
+|-------|-------|
+| `backend/src/routes/ideas-handlers.ts` | Ideas Route Handlers (aus ideas.ts extrahiert) |
+| `backend/src/services/tool-handlers/idea-tools.ts` | Idea Tool-Definitionen (aus index.ts extrahiert) |
+| `backend/src/services/tool-handlers/memory-recall-tools.ts` | Memory Recall Tools (aus index.ts extrahiert) |
+| `backend/src/services/tool-handlers/assistant-tools.ts` | Assistant Tools (aus index.ts extrahiert) |
+| `frontend/src/components/SystemAdminPage/` | 6 Dateien (aus monolithischer Komponente zerlegt) |
+| 8 Backend-Test-Dateien | Service + Route Tests |
+| 4 Frontend-Test-Dateien | Component Tests |
+
+**Tests:** Backend 5453 + Frontend 1240 = **6693 bestanden**, 24 uebersprungen, 0 Failures. TypeScript 0 Fehler, Build erfolgreich.
+
+---
 
 ### 2026-03-21: Phase 119 — Deep Quality Audit (6 Parallel Workers)
 
