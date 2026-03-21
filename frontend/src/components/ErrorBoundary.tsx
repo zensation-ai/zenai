@@ -3,7 +3,7 @@
 import React, { Component } from 'react';
 import type { ErrorInfo, ReactNode } from 'react';
 import { logError } from '../utils/errors';
-import { captureException } from '../services/sentry';
+import { queueError } from '../services/sentry-lazy';
 import './ErrorBoundary.css';
 
 interface ErrorBoundaryProps {
@@ -29,8 +29,8 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo): void {
     logError('ErrorBoundary:componentDidCatch', error);
-    // Phase 66: Report to Sentry
-    captureException(error, { componentStack: errorInfo.componentStack || undefined });
+    // Phase 66: Report to Sentry (queued if Sentry not yet loaded)
+    queueError(error);
     this.props.onError?.(error, errorInfo);
   }
 
