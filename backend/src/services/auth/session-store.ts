@@ -4,7 +4,7 @@
  * Designed for Redis-backed caching in a future iteration.
  */
 
-import { pool } from '../../utils/database';
+import { queryPublic } from '../../utils/database-context';
 import { logger } from '../../utils/logger';
 
 // ===========================================
@@ -39,7 +39,7 @@ class SessionStore {
    * Create a new session.
    */
   async createSession(input: CreateSessionInput): Promise<SessionRecord> {
-    const result = await pool.query(
+    const result = await queryPublic(
       `INSERT INTO public.user_sessions (user_id, refresh_token_hash, device_info, ip_address, expires_at)
        VALUES ($1, $2, $3, $4, $5)
        RETURNING *`,
@@ -58,7 +58,7 @@ class SessionStore {
    * Find a session by refresh token hash.
    */
   async findByRefreshTokenHash(hash: string): Promise<SessionRecord | null> {
-    const result = await pool.query(
+    const result = await queryPublic(
       'SELECT * FROM public.user_sessions WHERE refresh_token_hash = $1',
       [hash]
     );
@@ -69,7 +69,7 @@ class SessionStore {
    * Find a session by ID.
    */
   async findById(sessionId: string): Promise<SessionRecord | null> {
-    const result = await pool.query(
+    const result = await queryPublic(
       'SELECT * FROM public.user_sessions WHERE id = $1',
       [sessionId]
     );
@@ -80,7 +80,7 @@ class SessionStore {
    * Revoke a session by marking it as revoked.
    */
   async revokeSession(sessionId: string): Promise<void> {
-    await pool.query(
+    await queryPublic(
       'UPDATE public.user_sessions SET revoked = true WHERE id = $1',
       [sessionId]
     );
@@ -90,7 +90,7 @@ class SessionStore {
    * Revoke all sessions for a user.
    */
   async revokeAllUserSessions(userId: string): Promise<void> {
-    await pool.query(
+    await queryPublic(
       'UPDATE public.user_sessions SET revoked = true WHERE user_id = $1 AND revoked = false',
       [userId]
     );
@@ -104,7 +104,7 @@ class SessionStore {
    * List active (non-revoked, non-expired) sessions for a user.
    */
   async listActiveSessions(userId: string): Promise<SessionRecord[]> {
-    const result = await pool.query(
+    const result = await queryPublic(
       `SELECT * FROM public.user_sessions
        WHERE user_id = $1 AND revoked = false AND expires_at > NOW()
        ORDER BY created_at DESC`,
@@ -117,7 +117,7 @@ class SessionStore {
    * Cleanup expired sessions (call periodically).
    */
   async cleanupExpired(): Promise<number> {
-    const result = await pool.query(
+    const result = await queryPublic(
       `DELETE FROM public.user_sessions
        WHERE expires_at < NOW() - INTERVAL '1 day' OR (revoked = true AND created_at < NOW() - INTERVAL '1 day')`
     );

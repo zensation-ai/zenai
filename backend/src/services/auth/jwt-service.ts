@@ -177,8 +177,8 @@ export async function refreshTokens(
   await sessionStore.revokeSession(session.id);
 
   // Look up the user to generate a new token pair
-  const { pool } = await import('../../utils/database');
-  const userResult = await pool.query(
+  const { queryPublic } = await import('../../utils/database-context');
+  const userResult = await queryPublic(
     'SELECT * FROM public.users WHERE id = $1',
     [session.user_id]
   );

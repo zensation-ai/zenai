@@ -820,16 +820,54 @@ export async function query(text: string, params?: QueryParam[]): Promise<QueryR
  * Query the public schema explicitly.
  * Use this for global tables (audit_logs, api_keys, webhooks, oauth_tokens, integrations, etc.)
  * that are NOT context-specific and should always be in the public schema.
+ *
+ * Includes retry logic for transient connection errors (ECONNRESET, ETIMEDOUT, etc.)
+ * and circuit breaker protection, matching the resilience of queryContext().
  */
 export async function queryPublic(text: string, params?: QueryParam[]): Promise<QueryResult> {
-  const client = await sharedPool.connect();
-  try {
-    await client.query('SET search_path TO public');
-    const result = await client.query(text, params);
-    return result;
-  } finally {
-    client.release();
+  const isHealthProbe = text.trim() === 'SELECT 1';
+
+  const executeQuery = async (): Promise<QueryResult> => {
+    let lastError: Error | null = null;
+
+    for (let attempt = 0; attempt <= RETRY_CONFIG.maxRetries; attempt++) {
+      const client = await sharedPool.connect();
+      try {
+        await client.query('SET search_path TO public');
+        const result = await client.query(text, params);
+        client.release();
+        return result;
+      } catch (error) {
+        client.release();
+        lastError = error instanceof Error ? error : new Error(String(error));
+
+        if (attempt < RETRY_CONFIG.maxRetries && isRetryableError(error)) {
+          const baseDelay = RETRY_CONFIG.initialDelayMs * Math.pow(2, attempt);
+          const jitter = Math.random() * RETRY_CONFIG.initialDelayMs * 0.5;
+          const delay = Math.min(baseDelay + jitter, RETRY_CONFIG.maxDelayMs);
+          logger.warn(`Retryable error [public], attempt ${attempt + 1}/${RETRY_CONFIG.maxRetries}`, {
+            schema: 'public',
+            attempt: attempt + 1,
+            delay,
+            errorCode: (error as { code?: string }).code,
+            operation: 'queryPublicRetry',
+          });
+          await sleep(delay);
+          continue;
+        }
+
+        throw error;
+      }
+    }
+
+    throw lastError || new Error('queryPublic failed after retries');
+  };
+
+  if (isHealthProbe) {
+    return executeQuery();
   }
+
+  return dbBreaker.execute(executeQuery);
 }
 
 // Export QueryParam type for use in other modules

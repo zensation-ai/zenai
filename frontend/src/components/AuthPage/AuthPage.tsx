@@ -17,6 +17,8 @@ const ERROR_TRANSLATIONS: Record<string, string> = {
   'Password must be at least 8 characters': 'Passwort muss mindestens 8 Zeichen lang sein.',
   'Invalid email address': 'Ungueltige E-Mail-Adresse.',
   'Network error. Please check your connection.': 'Verbindungsfehler. Pruefe deine Internetverbindung.',
+  'Login failed': 'Anmeldung fehlgeschlagen. Bitte versuche es erneut.',
+  'Ein unerwarteter Fehler ist aufgetreten.': 'Server voruebergehend nicht erreichbar. Bitte versuche es in einigen Sekunden erneut.',
 };
 
 function translateError(message: string): string {
@@ -88,8 +90,9 @@ export function AuthPage() {
           setError(translateError(result.error.message));
         }
       }
-    } catch {
-      setError('Ein unerwarteter Fehler ist aufgetreten.');
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Ein unerwarteter Fehler ist aufgetreten.';
+      setError(translateError(message));
     } finally {
       setLoading(false);
     }

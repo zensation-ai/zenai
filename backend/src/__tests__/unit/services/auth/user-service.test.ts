@@ -6,8 +6,8 @@ import bcrypt from 'bcrypt';
 
 // Mock database
 const mockQuery = jest.fn();
-jest.mock('../../../../utils/database', () => ({
-  pool: { query: (...args: unknown[]) => mockQuery(...args) },
+jest.mock('../../../../utils/database-context', () => ({
+  queryPublic: (...args: unknown[]) => mockQuery(...args),
 }));
 
 // Mock logger

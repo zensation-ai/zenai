@@ -4,7 +4,7 @@
  */
 
 import bcrypt from 'bcrypt';
-import { pool } from '../../utils/database';
+import { queryPublic } from '../../utils/database-context';
 import { logger } from '../../utils/logger';
 
 const BCRYPT_SALT_ROUNDS = 12;
@@ -123,7 +123,7 @@ export async function register(input: RegisterInput): Promise<User> {
   }
 
   // Check for existing user
-  const existing = await pool.query(
+  const existing = await queryPublic(
     'SELECT id FROM public.users WHERE email = $1',
     [email.toLowerCase()]
   );
@@ -135,7 +135,7 @@ export async function register(input: RegisterInput): Promise<User> {
   const password_hash = await bcrypt.hash(password, BCRYPT_SALT_ROUNDS);
 
   // Insert user
-  const result = await pool.query(
+  const result = await queryPublic(
     `INSERT INTO public.users (email, password_hash, display_name, auth_provider)
      VALUES ($1, $2, $3, 'local')
      RETURNING *`,
@@ -147,7 +147,7 @@ export async function register(input: RegisterInput): Promise<User> {
   // Grant access to all 4 contexts by default
   const contexts = ['personal', 'work', 'learning', 'creative'] as const;
   for (const ctx of contexts) {
-    await pool.query(
+    await queryPublic(
       `INSERT INTO public.user_contexts (user_id, context, role) VALUES ($1, $2, 'owner')
        ON CONFLICT DO NOTHING`,
       [user.id, ctx]
@@ -167,7 +167,7 @@ export async function register(input: RegisterInput): Promise<User> {
  * Authenticate user with email/password. Returns user on success.
  */
 export async function login(email: string, password: string): Promise<User> {
-  const result = await pool.query(
+  const result = await queryPublic(
     'SELECT * FROM public.users WHERE email = $1',
     [email.toLowerCase()]
   );
@@ -191,7 +191,7 @@ export async function login(email: string, password: string): Promise<User> {
   }
 
   // Update login metadata
-  await pool.query(
+  await queryPublic(
     `UPDATE public.users SET last_login = NOW(), login_count = login_count + 1, updated_at = NOW()
      WHERE id = $1`,
     [user.id]
@@ -209,7 +209,7 @@ export async function login(email: string, password: string): Promise<User> {
  * Find user by email.
  */
 export async function findByEmail(email: string): Promise<User | null> {
-  const result = await pool.query(
+  const result = await queryPublic(
     'SELECT * FROM public.users WHERE email = $1',
     [email.toLowerCase()]
   );
@@ -220,7 +220,7 @@ export async function findByEmail(email: string): Promise<User | null> {
  * Find user by ID.
  */
 export async function findById(id: string): Promise<User | null> {
-  const result = await pool.query(
+  const result = await queryPublic(
     'SELECT * FROM public.users WHERE id = $1',
     [id]
   );
@@ -240,7 +240,7 @@ export async function findOrCreateOAuthUser(params: {
   const { email, provider, providerId, displayName, avatarUrl } = params;
 
   // Check if user exists by provider ID
-  let result = await pool.query(
+  let result = await queryPublic(
     'SELECT * FROM public.users WHERE auth_provider = $1 AND auth_provider_id = $2',
     [provider, providerId]
   );
@@ -248,7 +248,7 @@ export async function findOrCreateOAuthUser(params: {
   if (result.rows.length > 0) {
     const user = result.rows[0] as User;
     // Update login metadata
-    await pool.query(
+    await queryPublic(
       `UPDATE public.users SET last_login = NOW(), login_count = login_count + 1, updated_at = NOW()
        WHERE id = $1`,
       [user.id]
@@ -257,7 +257,7 @@ export async function findOrCreateOAuthUser(params: {
   }
 
   // Check if user exists by email (link accounts)
-  result = await pool.query(
+  result = await queryPublic(
     'SELECT * FROM public.users WHERE email = $1',
     [email.toLowerCase()]
   );
@@ -265,7 +265,7 @@ export async function findOrCreateOAuthUser(params: {
   if (result.rows.length > 0) {
     const user = result.rows[0] as User;
     // Link OAuth provider to existing account
-    await pool.query(
+    await queryPublic(
       `UPDATE public.users SET auth_provider = $1, auth_provider_id = $2,
        email_verified = true, last_login = NOW(), login_count = login_count + 1, updated_at = NOW()
        WHERE id = $3`,
@@ -275,7 +275,7 @@ export async function findOrCreateOAuthUser(params: {
   }
 
   // Create new OAuth user
-  result = await pool.query(
+  result = await queryPublic(
     `INSERT INTO public.users (email, email_verified, display_name, avatar_url, auth_provider, auth_provider_id, last_login, login_count)
      VALUES ($1, true, $2, $3, $4, $5, NOW(), 1)
      RETURNING *`,
@@ -287,7 +287,7 @@ export async function findOrCreateOAuthUser(params: {
   // Grant access to all 4 contexts
   const contexts = ['personal', 'work', 'learning', 'creative'] as const;
   for (const ctx of contexts) {
-    await pool.query(
+    await queryPublic(
       `INSERT INTO public.user_contexts (user_id, context, role) VALUES ($1, $2, 'owner')
        ON CONFLICT DO NOTHING`,
       [newUser.id, ctx]
@@ -333,9 +333,9 @@ export async function updateProfile(userId: string, input: UpdateProfileInput): 
   setClauses.push(`updated_at = NOW()`);
   values.push(userId);
 
-  const result = await pool.query(
+  const result = await queryPublic(
     `UPDATE public.users SET ${setClauses.join(', ')} WHERE id = $${paramIndex} RETURNING *`,
-    values
+    values as (string | number | boolean | null)[]
   );
 
   if (result.rows.length === 0) {
@@ -351,7 +351,7 @@ export async function updateProfile(userId: string, input: UpdateProfileInput): 
  */
 export async function setMfaSecret(userId: string, secret: string | null): Promise<void> {
   if (secret === null) {
-    await pool.query(
+    await queryPublic(
       'UPDATE public.users SET mfa_secret = NULL, updated_at = NOW() WHERE id = $1',
       [userId]
     );
@@ -359,7 +359,7 @@ export async function setMfaSecret(userId: string, secret: string | null): Promi
   }
   const { encrypt } = await import('../security/field-encryption');
   const encryptedSecret = encrypt(secret);
-  await pool.query(
+  await queryPublic(
     'UPDATE public.users SET mfa_secret = $1, updated_at = NOW() WHERE id = $2',
     [encryptedSecret, userId]
   );
@@ -369,7 +369,7 @@ export async function setMfaSecret(userId: string, secret: string | null): Promi
  * Enable/disable MFA for a user.
  */
 export async function setMfaEnabled(userId: string, enabled: boolean): Promise<void> {
-  await pool.query(
+  await queryPublic(
     'UPDATE public.users SET mfa_enabled = $1, updated_at = NOW() WHERE id = $2',
     [enabled, userId]
   );
@@ -379,7 +379,7 @@ export async function setMfaEnabled(userId: string, enabled: boolean): Promise<v
  * Change user password. Verifies current password before updating.
  */
 export async function changePassword(userId: string, currentPassword: string, newPassword: string): Promise<void> {
-  const result = await pool.query(
+  const result = await queryPublic(
     'SELECT password_hash FROM public.users WHERE id = $1',
     [userId]
   );
@@ -399,7 +399,7 @@ export async function changePassword(userId: string, currentPassword: string, ne
   }
 
   const newHash = await bcrypt.hash(newPassword, BCRYPT_SALT_ROUNDS);
-  await pool.query(
+  await queryPublic(
     'UPDATE public.users SET password_hash = $1, updated_at = NOW() WHERE id = $2',
     [newHash, userId]
   );
@@ -412,7 +412,7 @@ export async function changePassword(userId: string, currentPassword: string, ne
  * Returns the raw token for inclusion in the email link.
  */
 export async function createPasswordResetToken(email: string): Promise<string | null> {
-  const result = await pool.query(
+  const result = await queryPublic(
     'SELECT id FROM public.users WHERE email = $1 AND auth_provider = $2',
     [email.toLowerCase(), 'local']
   );
@@ -429,12 +429,12 @@ export async function createPasswordResetToken(email: string): Promise<string | 
   const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
 
   // Invalidate any existing reset tokens for this user
-  await pool.query(
+  await queryPublic(
     `DELETE FROM public.password_reset_tokens WHERE user_id = $1`,
     [userId]
   );
 
-  await pool.query(
+  await queryPublic(
     `INSERT INTO public.password_reset_tokens (user_id, token_hash, expires_at)
      VALUES ($1, $2, $3)`,
     [userId, tokenHash, expiresAt]
@@ -456,7 +456,7 @@ export async function resetPasswordWithToken(token: string, newPassword: string)
   const crypto = await import('crypto');
   const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
 
-  const result = await pool.query(
+  const result = await queryPublic(
     `SELECT user_id FROM public.password_reset_tokens
      WHERE token_hash = $1 AND expires_at > NOW()`,
     [tokenHash]
@@ -469,13 +469,13 @@ export async function resetPasswordWithToken(token: string, newPassword: string)
   const userId = result.rows[0].user_id;
   const newHash = await bcrypt.hash(newPassword, BCRYPT_SALT_ROUNDS);
 
-  await pool.query(
+  await queryPublic(
     'UPDATE public.users SET password_hash = $1, updated_at = NOW() WHERE id = $2',
     [newHash, userId]
   );
 
   // Delete used token
-  await pool.query('DELETE FROM public.password_reset_tokens WHERE user_id = $1', [userId]);
+  await queryPublic('DELETE FROM public.password_reset_tokens WHERE user_id = $1', [userId]);
 
   logger.info('Password reset completed', { operation: 'user.resetPassword', userId });
 }
