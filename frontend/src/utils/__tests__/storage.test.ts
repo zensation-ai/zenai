@@ -58,17 +58,15 @@ describe('safeLocalStorage', () => {
 
   describe('error handling', () => {
     it('returns null on localStorage getItem error', () => {
-      const debugSpy = vi.spyOn(console, 'debug').mockImplementation(() => {});
       vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => {
         throw new DOMException('SecurityError');
       });
 
+      // Silent catch — intentionally no logging (fires frequently in private browsing)
       expect(safeLocalStorage('get', 'key')).toBeNull();
-      expect(debugSpy).toHaveBeenCalledWith('localStorage not available:', expect.any(DOMException));
     });
 
     it('returns null on localStorage setItem error', () => {
-      vi.spyOn(console, 'debug').mockImplementation(() => {});
       vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
         throw new DOMException('QuotaExceededError');
       });
@@ -77,7 +75,6 @@ describe('safeLocalStorage', () => {
     });
 
     it('returns null on localStorage removeItem error', () => {
-      vi.spyOn(console, 'debug').mockImplementation(() => {});
       vi.spyOn(Storage.prototype, 'removeItem').mockImplementation(() => {
         throw new DOMException('SecurityError');
       });

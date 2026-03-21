@@ -11,9 +11,9 @@ export function safeLocalStorage(action: 'get' | 'set' | 'remove', key: string, 
     } else if (action === 'remove') {
       localStorage.removeItem(key);
     }
-  } catch (error) {
+  } catch {
     // Silent fail - localStorage not available (private browsing, quota exceeded, etc.)
-    console.debug('localStorage not available:', error);
+    // Intentionally silent: this fires frequently in private browsing/SSR and is non-actionable
   }
   return null;
 }

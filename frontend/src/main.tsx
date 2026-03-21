@@ -12,6 +12,7 @@ import { ThemeProvider } from './contexts/ThemeContext';
 import { AuthProvider } from './contexts/AuthContext';
 import { initializeNative } from './utils/native';
 import { logError } from './utils/errors';
+import { logger } from './utils/logger';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { installResilienceInterceptors } from './utils/apiResilience';
 import { initWebVitals } from './utils/webVitals';
@@ -49,7 +50,7 @@ async function fetchCsrfToken(): Promise<void> {
   } catch {
     // CSRF is optional when API key auth is present; log only in dev
     if (import.meta.env.DEV) {
-      console.warn('Could not fetch CSRF token (non-critical when using API key auth)');
+      logger.debug('Could not fetch CSRF token (non-critical when using API key auth)');
     }
   }
 }
@@ -77,7 +78,7 @@ axios.interceptors.request.use(async (config) => {
   } else if (apiKey) {
     config.headers.Authorization = `Bearer ${apiKey}`;
   } else if (import.meta.env.DEV) {
-    console.warn('No JWT token or API key configured.');
+    logger.warn('No JWT token or API key configured.');
   }
 
   // Attach CSRF token to mutating requests (defense-in-depth)

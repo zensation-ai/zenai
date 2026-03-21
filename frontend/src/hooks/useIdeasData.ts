@@ -11,6 +11,7 @@ import type { StructuredIdea, ApiStatus } from '../types';
 import type { AIContext } from '../components/ContextSwitcher';
 import { RECENT_CUTOFF_MS, SYNC_INTERVAL_MS } from '../constants';
 import { getErrorMessage, logError } from '../utils/errors';
+import { logger } from '../utils/logger';
 import {
   safeParseResponse,
   HealthResponseSchema,
@@ -196,7 +197,7 @@ export function useIdeasData(context: AIContext, currentPage: string): UseIdeasD
         });
       } catch (err) {
         if (err instanceof Error && err.name !== 'CanceledError') {
-          console.debug('[Sync] Background sync failed:', err.message);
+          logger.debug('[Sync] Background sync failed:', err.message);
         }
       }
     }, SYNC_INTERVAL_MS);

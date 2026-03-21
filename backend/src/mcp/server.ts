@@ -1768,8 +1768,10 @@ Regeln:
       try {
         const request = JSON.parse(line) as MCPRequest;
         const response = await this.handleRequest(request);
+        // STDIO protocol: console.log writes to stdout as required by MCP stdio transport
         console.log(JSON.stringify(response));
       } catch (error) {
+        // STDIO protocol: error responses must also go to stdout for the MCP client
         console.log(JSON.stringify({
           content: [{
             type: 'text',
@@ -1811,7 +1813,7 @@ Regeln:
 if (require.main === module) {
   const server = new KIABMCPServer();
   server.start().catch((error) => {
-    console.error('Failed to start MCP server:', error);
+    logger.error('Failed to start MCP server', error instanceof Error ? error : new Error(String(error)));
     process.exit(1);
   });
 }

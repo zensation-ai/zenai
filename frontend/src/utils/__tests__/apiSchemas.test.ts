@@ -71,8 +71,9 @@ describe('API Schema Validation', () => {
 
       safeParseResponse(schema, invalidData, 'testContext');
 
-      // In test mode (which uses DEV-like env), a warning should be logged
+      // logger.warn prefixes with '[WARN]' before delegating to console.warn
       expect(warnSpy).toHaveBeenCalledWith(
+        '[WARN]',
         expect.stringContaining('[API Schema] Validation failed for "testContext"'),
         expect.any(String),
       );

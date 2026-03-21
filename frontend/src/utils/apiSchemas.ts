@@ -10,6 +10,7 @@
  */
 
 import { z } from 'zod';
+import { logger } from './logger';
 
 // ---------------------------------------------------------------------------
 // Safe parse utility
@@ -32,7 +33,7 @@ export function safeParseResponse<T>(
 
   // Log validation failures for debugging - don't crash the app
   if (import.meta.env.DEV) {
-    console.warn(
+    logger.warn(
       `[API Schema] Validation failed for "${context}":`,
       result.error.issues.map(i => `${i.path.join('.')}: ${i.message}`).join(', '),
     );
