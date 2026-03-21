@@ -1,0 +1,15 @@
+User-agent: *
+Allow: /demo
+Allow: /pricing
+Disallow: /api/
+Disallow: /ideen
+Disallow: /chat
+Disallow: /cockpit
+Disallow: /planer
+Disallow: /settings
+Disallow: /meine-ki
+Disallow: /wissen
+Disallow: /inbox
+Disallow: /system
+
+Sitemap: https://frontend-mu-six-93.vercel.app/sitemap.xml
