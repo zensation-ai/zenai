@@ -12,16 +12,30 @@
 import { v4 as uuidv4 } from 'uuid';
 import { AIContext, queryContext, getPool } from '../../utils/database-context';
 import { logger } from '../../utils/logger';
-import { queryClaudeJSON } from '../claude';
 import { generateEmbedding } from '../ai';
 import { calculateRetention, updateStability } from './ebbinghaus-decay';
 import { calculateContextSimilarity, captureEncodingContext, deserializeContext, serializeContext, type EncodingContext } from './context-enrichment';
 import { tagEmotion, computeEmotionalWeight } from './emotional-tagger';
 import { detectNegation, computeStringSimilarity, stripNegation, safeJsonParse } from './ltm-utils';
+import {
+  computeCompositeImportance,
+  buildContextualMemory,
+  applyContextBoostToFacts,
+} from './ltm-search';
+import {
+  getRecentSessions,
+  extractPatterns,
+  extractFacts,
+  inferDecayClass,
+  decayRateToStability,
+} from './ltm-consolidation';
 
 // Re-export utilities for external consumers (facade pattern)
 export { detectNegation, computeStringSimilarity, stripNegation, safeJsonParse } from './ltm-utils';
 export type { NegationResult } from './ltm-utils';
+// Re-export search and consolidation functions for direct access
+export { computeCompositeImportance, buildContextualMemory, applyContextBoostToFacts } from './ltm-search';
+export { getRecentSessions, extractPatterns, extractFacts, inferDecayClass, decayRateToStability } from './ltm-consolidation';
 
 // ===========================================
 // Types & Interfaces
@@ -115,21 +129,6 @@ export interface SessionWithMessages {
   summary?: string;
 }
 
-/** AI-extracted pattern from conversations */
-interface ExtractedPattern {
-  patternType?: 'topic' | 'action' | 'style';
-  pattern: string;
-  confidence?: number;
-  associatedTopics?: string[];
-}
-
-/** AI-extracted fact about the user */
-interface ExtractedFact {
-  factType?: 'preference' | 'behavior' | 'knowledge' | 'goal' | 'context';
-  content: string;
-  confidence?: number;
-}
-
 // ===========================================
 // Configuration
 // ===========================================
@@ -177,41 +176,6 @@ const CONFIG = {
     context: 0.990,     // Context info ages fastest (~26% loss per month)
   } as Record<PersonalizationFact['factType'], number>,
 };
-
-// ===========================================
-// Decay Class Inference
-// ===========================================
-
-/**
- * Infer the appropriate decay class for a fact based on its type and source.
- *
- * Rules:
- * - Explicit goal facts → permanent (core identity)
- * - Explicit preferences from user → slow_decay
- * - Inferred behaviors → fast_decay (may change quickly)
- * - Context facts → fast_decay (ephemeral by nature)
- * - Everything else → normal_decay
- */
-function inferDecayClass(factType: string, source: string): DecayClass {
-  // Explicit goals and core identity facts should persist
-  if (factType === 'goal' && source === 'explicit') {return 'permanent';}
-
-  // Explicit preferences are stable
-  if (factType === 'preference' && source === 'explicit') {return 'slow_decay';}
-
-  // Knowledge from user is durable
-  if (factType === 'knowledge' && source === 'explicit') {return 'slow_decay';}
-
-  // Consolidated facts have been verified
-  if (source === 'consolidated') {return 'normal_decay';}
-
-  // Behaviors and context change fast
-  if (factType === 'behavior') {return 'normal_decay';}
-  if (factType === 'context') {return 'fast_decay';}
-
-  // Default for inferred knowledge
-  return 'normal_decay';
-}
 
 // ===========================================
 // Long-Term Memory Service
@@ -494,7 +458,7 @@ class LongTermMemoryService {
       logger.info('Starting long-term memory consolidation (transaction)', { context });
 
       // 1. Analyze recent sessions (last 24h)
-      const recentSessions = await this.getRecentSessions(context, 24);
+      const recentSessions = await this.getRecentSessionsInternal(context, 24);
 
       if (recentSessions.length === 0) {
         await client.query('COMMIT');
@@ -504,11 +468,11 @@ class LongTermMemoryService {
       }
 
       // 2. Extract patterns from sessions
-      const patterns = await this.extractPatterns(recentSessions, context);
+      const patterns = await this.extractPatternsInternal(recentSessions, context);
       result.patternsAdded = await this.mergePatterns(context, patterns);
 
       // 3. Extract facts about the user
-      const facts = await this.extractFacts(recentSessions, context);
+      const facts = await this.extractFactsInternal(recentSessions, context);
       const factResults = await this.mergeFacts(context, facts);
       result.factsAdded = factResults.added;
       result.factsUpdated = factResults.updated;
@@ -553,162 +517,33 @@ class LongTermMemoryService {
   }
 
   /**
-   * Get recent conversation sessions
+   * Get recent conversation sessions (delegates to ltm-consolidation)
    */
-  private async getRecentSessions(
+  private async getRecentSessionsInternal(
     context: AIContext,
     hours: number
   ): Promise<SessionWithMessages[]> {
-    const result = await queryContext(
-      context,
-      `SELECT id, messages, metadata, compressed_summary
-       FROM conversation_sessions
-       WHERE context = $1
-         AND last_activity >= NOW() - ($2 || ' hours')::INTERVAL
-       ORDER BY last_activity DESC`,
-      [context, hours]
-    );
-
-    return result.rows.map((r: Record<string, unknown>) => ({
-      id: r.id as string,
-      messages: typeof r.messages === 'string'
-        ? safeJsonParse<ConversationMessage[]>(r.messages, [])
-        : (r.messages as ConversationMessage[]) || [],
-      metadata: typeof r.metadata === 'string'
-        ? safeJsonParse<Record<string, unknown>>(r.metadata, {})
-        : (r.metadata as Record<string, unknown>) || {},
-      summary: r.compressed_summary as string | undefined,
-    }));
+    return getRecentSessions(context, hours);
   }
 
   /**
-   * Extract recurring patterns from sessions
+   * Extract recurring patterns from sessions (delegates to ltm-consolidation)
    */
-  private async extractPatterns(
+  private async extractPatternsInternal(
     sessions: SessionWithMessages[],
-    _context: AIContext
+    context: AIContext
   ): Promise<FrequentPattern[]> {
-    // Combine all messages for analysis
-    const allMessages = sessions.flatMap(s => s.messages);
-
-    if (allMessages.length < 5) {
-      return [];
-    }
-
-    // Extract user messages
-    const userMessages = allMessages
-      .filter((m: ConversationMessage) => m.role === 'user')
-      .map((m: ConversationMessage) => m.content)
-      .join('\n');
-
-    try {
-      const patternsPrompt = `Analysiere diese Nutzer-Nachrichten und identifiziere wiederkehrende Muster:
-
-${userMessages.substring(0, 3000)}
-
-Identifiziere:
-1. Häufige Themen oder Interessen
-2. Wiederkehrende Fragemuster
-3. Bevorzugte Formulierungen oder Stile
-
-Antworte als JSON:
-{
-  "patterns": [
-    {
-      "patternType": "topic|action|style",
-      "pattern": "Beschreibung des Musters",
-      "confidence": 0.7,
-      "associatedTopics": ["topic1", "topic2"]
-    }
-  ]
-}`;
-
-      const result = await queryClaudeJSON<{ patterns: ExtractedPattern[] }>(
-        'Du analysierst Konversationsmuster. Antworte nur mit JSON.',
-        patternsPrompt
-      );
-
-      return (result.patterns || []).map((p: ExtractedPattern) => ({
-        id: uuidv4(),
-        patternType: p.patternType || 'topic',
-        pattern: p.pattern,
-        frequency: 1,
-        lastUsed: new Date(),
-        associatedTopics: p.associatedTopics || [],
-        confidence: p.confidence || 0.5,
-      }));
-    } catch (error) {
-      logger.debug('Pattern extraction failed', { error });
-      return [];
-    }
+    return extractPatterns(sessions, context);
   }
 
   /**
-   * Extract facts about the user from sessions
+   * Extract facts about the user from sessions (delegates to ltm-consolidation)
    */
-  private async extractFacts(
+  private async extractFactsInternal(
     sessions: SessionWithMessages[],
-    _context: AIContext
+    context: AIContext
   ): Promise<PersonalizationFact[]> {
-    const allMessages = sessions.flatMap(s => s.messages);
-    const userMessages = allMessages
-      .filter((m: ConversationMessage) => m.role === 'user')
-      .map((m: ConversationMessage) => m.content)
-      .join('\n');
-
-    if (userMessages.length < 100) {
-      return [];
-    }
-
-    try {
-      const factsPrompt = `Extrahiere Fakten über den Nutzer aus diesen Nachrichten:
-
-${userMessages.substring(0, 3000)}
-
-Extrahiere:
-1. Präferenzen (was mag der Nutzer?)
-2. Wissen/Expertise (was weiß der Nutzer?)
-3. Ziele (was will der Nutzer erreichen?)
-4. Kontext (Beruf, Umfeld, Situation)
-
-Antworte als JSON:
-{
-  "facts": [
-    {
-      "factType": "preference|behavior|knowledge|goal|context",
-      "content": "Kurze, präzise Beschreibung",
-      "confidence": 0.8
-    }
-  ]
-}`;
-
-      const result = await queryClaudeJSON<{ facts: ExtractedFact[] }>(
-        'Du extrahierst Fakten über Nutzer aus Konversationen. Antworte nur mit JSON.',
-        factsPrompt
-      );
-
-      return (result.facts || [])
-        .filter((f: ExtractedFact) => (f.confidence ?? 0) >= CONFIG.MIN_FACT_CONFIDENCE)
-        .map((f: ExtractedFact) => {
-          const factType = (f.factType || 'knowledge') as PersonalizationFact['factType'];
-          return {
-            id: uuidv4(),
-            factType,
-            content: f.content,
-            confidence: f.confidence || 0.5,
-            source: 'inferred' as const,
-            firstSeen: new Date(),
-            lastConfirmed: new Date(),
-            occurrences: 1,
-            retrievalCount: 0,
-            lastRetrieved: null,
-            decayClass: inferDecayClass(factType, 'inferred'),
-          };
-        });
-    } catch (error) {
-      logger.debug('Fact extraction failed', { error });
-      return [];
-    }
+    return extractFacts(sessions, context);
   }
 
   /**
@@ -942,7 +777,7 @@ Antworte als JSON:
           if (!isRelevant) {return null;}
 
           // Composite importance score (Phase 42)
-          let compositeScore = this.computeCompositeImportance(fact);
+          let compositeScore = this.computeCompositeImportanceInternal(fact);
 
           // Phase 72: Apply context-dependent retrieval boost (max 30%)
           const factWithCtx = fact as PersonalizationFact & { encodingContext?: unknown };
@@ -1004,7 +839,7 @@ Antworte als JSON:
       });
 
       // Build contextual memory string
-      const contextualMemory = this.buildContextualMemory(
+      const contextualMemory = this.buildContextualMemoryInternal(
         relevantFacts.slice(0, 10),
         relevantPatterns,
         relevantInteractions
@@ -1028,59 +863,21 @@ Antworte als JSON:
   }
 
   /**
-   * Compute composite importance score for a fact.
-   *
-   * Three-factor scoring (based on 2026 State-of-the-Art research):
-   * - Recency (0.3): How recently the fact was confirmed or retrieved
-   * - Usage (0.4): How frequently the fact is retrieved and useful
-   * - Confidence (0.3): How reliable the source and how often confirmed
-   *
-   * Returns a score between 0 and 1.
+   * Compute composite importance score for a fact (delegates to ltm-search).
    */
-  private computeCompositeImportance(fact: PersonalizationFact): number {
-    const now = Date.now();
-    const w = CONFIG.COMPOSITE_WEIGHTS;
-
-    // 1. Recency score (exponential decay from last confirmation or retrieval)
-    const lastActive = fact.lastRetrieved
-      ? Math.max(fact.lastConfirmed.getTime(), fact.lastRetrieved.getTime())
-      : fact.lastConfirmed.getTime();
-    const daysSinceActive = (now - lastActive) / (1000 * 60 * 60 * 24);
-    const recencyScore = Math.exp(-0.02 * daysSinceActive); // ~50% after 35 days
-
-    // 2. Usage score (logarithmic, based on retrieval count + occurrences)
-    const totalUsage = fact.retrievalCount + fact.occurrences;
-    const usageScore = Math.min(1.0, Math.log(1 + totalUsage) / Math.log(20)); // Saturates at ~20 uses
-
-    // 3. Confidence score (direct)
-    const confidenceScore = fact.confidence;
-
-    return (w.recency * recencyScore) + (w.usage * usageScore) + (w.confidence * confidenceScore);
+  private computeCompositeImportanceInternal(fact: PersonalizationFact): number {
+    return computeCompositeImportance(fact);
   }
 
   /**
-   * Build a contextual memory string for Claude
+   * Build a contextual memory string for Claude (delegates to ltm-search).
    */
-  private buildContextualMemory(
+  private buildContextualMemoryInternal(
     facts: PersonalizationFact[],
     patterns: FrequentPattern[],
     interactions: SignificantInteraction[]
   ): string {
-    const parts: string[] = [];
-
-    if (facts.length > 0) {
-      parts.push(`[Bekannte Fakten]\n${facts.map(f => `- ${f.content}`).join('\n')}`);
-    }
-
-    if (patterns.length > 0) {
-      parts.push(`[Erkannte Muster]\n${patterns.map(p => `- ${p.pattern}`).join('\n')}`);
-    }
-
-    if (interactions.length > 0) {
-      parts.push(`[Relevante frühere Gespräche]\n${interactions.map(i => `- ${i.summary}`).join('\n')}`);
-    }
-
-    return parts.join('\n\n');
+    return buildContextualMemory(facts, patterns, interactions);
   }
 
   // ===========================================
@@ -1343,7 +1140,7 @@ Antworte als JSON:
       // Phase 72: Ebbinghaus exponential decay with stability tracking
       // Use fact's stability if available, otherwise derive from decay rate
       const factWithStability = fact as PersonalizationFact & { stability?: number; emotionalScore?: number };
-      const stability = factWithStability.stability || this.decayRateToStability(baseDecayRate);
+      const stability = factWithStability.stability || this.decayRateToStabilityInternal(baseDecayRate);
 
       // Compute emotional decay multiplier (emotional memories decay up to 3x slower)
       const emotionalMultiplier = factWithStability.emotionalScore
@@ -1441,14 +1238,10 @@ Antworte als JSON:
   // ===========================================
 
   /**
-   * Convert a legacy per-day decay rate to an Ebbinghaus stability value.
-   * Stability S such that e^(-1/S) ~= decayRate (retention after 1 day).
-   * From: decayRate = e^(-1/S) => S = -1 / ln(decayRate)
+   * Convert a legacy per-day decay rate to an Ebbinghaus stability value (delegates to ltm-consolidation).
    */
-  private decayRateToStability(decayRate: number): number {
-    if (decayRate >= 1.0) return 365; // permanent
-    if (decayRate <= 0) return 0.1;
-    return Math.max(0.1, Math.min(365, -1.0 / Math.log(decayRate)));
+  private decayRateToStabilityInternal(decayRate: number): number {
+    return decayRateToStability(decayRate);
   }
 
   /**
@@ -1524,20 +1317,12 @@ Antworte als JSON:
   }
 
   /**
-   * Apply context-dependent retrieval boost to a set of facts.
-   * Memories encoded in a similar context get up to 30% retrieval boost.
+   * Apply context-dependent retrieval boost to a set of facts (delegates to ltm-search).
    */
   applyContextBoost(
     facts: Array<{ encodingContext?: EncodingContext | null; score: number }>
   ): void {
-    const currentCtx = captureEncodingContext();
-
-    for (const item of facts) {
-      if (item.encodingContext) {
-        const similarity = calculateContextSimilarity(item.encodingContext, currentCtx);
-        item.score *= similarity.boost;
-      }
-    }
+    applyContextBoostToFacts(facts);
   }
 }
 

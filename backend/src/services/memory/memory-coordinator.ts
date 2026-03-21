@@ -45,6 +45,23 @@ import {
   expandViaGraph,
   toContextParts as graphToContextParts,
 } from './graph-memory-bridge';
+import {
+  processWithConcurrency,
+  extractFromQuery,
+  inferEmotionalContext,
+} from './memory-query-router';
+import {
+  calculateDecay,
+  getImportanceScore,
+  getTypeBoost,
+  applyDiversity,
+  fitToTokenBudget,
+} from './memory-stats';
+
+// Re-export extracted modules for direct access
+export { processWithConcurrency, extractFromQuery, inferEmotionalContext } from './memory-query-router';
+export type { ExtractedQueryItem } from './memory-query-router';
+export { calculateDecay, getImportanceScore, getTypeBoost, applyDiversity, fitToTokenBudget } from './memory-stats';
 
 // ===========================================
 // Types & Interfaces
@@ -155,49 +172,7 @@ const CONFIG = {
   },
 };
 
-/**
- * Process items with limited concurrency to avoid API rate limits
- */
-async function processWithConcurrency<T, R>(
-  items: T[],
-  processor: (item: T) => Promise<R>,
-  maxConcurrency: number
-): Promise<R[]> {
-  const results: R[] = [];
-  const executing: Promise<void>[] = [];
-
-  for (const item of items) {
-    const promise = processor(item).then((result) => {
-      results.push(result);
-    });
-
-    executing.push(promise);
-
-    if (executing.length >= maxConcurrency) {
-      await Promise.race(executing);
-      // Remove completed promises
-      const completedIndices: number[] = [];
-      for (let i = 0; i < executing.length; i++) {
-        // Check if promise is settled by racing with already-resolved promise
-        const isSettled = await Promise.race([
-          executing[i].then(() => true),
-          Promise.resolve(false)
-        ]);
-        if (isSettled) {
-          completedIndices.push(i);
-        }
-      }
-      // Remove in reverse order to maintain indices
-      for (let i = completedIndices.length - 1; i >= 0; i--) {
-        executing.splice(completedIndices[i], 1);
-      }
-    }
-  }
-
-  // Wait for remaining promises
-  await Promise.all(executing);
-  return results;
-}
+// processWithConcurrency moved to memory-query-router.ts
 
 // ===========================================
 // Memory Coordinator
@@ -399,7 +374,7 @@ export class MemoryCoordinator {
         }
 
         // Extract constraints/facts from query and add to working memory
-        const extracted = await this.extractFromQuery(userQuery);
+        const extracted = await this.extractFromQueryInternal(userQuery);
         for (const item of extracted) {
           await workingMemory.add(sessionId, item.type, item.content, item.priority);
         }
@@ -411,7 +386,7 @@ export class MemoryCoordinator {
           ? episodicMemory.retrieve(userQuery, context, {
               limit: 5,
               emotionalFilter: emotionalPriming
-                ? await this.inferEmotionalContext(userQuery)
+                ? await this.inferEmotionalContextInternal(userQuery)
                 : undefined,
             })
           : Promise.resolve([]),
@@ -465,7 +440,7 @@ export class MemoryCoordinator {
       const prunedParts = await this.pruneContext(allParts, userQuery, minRelevance);
 
       // 5. Fit to token budget
-      const { parts: finalParts, estimatedTokens } = this.fitToTokenBudget(
+      const { parts: finalParts, estimatedTokens } = this.fitToTokenBudgetInternal(
         prunedParts,
         maxContextTokens
       );
@@ -556,85 +531,17 @@ export class MemoryCoordinator {
   }
 
   /**
-   * Extract implicit constraints/facts from user query
+   * Extract implicit constraints/facts from user query (delegates to memory-query-router).
    */
-  private async extractFromQuery(query: string): Promise<Array<{
-    type: 'constraint' | 'fact' | 'hypothesis';
-    content: string;
-    priority: number;
-  }>> {
-    const extracted: Array<{
-      type: 'constraint' | 'fact' | 'hypothesis';
-      content: string;
-      priority: number;
-    }> = [];
-
-    // Detect constraints
-    /* eslint-disable security/detect-unsafe-regex -- Patterns are bounded by sentence endings, no catastrophic backtracking */
-    const constraintPatterns = [
-      { pattern: /muss\s+(.+?)(?:\.|,|$)/gi, type: 'constraint' as const },
-      { pattern: /sollte?\s+(.+?)(?:\.|,|$)/gi, type: 'constraint' as const },
-      { pattern: /darf\s+nicht\s+(.+?)(?:\.|,|$)/gi, type: 'constraint' as const },
-      { pattern: /wichtig(?:\s+ist)?[:\s]+(.+?)(?:\.|,|$)/gi, type: 'constraint' as const },
-    ];
-    /* eslint-enable security/detect-unsafe-regex */
-
-    for (const { pattern, type } of constraintPatterns) {
-      let match;
-      while ((match = pattern.exec(query)) !== null) {
-        extracted.push({
-          type,
-          content: match[1].trim(),
-          priority: 0.8,
-        });
-      }
-    }
-
-    // Detect facts/assumptions
-    const factPatterns = [
-      { pattern: /ich\s+(?:bin|habe|arbeite)\s+(.+?)(?:\.|,|$)/gi, type: 'fact' as const },
-      { pattern: /wir\s+(?:haben|nutzen|verwenden)\s+(.+?)(?:\.|,|$)/gi, type: 'fact' as const },
-    ];
-
-    for (const { pattern, type } of factPatterns) {
-      let match;
-      while ((match = pattern.exec(query)) !== null) {
-        extracted.push({
-          type,
-          content: match[1].trim(),
-          priority: 0.6,
-        });
-      }
-    }
-
-    return extracted;
+  private async extractFromQueryInternal(query: string) {
+    return extractFromQuery(query);
   }
 
   /**
-   * Infer emotional context from query for episodic filtering
+   * Infer emotional context from query (delegates to memory-query-router).
    */
-  private async inferEmotionalContext(query: string): Promise<{
-    minValence?: number;
-    maxValence?: number;
-  } | undefined> {
-    const queryLower = query.toLowerCase();
-
-    // Positive context keywords
-    const positiveKeywords = ['erfolg', 'gut', 'super', 'freude', 'positiv', 'success', 'good', 'great'];
-    // Negative context keywords
-    const negativeKeywords = ['problem', 'fehler', 'schwierig', 'frustrier', 'error', 'issue', 'difficult'];
-
-    const hasPositive = positiveKeywords.some(k => queryLower.includes(k));
-    const hasNegative = negativeKeywords.some(k => queryLower.includes(k));
-
-    if (hasPositive && !hasNegative) {
-      return { minValence: 0.2 }; // Prefer positive episodes
-    }
-    if (hasNegative && !hasPositive) {
-      return { maxValence: 0.2 }; // Include negative episodes (problem solving)
-    }
-
-    return undefined; // No emotional filter
+  private async inferEmotionalContextInternal(query: string) {
+    return inferEmotionalContext(query);
   }
 
   /**
@@ -768,43 +675,13 @@ export class MemoryCoordinator {
   }
 
   /**
-   * Fit context parts to token budget
+   * Fit context parts to token budget (delegates to memory-stats).
    */
-  private fitToTokenBudget(
+  private fitToTokenBudgetInternal(
     parts: ContextPart[],
     maxTokens: number
   ): { parts: ContextPart[]; estimatedTokens: number } {
-    // Sort by relevance
-    const sorted = [...parts].sort((a, b) => b.relevance - a.relevance);
-
-    const result: ContextPart[] = [];
-    let totalTokens = 0;
-
-    for (const part of sorted) {
-      const partTokens = Math.ceil(part.content.length / CONFIG.CHARS_PER_TOKEN);
-
-      if (totalTokens + partTokens <= maxTokens) {
-        result.push(part);
-        totalTokens += partTokens;
-      } else if (totalTokens < maxTokens * 0.9) {
-        // Try to fit a truncated version
-        const availableTokens = maxTokens - totalTokens - 10; // Reserve for "..."
-        const availableChars = availableTokens * CONFIG.CHARS_PER_TOKEN;
-
-        if (availableChars > 50) {
-          result.push({
-            ...part,
-            content: part.content.substring(0, availableChars) + '...',
-          });
-          totalTokens = maxTokens;
-        }
-        break;
-      } else {
-        break;
-      }
-    }
-
-    return { parts: result, estimatedTokens: totalTokens };
+    return fitToTokenBudget(parts, maxTokens);
   }
 
   /**
@@ -947,68 +824,24 @@ export class MemoryCoordinator {
   // ===========================================
 
   /**
-   * Calculate time-based relevance decay
-   * Older context becomes less relevant over time
+   * Calculate time-based relevance decay (delegates to memory-stats).
    */
-  private calculateDecay(timestamp: number | undefined, decayRate: number = 0.05): number {
-    if (!timestamp) {return 1.0;}
-
-    const now = Date.now();
-    // Handle future timestamps (data corruption) - no decay for future items
-    if (timestamp > now) {
-      logger.debug('Future timestamp detected in decay calculation', { timestamp, now });
-      return 1.0;
-    }
-
-    const ageMs = now - timestamp;
-    const ageHours = ageMs / (1000 * 60 * 60);
-
-    // Exponential decay: relevance decreases over time
-    // After ~24 hours, relevance is ~30% of original
-    return Math.exp(-decayRate * ageHours);
+  private calculateDecayInternal(timestamp: number | undefined, decayRate: number = 0.05): number {
+    return calculateDecay(timestamp, decayRate);
   }
 
   /**
-   * Calculate importance score for three-factor retrieval
-   * Based on source layer priority and content characteristics
-   * Range: 0.3 - 1.0 (never zero to prevent score collapse)
+   * Calculate importance score (delegates to memory-stats).
    */
-  private getImportanceScore(part: ContextPart): number {
-    // Source-based importance (from memory layer priority)
-    const sourceImportance: Record<ContextPart['source'], number> = {
-      working: 1.0,         // Active task = highest importance
-      episodic: 0.8,        // Concrete past experiences
-      short_term: 0.75,     // Current session context
-      long_term: 0.7,       // Persistent knowledge
-      pre_retrieved: 0.55,  // Related documents
-      knowledge_graph: 0.6, // Graph-expanded context
-    };
-    const baseImportance = sourceImportance[part.source] || 0.5;
-
-    // Content length bonus: longer, more detailed content slightly more important
-    const contentLength = part.content.length;
-    const lengthBonus = contentLength > 200 ? 1.1 : contentLength > 50 ? 1.0 : 0.9;
-
-    // Ensure minimum importance (prevent score collapse in multiplicative formula)
-    return Math.max(0.3, Math.min(1.0, baseImportance * lengthBonus));
+  private getImportanceScoreInternal(part: ContextPart): number {
+    return getImportanceScore(part);
   }
 
   /**
-   * Apply type-based relevance boost
-   * Some context types are inherently more important
+   * Apply type-based relevance boost (delegates to memory-stats).
    */
-  private getTypeBoost(type: ContextPart['type']): number {
-    const boosts: Record<ContextPart['type'], number> = {
-      'working': 1.3,      // Working memory (current task) - highest priority
-      'summary': 1.2,      // Conversation summaries are very important
-      'episode': 1.15,     // Episodic memories (concrete experiences)
-      'fact': 1.1,         // Known facts about user
-      'pattern': 1.0,      // Behavioral patterns
-      'document': 0.95,    // Pre-retrieved documents
-      'interaction': 0.9,  // Past interactions
-      'hint': 0.85,        // Contextual hints
-    };
-    return boosts[type] || 1.0;
+  private getTypeBoostInternal(type: ContextPart['type']): number {
+    return getTypeBoost(type);
   }
 
   /**
@@ -1031,7 +864,7 @@ export class MemoryCoordinator {
         return parts
           .map(p => ({
             ...p,
-            relevance: p.relevance * this.getTypeBoost(p.type),
+            relevance: p.relevance * this.getTypeBoostInternal(p.type),
           }))
           .filter(p => p.relevance >= minRelevance)
           .sort((a, b) => b.relevance - a.relevance);
@@ -1047,17 +880,17 @@ export class MemoryCoordinator {
             const similarity = cosineSimilarity(queryEmbedding, partEmbedding);
 
             // Get type-based boost
-            const typeBoost = this.getTypeBoost(part.type);
+            const typeBoost = this.getTypeBoostInternal(part.type);
 
             // Calculate time decay (if timestamp available in metadata)
             const timestamp = (part as ContextPart & { timestamp?: number }).timestamp || Date.now();
-            const decay = this.calculateDecay(timestamp);
+            const decay = this.calculateDecayInternal(timestamp);
 
             // Three-Factor Retrieval Scoring (Stanford Generative Agents pattern)
             // Multiplicative: recency * importance * relevance
             // A single low factor properly suppresses the score
             const recency = decay; // Already exponential time-based decay
-            const importance = this.getImportanceScore(part);
+            const importance = this.getImportanceScoreInternal(part);
             const relevance = (similarity * 0.6 + part.relevance * 0.4); // Semantic-weighted relevance
 
             // Multiplicative three-factor score with type boost
@@ -1078,7 +911,7 @@ export class MemoryCoordinator {
           } catch {
             return {
               ...part,
-              relevance: part.relevance * this.getTypeBoost(part.type),
+              relevance: part.relevance * this.getTypeBoostInternal(part.type),
             };
           }
         },
@@ -1111,7 +944,7 @@ export class MemoryCoordinator {
         .sort((a, b) => b.relevance - a.relevance);
 
       // Apply diversity constraint - limit same-type entries
-      const diversified = this.applyDiversity(filtered, 5);
+      const diversified = this.applyDiversityInternal(filtered, 5);
 
       return diversified;
     } catch (error) {
@@ -1121,21 +954,10 @@ export class MemoryCoordinator {
   }
 
   /**
-   * Apply diversity constraint to avoid too many entries of the same type
+   * Apply diversity constraint (delegates to memory-stats).
    */
-  private applyDiversity(parts: ContextPart[], maxPerType: number): ContextPart[] {
-    const typeCounts: Record<string, number> = {};
-    const result: ContextPart[] = [];
-
-    for (const part of parts) {
-      const count = typeCounts[part.type] || 0;
-      if (count < maxPerType) {
-        result.push(part);
-        typeCounts[part.type] = count + 1;
-      }
-    }
-
-    return result;
+  private applyDiversityInternal(parts: ContextPart[], maxPerType: number): ContextPart[] {
+    return applyDiversity(parts, maxPerType);
   }
 
   // ===========================================

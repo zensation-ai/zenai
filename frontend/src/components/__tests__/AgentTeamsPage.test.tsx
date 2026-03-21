@@ -98,7 +98,7 @@ describe('AgentTeamsPage Component', () => {
 
   it('shows header with back button when not embedded', () => {
     render(<AgentTeamsPage {...defaultProps} />);
-    const backButton = screen.getByText(/Zur.ck/);
+    const backButton = screen.getByRole('button', { name: /Zurueck/i });
     expect(backButton).toBeInTheDocument();
     fireEvent.click(backButton);
     expect(defaultProps.onBack).toHaveBeenCalled();
@@ -106,7 +106,7 @@ describe('AgentTeamsPage Component', () => {
 
   it('hides header when embedded', () => {
     render(<AgentTeamsPage {...defaultProps} embedded={true} />);
-    expect(screen.queryByText(/Zur.ck/)).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Zurueck/i })).not.toBeInTheDocument();
   });
 
   it('shows tab navigation with 4 tabs', () => {

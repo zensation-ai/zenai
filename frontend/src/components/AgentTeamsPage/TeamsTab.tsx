@@ -1,161 +1,30 @@
 /**
- * AgentTeamsPage Component
+ * TeamsTab — Main teams execution tab with strategy selection, streaming, results, and history.
  *
- * Frontend for the Multi-Agent Task Orchestration system.
- * Features: SSE Streaming, Agent Templates, Coder Agent, Analytics.
- * Tabs: Teams (Phase 45), Agenten (Phase 64), Workflows (Phase 64), A2A (Phase 60).
- *
- * Phase 45 + 60 + 64
+ * Extracted from AgentTeamsPage.tsx (Phase 121).
  */
 
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { Bot } from 'lucide-react';
 import axios from 'axios';
-import { AIContext } from './ContextSwitcher';
-import { showToast } from './Toast';
-import { getTimeBasedGreeting } from '../utils/aiPersonality';
-import { logError } from '../utils/errors';
-import { getApiBaseUrl, getApiFetchHeaders } from '../utils/apiConfig';
-import { AgentIdentityPanel } from './AgentIdentityPanel';
-import { A2AAgentsPanel } from './A2AAgentsPanel';
-import { WorkflowPanel } from './WorkflowPanel';
-import '../neurodesign.css';
-import './AgentTeamsPage.css';
+import type { AIContext } from '../ContextSwitcher';
+import { showToast } from '../Toast';
+import { logError } from '../../utils/errors';
+import { getApiBaseUrl, getApiFetchHeaders } from '../../utils/apiConfig';
+import type { TeamResult, HistoryEntry, AgentTemplate, StreamEvent, Strategy } from './types';
+import { STRATEGIES, ROLE_CONFIG, EXECUTION_STATUS_LABELS, formatDuration, formatTokens } from './types';
 
-// ─── Types ──────────────────────────────────────────────────────────────────
-
-interface AgentResult {
-  role: string;
-  success: boolean;
-  toolsUsed: string[];
-  executionTimeMs: number;
-  error?: string;
-}
-
-interface TeamResult {
-  teamId: string;
-  finalOutput: string;
-  strategy: string;
-  agents: AgentResult[];
-  stats: {
-    executionTimeMs: number;
-    totalTokens: { input: number; output: number } | number;
-    sharedMemoryEntries: number;
-  };
-}
-
-interface HistoryEntry {
-  id: string;
-  teamId: string;
-  task: string;
-  strategy: string;
-  finalOutput: string;
-  agents: AgentResult[];
-  executionTimeMs: number;
-  tokens: { input: number; output: number } | number;
-  success: boolean;
-  savedAsIdeaId?: string;
-  createdAt: string;
-  status?: string;
-  checkpointStep?: number;
-  pauseReason?: string;
-}
-
-const EXECUTION_STATUS_LABELS: Record<string, { label: string; color: string }> = {
-  running: { label: 'Läuft', color: '#3b82f6' },
-  completed: { label: 'Abgeschlossen', color: '#22c55e' },
-  failed: { label: 'Fehlgeschlagen', color: '#ef4444' },
-  paused: { label: 'Pausiert', color: '#f59e0b' },
-  awaiting_approval: { label: 'Genehmigung nötig', color: '#f97316' },
-  cancelled: { label: 'Abgebrochen', color: '#9ca3af' },
-};
-
-interface AgentTemplate {
-  id: string;
-  name: string;
-  description: string;
-  icon: string;
-  strategy: string;
-  pipeline?: string[];
-  skipReview?: boolean;
-  promptHint?: string;
-}
-
-interface StreamEvent {
-  type: string;
-  teamId?: string;
-  strategy?: string;
-  pipeline?: string[];
-  agentRole?: string;
-  agentIndex?: number;
-  totalAgents?: number;
-  subTask?: string;
-  result?: Partial<AgentResult>;
-  finalOutput?: string;
-  error?: string;
-  // Full result payload
-  success?: boolean;
-  agents?: AgentResult[];
-  stats?: {
-    executionTimeMs: number;
-    totalTokens: { input: number; output: number };
-    sharedMemoryEntries: number;
-  };
-}
-
-type Strategy = 'research_write_review' | 'research_only' | 'write_only' | 'code_solve' | 'research_code_review' | 'custom';
-
-const STRATEGIES: { id: Strategy; label: string; icon: string; desc: string }[] = [
-  { id: 'research_write_review', label: 'Komplett', icon: '🔬', desc: 'Recherche, Schreiben, Review' },
-  { id: 'research_only', label: 'Recherche', icon: '🔍', desc: 'Nur Informationen sammeln' },
-  { id: 'write_only', label: 'Schreiben', icon: '✍️', desc: 'Nur Content erstellen' },
-  { id: 'code_solve', label: 'Code', icon: '💻', desc: 'Code generieren & testen' },
-  { id: 'research_code_review', label: 'Code-Review', icon: '🔍', desc: 'Code analysieren & verbessern' },
-  { id: 'custom', label: 'Angepasst', icon: '🛠️', desc: 'Eigene Pipeline' },
-];
-
-const ROLE_CONFIG: Record<string, { icon: string; label: string; color: string }> = {
-  researcher: { icon: '🔍', label: 'Researcher', color: '#3b82f6' },
-  writer: { icon: '✍️', label: 'Writer', color: '#8b5cf6' },
-  reviewer: { icon: '📋', label: 'Reviewer', color: '#22c55e' },
-  coder: { icon: '💻', label: 'Coder', color: '#f59e0b' },
-};
-
-// ─── Agent Identity Types (Phase 64) ────────────────────────────────────────
-
-// AgentIdentity type moved to AgentIdentityPanel component
-
-// Workflow Types moved to WorkflowPanel component
-// A2A Types moved to A2AAgentsPanel component
-
-// ─── Tab Type ───────────────────────────────────────────────────────────────
-
-type AgentTab = 'teams' | 'identities' | 'workflows' | 'a2a';
-
-const AGENT_TABS: { id: AgentTab; label: string; icon: string }[] = [
-  { id: 'teams', label: 'Teams', icon: '🚀' },
-  { id: 'identities', label: 'Agenten', icon: '🤖' },
-  { id: 'workflows', label: 'Workflows', icon: '🔄' },
-  { id: 'a2a', label: 'A2A', icon: '🌐' },
-];
-
-// ─── Trust Level Config ─────────────────────────────────────────────────────
-
-// Trust level config moved to AgentIdentityPanel
-
-// ─── Component ──────────────────────────────────────────────────────────────
-
-interface AgentTeamsPageProps {
+interface TeamsTabProps {
   context: AIContext;
-  onBack?: () => void;
-  embedded?: boolean;
+  showAnalytics: boolean;
+  analytics: {
+    totals: { executions: number; successful: number; failed: number; tokens: number; successRate: number };
+    byStrategy: Array<{ strategy: string; count: number; successful: number; avgExecutionTime: number; avgTokens: number }>;
+    dailyTrend: Array<{ date: string; executions: number; successful: number; avgTime: number }>;
+  } | null;
 }
 
-export function AgentTeamsPage({ context, onBack, embedded }: AgentTeamsPageProps) {
-  const greeting = getTimeBasedGreeting();
-  const [activeTab, setActiveTab] = useState<AgentTab>('teams');
-
-  // ─── Teams Tab State ────────────────────────────────────────────────────
+export function TeamsTab({ context, showAnalytics, analytics }: TeamsTabProps) {
   const [task, setTask] = useState('');
   const [strategy, setStrategy] = useState<Strategy>('research_write_review');
   const [skipReview, setSkipReview] = useState(false);
@@ -177,25 +46,9 @@ export function AgentTeamsPage({ context, onBack, embedded }: AgentTeamsPageProp
   const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null);
   const [showTemplates, setShowTemplates] = useState(false);
 
-  // Analytics state
-  const [showAnalytics, setShowAnalytics] = useState(false);
-  const [analytics, setAnalytics] = useState<{
-    totals: { executions: number; successful: number; failed: number; tokens: number; successRate: number };
-    byStrategy: Array<{ strategy: string; count: number; successful: number; avgExecutionTime: number; avgTokens: number }>;
-    dailyTrend: Array<{ date: string; executions: number; successful: number; avgTime: number }>;
-  } | null>(null);
-
-  // Agent Identity Tab state moved to AgentIdentityPanel component
-
-  // Workflow Tab State moved to WorkflowPanel component
-
-  // A2A Tab State moved to A2AAgentsPanel component
-
   const abortControllerRef = useRef<AbortController | null>(null);
   const resultRef = useRef<HTMLDivElement | null>(null);
   const eventSourceRef = useRef<{ abort: () => void } | null>(null);
-
-  // ─── Teams Tab Callbacks ────────────────────────────────────────────────
 
   const loadHistory = useCallback(async () => {
     try {
@@ -206,7 +59,7 @@ export function AgentTeamsPage({ context, onBack, embedded }: AgentTeamsPageProp
         setHistory(res.data.executions);
       }
     } catch (err) {
-      logError('AgentTeamsPage:loadHistory', err);
+      logError('TeamsTab:loadHistory', err);
     }
   }, [context]);
 
@@ -217,62 +70,14 @@ export function AgentTeamsPage({ context, onBack, embedded }: AgentTeamsPageProp
         setTemplates(res.data.templates);
       }
     } catch (err) {
-      logError('AgentTeamsPage:loadTemplates', err);
+      logError('TeamsTab:loadTemplates', err);
     }
   }, []);
-
-  const loadAnalytics = useCallback(async () => {
-    try {
-      const res = await axios.get('/api/agents/analytics', {
-        params: { context, days: 30 },
-      });
-      if (res.data.success) {
-        setAnalytics(res.data);
-      }
-    } catch (err) {
-      logError('AgentTeamsPage:loadAnalytics', err);
-    }
-  }, [context]);
-
-  // ─── Agent Identity Callbacks (Phase 64) ────────────────────────────────
-
-  // Identity CRUD moved to AgentIdentityPanel component
-
-  // Workflow Callbacks moved to WorkflowPanel component
-
-  // A2A Callbacks moved to A2AAgentsPanel component
-
-  // Durable execution controls
-  const handlePauseExecution = async (executionId: string) => {
-    try {
-      await axios.post(`/api/agents/executions/${executionId}/pause`, { context });
-      showToast('Ausführung pausiert', 'success');
-      await loadHistory();
-    } catch (err) {
-      logError('AgentTeamsPage:pause', err);
-      showToast('Fehler beim Pausieren', 'error');
-    }
-  };
-
-  const handleCancelExecution = async (executionId: string) => {
-    try {
-      await axios.post(`/api/agents/executions/${executionId}/cancel`, { context });
-      showToast('Ausführung abgebrochen', 'success');
-      await loadHistory();
-    } catch (err) {
-      logError('AgentTeamsPage:cancel', err);
-      showToast('Fehler beim Abbrechen', 'error');
-    }
-  };
-
-  // ─── Effects ────────────────────────────────────────────────────────────
 
   useEffect(() => {
     loadHistory();
     loadTemplates();
   }, [loadHistory, loadTemplates]);
-
-  // Tab-specific data: identities, workflows, and a2a are self-contained in their own panels
 
   // Cleanup on unmount
   useEffect(() => {
@@ -289,7 +94,7 @@ export function AgentTeamsPage({ context, onBack, embedded }: AgentTeamsPageProp
       eventSourceRef.current?.abort();
       setLoading(false);
       setCurrentAgent(null);
-      showToast('Ausführung abgebrochen', 'info');
+      showToast('Ausfuehrung abgebrochen', 'info');
     }
   }, [loading]);
 
@@ -298,7 +103,28 @@ export function AgentTeamsPage({ context, onBack, embedded }: AgentTeamsPageProp
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [handleKeyDown]);
 
-  // ─── Teams Tab Handlers ─────────────────────────────────────────────────
+  // Durable execution controls
+  const handlePauseExecution = async (executionId: string) => {
+    try {
+      await axios.post(`/api/agents/executions/${executionId}/pause`, { context });
+      showToast('Ausfuehrung pausiert', 'success');
+      await loadHistory();
+    } catch (err) {
+      logError('TeamsTab:pause', err);
+      showToast('Fehler beim Pausieren', 'error');
+    }
+  };
+
+  const handleCancelExecution = async (executionId: string) => {
+    try {
+      await axios.post(`/api/agents/executions/${executionId}/cancel`, { context });
+      showToast('Ausfuehrung abgebrochen', 'success');
+      await loadHistory();
+    } catch (err) {
+      logError('TeamsTab:cancel', err);
+      showToast('Fehler beim Abbrechen', 'error');
+    }
+  };
 
   const handleClassify = async () => {
     if (!task.trim()) return;
@@ -311,7 +137,7 @@ export function AgentTeamsPage({ context, onBack, embedded }: AgentTeamsPageProp
         setStrategy(res.data.strategy);
       }
     } catch (err) {
-      logError('AgentTeamsPage:classify', err);
+      logError('TeamsTab:classify', err);
       showToast('Strategie-Klassifikation fehlgeschlagen', 'error');
     } finally {
       setClassifying(false);
@@ -414,7 +240,7 @@ export function AgentTeamsPage({ context, onBack, embedded }: AgentTeamsPageProp
       }
     } catch (err) {
       if (err instanceof DOMException && err.name === 'AbortError') return;
-      logError('AgentTeamsPage:executeStreaming', err);
+      logError('TeamsTab:executeStreaming', err);
       // Fallback to non-streaming
       await handleExecuteFallback();
       return;
@@ -443,24 +269,14 @@ export function AgentTeamsPage({ context, onBack, embedded }: AgentTeamsPageProp
         setResult(res.data);
         loadHistory();
       } else {
-        setError(res.data.error || 'Ausführung fehlgeschlagen');
+        setError(res.data.error || 'Ausfuehrung fehlgeschlagen');
       }
     } catch (err) {
-      logError('AgentTeamsPage:executeFallback', err);
-      setError('Aufgabe konnte nicht ausgeführt werden. Bitte versuche es erneut.');
+      logError('TeamsTab:executeFallback', err);
+      setError('Aufgabe konnte nicht ausgefuehrt werden. Bitte versuche es erneut.');
     } finally {
       setLoading(false);
     }
-  };
-
-  const formatDuration = (ms: number) => {
-    if (ms < 1000) return `${ms}ms`;
-    return `${(ms / 1000).toFixed(1)}s`;
-  };
-
-  const formatTokens = (tokens: { input: number; output: number } | number): string => {
-    if (typeof tokens === 'number') return tokens.toLocaleString('de-DE');
-    return (tokens.input + tokens.output).toLocaleString('de-DE');
   };
 
   const handleSaveAsIdea = async (executionId: string) => {
@@ -472,7 +288,7 @@ export function AgentTeamsPage({ context, onBack, embedded }: AgentTeamsPageProp
         loadHistory();
       }
     } catch (err) {
-      logError('AgentTeamsPage:saveAsIdea', err);
+      logError('TeamsTab:saveAsIdea', err);
       showToast('Speichern fehlgeschlagen', 'error');
     } finally {
       setSavingIdeaId(null);
@@ -487,9 +303,7 @@ export function AgentTeamsPage({ context, onBack, embedded }: AgentTeamsPageProp
     showToast(`Template "${template.name}" angewendet`, 'success');
   };
 
-  // ─── Render Helpers ─────────────────────────────────────────────────────
-
-  const renderTeamsTab = () => (
+  return (
     <>
       {/* Analytics Panel */}
       {showAnalytics && analytics && (
@@ -498,7 +312,7 @@ export function AgentTeamsPage({ context, onBack, embedded }: AgentTeamsPageProp
           <div className="analytics-totals">
             <div className="analytics-stat">
               <span className="analytics-stat-value">{analytics.totals.executions}</span>
-              <span className="analytics-stat-label">Ausführungen</span>
+              <span className="analytics-stat-label">Ausfuehrungen</span>
             </div>
             <div className="analytics-stat">
               <span className="analytics-stat-value analytics-success">{analytics.totals.successRate}%</span>
@@ -536,7 +350,7 @@ export function AgentTeamsPage({ context, onBack, embedded }: AgentTeamsPageProp
             className="templates-toggle neuro-hover-lift"
             onClick={() => setShowTemplates(!showTemplates)}
           >
-            {showTemplates ? '✕ Schließen' : '📋 Templates'}
+            {showTemplates ? '\u2715 Schliessen' : '\uD83D\uDCCB Templates'}
           </button>
         </div>
 
@@ -564,7 +378,7 @@ export function AgentTeamsPage({ context, onBack, embedded }: AgentTeamsPageProp
           placeholder="Beschreibe die Aufgabe, die das Agent-Team bearbeiten soll..."
           rows={4}
           disabled={loading}
-          aria-label="Aufgabenbeschreibung für Agent-Team"
+          aria-label="Aufgabenbeschreibung fuer Agent-Team"
         />
         <div className="task-actions">
           <button
@@ -573,7 +387,7 @@ export function AgentTeamsPage({ context, onBack, embedded }: AgentTeamsPageProp
             onClick={handleClassify}
             disabled={!task.trim() || classifying || loading}
           >
-            {classifying ? 'Analysiere...' : '🔎 Strategie erkennen'}
+            {classifying ? 'Analysiere...' : '\uD83D\uDD0E Strategie erkennen'}
           </button>
           {classifiedStrategy && (
             <span className="classified-badge neuro-stagger-item">
@@ -582,13 +396,13 @@ export function AgentTeamsPage({ context, onBack, embedded }: AgentTeamsPageProp
           )}
           {selectedTemplate && (
             <span className="template-badge neuro-stagger-item">
-              📋 {templates.find(t => t.id === selectedTemplate)?.name}
+              \uD83D\uDCCB {templates.find(t => t.id === selectedTemplate)?.name}
               <button
                 type="button"
                 className="clear-template"
                 onClick={() => setSelectedTemplate(null)}
               >
-                ✕
+                \u2715
               </button>
             </span>
           )}
@@ -597,7 +411,7 @@ export function AgentTeamsPage({ context, onBack, embedded }: AgentTeamsPageProp
 
       {/* Strategy Selection */}
       <div className="agent-teams-section liquid-glass neuro-stagger-item">
-        <h3>Strategie wählen</h3>
+        <h3>Strategie waehlen</h3>
         <div className="strategy-grid">
           {STRATEGIES.map((s, index) => (
             <button
@@ -622,7 +436,7 @@ export function AgentTeamsPage({ context, onBack, embedded }: AgentTeamsPageProp
               onChange={(e) => setSkipReview(e.target.checked)}
               disabled={loading}
             />
-            <span>Review überspringen</span>
+            <span>Review ueberspringen</span>
           </label>
         )}
       </div>
@@ -686,7 +500,7 @@ export function AgentTeamsPage({ context, onBack, embedded }: AgentTeamsPageProp
                 <div key={`${e.agentRole || 'agent'}-${i}`} className={`stream-agent-done ${e.type === 'agent_complete' ? 'success' : 'failed'}`}>
                   <span>{config.icon} {config.label}</span>
                   <span className={e.type === 'agent_complete' ? 'done-success' : 'done-failed'}>
-                    {e.type === 'agent_complete' ? '✓' : '✗'}
+                    {e.type === 'agent_complete' ? '\u2713' : '\u2717'}
                   </span>
                   {e.result?.executionTimeMs && (
                     <span className="done-time">{formatDuration(e.result.executionTimeMs)}</span>
@@ -698,14 +512,14 @@ export function AgentTeamsPage({ context, onBack, embedded }: AgentTeamsPageProp
               );
             })}
 
-          <p className="loading-hint">Drücke Escape zum Abbrechen</p>
+          <p className="loading-hint">Druecke Escape zum Abbrechen</p>
         </div>
       )}
 
       {/* Error */}
       {error && (
         <div className="agent-error liquid-glass neuro-stagger-item">
-          <span className="error-icon">⚠️</span>
+          <span className="error-icon">\u26A0\uFE0F</span>
           <p>{error}</p>
         </div>
       )}
@@ -731,7 +545,7 @@ export function AgentTeamsPage({ context, onBack, embedded }: AgentTeamsPageProp
             </div>
             <div className="stat-item">
               <span className="stat-label">Shared Memory</span>
-              <span className="stat-value">{result.stats.sharedMemoryEntries} Einträge</span>
+              <span className="stat-value">{result.stats.sharedMemoryEntries} Eintraege</span>
             </div>
           </div>
 
@@ -749,7 +563,7 @@ export function AgentTeamsPage({ context, onBack, embedded }: AgentTeamsPageProp
                     <span className="agent-role-icon">{config.icon}</span>
                     <span className="agent-role-label">{config.label}</span>
                     <span className={`agent-status-badge ${agent.success ? 'success' : 'failed'}`}>
-                      {agent.success ? '✓ Erfolgreich' : '✗ Fehler'}
+                      {agent.success ? '\u2713 Erfolgreich' : '\u2717 Fehler'}
                     </span>
                   </div>
                   <div className="agent-card-meta">
@@ -830,7 +644,7 @@ export function AgentTeamsPage({ context, onBack, embedded }: AgentTeamsPageProp
                     </span>
                   ) : (
                     <span className={`history-status ${entry.success ? 'success' : 'failed'}`}>
-                      {entry.success ? '✓' : '✗'}
+                      {entry.success ? '\u2713' : '\u2717'}
                     </span>
                   )}
                   <span className="history-task">{entry.task.substring(0, 80)}{entry.task.length > 80 ? '...' : ''}</span>
@@ -895,11 +709,11 @@ export function AgentTeamsPage({ context, onBack, embedded }: AgentTeamsPageProp
                           onClick={() => handleSaveAsIdea(entry.id)}
                           disabled={savingIdeaId === entry.id}
                         >
-                          {savingIdeaId === entry.id ? 'Speichere...' : '💡 Als Gedanke speichern'}
+                          {savingIdeaId === entry.id ? 'Speichere...' : '\uD83D\uDCA1 Als Gedanke speichern'}
                         </button>
                       )}
                       {entry.savedAsIdeaId && (
-                        <span className="saved-badge">💡 Gespeichert</span>
+                        <span className="saved-badge">\uD83D\uDCA1 Gespeichert</span>
                       )}
                     </div>
                   </div>
@@ -910,78 +724,5 @@ export function AgentTeamsPage({ context, onBack, embedded }: AgentTeamsPageProp
         </div>
       )}
     </>
-  );
-
-  const renderIdentitiesTab = () => (
-    <div className="agent-teams-section liquid-glass neuro-stagger-item">
-      <AgentIdentityPanel />
-    </div>
-  );
-
-  const renderWorkflowsTab = () => (
-    <div className="agent-teams-section liquid-glass neuro-stagger-item">
-      <WorkflowPanel context={context} />
-    </div>
-  );
-
-  const renderA2ATab = () => (
-    <div className="agent-teams-section liquid-glass neuro-stagger-item">
-      <A2AAgentsPanel context={context} />
-    </div>
-  );
-
-  // ─── Main Render ────────────────────────────────────────────────────────
-
-  return (
-    <div className="agent-teams-page neuro-page-enter">
-      {!embedded && (
-        <div className="agent-teams-header liquid-glass-nav">
-          <button className="back-button neuro-hover-lift" onClick={onBack} type="button">
-            ← Zurück
-          </button>
-          <div className="header-greeting">
-            <h1>{greeting.emoji} Agent Teams</h1>
-            <span className="greeting-subtext neuro-subtext-emotional">
-              Multi-Agent Aufgaben orchestrieren
-            </span>
-          </div>
-          <button
-            type="button"
-            className="analytics-toggle-btn neuro-hover-lift"
-            onClick={() => {
-              setShowAnalytics(!showAnalytics);
-              if (!analytics) loadAnalytics();
-            }}
-            aria-label="Analytics anzeigen"
-            aria-expanded={showAnalytics}
-            title="Analytics (letzte 30 Tage)"
-          >
-            📊
-          </button>
-        </div>
-      )}
-
-      {/* Tab Navigation */}
-      <div className="strategy-grid" style={{ marginBottom: '1.5rem' }}>
-        {AGENT_TABS.map((tab, index) => (
-          <button
-            key={tab.id}
-            type="button"
-            className={`strategy-card neuro-hover-lift ${activeTab === tab.id ? 'active' : ''}`}
-            style={{ animationDelay: `${index * 50}ms` }}
-            onClick={() => setActiveTab(tab.id)}
-          >
-            <span className="strategy-icon">{tab.icon}</span>
-            <span className="strategy-label">{tab.label}</span>
-          </button>
-        ))}
-      </div>
-
-      {/* Tab Content */}
-      {activeTab === 'teams' && renderTeamsTab()}
-      {activeTab === 'identities' && renderIdentitiesTab()}
-      {activeTab === 'workflows' && renderWorkflowsTab()}
-      {activeTab === 'a2a' && renderA2ATab()}
-    </div>
   );
 }
