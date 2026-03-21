@@ -38,6 +38,7 @@ export function CalendarBriefing({
     const weekEnd = new Date(currentDate);
     weekEnd.setDate(weekEnd.getDate() + 7);
     onFetchConflicts(currentDate.toISOString(), weekEnd.toISOString());
+  // Intentionally use date string as dep — only re-fetch when calendar day changes, not on prop identity
   }, [currentDate.toISOString().split('T')[0]]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const errorConflicts = conflicts.filter(c => c.severity === 'error');

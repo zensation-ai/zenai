@@ -43,6 +43,6 @@ module.exports = {
   testTimeout: 30000,
   verbose: true,
   maxWorkers: 2,
-  forceExit: true, // TODO Phase 65: Investigate open handles (health check intervals, rate limit cleanup)
+  forceExit: true, // Phase 119: Investigated — app intervals are guarded (NODE_ENV=test), leak is likely from 3rd-party modules; --detectOpenHandles reports nothing specific
   workerIdleMemoryLimit: '256MB'
 };

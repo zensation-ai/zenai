@@ -149,12 +149,11 @@ export function inputScreeningMiddleware(req: Request, _res: Response, next: Nex
     });
 
     // Don't block — just tag the request for downstream handling
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (req as any).injectionScreening = {
+    req.injectionScreening = {
       flagged: true,
       score: result.score,
       patterns: result.matchedPatterns,
-    } satisfies InjectionScreeningData;
+    };
   }
 
   next();

@@ -55,6 +55,7 @@ const AIQuestionBubbleComponent: React.FC<AIQuestionBubbleProps> = ({
       if (timerRef.current) clearTimeout(timerRef.current);
       if (animTimerRef.current) clearTimeout(animTimerRef.current);
     };
+  // Intentionally omit handleDismiss — defined below, uses refs; including it would cause infinite loop
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [autoHideAfter]);
 

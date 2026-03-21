@@ -132,6 +132,7 @@ export function GeneralChat({ context, isCompact = false, assistantMode = false,
         streamingRafRef.current = null;
       }
     };
+  // Intentionally omit refs and dispatch — stable across renders; only reload on context/session change
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [context, sessionKey, chatState.skipNextLoad]);
 

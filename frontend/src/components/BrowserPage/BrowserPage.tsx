@@ -62,6 +62,7 @@ export function BrowserPage({ context, initialTab = 'browse', onBack }: BrowserP
       data.fetchBookmarks();
       data.fetchFolders();
     }
+  // Intentionally omit data.fetch* — stable methods, only re-fetch on tab/context change
   }, [activeTab, context]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Navigate to URL

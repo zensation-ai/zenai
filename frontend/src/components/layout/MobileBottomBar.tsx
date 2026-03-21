@@ -120,6 +120,7 @@ export const MobileBottomBar = memo(function MobileBottomBar({
   // Calculate active tab index for the sliding indicator
   const activeIndex = useMemo(() => {
     return BOTTOM_TABS.findIndex(tab => !tab.isSpecial && isActive(tab));
+  // Intentionally omit isActive — derived from currentPage, including it would be redundant
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentPage]);
 

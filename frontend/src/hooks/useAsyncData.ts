@@ -103,6 +103,7 @@ export function useAsyncData<T>(
       mountedRef.current = false;
       abortControllerRef.current?.abort();
     };
+    // Deps provided by caller — this is a generic hook pattern where deps are passed in
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, deps);
 
@@ -197,6 +198,7 @@ export function useParallelAsyncData<T extends unknown[]>(
     return () => {
       abortControllerRef.current?.abort();
     };
+    // Deps provided by caller — this is a generic hook pattern where deps are passed in
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, deps);
 

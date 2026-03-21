@@ -159,6 +159,7 @@ router.post(
       const message = error instanceof Error ? error.message : 'Install failed';
       const status = message.includes('not found') ? 404 : message.includes('already installed') ? 409 : 400;
 
+      logger.warn('Extension install failed', { error, operation: 'extensions.install', extensionId, userId });
       res.status(status).json({
         success: false,
         error: message,
@@ -192,6 +193,7 @@ router.post(
       });
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Uninstall failed';
+      logger.warn('Extension uninstall failed', { error, operation: 'extensions.uninstall', extensionId, userId });
       res.status(404).json({
         success: false,
         error: message,
@@ -225,6 +227,7 @@ router.post(
       });
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Enable failed';
+      logger.warn('Extension enable failed', { error, operation: 'extensions.enable', extensionId, userId });
       res.status(404).json({
         success: false,
         error: message,
@@ -258,6 +261,7 @@ router.post(
       });
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Disable failed';
+      logger.warn('Extension disable failed', { error, operation: 'extensions.disable', extensionId, userId });
       res.status(404).json({
         success: false,
         error: message,

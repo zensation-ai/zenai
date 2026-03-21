@@ -143,6 +143,7 @@ const InboxTriageComponent: React.FC<InboxTriageProps> = ({ context, apiBase, on
     }
   }, [apiBase, context, processedIds]);
 
+  // Intentionally omit fetchTriageIdeas — only re-fetch on context change, not on callback identity
   useEffect(() => { fetchTriageIdeas(); }, [context]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const showDopamineReward = useCallback((action: TriageAction) => {

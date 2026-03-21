@@ -171,6 +171,7 @@ function AccountTab() {
   // Load sessions on mount
   useEffect(() => {
     loadSessions();
+  // Intentionally run only on mount — loads auth sessions once
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

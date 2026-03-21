@@ -76,6 +76,7 @@ export function CanvasPage({ context }: CanvasPageProps) {
       }
     };
     loadDocuments();
+  // Intentionally omit activeDocument — only want to reload on context change, not doc selection
   }, [context]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Auto-save with debounce

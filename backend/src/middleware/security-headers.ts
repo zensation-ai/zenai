@@ -127,6 +127,7 @@ export function getSecurityHeadersConfig(options: {
   return helmet({
     // Content Security Policy
     contentSecurityPolicy: {
+      // Helmet v7 CSP directives type is overly strict for dynamic construction
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       directives: cspDirectives as any,
       reportOnly: false, // Enforce CSP (set true for testing)

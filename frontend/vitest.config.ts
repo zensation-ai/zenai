@@ -1,6 +1,7 @@
 /// <reference types="vitest" />
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
+import path from 'path';
 
 export default defineConfig({
   plugins: [react()],
@@ -54,10 +55,20 @@ export default defineConfig({
       },
     },
     css: true,
+    server: {
+      deps: {
+        inline: [
+          '@tanstack/react-query',
+        ],
+      },
+    },
   },
   resolve: {
     alias: {
       '@': '/src',
+      'react': path.resolve(__dirname, 'node_modules/react'),
+      'react-dom': path.resolve(__dirname, 'node_modules/react-dom'),
+      'react-dom/client': path.resolve(__dirname, 'node_modules/react-dom/client'),
     },
   },
 });

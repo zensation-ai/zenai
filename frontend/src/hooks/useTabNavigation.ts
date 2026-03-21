@@ -43,6 +43,7 @@ export function useTabNavigation<T extends string>({
 
   useEffect(() => {
     setActiveTab(validate(initialTab));
+  // Intentionally omit validate — pure function derived from static validTabs/defaultTab
   }, [initialTab]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleTabChange = useCallback((tab: T) => {

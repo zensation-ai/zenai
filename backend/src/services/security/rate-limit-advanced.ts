@@ -94,6 +94,7 @@ async function getRedisClient(): Promise<typeof redisClient> {
   try {
     // eslint-disable-next-line @typescript-eslint/no-var-requires
     const redisModule = 'redis';
+    // Dynamic import erases module type information
     const { createClient } = await import(/* webpackIgnore: true */ redisModule) as any;
     const client = createClient({ url: redisUrl });
 

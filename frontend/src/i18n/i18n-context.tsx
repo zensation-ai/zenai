@@ -6,6 +6,7 @@ import { en } from './locales/en';
 import { fr } from './locales/fr';
 import { es } from './locales/es';
 
+// Locale JSON objects have deeply nested string structures — typing exhaustively provides no benefit
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const translations: Record<Locale, any> = { de, en, fr, es };
 

@@ -178,6 +178,7 @@ function AuthenticatedApp() {
     pageHistory.addRecentPage(currentPage);
     // Lazy import to avoid bundling frecency in initial chunk
     import('./components/Dashboard').then(m => m.recordPageVisit?.(currentPage)).catch(() => {});
+  // Intentionally omit pageHistory — stable module-level singleton
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentPage]);
 

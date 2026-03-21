@@ -99,6 +99,7 @@ export function Modal({
       onClick={handleBackdropClick}
       aria-hidden="true"
     >
+      {/* Dialog element needs onClick for keyboard-triggered close — role="dialog" is interactive by design */}
       {/* eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions */}
       <div
         ref={dialogRef}

@@ -54,7 +54,7 @@ export function ChatInput({
   setInlineError,
   thinkingMode,
   setThinkingMode,
-  voiceChatOpen: _voiceChatOpen, // eslint-disable-line @typescript-eslint/no-unused-vars
+  voiceChatOpen: _voiceChatOpen, // eslint-disable-line @typescript-eslint/no-unused-vars -- destructured from props to avoid passing to DOM
   setVoiceChatOpen,
   inputRef,
   context,

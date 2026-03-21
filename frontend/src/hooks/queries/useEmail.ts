@@ -139,6 +139,27 @@ export function useSendEmailMutation(context: AIContext) {
 }
 
 /**
+ * Batch update email status (archive, trash, etc.)
+ * Uses POST /api/:context/emails/batch
+ */
+export function useBatchEmailStatusMutation(context: AIContext) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ ids, status }: { ids: string[]; status: string }) => {
+      const response = await axios.post(`/api/${context}/emails/batch`, { ids, status });
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.email.all(context) });
+    },
+    onError: (error) => {
+      logError('useBatchEmailStatusMutation', error);
+    },
+  });
+}
+
+/**
  * Toggle email star
  */
 export function useToggleEmailStarMutation(context: AIContext) {

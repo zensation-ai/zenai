@@ -1,17 +1,11 @@
 /**
- * Agent Orchestrator (Multi-Agent System)
+ * Agent Orchestrator (Multi-Agent System) — Facade
  *
  * Coordinates teams of specialized agents to solve complex tasks.
- * LangGraph-inspired architecture with:
- * - Task decomposition into sub-tasks
- * - Intelligent agent selection per sub-task
- * - Pipeline execution with shared memory
- * - Result aggregation and quality review
  *
- * Agent Roles:
- * - Researcher: Information gathering (Haiku - fast)
- * - Writer: Content creation (Sonnet - balanced)
- * - Reviewer: Quality assurance (Sonnet - analytical)
+ * Phase 119: Split into facade pattern.
+ * - Strategy classification & templates: ./agents/strategy-classifier.ts
+ * - This file: Core orchestration, graph execution, streaming, and re-exports
  *
  * @module services/agent-orchestrator
  */
@@ -30,20 +24,30 @@ import { createReviewer } from './agents/reviewer';
 import { createCoder } from './agents/coder';
 import { AgentGraph, WorkflowState } from './agents/agent-graph';
 
+// Re-export everything from strategy-classifier for backward compatibility
+export {
+  TeamStrategy,
+  AgentTemplate,
+  AGENT_TEMPLATES,
+  classifyTeamStrategy,
+  getAgentPipeline,
+  FallbackChain,
+  DEFAULT_MODEL_FALLBACK_CHAIN,
+  FAST_MODEL_FALLBACK_CHAIN,
+  createFallbackChain,
+  executeWithFallback,
+  executeToolsWithFallback,
+} from './agents/strategy-classifier';
+
+import {
+  type TeamStrategy,
+  classifyTeamStrategy,
+  getAgentPipeline,
+} from './agents/strategy-classifier';
+
 // ===========================================
 // Types & Interfaces
 // ===========================================
-
-export type TeamStrategy =
-  | 'research_write_review'
-  | 'research_only'
-  | 'write_only'
-  | 'code_solve'
-  | 'research_code_review'
-  | 'parallel_research'
-  | 'parallel_code_review'
-  | 'full_parallel'
-  | 'custom';
 
 export interface TeamTask {
   /** Description of the complex task */
@@ -105,377 +109,10 @@ export interface AgentProgressEvent {
   stats?: TeamResult['totalTokens'] & { executionTimeMs: number; memoryEntries: number };
 }
 
-/** Agent template definition */
-export interface AgentTemplate {
-  id: string;
-  name: string;
-  description: string;
-  icon: string;
-  strategy: TeamStrategy;
-  pipeline?: AgentRole[];
-  skipReview?: boolean;
-  promptHint?: string;
-}
-
-/** Predefined agent templates */
-export const AGENT_TEMPLATES: AgentTemplate[] = [
-  {
-    id: 'deep_research',
-    name: 'Tiefenrecherche',
-    description: 'Gründliche Recherche mit Fakten-Check und Quellenanalyse',
-    icon: '🔬',
-    strategy: 'research_write_review',
-    promptHint: 'Recherchiere gründlich und prüfe alle Fakten',
-  },
-  {
-    id: 'blog_article',
-    name: 'Blog-Artikel',
-    description: 'Recherchierter Blog-Artikel mit SEO-optimiertem Aufbau',
-    icon: '📝',
-    strategy: 'research_write_review',
-    promptHint: 'Erstelle einen gut strukturierten Blog-Artikel',
-  },
-  {
-    id: 'code_solution',
-    name: 'Code-Lösung',
-    description: 'Code generieren, testen und optimieren',
-    icon: '💻',
-    strategy: 'code_solve',
-    promptHint: 'Implementiere eine funktionierende Code-Lösung',
-  },
-  {
-    id: 'competitive_analysis',
-    name: 'Wettbewerbsanalyse',
-    description: 'Markt- und Wettbewerbsanalyse mit Empfehlungen',
-    icon: '📊',
-    strategy: 'research_write_review',
-    promptHint: 'Analysiere den Wettbewerb und gib strategische Empfehlungen',
-  },
-  {
-    id: 'email_draft',
-    name: 'E-Mail verfassen',
-    description: 'Professionelle E-Mail basierend auf Kontext',
-    icon: '✉️',
-    strategy: 'write_only',
-    skipReview: false,
-    promptHint: 'Verfasse eine professionelle E-Mail',
-  },
-  {
-    id: 'code_review',
-    name: 'Code-Review',
-    description: 'Code analysieren, Bugs finden, Verbesserungen vorschlagen',
-    icon: '🔍',
-    strategy: 'research_code_review',
-    promptHint: 'Analysiere den Code und schlage Verbesserungen vor',
-  },
-  {
-    id: 'quick_summary',
-    name: 'Schnelle Zusammenfassung',
-    description: 'Schnelle Recherche und kompakte Zusammenfassung',
-    icon: '⚡',
-    strategy: 'research_only',
-    promptHint: 'Fasse die wichtigsten Punkte zusammen',
-  },
-  {
-    id: 'strategy_paper',
-    name: 'Strategiepapier',
-    description: 'Umfassende Analyse mit Strategieempfehlung',
-    icon: '🎯',
-    strategy: 'research_write_review',
-    promptHint: 'Erstelle ein detailliertes Strategiepapier mit Handlungsempfehlungen',
-  },
-];
-
-// ===========================================
-// Task Classification
-// ===========================================
-
-/**
- * Determine the best strategy for a task based on its nature
- */
-export function classifyTeamStrategy(task: string): TeamStrategy {
-  const taskLower = task.toLowerCase();
-
-  // Code-heavy patterns
-  const codePatterns = [
-    // eslint-disable-next-line security/detect-unsafe-regex -- bounded optional groups, no backtracking risk
-    /schreib(?:e|t)? (?:mir )?(?:eine?n? |den |das )?code/,
-    /implementier(e|en)/,
-    /programmier(e|en)/,
-    /code.*schreib/,
-    /python.*(script|programm|code)/,
-    /javascript.*funktion/,
-    /typescript.*implementierung/,
-    /erstelle? .*(shell|bash|python|node).*script/,
-    /debug(ge|gen)?/,
-    /fix(e|en)? .*bug/,
-    /algorithmus/,
-    /funktion.*erstell/,
-  ];
-
-  // Research + Code patterns
-  const researchCodePatterns = [
-    /analysiere.*code/,
-    /code.*review/,
-    /code.*prüf/,
-    /überprüf.*implementierung/,
-    /such.*fehler.*code/,
-    /optimier.*code/,
-  ];
-
-  // Research-heavy patterns
-  const researchPatterns = [
-    /recherchiere/,
-    /finde (heraus|informationen)/,
-    /was (weiß ich|habe ich) (über|zu|zum)/,
-    /suche nach/,
-    /sammle (informationen|daten|fakten)/,
-  ];
-
-  // Write-heavy patterns
-  const writePatterns = [
-    /schreibe? (mir |eine[mnrs]? )/,
-    /erstelle? (mir |eine[mnrs]? )/,
-    /formuliere/,
-    /verfasse/,
-    /entwirf/,
-  ];
-
-  // Full pipeline patterns (research + write + review)
-  const fullPipelinePatterns = [
-    /analysiere.*und.*(erstelle|schreibe|fasse)/,
-    /recherchiere.*und.*(erstelle|schreibe|verfasse)/,
-    /(strategie|konzept|plan|bericht|report)/,
-    /vergleiche.*und.*bewerte/,
-    /gib.*überblick.*und.*empf/,
-    /zusammenfass.*und.*empfehl/,
-  ];
-
-  // Parallel research patterns
-  const parallelResearchPatterns = [
-    /parallel.*recherchier/,
-    /recherchier.*parallel/,
-    /mehrere\s+quellen.*gleichzeitig/,
-    /aus\s+verschiedenen\s+quellen.*recherchier/,
-  ];
-
-  // Parallel code + research patterns
-  const parallelCodePatterns = [
-    /implementier.*und.*recherchier.*gleichzeitig/,
-    /code.*und.*recherch.*parallel/,
-    /parallel.*code.*und.*recherch/,
-  ];
-
-  // Check parallel patterns first
-  for (const pattern of parallelCodePatterns) {
-    if (pattern.test(taskLower)) {
-      return 'parallel_code_review';
-    }
-  }
-
-  for (const pattern of parallelResearchPatterns) {
-    if (pattern.test(taskLower)) {
-      return 'parallel_research';
-    }
-  }
-
-  // Check research + code patterns first
-  for (const pattern of researchCodePatterns) {
-    if (pattern.test(taskLower)) {
-      return 'research_code_review';
-    }
-  }
-
-  // Check code-only patterns
-  for (const pattern of codePatterns) {
-    if (pattern.test(taskLower)) {
-      return 'code_solve';
-    }
-  }
-
-  // Check full pipeline (most complex)
-  for (const pattern of fullPipelinePatterns) {
-    if (pattern.test(taskLower)) {
-      return 'research_write_review';
-    }
-  }
-
-  // Check research-only
-  for (const pattern of researchPatterns) {
-    if (pattern.test(taskLower)) {
-      return 'research_only';
-    }
-  }
-
-  // Check write-only
-  for (const pattern of writePatterns) {
-    if (pattern.test(taskLower)) {
-      return 'write_only';
-    }
-  }
-
-  // Default: full pipeline for complex tasks
-  if (taskLower.length > 100) {
-    return 'research_write_review';
-  }
-
-  return 'research_write_review';
-}
-
-/**
- * Get the agent pipeline for a strategy
- */
-export function getAgentPipeline(strategy: TeamStrategy, skipReview?: boolean): AgentRole[] {
-  switch (strategy) {
-    case 'research_only':
-      return ['researcher'];
-    case 'write_only':
-      return skipReview ? ['writer'] : ['writer', 'reviewer'];
-    case 'research_write_review':
-      return skipReview ? ['researcher', 'writer'] : ['researcher', 'writer', 'reviewer'];
-    case 'code_solve':
-      return skipReview ? ['coder'] : ['coder', 'reviewer'];
-    case 'research_code_review':
-      return ['researcher', 'coder', 'reviewer'];
-    case 'parallel_research':
-      return ['researcher', 'researcher', 'writer', 'reviewer'];
-    case 'parallel_code_review':
-      return ['coder', 'researcher', 'reviewer'];
-    case 'full_parallel':
-      return ['researcher', 'coder', 'writer', 'reviewer'];
-    case 'custom':
-      return []; // Will be provided by customPipeline
-  }
-}
-
-// ===========================================
-// Graceful Degradation — Fallback Chains (Phase 114, Task 52)
-// ===========================================
-
-/**
- * A fallback chain defines an ordered list of models to try on failure.
- * When the primary model fails, the next in the chain is used, and so on.
- */
-export interface FallbackChain {
-  /** Ordered list of model names (primary first, cheapest last) */
-  models: string[];
-  /** Current index in the chain (0 = primary) */
-  currentIndex: number;
-}
-
-/** Default model fallback chain: powerful → standard → fast */
-export const DEFAULT_MODEL_FALLBACK_CHAIN: string[] = [
-  'claude-opus-4-5',
-  'claude-sonnet-4-5',
-  'claude-haiku-4-5',
-];
-
-/** Fast model fallback chain: standard → fast (skip opus) */
-export const FAST_MODEL_FALLBACK_CHAIN: string[] = [
-  'claude-sonnet-4-5',
-  'claude-haiku-4-5',
-];
-
-/**
- * Create a new fallback chain starting at a given model.
- * If the model is not in the chain, returns the full default chain.
- */
-export function createFallbackChain(primaryModel?: string, chain?: string[]): FallbackChain {
-  const models = chain ?? DEFAULT_MODEL_FALLBACK_CHAIN;
-  const idx = primaryModel ? models.indexOf(primaryModel) : 0;
-  return {
-    models,
-    currentIndex: idx >= 0 ? idx : 0,
-  };
-}
-
-/**
- * Execute a function with fallback chain logic.
- *
- * Tries the executor function with each model in the chain.
- * On failure, logs the event and advances to the next model.
- * Returns the first successful result, or throws if all models fail.
- *
- * @param chain - Fallback chain to use
- * @param executor - Function that receives the current model name and executes
- * @param label - Human-readable label for logging (e.g., agent role)
- */
-export async function executeWithFallback<T>(
-  chain: FallbackChain,
-  executor: (model: string) => Promise<T>,
-  label = 'operation',
-): Promise<T> {
-  const modelsToTry = chain.models.slice(chain.currentIndex);
-
-  let lastError: Error | null = null;
-
-  for (let i = 0; i < modelsToTry.length; i++) {
-    const model = modelsToTry[i];
-    try {
-      if (i > 0) {
-        logger.info('Fallback chain: trying next model', {
-          operation: 'fallback-chain',
-          label,
-          model,
-          attempt: i + 1,
-          totalModels: modelsToTry.length,
-        });
-      }
-      return await executor(model);
-    } catch (error) {
-      lastError = error instanceof Error ? error : new Error(String(error));
-      logger.warn('Fallback chain: model failed, trying next', {
-        operation: 'fallback-chain',
-        label,
-        model,
-        error: lastError.message,
-        hasNext: i < modelsToTry.length - 1,
-      });
-    }
-  }
-
-  const finalError = lastError ?? new Error('All fallback models failed');
-  logger.error('Fallback chain exhausted: all models failed', finalError, {
-    operation: 'fallback-chain',
-    label,
-    modelsAttempted: modelsToTry.join(','),
-  });
-  throw finalError;
-}
-
-/**
- * Execute a list of tool calls with graceful degradation.
- * If a tool fails, it is skipped and execution continues with remaining tools.
- * Returns an array of successful results.
- *
- * @param tools - List of tool names to try
- * @param executor - Function that receives a tool name and executes it
- * @param label - Human-readable label for logging
- */
-export async function executeToolsWithFallback<T>(
-  tools: string[],
-  executor: (toolName: string) => Promise<T>,
-  label = 'tools',
-): Promise<Array<{ toolName: string; result: T }>> {
-  const results: Array<{ toolName: string; result: T }> = [];
-
-  for (const toolName of tools) {
-    try {
-      const result = await executor(toolName);
-      results.push({ toolName, result });
-    } catch (error) {
-      const errMsg = error instanceof Error ? error.message : String(error);
-      logger.warn('Tool failed in fallback execution, skipping', {
-        operation: 'tool-fallback',
-        label,
-        toolName,
-        error: errMsg,
-      });
-      // Continue with next tool
-    }
-  }
-
-  return results;
+/** Options for executeTeamTask */
+export interface ExecuteTeamTaskOptions {
+  /** When true, use AgentGraph execution engine instead of sequential pipeline */
+  useGraph?: boolean;
 }
 
 // ===========================================
@@ -501,13 +138,6 @@ function createAgent(role: AgentRole): BaseAgent {
 // Dynamic Agent Factory (Identity-Aware)
 // ===========================================
 
-/**
- * Create an agent using DB-stored identity if available, falling back to hardcoded factory.
- *
- * 1. Queries AgentIdentityService for a matching role
- * 2. If found: builds persona prompt from identity fields and injects into agent config
- * 3. If not found: falls back to existing hardcoded factory (createResearcher, etc.)
- */
 export async function createAgentWithIdentity(role: AgentRole, _taskContext?: string): Promise<BaseAgent> {
   try {
     const { getAgentIdentityService } = await import('./agents/agent-identity');
@@ -515,17 +145,13 @@ export async function createAgentWithIdentity(role: AgentRole, _taskContext?: st
     const identities = await identityService.listIdentities({ role, enabled: true });
 
     if (identities.length > 0) {
-      const identity = identities[0]; // Use first matching identity
+      const identity = identities[0];
       const personaPrompt = identityService.buildPersonaPrompt(identity);
-
-      // Create agent with hardcoded factory, then inject persona
       const agent = createAgent(role);
-      // Inject persona prompt into config
-      (agent as any).config.personaPrompt = personaPrompt;
+      agent.setPersonaPrompt(personaPrompt);
       return agent;
     }
   } catch {
-    // Fall back to hardcoded factory on any error
     logger.debug('Agent identity lookup failed, using default factory', { role });
   }
 
@@ -536,9 +162,6 @@ export async function createAgentWithIdentity(role: AgentRole, _taskContext?: st
 // Task Decomposition
 // ===========================================
 
-/**
- * Decompose a complex task into sub-tasks for each agent
- */
 async function decomposeTask(
   task: string,
   pipeline: AgentRole[],
@@ -580,7 +203,6 @@ REGELN:
     }],
   });
 
-  // Parse the decomposition
   const textContent = response.content
     .filter((b): b is Anthropic.TextBlock => b.type === 'text')
     .map(b => b.text)
@@ -588,7 +210,6 @@ REGELN:
 
   const subTasks: SubTask[] = [];
   try {
-    // Extract JSON from response (handle markdown code blocks)
     const jsonMatch = textContent.match(/\[[\s\S]*\]/);
     if (jsonMatch) {
       const parsed = JSON.parse(jsonMatch[0]) as Array<{ agent: string; task: string }>;
@@ -597,7 +218,6 @@ REGELN:
       for (const item of parsed) {
         const role = item.agent as AgentRole;
         if (!pipeline.includes(role)) {continue;}
-
         const id = uuidv4();
         subTasks.push({
           id,
@@ -646,12 +266,6 @@ REGELN:
 /** Maximum retries per agent on failure */
 const MAX_AGENT_RETRIES = 2;
 
-/** Options for executeTeamTask */
-export interface ExecuteTeamTaskOptions {
-  /** When true, use AgentGraph execution engine instead of sequential pipeline */
-  useGraph?: boolean;
-}
-
 /**
  * Execute a complex task with a team of agents
  */
@@ -675,13 +289,9 @@ export async function executeTeamTask(
   });
 
   try {
-    // Initialize shared memory
     sharedMemory.initialize(teamId);
 
-    // Determine strategy
     const strategy = task.strategy || classifyTeamStrategy(task.description);
-
-    // Get pipeline
     const pipeline = strategy === 'custom' && task.customPipeline
       ? task.customPipeline
       : getAgentPipeline(strategy, task.skipReview);
@@ -690,47 +300,27 @@ export async function executeTeamTask(
       throw new Error('Empty agent pipeline');
     }
 
-    // Emit team_start
-    onProgress?.({
-      type: 'team_start',
-      teamId,
-      strategy,
-      pipeline,
-    });
+    onProgress?.({ type: 'team_start', teamId, strategy, pipeline });
 
-    // Write plan to shared memory
     sharedMemory.write(
-      teamId,
-      'orchestrator',
-      'plan',
+      teamId, 'orchestrator', 'plan',
       `Aufgabe: ${task.description}\nStrategie: ${strategy}\nPipeline: ${pipeline.join(' → ')}`,
     );
 
-    // Decompose task
     const subTasks = await decomposeTask(task.description, pipeline, task.context);
 
-    logger.info('Task decomposed', {
-      teamId,
-      subTaskCount: subTasks.length,
-      pipeline: pipeline.join(' → '),
-    });
+    logger.info('Task decomposed', { teamId, subTaskCount: subTasks.length, pipeline: pipeline.join(' → ') });
 
-    // Execute pipeline sequentially (respecting dependencies)
     for (let i = 0; i < subTasks.length; i++) {
       const subTask = subTasks[i];
       subTask.status = 'in_progress';
 
-      // Emit agent_start
       onProgress?.({
-        type: 'agent_start',
-        teamId,
-        agentRole: subTask.assignedAgent,
-        agentIndex: i,
-        totalAgents: subTasks.length,
+        type: 'agent_start', teamId,
+        agentRole: subTask.assignedAgent, agentIndex: i, totalAgents: subTasks.length,
         subTask: subTask.description,
       });
 
-      // Build context from previous results
       const previousResults = agentResults
         .filter(r => r.success)
         .map(r => `[${r.role}]: ${r.content}`)
@@ -743,57 +333,33 @@ export async function executeTeamTask(
         teamId,
       };
 
-      // Execute with retry on failure (exponential backoff)
       let result: AgentOutput | null = null;
       let retries = 0;
 
       while (retries <= MAX_AGENT_RETRIES) {
         const agent = createAgent(subTask.assignedAgent);
 
-        // On retry, include previous error in context so agent can adapt
         if (retries > 0 && result?.error) {
           agentInput.context = `${agentInput.context || ''}\n\n[PREVIOUS ATTEMPT FAILED]: ${result.error}\nPlease try a different approach.`.trim();
         }
 
         result = await agent.execute(agentInput);
 
-        if (result.success) {
-          break;
-        }
+        if (result.success) { break; }
 
         retries++;
         if (retries <= MAX_AGENT_RETRIES) {
-          // Exponential backoff: 2s, 4s (base 2)
           const backoffMs = Math.pow(2, retries) * 1000;
-          logger.info('Retrying failed agent with backoff', {
-            teamId,
-            agent: subTask.assignedAgent,
-            attempt: retries + 1,
-            backoffMs,
-            error: result.error,
-          });
-
+          logger.info('Retrying failed agent with backoff', { teamId, agent: subTask.assignedAgent, attempt: retries + 1, backoffMs, error: result.error });
           await new Promise(resolve => setTimeout(resolve, backoffMs));
-
-          // Write retry info to shared memory
-          sharedMemory.write(
-            teamId,
-            'orchestrator',
-            'decision',
-            `Retry für ${subTask.assignedAgent}: ${result.error}`,
-            { retry: retries, backoffMs }
-          );
+          sharedMemory.write(teamId, 'orchestrator', 'decision', `Retry für ${subTask.assignedAgent}: ${result.error}`, { retry: retries, backoffMs });
         }
       }
 
       if (!result) {
         result = {
-          role: subTask.assignedAgent,
-          success: false,
-          content: '',
-          toolsUsed: [],
-          tokensUsed: { input: 0, output: 0 },
-          executionTimeMs: 0,
+          role: subTask.assignedAgent, success: false, content: '', toolsUsed: [],
+          tokensUsed: { input: 0, output: 0 }, executionTimeMs: 0,
           error: 'Agent execution returned no result',
         };
       }
@@ -803,114 +369,39 @@ export async function executeTeamTask(
       if (result.success) {
         subTask.status = 'completed';
         subTask.result = result;
-
-        // Emit agent_complete
         onProgress?.({
-          type: 'agent_complete',
-          teamId,
-          agentRole: subTask.assignedAgent,
-          agentIndex: i,
-          totalAgents: subTasks.length,
-          result: {
-            role: result.role,
-            success: true,
-            toolsUsed: result.toolsUsed,
-            executionTimeMs: result.executionTimeMs,
-          },
+          type: 'agent_complete', teamId, agentRole: subTask.assignedAgent,
+          agentIndex: i, totalAgents: subTasks.length,
+          result: { role: result.role, success: true, toolsUsed: result.toolsUsed, executionTimeMs: result.executionTimeMs },
         });
       } else {
         subTask.status = 'failed';
         subTask.result = result;
-
-        // Emit agent_error
         onProgress?.({
-          type: 'agent_error',
-          teamId,
-          agentRole: subTask.assignedAgent,
-          agentIndex: i,
-          totalAgents: subTasks.length,
-          result: {
-            role: result.role,
-            success: false,
-            error: result.error,
-            executionTimeMs: result.executionTimeMs,
-          },
+          type: 'agent_error', teamId, agentRole: subTask.assignedAgent,
+          agentIndex: i, totalAgents: subTasks.length,
+          result: { role: result.role, success: false, error: result.error, executionTimeMs: result.executionTimeMs },
         });
-
-        logger.warn('Sub-task failed after retries, continuing pipeline', {
-          teamId,
-          agent: subTask.assignedAgent,
-          error: result.error,
-          retries,
-        });
+        logger.warn('Sub-task failed after retries, continuing pipeline', { teamId, agent: subTask.assignedAgent, error: result.error, retries });
       }
     }
 
-    // Aggregate final output
     const finalOutput = aggregateResults(agentResults);
-
-    // Get memory stats
     const memoryStats = sharedMemory.getStats(teamId);
+    const totalTokens = agentResults.reduce((acc, r) => ({ input: acc.input + r.tokensUsed.input, output: acc.output + r.tokensUsed.output }), { input: 0, output: 0 });
 
-    // Calculate total tokens
-    const totalTokens = agentResults.reduce(
-      (acc, r) => ({
-        input: acc.input + r.tokensUsed.input,
-        output: acc.output + r.tokensUsed.output,
-      }),
-      { input: 0, output: 0 }
-    );
+    const teamResult: TeamResult = { teamId, success: agentResults.some(r => r.success), finalOutput, agentResults, executionTimeMs: Date.now() - startTime, strategy, totalTokens, memoryStats: { totalEntries: memoryStats.totalEntries, byAgent: memoryStats.byAgent } };
 
-    const teamResult: TeamResult = {
-      teamId,
-      success: agentResults.some(r => r.success),
-      finalOutput,
-      agentResults,
-      executionTimeMs: Date.now() - startTime,
-      strategy,
-      totalTokens,
-      memoryStats: {
-        totalEntries: memoryStats.totalEntries,
-        byAgent: memoryStats.byAgent,
-      },
-    };
+    onProgress?.({ type: 'team_complete', teamId, finalOutput, stats: { input: totalTokens.input, output: totalTokens.output, executionTimeMs: teamResult.executionTimeMs, memoryEntries: memoryStats.totalEntries } });
 
-    // Emit team_complete
-    onProgress?.({
-      type: 'team_complete',
-      teamId,
-      finalOutput,
-      stats: {
-        input: totalTokens.input,
-        output: totalTokens.output,
-        executionTimeMs: teamResult.executionTimeMs,
-        memoryEntries: memoryStats.totalEntries,
-      },
-    });
+    logger.info('Team task completed', { teamId, success: teamResult.success, agentCount: agentResults.length, totalTokens, executionTimeMs: teamResult.executionTimeMs });
 
-    logger.info('Team task completed', {
-      teamId,
-      success: teamResult.success,
-      agentCount: agentResults.length,
-      totalTokens,
-      executionTimeMs: teamResult.executionTimeMs,
-    });
-
-    // Emit system event for proactive engine
     import('./event-system').then(({ emitSystemEvent }) =>
-      emitSystemEvent({
-        context: task.aiContext,
-        eventType: teamResult.success ? 'agent.completed' : 'agent.failed',
-        eventSource: 'agent_orchestrator',
-        payload: { teamId, strategy, executionTimeMs: teamResult.executionTimeMs, agentCount: agentResults.length },
-      })
-    ).catch(err => {
-      logger.warn('Failed to emit agent event', { error: err instanceof Error ? err.message : String(err), teamId });
-    });
+      emitSystemEvent({ context: task.aiContext, eventType: teamResult.success ? 'agent.completed' : 'agent.failed', eventSource: 'agent_orchestrator', payload: { teamId, strategy, executionTimeMs: teamResult.executionTimeMs, agentCount: agentResults.length } })
+    ).catch(err => { logger.warn('Failed to emit agent event', { error: err instanceof Error ? err.message : String(err), teamId }); });
 
     return teamResult;
   } finally {
-    // Cleanup shared memory after execution
     sharedMemory.clear(teamId);
   }
 }
@@ -924,19 +415,16 @@ export async function executeTeamTask(
  */
 function buildGraphForStrategy(strategy: TeamStrategy, skipReview?: boolean): AgentGraph {
   switch (strategy) {
-    case 'research_only': {
+    case 'research_only':
       return new AgentGraph('research-only')
         .addNode({ id: 'researcher', type: 'agent', config: { agentRole: 'researcher', label: 'Research' } })
         .setStart('researcher');
-    }
 
     case 'write_only': {
       const graph = new AgentGraph('write-only')
         .addNode({ id: 'writer', type: 'agent', config: { agentRole: 'writer', label: 'Write' } });
       if (!skipReview) {
-        graph
-          .addNode({ id: 'reviewer', type: 'agent', config: { agentRole: 'reviewer', label: 'Review' } })
-          .addEdge({ from: 'writer', to: 'reviewer' });
+        graph.addNode({ id: 'reviewer', type: 'agent', config: { agentRole: 'reviewer', label: 'Review' } }).addEdge({ from: 'writer', to: 'reviewer' });
       }
       return graph.setStart('writer');
     }
@@ -947,9 +435,7 @@ function buildGraphForStrategy(strategy: TeamStrategy, skipReview?: boolean): Ag
         .addNode({ id: 'writer', type: 'agent', config: { agentRole: 'writer', label: 'Write' } })
         .addEdge({ from: 'researcher', to: 'writer' });
       if (!skipReview) {
-        graph
-          .addNode({ id: 'reviewer', type: 'agent', config: { agentRole: 'reviewer', label: 'Review' } })
-          .addEdge({ from: 'writer', to: 'reviewer' });
+        graph.addNode({ id: 'reviewer', type: 'agent', config: { agentRole: 'reviewer', label: 'Review' } }).addEdge({ from: 'writer', to: 'reviewer' });
       }
       return graph.setStart('researcher');
     }
@@ -958,145 +444,84 @@ function buildGraphForStrategy(strategy: TeamStrategy, skipReview?: boolean): Ag
       const graph = new AgentGraph('code-solve')
         .addNode({ id: 'coder', type: 'agent', config: { agentRole: 'coder', label: 'Code' } });
       if (!skipReview) {
-        graph
-          .addNode({ id: 'reviewer', type: 'agent', config: { agentRole: 'reviewer', label: 'Review' } })
-          .addEdge({ from: 'coder', to: 'reviewer' });
+        graph.addNode({ id: 'reviewer', type: 'agent', config: { agentRole: 'reviewer', label: 'Review' } }).addEdge({ from: 'coder', to: 'reviewer' });
       }
       return graph.setStart('coder');
     }
 
-    case 'research_code_review': {
+    case 'research_code_review':
       return new AgentGraph('research-code-review')
         .addNode({ id: 'researcher', type: 'agent', config: { agentRole: 'researcher', label: 'Research' } })
         .addNode({ id: 'coder', type: 'agent', config: { agentRole: 'coder', label: 'Code' } })
         .addNode({ id: 'reviewer', type: 'agent', config: { agentRole: 'reviewer', label: 'Review' } })
-        .addEdge({ from: 'researcher', to: 'coder' })
-        .addEdge({ from: 'coder', to: 'reviewer' })
+        .addEdge({ from: 'researcher', to: 'coder' }).addEdge({ from: 'coder', to: 'reviewer' })
         .setStart('researcher');
-    }
 
     case 'parallel_research': {
-      // 2x Researcher parallel → Writer → Reviewer
       const graph = new AgentGraph('parallel-research')
         .addNode({ id: 'researcher1', type: 'agent', config: { agentRole: 'researcher', label: 'Research 1' } })
         .addNode({ id: 'researcher2', type: 'agent', config: { agentRole: 'researcher', label: 'Research 2' } })
         .addNode({ id: 'writer', type: 'agent', config: { agentRole: 'writer', label: 'Write' } })
-        .addEdge({ from: 'researcher1', to: 'writer' })
-        .addEdge({ from: 'researcher2', to: 'writer' });
+        .addEdge({ from: 'researcher1', to: 'writer' }).addEdge({ from: 'researcher2', to: 'writer' });
       if (!skipReview) {
-        graph
-          .addNode({ id: 'reviewer', type: 'agent', config: { agentRole: 'reviewer', label: 'Review' } })
-          .addEdge({ from: 'writer', to: 'reviewer' });
+        graph.addNode({ id: 'reviewer', type: 'agent', config: { agentRole: 'reviewer', label: 'Review' } }).addEdge({ from: 'writer', to: 'reviewer' });
       }
       return graph.setStart('researcher1');
     }
 
-    case 'parallel_code_review': {
-      // Coder + Researcher parallel → Reviewer
-      const graph = new AgentGraph('parallel-code-review')
+    case 'parallel_code_review':
+      return new AgentGraph('parallel-code-review')
         .addNode({ id: 'coder', type: 'agent', config: { agentRole: 'coder', label: 'Code' } })
         .addNode({ id: 'researcher', type: 'agent', config: { agentRole: 'researcher', label: 'Research' } })
         .addNode({ id: 'reviewer', type: 'agent', config: { agentRole: 'reviewer', label: 'Review' } })
-        .addEdge({ from: 'coder', to: 'reviewer' })
-        .addEdge({ from: 'researcher', to: 'reviewer' })
+        .addEdge({ from: 'coder', to: 'reviewer' }).addEdge({ from: 'researcher', to: 'reviewer' })
         .setStart('coder');
-      return graph;
-    }
 
     case 'full_parallel': {
-      // Researcher + Coder parallel → Writer → Reviewer
       const graph = new AgentGraph('full-parallel')
         .addNode({ id: 'researcher', type: 'agent', config: { agentRole: 'researcher', label: 'Research' } })
         .addNode({ id: 'coder', type: 'agent', config: { agentRole: 'coder', label: 'Code' } })
         .addNode({ id: 'writer', type: 'agent', config: { agentRole: 'writer', label: 'Write' } })
-        .addEdge({ from: 'researcher', to: 'writer' })
-        .addEdge({ from: 'coder', to: 'writer' });
+        .addEdge({ from: 'researcher', to: 'writer' }).addEdge({ from: 'coder', to: 'writer' });
       if (!skipReview) {
-        graph
-          .addNode({ id: 'reviewer', type: 'agent', config: { agentRole: 'reviewer', label: 'Review' } })
-          .addEdge({ from: 'writer', to: 'reviewer' });
+        graph.addNode({ id: 'reviewer', type: 'agent', config: { agentRole: 'reviewer', label: 'Review' } }).addEdge({ from: 'writer', to: 'reviewer' });
       }
       return graph.setStart('researcher');
     }
 
-    case 'custom': {
-      // Custom strategy cannot be auto-mapped to a graph; fall back to empty graph
+    case 'custom':
       return new AgentGraph('custom');
-    }
   }
 }
 
-/**
- * Execute a team task using the AgentGraph execution engine.
- * Maps strategy to graph topology, wires agent factories, and
- * translates graph results back to TeamResult format.
- */
-async function executeWithGraph(
-  task: TeamTask,
-  onProgress?: AgentProgressCallback
-): Promise<TeamResult> {
+async function executeWithGraph(task: TeamTask, onProgress?: AgentProgressCallback): Promise<TeamResult> {
   const startTime = Date.now();
   const teamId = uuidv4();
   const agentOutputs: AgentOutput[] = [];
 
-  logger.info('Starting graph-based team task execution', {
-    teamId,
-    taskLength: task.description.length,
-    strategy: task.strategy,
-  });
+  logger.info('Starting graph-based team task execution', { teamId, taskLength: task.description.length, strategy: task.strategy });
 
   try {
-    // Initialize shared memory
     sharedMemory.initialize(teamId);
-
-    // Determine strategy
     const strategy = task.strategy || classifyTeamStrategy(task.description);
-    const pipeline = strategy === 'custom' && task.customPipeline
-      ? task.customPipeline
-      : getAgentPipeline(strategy, task.skipReview);
-
-    // Build graph from strategy
+    const pipeline = strategy === 'custom' && task.customPipeline ? task.customPipeline : getAgentPipeline(strategy, task.skipReview);
     const graph = buildGraphForStrategy(strategy, task.skipReview);
     const graphNodes = graph.getNodes();
 
-    if (graphNodes.length === 0) {
-      throw new Error('Empty agent graph - cannot execute');
-    }
+    if (graphNodes.length === 0) { throw new Error('Empty agent graph - cannot execute'); }
 
-    // Emit team_start
-    onProgress?.({
-      type: 'team_start',
-      teamId,
-      strategy,
-      pipeline,
-    });
+    onProgress?.({ type: 'team_start', teamId, strategy, pipeline });
+    sharedMemory.write(teamId, 'orchestrator', 'plan', `Aufgabe: ${task.description}\nStrategie: ${strategy} (graph)\nNodes: ${graphNodes.map(n => n.config.agentRole || n.id).join(' → ')}`);
 
-    // Write plan to shared memory
-    sharedMemory.write(
-      teamId,
-      'orchestrator',
-      'plan',
-      `Aufgabe: ${task.description}\nStrategie: ${strategy} (graph)\nNodes: ${graphNodes.map(n => n.config.agentRole || n.id).join(' → ')}`,
-    );
-
-    // Track node index for progress events
     let nodeIndex = 0;
     const totalNodes = graphNodes.filter(n => n.type === 'agent').length;
 
-    // Set up progress callback to translate graph events → orchestrator events
     graph.setProgressCallback((event) => {
       switch (event.type) {
         case 'node_start': {
           const node = graphNodes.find(n => n.id === event.nodeId);
           if (node?.type === 'agent') {
-            onProgress?.({
-              type: 'agent_start',
-              teamId,
-              agentRole: (node.config.agentRole || 'researcher') as AgentRole,
-              agentIndex: nodeIndex,
-              totalAgents: totalNodes,
-              subTask: task.description,
-            });
+            onProgress?.({ type: 'agent_start', teamId, agentRole: (node.config.agentRole || 'researcher') as AgentRole, agentIndex: nodeIndex, totalAgents: totalNodes, subTask: task.description });
           }
           break;
         }
@@ -1104,31 +529,9 @@ async function executeWithGraph(
           const node = graphNodes.find(n => n.id === event.nodeId);
           if (node?.type === 'agent' && event.result) {
             const role = (node.config.agentRole || 'researcher') as AgentRole;
-
-            // Build an AgentOutput record from the graph node result
-            const agentOutput: AgentOutput = {
-              role,
-              success: event.result.success ?? true,
-              content: event.result.output || '',
-              toolsUsed: [],
-              tokensUsed: { input: 0, output: 0 },
-              executionTimeMs: event.result.durationMs || 0,
-            };
+            const agentOutput: AgentOutput = { role, success: event.result.success ?? true, content: event.result.output || '', toolsUsed: [], tokensUsed: { input: 0, output: 0 }, executionTimeMs: event.result.durationMs || 0 };
             agentOutputs.push(agentOutput);
-
-            onProgress?.({
-              type: 'agent_complete',
-              teamId,
-              agentRole: role,
-              agentIndex: nodeIndex,
-              totalAgents: totalNodes,
-              result: {
-                role,
-                success: true,
-                toolsUsed: [],
-                executionTimeMs: event.result.durationMs || 0,
-              },
-            });
+            onProgress?.({ type: 'agent_complete', teamId, agentRole: role, agentIndex: nodeIndex, totalAgents: totalNodes, result: { role, success: true, toolsUsed: [], executionTimeMs: event.result.durationMs || 0 } });
             nodeIndex++;
           }
           break;
@@ -1137,31 +540,9 @@ async function executeWithGraph(
           const node = graphNodes.find(n => n.id === event.nodeId);
           if (node?.type === 'agent' && event.result) {
             const role = (node.config.agentRole || 'researcher') as AgentRole;
-
-            const agentOutput: AgentOutput = {
-              role,
-              success: false,
-              content: '',
-              toolsUsed: [],
-              tokensUsed: { input: 0, output: 0 },
-              executionTimeMs: event.result.durationMs || 0,
-              error: event.result.output,
-            };
+            const agentOutput: AgentOutput = { role, success: false, content: '', toolsUsed: [], tokensUsed: { input: 0, output: 0 }, executionTimeMs: event.result.durationMs || 0, error: event.result.output };
             agentOutputs.push(agentOutput);
-
-            onProgress?.({
-              type: 'agent_error',
-              teamId,
-              agentRole: role,
-              agentIndex: nodeIndex,
-              totalAgents: totalNodes,
-              result: {
-                role,
-                success: false,
-                error: event.result.output,
-                executionTimeMs: event.result.durationMs || 0,
-              },
-            });
+            onProgress?.({ type: 'agent_error', teamId, agentRole: role, agentIndex: nodeIndex, totalAgents: totalNodes, result: { role, success: false, error: event.result.output, executionTimeMs: event.result.durationMs || 0 } });
             nodeIndex++;
           }
           break;
@@ -1169,51 +550,22 @@ async function executeWithGraph(
       }
     });
 
-    // Agent executor callback for graph.execute()
     const agentExecutor = async (role: string, agentTask: string, state: WorkflowState): Promise<string> => {
       const agent = createAgent(role as AgentRole);
-
-      // Build context from previous node results
-      const previousResults = Object.values(state.nodeResults)
-        .filter(r => r.success && r.output)
-        .map(r => `[${r.nodeId}] ${r.output}`)
-        .join('\n\n---\n\n');
-
-      const output = await agent.execute({
-        task: agentTask,
-        context: previousResults || task.context,
-        aiContext: task.aiContext,
-        teamId,
-      });
-
-      // Update token counts on the last agentOutput entry (which was created in node_complete)
-      // We do this after execution because we only know tokens after the agent finishes
-      // The node_complete callback fires after this returns, so we store the output for retrieval
-      if (!output.success) {
-        throw new Error(output.error || `Agent ${role} failed`);
-      }
-
-      // Patch the last agentOutput with real token info
-      // (the node_complete callback will fire after we return the string)
-      // Store metadata on the state for later retrieval
+      const previousResults = Object.values(state.nodeResults).filter(r => r.success && r.output).map(r => `[${r.nodeId}] ${r.output}`).join('\n\n---\n\n');
+      const output = await agent.execute({ task: agentTask, context: previousResults || task.context, aiContext: task.aiContext, teamId });
+      if (!output.success) { throw new Error(output.error || `Agent ${role} failed`); }
       state.variables[`_tokens_${state.currentNodeId}`] = output.tokensUsed;
       state.variables[`_tools_${state.currentNodeId}`] = output.toolsUsed;
-
       return output.content;
     };
 
-    // Execute the graph
     const graphResult = await graph.execute(
       task.context ? `${task.description}\n\nKontext: ${task.context}` : task.description,
-      task.aiContext,
-      agentExecutor,
-      undefined, // no toolExecutor needed
-      20,        // maxIterations
+      task.aiContext, agentExecutor, undefined, 20,
     );
 
-    // Patch agentOutputs with real token/tool info stored in state variables
     for (const agentOutput of agentOutputs) {
-      // Find matching node by role
       const matchNode = graphNodes.find(n => n.config.agentRole === agentOutput.role);
       if (matchNode) {
         const tokens = graphResult.state.variables[`_tokens_${matchNode.id}`] as { input: number; output: number } | undefined;
@@ -1223,155 +575,54 @@ async function executeWithGraph(
       }
     }
 
-    // Aggregate final output
     const finalOutput = graphResult.finalOutput || aggregateResults(agentOutputs);
-
-    // Get memory stats
     const memoryStats = sharedMemory.getStats(teamId);
+    const totalTokens = agentOutputs.reduce((acc, r) => ({ input: acc.input + r.tokensUsed.input, output: acc.output + r.tokensUsed.output }), { input: 0, output: 0 });
 
-    // Calculate total tokens
-    const totalTokens = agentOutputs.reduce(
-      (acc, r) => ({
-        input: acc.input + r.tokensUsed.input,
-        output: acc.output + r.tokensUsed.output,
-      }),
-      { input: 0, output: 0 }
-    );
+    const teamResult: TeamResult = { teamId, success: graphResult.success, finalOutput, agentResults: agentOutputs, executionTimeMs: Date.now() - startTime, strategy, totalTokens, memoryStats: { totalEntries: memoryStats.totalEntries, byAgent: memoryStats.byAgent } };
 
-    const teamResult: TeamResult = {
-      teamId,
-      success: graphResult.success,
-      finalOutput,
-      agentResults: agentOutputs,
-      executionTimeMs: Date.now() - startTime,
-      strategy,
-      totalTokens,
-      memoryStats: {
-        totalEntries: memoryStats.totalEntries,
-        byAgent: memoryStats.byAgent,
-      },
-    };
+    onProgress?.({ type: 'team_complete', teamId, finalOutput, stats: { input: totalTokens.input, output: totalTokens.output, executionTimeMs: teamResult.executionTimeMs, memoryEntries: memoryStats.totalEntries } });
 
-    // Emit team_complete
-    onProgress?.({
-      type: 'team_complete',
-      teamId,
-      finalOutput,
-      stats: {
-        input: totalTokens.input,
-        output: totalTokens.output,
-        executionTimeMs: teamResult.executionTimeMs,
-        memoryEntries: memoryStats.totalEntries,
-      },
-    });
+    logger.info('Graph-based team task completed', { teamId, success: teamResult.success, agentCount: agentOutputs.length, nodeCount: graphResult.nodeHistory.length, totalTokens, executionTimeMs: teamResult.executionTimeMs });
 
-    logger.info('Graph-based team task completed', {
-      teamId,
-      success: teamResult.success,
-      agentCount: agentOutputs.length,
-      nodeCount: graphResult.nodeHistory.length,
-      totalTokens,
-      executionTimeMs: teamResult.executionTimeMs,
-    });
-
-    // Emit system event for proactive engine
     import('./event-system').then(({ emitSystemEvent }) =>
-      emitSystemEvent({
-        context: task.aiContext,
-        eventType: teamResult.success ? 'agent.completed' : 'agent.failed',
-        eventSource: 'agent_orchestrator',
-        payload: { teamId, strategy, executionTimeMs: teamResult.executionTimeMs, agentCount: agentOutputs.length, executionMode: 'graph' },
-      })
-    ).catch(err => {
-      logger.warn('Failed to emit agent event', { error: err instanceof Error ? err.message : String(err), teamId });
-    });
+      emitSystemEvent({ context: task.aiContext, eventType: teamResult.success ? 'agent.completed' : 'agent.failed', eventSource: 'agent_orchestrator', payload: { teamId, strategy, executionTimeMs: teamResult.executionTimeMs, agentCount: agentOutputs.length, executionMode: 'graph' } })
+    ).catch(err => { logger.warn('Failed to emit agent event', { error: err instanceof Error ? err.message : String(err), teamId }); });
 
     return teamResult;
   } catch (error) {
     const errorMsg = error instanceof Error ? error.message : String(error);
     logger.error('Graph-based team task failed', error instanceof Error ? error : new Error(errorMsg));
-
-    // Return a failed TeamResult rather than throwing
     const strategy = task.strategy || classifyTeamStrategy(task.description);
     const memoryStats = sharedMemory.getStats(teamId);
-    const totalTokens = agentOutputs.reduce(
-      (acc, r) => ({
-        input: acc.input + r.tokensUsed.input,
-        output: acc.output + r.tokensUsed.output,
-      }),
-      { input: 0, output: 0 }
-    );
-
-    return {
-      teamId,
-      success: false,
-      finalOutput: `Graph execution failed: ${errorMsg}`,
-      agentResults: agentOutputs,
-      executionTimeMs: Date.now() - startTime,
-      strategy,
-      totalTokens,
-      memoryStats: {
-        totalEntries: memoryStats.totalEntries,
-        byAgent: memoryStats.byAgent,
-      },
-    };
+    const totalTokens = agentOutputs.reduce((acc, r) => ({ input: acc.input + r.tokensUsed.input, output: acc.output + r.tokensUsed.output }), { input: 0, output: 0 });
+    return { teamId, success: false, finalOutput: `Graph execution failed: ${errorMsg}`, agentResults: agentOutputs, executionTimeMs: Date.now() - startTime, strategy, totalTokens, memoryStats: { totalEntries: memoryStats.totalEntries, byAgent: memoryStats.byAgent } };
   } finally {
     sharedMemory.clear(teamId);
   }
 }
 
-/**
- * Execute a team task with SSE streaming progress
- */
-export async function executeTeamTaskStreaming(
-  task: TeamTask,
-  res: Response,
-  options?: ExecuteTeamTaskOptions
-): Promise<void> {
-  // Setup SSE headers
-  res.writeHead(200, {
-    'Content-Type': 'text/event-stream; charset=utf-8',
-    'Cache-Control': 'no-cache',
-    'Connection': 'keep-alive',
-    'X-Accel-Buffering': 'no',
-  });
+// ===========================================
+// SSE Streaming
+// ===========================================
 
-  const sendEvent = (event: AgentProgressEvent) => {
-    res.write(`data: ${JSON.stringify(event)}\n\n`);
-  };
+export async function executeTeamTaskStreaming(task: TeamTask, res: Response, options?: ExecuteTeamTaskOptions): Promise<void> {
+  res.writeHead(200, { 'Content-Type': 'text/event-stream; charset=utf-8', 'Cache-Control': 'no-cache', 'Connection': 'keep-alive', 'X-Accel-Buffering': 'no' });
+
+  const sendEvent = (event: AgentProgressEvent) => { res.write(`data: ${JSON.stringify(event)}\n\n`); };
 
   let closed = false;
   res.on('close', () => { closed = true; });
 
   try {
-    const result = await executeTeamTask(task, (event) => {
-      if (!closed) {
-        sendEvent(event);
-      }
-    }, options);
+    const result = await executeTeamTask(task, (event) => { if (!closed) { sendEvent(event); } }, options);
 
-    // Send final result as JSON event
     if (!closed) {
       res.write(`data: ${JSON.stringify({
-        type: 'result',
-        teamId: result.teamId,
-        success: result.success,
-        finalOutput: result.finalOutput,
-        strategy: result.strategy,
-        agents: result.agentResults.map(a => ({
-          role: a.role,
-          success: a.success,
-          toolsUsed: a.toolsUsed,
-          executionTimeMs: a.executionTimeMs,
-          error: a.error,
-        })),
-        stats: {
-          executionTimeMs: result.executionTimeMs,
-          totalTokens: result.totalTokens,
-          sharedMemoryEntries: result.memoryStats.totalEntries,
-        },
+        type: 'result', teamId: result.teamId, success: result.success, finalOutput: result.finalOutput, strategy: result.strategy,
+        agents: result.agentResults.map(a => ({ role: a.role, success: a.success, toolsUsed: a.toolsUsed, executionTimeMs: a.executionTimeMs, error: a.error })),
+        stats: { executionTimeMs: result.executionTimeMs, totalTokens: result.totalTokens, sharedMemoryEntries: result.memoryStats.totalEntries },
       })}\n\n`);
-
       res.write('data: [DONE]\n\n');
     }
   } catch (error) {
@@ -1381,87 +632,36 @@ export async function executeTeamTaskStreaming(
       res.write('data: [DONE]\n\n');
     }
   } finally {
-    if (!closed) {
-      res.end();
-    }
+    if (!closed) { res.end(); }
   }
 }
 
-/**
- * Aggregate results from all agents into a final output
- */
+// ===========================================
+// Result Aggregation
+// ===========================================
+
 function aggregateResults(results: AgentOutput[]): string {
-  // If there's a reviewer result, use that (it's the refined version)
   const reviewerResult = results.find(r => r.role === 'reviewer' && r.success);
-  if (reviewerResult) {
-    return reviewerResult.content;
-  }
-
-  // If there's a writer result, use that
+  if (reviewerResult) return reviewerResult.content;
   const writerResult = results.find(r => r.role === 'writer' && r.success);
-  if (writerResult) {
-    return writerResult.content;
-  }
-
-  // Fall back to the last successful result
+  if (writerResult) return writerResult.content;
   const lastSuccess = [...results].reverse().find(r => r.success);
-  if (lastSuccess) {
-    return lastSuccess.content;
-  }
-
-  // If nothing succeeded, compile error report
-  return results
-    .map(r => `[${r.role}]: ${r.error || 'Keine Ausgabe'}`)
-    .join('\n');
+  if (lastSuccess) return lastSuccess.content;
+  return results.map(r => `[${r.role}]: ${r.error || 'Keine Ausgabe'}`).join('\n');
 }
 
 // ===========================================
 // Quick Execution Helpers
 // ===========================================
 
-/**
- * Quick research task (researcher only)
- */
-export async function quickResearch(
-  query: string,
-  aiContext: AIContext = 'personal'
-): Promise<TeamResult> {
-  return executeTeamTask({
-    description: query,
-    aiContext,
-    strategy: 'research_only',
-  });
+export async function quickResearch(query: string, aiContext: AIContext = 'personal'): Promise<TeamResult> {
+  return executeTeamTask({ description: query, aiContext, strategy: 'research_only' });
 }
 
-/**
- * Research and write (no review)
- */
-export async function researchAndWrite(
-  task: string,
-  aiContext: AIContext = 'personal',
-  context?: string
-): Promise<TeamResult> {
-  return executeTeamTask({
-    description: task,
-    aiContext,
-    strategy: 'research_write_review',
-    skipReview: true,
-    context,
-  });
+export async function researchAndWrite(task: string, aiContext: AIContext = 'personal', context?: string): Promise<TeamResult> {
+  return executeTeamTask({ description: task, aiContext, strategy: 'research_write_review', skipReview: true, context });
 }
 
-/**
- * Full pipeline (research → write → review)
- */
-export async function fullTeamExecution(
-  task: string,
-  aiContext: AIContext = 'personal',
-  context?: string
-): Promise<TeamResult> {
-  return executeTeamTask({
-    description: task,
-    aiContext,
-    strategy: 'research_write_review',
-    context,
-  });
+export async function fullTeamExecution(task: string, aiContext: AIContext = 'personal', context?: string): Promise<TeamResult> {
+  return executeTeamTask({ description: task, aiContext, strategy: 'research_write_review', context });
 }

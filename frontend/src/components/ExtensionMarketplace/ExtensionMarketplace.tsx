@@ -137,6 +137,7 @@ export function ExtensionMarketplace() {
   // Fetch on mount and when viewMode/typeFilter changes
   useEffect(() => {
     fetchExtensions();
+  // Intentionally omit fetchExtensions — stable callback, only re-fetch on filter change
   }, [viewMode, typeFilter]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Debounce search queries (300ms)
@@ -146,6 +147,7 @@ export function ExtensionMarketplace() {
       fetchExtensions(searchQuery);
     }, 300);
     return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
+  // Intentionally omit fetchExtensions — stable callback, debounce only triggers on search change
   }, [searchQuery]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ===========================================

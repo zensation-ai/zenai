@@ -219,7 +219,7 @@ export function useAIQuestions({
       }, 3000);
       return () => clearTimeout(timer);
     }
-  // Only run once on mount
+  // Intentionally run only on mount — one-time question display after 3s delay
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

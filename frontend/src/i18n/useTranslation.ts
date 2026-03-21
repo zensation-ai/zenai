@@ -19,6 +19,7 @@ export function useTranslation() {
 
   const t = useCallback((key: string, params?: Record<string, string | number>) => {
     return translate(key, params);
+  // Intentionally omit translate — module-level pure function, stable identity
   }, [locale]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return { t, locale, changeLocale };

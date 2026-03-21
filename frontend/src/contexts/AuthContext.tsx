@@ -163,6 +163,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => {
       if (refreshTimerRef.current) clearTimeout(refreshTimerRef.current);
     };
+  // Intentionally run only on mount — reads localStorage and triggers initial auth check
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -222,6 +223,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } finally {
       setLoading(false);
     }
+  // Intentionally omit clearAuthState/refreshTokens — defined later, stable via useCallback([])
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -256,6 +258,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } finally {
       setLoading(false);
     }
+  // Intentionally omit storeAuthState/clearAuthState — stable via useCallback([])
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

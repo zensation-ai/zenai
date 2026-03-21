@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { X } from 'lucide-react';
-import type { FilterChipDef, IdeaFilters } from './types';
+import type { FilterChipDef, IdeaFilters, IdeaStatus } from './types';
 import './FilterChipBar.css';
 
 interface FilterChipBarProps {
@@ -13,7 +13,7 @@ interface FilterChipBarProps {
 
 function isChipActive(chip: FilterChipDef, filters: IdeaFilters): boolean {
   switch (chip.group) {
-    case 'status': return filters.status.has(chip.value as any);
+    case 'status': return filters.status.has(chip.value as IdeaStatus);
     case 'type': return filters.types.has(chip.value);
     case 'category': return filters.categories.has(chip.value);
     case 'priority': return filters.priorities.has(chip.value);

@@ -282,6 +282,7 @@ const DashboardComponent: React.FC<DashboardProps> = ({
   const fetchError = summary.isError;
   const reducedMotion = usePrefersReducedMotion();
 
+  // Intentionally depend on context (not time) — greeting recomputes on context switch, not every render
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const greeting = useMemo(() => getTimeBasedGreeting(), [context]);
   const contextInfo = CONTEXT_LABELS[context];

@@ -12,7 +12,7 @@ import { EmailGridView } from './EmailGridView';
 import { InboxPanel } from './InboxPanel';
 import { useInboxFilters } from './useInboxFilters';
 import { QueryErrorState } from '../QueryErrorState';
-import { useEmailsQuery, useToggleEmailStarMutation } from '../../hooks/queries/useEmail';
+import { useEmailsQuery, useToggleEmailStarMutation, useBatchEmailStatusMutation } from '../../hooks/queries/useEmail';
 import type { Email, InboxViewMode } from './types';
 import type { AIContext } from '../ContextSwitcher';
 import './InboxSmartPage.css';
@@ -54,6 +54,7 @@ export function InboxSmartPage({ context, initialTab: _initialTab }: InboxSmartP
     queryFilters,
   );
   const starMutation = useToggleEmailStarMutation(context as AIContext);
+  const batchStatusMutation = useBatchEmailStatusMutation(context as AIContext);
 
   // Bridge hook Email type to local Email type (API returns full objects)
   const allEmails = emails as unknown as Email[];
@@ -107,16 +108,22 @@ export function InboxSmartPage({ context, initialTab: _initialTab }: InboxSmartP
   }, []);
 
   const handleBatchArchive = useCallback(() => {
-    // TODO: implement batch archive mutation
+    const ids = [...selectedIds];
+    if (ids.length > 0) {
+      batchStatusMutation.mutate({ ids, status: 'archived' });
+    }
     setSelectedIds(new Set());
     setSelectionMode(false);
-  }, []);
+  }, [selectedIds, batchStatusMutation]);
 
   const handleBatchDelete = useCallback(() => {
-    // TODO: implement batch delete mutation
+    const ids = [...selectedIds];
+    if (ids.length > 0) {
+      batchStatusMutation.mutate({ ids, status: 'trash' });
+    }
     setSelectedIds(new Set());
     setSelectionMode(false);
-  }, []);
+  }, [selectedIds, batchStatusMutation]);
 
   if (error) {
     return (

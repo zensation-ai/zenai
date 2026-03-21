@@ -65,6 +65,7 @@ export function AIBrain({
   const currentMessage = useMemo(() => {
     const messages = AI_ACTIVITY_MESSAGES[activityType] || AI_ACTIVITY_MESSAGES.thinking;
     return messages[Math.floor(Math.random() * messages.length)];
+    // Intentionally include isActive to pick a new random message on activity toggle
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activityType, isActive]);
 

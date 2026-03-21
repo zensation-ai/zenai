@@ -80,6 +80,11 @@ export abstract class BaseAgent {
     return this.config.role;
   }
 
+  /** Set persona prompt from DB identity (used by orchestrator) */
+  setPersonaPrompt(prompt: string): void {
+    this.config.personaPrompt = prompt;
+  }
+
   /** Timeout for agent execution in milliseconds */
   static AGENT_TIMEOUT_MS = 60_000;
 

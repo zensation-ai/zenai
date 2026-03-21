@@ -93,6 +93,7 @@ export async function sendEmail(options: SendEmailOptions): Promise<SendEmailRes
     }));
   }
 
+  // Resend SDK CreateEmailOptions type doesn't match optional attachments pattern
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data, error } = await client.emails.send(params as any);
 

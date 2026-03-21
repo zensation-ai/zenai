@@ -63,6 +63,7 @@ vi.mock('../../../hooks/queries/useEmail', () => ({
   }),
   useEmailStatsQuery: () => ({ data: null }),
   useToggleEmailStarMutation: () => ({ mutate: vi.fn() }),
+  useBatchEmailStatusMutation: () => ({ mutate: vi.fn(), isPending: false }),
 }));
 
 let queryClient: QueryClient;

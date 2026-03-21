@@ -93,6 +93,7 @@ export function AppLayout({
     if (isTablet && !sidebarCollapsed) {
       setSidebarCollapsed(true);
     }
+  // Intentionally omit sidebarCollapsed — only auto-collapse when breakpoint changes, not on manual toggle
   }, [isTablet]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Mobile sidebar drawer state
