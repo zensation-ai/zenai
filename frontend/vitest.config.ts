@@ -4,22 +4,36 @@ import react from '@vitejs/plugin-react';
 import path from 'path';
 import fs from 'fs';
 
-// Resolve symlinks for pnpm workspace compatibility
-// Checks local node_modules first, then root
+// Resolve packages for pnpm workspace compatibility
+// Uses require.resolve to follow Node's module resolution (handles pnpm store, hoisting, symlinks)
 function resolvePackage(pkg: string): string {
-  const candidates = [
-    path.resolve(__dirname, 'node_modules', pkg),
-    path.resolve(__dirname, '..', 'node_modules', pkg),
-  ];
-  for (const candidate of candidates) {
-    try {
-      const real = fs.realpathSync(candidate);
-      if (fs.existsSync(real)) return real;
-    } catch {
-      // Symlink target doesn't exist, try next
+  try {
+    // require.resolve gives us the main entry point, we need the package directory
+    const resolved = require.resolve(pkg, { paths: [__dirname, path.resolve(__dirname, '..')] });
+    // Walk up from resolved entry to find the package root (directory containing package.json)
+    let dir = path.dirname(resolved);
+    while (dir !== path.dirname(dir)) {
+      if (fs.existsSync(path.join(dir, 'package.json'))) {
+        const pkgJson = JSON.parse(fs.readFileSync(path.join(dir, 'package.json'), 'utf8'));
+        if (pkgJson.name === pkg) return dir;
+      }
+      dir = path.dirname(dir);
     }
+    return path.dirname(resolved);
+  } catch {
+    // Fallback to manual lookup
+    const candidates = [
+      path.resolve(__dirname, 'node_modules', pkg),
+      path.resolve(__dirname, '..', 'node_modules', pkg),
+    ];
+    for (const c of candidates) {
+      try {
+        const real = fs.realpathSync(c);
+        if (fs.existsSync(real)) return real;
+      } catch { /* skip */ }
+    }
+    return candidates[0];
   }
-  return candidates[0]; // fallback
 }
 
 export default defineConfig({
