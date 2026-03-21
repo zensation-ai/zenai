@@ -19,7 +19,7 @@
     "electron-updater": "^6.3.0"
   },
   "devDependencies": {
-    "electron": "^33.0.0",
+    "electron": "^41.0.0",
     "electron-builder": "^25.0.0",
     "typescript": "^5.3.3"
   }
