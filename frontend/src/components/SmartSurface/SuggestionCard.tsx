@@ -6,7 +6,7 @@
  * Includes pulse-on-appear, dismiss slide-out, and snooze shrink animations.
  */
 
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, memo } from 'react';
 import type { SmartSuggestion, SnoozeDuration } from '../../hooks/useSmartSuggestions';
 import { animations } from '../../design-system';
 import './SuggestionCard.css';
@@ -37,7 +37,7 @@ interface SuggestionCardProps {
   onAccept: (id: string) => void;
 }
 
-export function SuggestionCard({ suggestion, onDismiss, onSnooze, onAccept }: SuggestionCardProps) {
+export const SuggestionCard = memo(function SuggestionCard({ suggestion, onDismiss, onSnooze, onAccept }: SuggestionCardProps) {
   const [snoozeOpen, setSnoozeOpen] = useState(false);
   const [exitAnimation, setExitAnimation] = useState<'dismiss' | 'snooze' | null>(null);
   const cardRef = useRef<HTMLDivElement>(null);
@@ -200,4 +200,4 @@ export function SuggestionCard({ suggestion, onDismiss, onSnooze, onAccept }: Su
       </div>
     </div>
   );
-}
+});
