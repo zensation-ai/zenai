@@ -17,8 +17,8 @@ import {
   MemoryInsightsPage, SystemAdminPage,
   // Phase 104: ChatHub is the new primary start page
   ChatHub,
-  // Smart Pages (Phase 109-110)
-  CockpitPage, WissenPage, MeineKIPage, SystemPage,
+  // Original full-featured pages (Smart Page stubs not yet wired)
+  DocumentVaultPage, BusinessDashboard, MyAIPage, SettingsDashboard,
 } from './routes/LazyPages';
 
 // Onboarding (Phase 86)
@@ -280,31 +280,39 @@ function AuthenticatedApp() {
         </Suspense>
       } />
 
-      {/* Wissen (Documents/Knowledge) — Smart Page */}
+      {/* Wissen (Documents/Knowledge) */}
       <Route path="/wissen" element={
         <Suspense fallback={<PageLoader />}>
-          <WissenPage context={context} initialTab="documents" />
+          <DocumentVaultPage context={context} onBack={() => navigateToPage('hub')} initialTab="documents" />
         </Suspense>
       } />
       <Route path="/wissen/:tab" element={
         <Suspense fallback={<PageLoader />}>
-          <WissenPage context={context} initialTab={tabParam || 'documents'} />
+          <DocumentVaultPage
+            context={context}
+            onBack={() => navigateToPage('hub')}
+            initialTab={(tabParam || 'documents') as 'documents' | 'editor' | 'media'}
+          />
         </Suspense>
       } />
 
-      {/* Cockpit (Business) — Smart Page */}
+      {/* Cockpit (Business) */}
       <Route path="/cockpit" element={
         <Suspense fallback={<PageLoader />}>
-          <CockpitPage context={context} initialTab="overview" />
+          <BusinessDashboard context={context} onBack={() => navigateToPage('hub')} />
         </Suspense>
       } />
       <Route path="/cockpit/:tab" element={
         <Suspense fallback={<PageLoader />}>
-          <CockpitPage context={context} initialTab={tabParam || 'overview'} />
+          <BusinessDashboard
+            context={context}
+            onBack={() => navigateToPage('hub')}
+            initialTab={tabParam as 'overview' | 'revenue' | 'traffic' | 'seo' | 'health' | 'insights' | 'reports' | 'connectors' | 'intelligence' | undefined}
+          />
         </Suspense>
       } />
 
-      {/* Meine KI (My AI) — Smart Page */}
+      {/* Meine KI (My AI) */}
       <Route path="/meine-ki/memory-insights" element={
         <Suspense fallback={<PageLoader />}>
           <MemoryInsightsPage context={context} onBack={() => navigateToPage('my-ai')} />
@@ -312,29 +320,48 @@ function AuthenticatedApp() {
       } />
       <Route path="/meine-ki" element={
         <Suspense fallback={<PageLoader />}>
-          <MeineKIPage context={context} initialTab="personalize" />
+          <MyAIPage context={context} onBack={() => navigateToPage('hub')} initialTab="personalize" />
         </Suspense>
       } />
       <Route path="/meine-ki/:tab" element={
         <Suspense fallback={<PageLoader />}>
-          <MeineKIPage context={context} initialTab={tabParam || 'personalize'} />
+          <MyAIPage
+            context={context}
+            onBack={() => navigateToPage('hub')}
+            initialTab={(tabParam || 'personalize') as 'personalize' | 'memory' | 'procedures' | 'digital-twin' | 'voice-chat'}
+          />
         </Suspense>
       } />
 
-      {/* System (Settings) — Smart Page */}
+      {/* System (Settings) */}
       <Route path="/system" element={
         <Suspense fallback={<PageLoader />}>
-          <SystemPage context={context} initialTab="general" />
+          <SettingsDashboard
+            context={context}
+            onBack={() => navigateToPage('hub')}
+            onNavigate={(page) => navigateToPage(page as Page)}
+            initialTab="general"
+          />
         </Suspense>
       } />
       <Route path="/system/:tab" element={
         <Suspense fallback={<PageLoader />}>
-          <SystemPage context={context} initialTab={tabParam || 'general'} />
+          <SettingsDashboard
+            context={context}
+            onBack={() => navigateToPage('hub')}
+            onNavigate={(page) => navigateToPage(page as Page)}
+            initialTab={(tabParam || 'general') as 'profile' | 'account' | 'general' | 'ai' | 'privacy' | 'automations' | 'proactive-rules' | 'governance' | 'context-rules' | 'security' | 'integrations' | 'mcp-servers' | 'extensions' | 'on-device-ai' | 'system' | 'data'}
+          />
         </Suspense>
       } />
       <Route path="/system/:tab/:subtab" element={
         <Suspense fallback={<PageLoader />}>
-          <SystemPage context={context} initialTab={tabParam || 'general'} />
+          <SettingsDashboard
+            context={context}
+            onBack={() => navigateToPage('hub')}
+            onNavigate={(page) => navigateToPage(page as Page)}
+            initialTab={(tabParam || 'general') as 'profile' | 'account' | 'general' | 'ai' | 'privacy' | 'automations' | 'proactive-rules' | 'governance' | 'context-rules' | 'security' | 'integrations' | 'mcp-servers' | 'extensions' | 'on-device-ai' | 'system' | 'data'}
+          />
         </Suspense>
       } />
 

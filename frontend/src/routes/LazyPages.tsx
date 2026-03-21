@@ -44,6 +44,23 @@ export const SystemPage = lazy(() =>
   import('../components/SystemPage/SystemSmartPage').then(m => ({ default: m.SystemSmartPage }))
 );
 
+// Original full-featured pages (used until Smart Pages are wired up)
+export const DocumentVaultPage = lazy(() =>
+  import('../components/DocumentVaultPage').then(m => ({ default: m.DocumentVaultPage }))
+);
+
+export const BusinessDashboard = lazy(() =>
+  import('../components/BusinessDashboard').then(m => ({ default: m.BusinessDashboard }))
+);
+
+export const MyAIPage = lazy(() =>
+  import('../components/MyAIPage').then(m => ({ default: m.MyAIPage }))
+);
+
+export const SettingsDashboard = lazy(() =>
+  import('../components/SettingsDashboard').then(m => ({ default: m.SettingsDashboard }))
+);
+
 export const PlannerPage = lazy(() =>
   import('../components/PlannerPage/PlannerPage').then(m => ({ default: m.PlannerPage }))
 );

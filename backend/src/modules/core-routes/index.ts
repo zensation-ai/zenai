@@ -1,6 +1,5 @@
 import type { Express } from 'express';
 import type { Module } from '../../core/module';
-import { healthRouter } from '../../routes/health';
 import { voiceMemoRouter } from '../../routes/voice-memo';
 import { ideasRouter, ideasContextRouter } from '../../routes/ideas';
 import { knowledgeGraphRouter } from '../../routes/knowledge-graph';
@@ -30,8 +29,7 @@ export class CoreRoutesModule implements Module {
   name = 'core-routes';
 
   registerRoutes(app: Express): void {
-    // Phase 1-3 Routes
-    app.use('/api/health', healthRouter);
+    // Note: healthRouter is in HealthModule (registered first to avoid apiKeyAuth catch-all)
     app.use('/api/voice-memo', voiceMemoRouter);
     app.use('/api/ideas', ideasRouter);
     app.use('/api', ideasContextRouter);

@@ -3,6 +3,9 @@ import type { Module } from '../core/module';
 // Middleware (global middleware, CORS, auth, rate limiting, etc.)
 import { MiddlewareModule } from './middleware';
 
+// Health module — MUST be before any module with router.use(apiKeyAuth) on /api
+import { HealthModule } from './health';
+
 // Feature modules — ORDER MATTERS! Matches the route registration order in the original main.ts.
 // Some routes have path conflicts that require specific ordering (e.g., /api/code before /:context routes,
 // email webhooks before generic webhooks).
@@ -47,6 +50,10 @@ import { SleepModule } from './sleep';
 export const modules: Module[] = [
   // Global middleware (must be first)
   new MiddlewareModule(),
+
+  // Health — MUST be before any module with router.use(apiKeyAuth) at /api mount
+  // (e.g., DocumentsModule, FinanceModule) to keep /api/health unauthenticated
+  new HealthModule(),
 
   // Routes that must come before context-aware routes (to avoid /:context conflicts)
   new ObservabilityModule(),
