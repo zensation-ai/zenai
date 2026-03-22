@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { CheckSquare, Brain, Calendar, Activity } from 'lucide-react';
+import { CheckSquare, Brain, Activity, type LucideIcon } from 'lucide-react';
 import './DashboardPage.css';
 
 type AIContext = 'personal' | 'work' | 'learning' | 'creative';
@@ -10,7 +10,7 @@ interface DashboardPageProps {
 
 interface WidgetProps {
   title: string;
-  icon: React.ComponentType<{ size?: number }>;
+  icon: LucideIcon;
   panel: string;
   children: React.ReactNode;
 }
@@ -33,7 +33,7 @@ function Widget({ title, icon: Icon, panel, children }: WidgetProps) {
   );
 }
 
-export function DashboardPage({ context }: DashboardPageProps) {
+export function DashboardPage({ context: _context }: DashboardPageProps) {
   return (
     <div className="dashboard-page">
       <h1 className="dashboard-page__title">Dashboard</h1>
