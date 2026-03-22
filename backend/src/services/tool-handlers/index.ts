@@ -81,6 +81,9 @@ import {
   TOOL_MEMORY_REPLACE,
   TOOL_MEMORY_ABSTRACT,
   TOOL_MEMORY_SEARCH_AND_LINK,
+  TOOL_CORE_MEMORY_READ,
+  TOOL_CORE_MEMORY_UPDATE,
+  TOOL_CORE_MEMORY_APPEND,
 } from '../claude/tool-use';
 
 // Sub-module imports — extracted handlers
@@ -135,6 +138,11 @@ import {
   TOOL_CONVERSATION_SEARCH,
   TOOL_CONVERSATION_SEARCH_DATE,
 } from './conversation-search';
+import {
+  handleCoreMemoryRead,
+  handleCoreMemoryUpdate,
+  handleCoreMemoryAppend,
+} from './core-memory-tools';
 
 // ===========================================
 // Registration
@@ -237,6 +245,11 @@ export function registerAllToolHandlers(): void {
   toolRegistry.register(TOOL_CONVERSATION_SEARCH, handleConversationSearch);
   toolRegistry.register(TOOL_CONVERSATION_SEARCH_DATE, handleConversationSearchDate);
 
+  // Core Memory tools (core-memory-tools.ts) — Phase 126
+  toolRegistry.register(TOOL_CORE_MEMORY_READ, handleCoreMemoryRead);
+  toolRegistry.register(TOOL_CORE_MEMORY_UPDATE, handleCoreMemoryUpdate);
+  toolRegistry.register(TOOL_CORE_MEMORY_APPEND, handleCoreMemoryAppend);
+
   logger.info('Tool handlers registered', {
     tools: [
       'search_ideas', 'create_idea', 'get_related_ideas', 'calculate',
@@ -258,6 +271,7 @@ export function registerAllToolHandlers(): void {
       'memory_replace', 'memory_abstract', 'memory_search_and_link',
       'update_idea', 'archive_idea', 'delete_idea',
       'conversation_search', 'conversation_search_date',
+      'core_memory_read', 'core_memory_update', 'core_memory_append',
     ],
   });
 }

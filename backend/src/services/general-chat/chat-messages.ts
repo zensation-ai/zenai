@@ -21,6 +21,8 @@ import { routeToModel, recordUsage } from '../model-orchestrator';
 import { estimateTokensBudget } from '../../utils/token-budget';
 import { logAIDecision } from '../compliance-logger';
 import { estimateChatInputTokens, estimateTokens } from '../../utils/token-estimation';
+import { getCurrentUserId } from '../../utils/request-context';
+import { SYSTEM_USER_ID } from '../../utils/user-context';
 import {
   RAGQualityMetrics,
   ResponseMetadata,
@@ -179,6 +181,20 @@ export async function generateEnhancedResponse(
     const personalFactsSection = await getPersonalFactsPromptSection(userMessage);
     if (personalFactsSection) {
       systemPrompt += personalFactsSection;
+    }
+
+    // Phase 126: Pinned Core Memory blocks
+    try {
+      const { getCoreMemoryBlocks, buildCoreMemoryPromptSection } = await import('../memory/core-memory');
+      const coreMemoryUserId = getCurrentUserId() || SYSTEM_USER_ID;
+      const coreBlocks = await getCoreMemoryBlocks(contextType, coreMemoryUserId);
+      const coreMemorySection = buildCoreMemoryPromptSection(coreBlocks);
+      if (coreMemorySection) {
+        systemPrompt += '\n\n' + coreMemorySection;
+      }
+    } catch (error) {
+      // Non-critical: Core Memory is a bonus, not required
+      logger.debug('Core Memory injection skipped', { error: error instanceof Error ? error.message : String(error) });
     }
 
     logger.debug('Enhanced context prepared', {

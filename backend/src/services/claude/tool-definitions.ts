@@ -795,3 +795,66 @@ export const TOOL_MEMORY_SEARCH_AND_LINK: ToolDefinition = {
     required: ['query'],
   },
 };
+
+// ===========================================
+// Phase 126: Core Memory Tools
+// ===========================================
+
+export const TOOL_CORE_MEMORY_READ: ToolDefinition = {
+  name: 'core_memory_read',
+  description:
+    'Liest einen Block aus dem Kern-Gedaechtnis des Benutzers. Das Kern-Gedaechtnis enthaelt dauerhaft angeheftete Informationen wie Benutzerprofil, aktuelle Ziele, Praeferenzen und Arbeitskontext. Nutze dies um den aktuellen Inhalt eines Blocks abzurufen.',
+  input_schema: {
+    type: 'object',
+    properties: {
+      block_type: {
+        type: 'string',
+        enum: ['user_profile', 'current_goals', 'preferences', 'working_context'],
+        description: 'Typ des Kern-Gedaechtnis-Blocks: user_profile (Benutzerprofil), current_goals (aktuelle Ziele), preferences (Praeferenzen), working_context (Arbeitskontext)',
+      },
+    },
+    required: ['block_type'],
+  },
+};
+
+export const TOOL_CORE_MEMORY_UPDATE: ToolDefinition = {
+  name: 'core_memory_update',
+  description:
+    'Ersetzt den gesamten Inhalt eines Kern-Gedaechtnis-Blocks. Nutze dies wenn der Benutzer grundlegende Informationen aendert oder du den Block komplett neu schreiben moechtest. VORSICHT: Ueberschreibt den bisherigen Inhalt vollstaendig.',
+  input_schema: {
+    type: 'object',
+    properties: {
+      block_type: {
+        type: 'string',
+        enum: ['user_profile', 'current_goals', 'preferences', 'working_context'],
+        description: 'Typ des Kern-Gedaechtnis-Blocks',
+      },
+      content: {
+        type: 'string',
+        description: 'Der neue Inhalt fuer den Block (ersetzt den bisherigen Inhalt vollstaendig)',
+      },
+    },
+    required: ['block_type', 'content'],
+  },
+};
+
+export const TOOL_CORE_MEMORY_APPEND: ToolDefinition = {
+  name: 'core_memory_append',
+  description:
+    'Fuegt Text am Ende eines Kern-Gedaechtnis-Blocks hinzu. Nutze dies um neue Informationen zu ergaenzen ohne den bestehenden Inhalt zu ueberschreiben. Ideal fuer das Hinzufuegen neuer Ziele, Praeferenzen oder Kontextinformationen.',
+  input_schema: {
+    type: 'object',
+    properties: {
+      block_type: {
+        type: 'string',
+        enum: ['user_profile', 'current_goals', 'preferences', 'working_context'],
+        description: 'Typ des Kern-Gedaechtnis-Blocks',
+      },
+      text: {
+        type: 'string',
+        description: 'Der Text der am Ende des Blocks angehaengt wird',
+      },
+    },
+    required: ['block_type', 'text'],
+  },
+};
