@@ -1,21 +1,20 @@
 /**
  * Phase 72: Ebbinghaus Forgetting Curve + SM-2 Spaced Repetition
  *
- * Implements scientifically-accurate memory decay based on:
+ * DEPRECATED (Phase 125): Core functions now delegate to fsrs-scheduler.ts.
+ * calculateRetention() and updateStability() forward to FSRS-variant algorithm.
+ * This file is retained for backward compatibility and will be removed in Phase 126.
+ *
+ * Original implementation based on:
  * - Ebbinghaus (1885): R = e^(-t/S) exponential forgetting curve
  * - SM-2 Algorithm (Wozniak, 1990): stability update on retrieval
- *
- * Key concepts:
- * - Retention (R): probability of recall at time t since last access
- * - Stability (S): how resistant a memory is to forgetting (in days)
- * - Each successful retrieval increases stability (spacing effect)
- * - Each failed retrieval decreases stability
- *
- * This replaces the linear decay model with a biologically-accurate
- * exponential decay curve.
  */
 
 import { logger } from '../../utils/logger';
+import {
+  getRetentionProbabilityCompat,
+  updateStabilityCompat,
+} from './fsrs-scheduler';
 
 // ===========================================
 // Types
@@ -96,14 +95,14 @@ export function calculateRetention(
   const now = new Date();
   const daysSinceAccess = Math.max(0, (now.getTime() - lastAccess.getTime()) / (1000 * 60 * 60 * 24));
 
-  // Apply emotional multiplier to stability (emotional memories decay slower)
+  // Phase 125: Delegate to FSRS for retention calculation
+  const retention = getRetentionProbabilityCompat(lastAccess, stability, emotionalMultiplier);
+
+  // Apply emotional multiplier to stability for metadata
   const effectiveStability = Math.max(
     CONFIG.MIN_STABILITY,
     stability * Math.min(emotionalMultiplier, CONFIG.MAX_EMOTIONAL_MULTIPLIER)
   );
-
-  // Ebbinghaus formula: R = e^(-t/S)
-  const retention = Math.exp(-daysSinceAccess / effectiveStability);
 
   return {
     retention: Math.max(0, Math.min(1, retention)),
@@ -132,20 +131,16 @@ export function updateStability(
   currentStability: number,
   retrievalSuccess: boolean
 ): number {
-  const multiplier = retrievalSuccess
-    ? CONFIG.SUCCESS_MULTIPLIER
-    : CONFIG.FAILURE_MULTIPLIER;
+  // Phase 125: Delegate to FSRS scheduler
+  const fsrsResult = updateStabilityCompat(currentStability, retrievalSuccess);
 
-  const newStability = currentStability * multiplier;
+  // Clamp to original range for backward compatibility
+  const clamped = Math.max(CONFIG.MIN_STABILITY, Math.min(CONFIG.MAX_STABILITY, fsrsResult));
 
-  // Clamp to valid range
-  const clamped = Math.max(CONFIG.MIN_STABILITY, Math.min(CONFIG.MAX_STABILITY, newStability));
-
-  logger.debug('Stability updated', {
+  logger.debug('Stability updated (FSRS)', {
     previousStability: currentStability,
     newStability: clamped,
     retrievalSuccess,
-    multiplier,
   });
 
   return clamped;

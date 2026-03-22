@@ -244,14 +244,14 @@ describe('EbbinghausDecay', () => {
   });
 
   describe('updateStability', () => {
-    it('should increase stability on success (SM-2)', () => {
+    it('should increase stability on success (FSRS-delegated)', () => {
       const newStability = updateStability(1.0, true);
-      expect(newStability).toBe(2.5); // 1.0 * 2.5
+      expect(newStability).toBeGreaterThan(1.0); // FSRS increases on success
     });
 
     it('should decrease stability on failure', () => {
-      const newStability = updateStability(1.0, false);
-      expect(newStability).toBe(0.5); // 1.0 * 0.5
+      const newStability = updateStability(10.0, false);
+      expect(newStability).toBeLessThan(10.0); // FSRS decreases on failure
     });
 
     it('should not exceed maximum stability', () => {
@@ -266,10 +266,11 @@ describe('EbbinghausDecay', () => {
 
     it('should compound over multiple successful retrievals', () => {
       let stability = 1.0;
-      stability = updateStability(stability, true); // 2.5
-      stability = updateStability(stability, true); // 6.25
-      stability = updateStability(stability, true); // 15.625
-      expect(stability).toBeCloseTo(15.625, 1);
+      stability = updateStability(stability, true);
+      stability = updateStability(stability, true);
+      stability = updateStability(stability, true);
+      // FSRS compounds more gradually than SM-2 (2.5x), but still increases
+      expect(stability).toBeGreaterThan(1.0);
     });
   });
 
