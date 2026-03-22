@@ -48,6 +48,8 @@ export interface UseStreamingChatOptions {
   context: AIContext;
   /** Called when a tool_use_end event triggers a navigation action */
   onNavigate?: (page: string) => void;
+  /** Called when a panel_action SSE event is received (from open_panel tool) */
+  onPanelAction?: (action: { action: string; panel: string; filter?: string }) => void;
   /** Called when the stream completes successfully */
   onStreamComplete?: (sessionId: string) => void;
 }
@@ -128,7 +130,7 @@ export function parseSSEChunk(
 // ============================================
 
 export function useStreamingChat(options: UseStreamingChatOptions): UseStreamingChatReturn {
-  const { context, onNavigate, onStreamComplete } = options;
+  const { context, onNavigate, onPanelAction, onStreamComplete } = options;
   const queryClient = useQueryClient();
 
   // Streaming display state
@@ -257,6 +259,15 @@ export function useStreamingChat(options: UseStreamingChatOptions): UseStreaming
               }
 
               // Tool use events
+              // Handle panel_action events from open_panel tool
+              if (eventType === 'panel_action' && onPanelAction) {
+                const panelData = data as { action?: string; panel?: string; filter?: string };
+                if (panelData.action && panelData.panel) {
+                  onPanelAction({ action: panelData.action, panel: panelData.panel, filter: panelData.filter });
+                }
+                continue;
+              }
+
               if (eventType === 'tool_use_start' && data.tool) {
                 const tool = data.tool as { name?: string };
                 setActiveToolName(tool.name ?? null);
