@@ -212,6 +212,12 @@ export const queryKeys = {
       ['my-ai', ctx, 'procedures', stableFilters(filters)] as const,
   },
 
+  // Cognitive
+  cognitive: {
+    all: (ctx: string) => ['cognitive', ctx] as const,
+    overview: (ctx: string) => ['cognitive', ctx, 'overview'] as const,
+  },
+
   // Settings
   settings: {
     all: () => ['settings'] as const,

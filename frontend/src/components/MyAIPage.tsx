@@ -20,8 +20,9 @@ const VoiceChat = lazy(() => import('./VoiceChat/VoiceChat').then(m => ({ defaul
 const VoiceSettings = lazy(() => import('./VoiceChat/VoiceSettings').then(m => ({ default: m.VoiceSettings })));
 const ProceduralMemoryPanel = lazy(() => import('./ProceduralMemoryPanel').then(m => ({ default: m.ProceduralMemoryPanel })));
 const DigitalTwinPage = lazy(() => import('./DigitalTwinPage/DigitalTwinPage').then(m => ({ default: m.DigitalTwinPage })));
+const CognitiveDashboard = lazy(() => import('./MyAIPage/CognitiveDashboard').then(m => ({ default: m.CognitiveDashboard })));
 
-type MyAITab = 'personalize' | 'memory' | 'procedures' | 'digital-twin' | 'voice-chat';
+type MyAITab = 'personalize' | 'memory' | 'procedures' | 'digital-twin' | 'cognitive' | 'voice-chat';
 
 interface MyAIPageProps {
   context: AIContext;
@@ -34,6 +35,7 @@ const TABS: TabDef<MyAITab>[] = [
   { id: 'memory', label: 'KI-Wissen', icon: '🧠', description: 'Was deine KI über dich gelernt hat' },
   { id: 'procedures', label: 'Prozeduren', icon: '📋', description: 'Gelernte Vorgehensweisen und Hybrid-Suche' },
   { id: 'digital-twin', label: 'Digital Twin', icon: '🪞', description: 'Dein KI-Profil und Persoenlichkeitsradar' },
+  { id: 'cognitive', label: 'KI-Bewusstsein', icon: '🧪', description: 'Kognitive Architektur und Selbstreflexion' },
   { id: 'voice-chat', label: 'Sprach-Chat', icon: '🎙️', description: 'Echtzeit-Sprachgespraech mit KI' },
 ];
 
@@ -50,7 +52,7 @@ const MyAIPageComponent: React.FC<MyAIPageProps> = ({
 }) => {
   const { activeTab, handleTabChange } = useTabNavigation<MyAITab>({
     initialTab,
-    validTabs: ['personalize', 'memory', 'procedures', 'digital-twin', 'voice-chat'],
+    validTabs: ['personalize', 'memory', 'procedures', 'digital-twin', 'cognitive', 'voice-chat'],
     defaultTab: 'personalize',
     basePath: '/my-ai',
     rootTab: 'personalize',
@@ -87,6 +89,14 @@ const MyAIPageComponent: React.FC<MyAIPageProps> = ({
           <Suspense fallback={<TabLoader />}>
             <div className="hub-tab-content">
               <DigitalTwinPage context={context} />
+            </div>
+          </Suspense>
+        );
+      case 'cognitive':
+        return (
+          <Suspense fallback={<TabLoader />}>
+            <div className="hub-tab-content">
+              <CognitiveDashboard context={context} />
             </div>
           </Suspense>
         );

@@ -21,6 +21,8 @@ const TYPE_CONFIG: Record<string, { icon: string; actionLabel: string; color: st
   learning_opportunity:  { icon: '\uD83D\uDCDA', actionLabel: 'Lernen', color: '#f97316' },
   contradiction_alert:   { icon: '\u26A0\uFE0F', actionLabel: 'Pruefen', color: '#ef4444' },
   morning_briefing:      { icon: '\u2600\uFE0F', actionLabel: 'Uebersicht', color: '#f59e0b' },
+  knowledge_gap:         { icon: '\uD83D\uDD0D', actionLabel: 'Recherchieren', color: '#8b5cf6' },
+  hypothesis:            { icon: '\uD83D\uDCA1', actionLabel: 'Pruefen', color: '#a855f7' },
 };
 
 interface MorningBriefingMeta {

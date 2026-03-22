@@ -105,11 +105,11 @@ describe('MyAIPage Component', () => {
     expect(screen.getByText('Personalisierung, KI-Wissen und Sprach-Chat')).toBeInTheDocument();
   });
 
-  it('renders all 5 tab buttons', () => {
+  it('renders all 6 tab buttons', () => {
     render(<MyAIPage {...defaultProps} />);
     const tabNav = screen.getByTestId('tab-nav');
     const tabs = tabNav.querySelectorAll('[role="tab"]');
-    expect(tabs.length).toBe(5);
+    expect(tabs.length).toBe(6);
   });
 
   it('renders key tab labels', () => {

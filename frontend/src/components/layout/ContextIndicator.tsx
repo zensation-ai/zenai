@@ -25,6 +25,12 @@ interface ActiveContextData {
   }>;
 }
 
+interface CognitiveMetrics {
+  calibration: { ece: number; isWellCalibrated: boolean };
+  curiosity: { activeGaps: number; pendingHypotheses: number };
+  predictions: { accuracy: number; totalPredictions: number };
+}
+
 interface ContextIndicatorProps {
   context: AIContext;
 }
@@ -38,6 +44,7 @@ const CONTEXT_LABELS: Record<AIContext, string> = {
 
 export function ContextIndicator({ context }: ContextIndicatorProps) {
   const [data, setData] = useState<ActiveContextData | null>(null);
+  const [cognitive, setCognitive] = useState<CognitiveMetrics | null>(null);
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const popoverRef = useRef<HTMLDivElement>(null);
@@ -46,9 +53,15 @@ export function ContextIndicator({ context }: ContextIndicatorProps) {
   const fetchContext = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await axios.get(`/api/${context}/context-v2/active`);
-      if (res.data.success) {
-        setData(res.data.data);
+      const [ctxRes, cogRes] = await Promise.allSettled([
+        axios.get(`/api/${context}/context-v2/active`),
+        axios.get(`/api/${context}/metacognition/overview`),
+      ]);
+      if (ctxRes.status === 'fulfilled' && ctxRes.value.data.success) {
+        setData(ctxRes.value.data.data);
+      }
+      if (cogRes.status === 'fulfilled' && cogRes.value.data.success) {
+        setCognitive(cogRes.value.data.data);
       }
     } catch {
       // Silently fail - indicator just won't show data
@@ -153,6 +166,35 @@ export function ContextIndicator({ context }: ContextIndicatorProps) {
               <span className="ctx-indicator-popover-stat-label">Termine (2h)</span>
             </div>
           </div>
+
+          {cognitive && (
+            <div className="ctx-indicator-popover-grid" style={{ marginTop: '0.5rem' }}>
+              <div className="ctx-indicator-popover-stat">
+                <span className="ctx-indicator-popover-stat-value" style={{ color: cognitive.calibration.isWellCalibrated ? 'var(--color-success, #22c55e)' : 'var(--color-warning, #f59e0b)' }}>
+                  {cognitive.calibration.isWellCalibrated ? 'Gut' : Math.round(cognitive.calibration.ece * 100) + '%'}
+                </span>
+                <span className="ctx-indicator-popover-stat-label">Kalibrierung</span>
+              </div>
+              <div className="ctx-indicator-popover-stat">
+                <span className="ctx-indicator-popover-stat-value">
+                  {cognitive.predictions.totalPredictions > 0 ? Math.round(cognitive.predictions.accuracy * 100) + '%' : '–'}
+                </span>
+                <span className="ctx-indicator-popover-stat-label">Vorhersage</span>
+              </div>
+              <div className="ctx-indicator-popover-stat">
+                <span className="ctx-indicator-popover-stat-value">
+                  {cognitive.curiosity.activeGaps}
+                </span>
+                <span className="ctx-indicator-popover-stat-label">Wissensluecken</span>
+              </div>
+              <div className="ctx-indicator-popover-stat">
+                <span className="ctx-indicator-popover-stat-value">
+                  {cognitive.curiosity.pendingHypotheses}
+                </span>
+                <span className="ctx-indicator-popover-stat-label">Hypothesen</span>
+              </div>
+            </div>
+          )}
 
           {data?.upcomingEvents && data.upcomingEvents.length > 0 && (
             <div className="ctx-indicator-popover-events">

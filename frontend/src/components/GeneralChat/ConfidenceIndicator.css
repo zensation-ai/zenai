@@ -1,0 +1,43 @@
+/* ConfidenceIndicator - Phase 135-136 */
+
+.confidence-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--text-tertiary, #94a3b8);
+  padding: 2px 0;
+  line-height: 1.4;
+}
+
+.confidence-indicator-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.confidence-indicator-dot.high {
+  background-color: #22c55e;
+}
+
+.confidence-indicator-dot.medium {
+  background-color: #f59e0b;
+}
+
+.confidence-indicator-dot.low {
+  background-color: #ef4444;
+}
+
+.confidence-indicator-text {
+  color: var(--text-tertiary, #94a3b8);
+}
+
+.confidence-indicator-separator {
+  color: var(--border, rgba(0, 0, 0, 0.15));
+  user-select: none;
+}
+
+.confidence-indicator-sources {
+  color: var(--text-tertiary, #94a3b8);
+}

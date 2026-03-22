@@ -356,7 +356,7 @@ function AuthenticatedApp() {
           <MyAIPage
             context={context}
             onBack={() => navigateToPage('hub')}
-            initialTab={(tabParam || 'personalize') as 'personalize' | 'memory' | 'procedures' | 'digital-twin' | 'voice-chat'}
+            initialTab={(tabParam || 'personalize') as 'personalize' | 'memory' | 'procedures' | 'digital-twin' | 'cognitive' | 'voice-chat'}
           />
         </Suspense>
       } />
