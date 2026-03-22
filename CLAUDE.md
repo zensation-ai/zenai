@@ -30,7 +30,7 @@
   - Short-Term Memory (Session-Kontext)
   - Long-Term Memory (persistentes Wissen)
 
-## Current Phase: 134
+## Current Phase: 136
 
 ### Phase 31 Features (AI State-of-the-Art)
 
@@ -1104,10 +1104,10 @@ cd frontend && npx vitest run
 
 | Kategorie | Bestanden | Übersprungen | Fehlgeschlagen |
 |-----------|-----------|--------------|----------------|
-| **Backend** | 7384 | 24 | 0 |
+| **Backend** | 7490 | 24 | 0 |
 | **Frontend** | 1400 | 0 | 0 |
 | **CLI** | 108 | 0 | 0 |
-| **Gesamt** | 8892 | 24 | 0 |
+| **Gesamt** | 8998 | 24 | 0 |
 
 **Absichtlich übersprungene Tests (24):**
 - 21x Code-Execution Sandbox (Docker nicht verfügbar)
@@ -1292,6 +1292,32 @@ mockQueryContext
 | `backend/src/__tests__/unit/services/curiosity/prediction-engine.test.ts` | 35 Prediction Engine Tests |
 
 **Tests:** CLI 108 + Backend 7384 + Frontend 1400 = **8892 bestanden**, 24 uebersprungen, 0 Failures
+
+---
+
+### 2026-03-22: Phase 135-136 — Meta-Cognition (106 neue Tests)
+
+**ZenAI bekommt ein Modell seiner selbst: Confidence Calibration, Confusion Detection, Capability Profiling.**
+
+| Feature | Details |
+|---------|---------|
+| **Metacognitive State Vector** | 5 Pro-Response Metriken: confidence, coherence, conflictLevel, knowledgeCoverage, confusionLevel |
+| **Confusion Detection** | 3-stufig (high/medium/low) basierend auf Conflict-Level, Knowledge Coverage, Confidence, Coherence |
+| **Calibration Tracking** | ECE (Expected Calibration Error), 5 Confidence-Bins, Overconfidence Detection |
+| **Capability Model** | Pro-Domain Performance (factCount, successRate), Strengths/Weaknesses, Improvement Trend |
+| **Self-Evaluation** | evaluateResponse() warnt bei niedrigem Coverage oder schwacher Domain |
+
+**Neue Dateien:**
+
+| Datei | Zweck |
+|-------|-------|
+| `backend/src/services/metacognition/state-vector.ts` | Metacognitive State Berechnung + Confusion Detection |
+| `backend/src/services/metacognition/calibration.ts` | Calibration Bins, ECE, Overconfidence Tracking |
+| `backend/src/services/metacognition/capability-model.ts` | Domain Capabilities, Strengths/Weaknesses, Trend |
+| `backend/sql/migrations/phase135_metacognition.sql` | evaluation_log + capability_profiles + calibration_bins x4 Schemas |
+| 3 Test-Dateien | 40 + 33 + 33 = 106 Tests |
+
+**Tests:** CLI 108 + Backend 7490 + Frontend 1400 = **8998 bestanden**, 24 uebersprungen, 0 Failures
 
 ---
 
