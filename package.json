@@ -39,5 +39,11 @@
   },
   "devDependencies": {
     "turbo": "^2.5.0"
+  },
+  "dependencies": {
+    "docx": "^9.6.1",
+    "exceljs": "^4.4.0",
+    "pdfmake": "^0.3.7",
+    "pptxgenjs": "^4.0.1"
   }
 }
