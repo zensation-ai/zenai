@@ -30,7 +30,7 @@
   - Short-Term Memory (Session-Kontext)
   - Long-Term Memory (persistentes Wissen)
 
-## Current Phase: 136
+## Current Phase: 138
 
 ### Phase 31 Features (AI State-of-the-Art)
 
@@ -1104,10 +1104,10 @@ cd frontend && npx vitest run
 
 | Kategorie | Bestanden | Übersprungen | Fehlgeschlagen |
 |-----------|-----------|--------------|----------------|
-| **Backend** | 7490 | 24 | 0 |
+| **Backend** | 7626 | 24 | 0 |
 | **Frontend** | 1400 | 0 | 0 |
 | **CLI** | 108 | 0 | 0 |
-| **Gesamt** | 8998 | 24 | 0 |
+| **Gesamt** | 9134 | 24 | 0 |
 
 **Absichtlich übersprungene Tests (24):**
 - 21x Code-Execution Sandbox (Docker nicht verfügbar)
@@ -1318,6 +1318,31 @@ mockQueryContext
 | 3 Test-Dateien | 40 + 33 + 33 = 106 Tests |
 
 **Tests:** CLI 108 + Backend 7490 + Frontend 1400 = **8998 bestanden**, 24 uebersprungen, 0 Failures
+
+---
+
+### 2026-03-22: Phase 137-138 — Unified Feedback + Adaptive Behavior (136 neue Tests)
+
+**Feedback-Loop schliesst sich: Zentraler Feedback-Bus + lernende Verhaltensanpassung.**
+
+| Feature | Details |
+|---------|---------|
+| **Feedback Bus** | Pub/Sub fuer 6 Feedback-Typen (response_rating, fact_correction, suggestion_action, tool_success, document_quality, agent_performance) |
+| **Feedback Aggregator** | Statistiken pro Typ: avgValue, positiveRate, recentTrend, overallScore |
+| **Behavior Engine** | Lernende Praeferenzen: responseLength, detailLevel, proactivityLevel, preferredTools, languageStyle |
+| **Style Learner** | Heuristik-basiert: Formality (DE+EN), Technicality, Verbosity, Language Detection (de/en/mixed) |
+
+**Neue Dateien:**
+
+| Datei | Zweck |
+|-------|-------|
+| `backend/src/services/feedback/feedback-bus.ts` | Zentraler Feedback-Router (Pub/Sub) |
+| `backend/src/services/feedback/feedback-aggregator.ts` | Feedback-Statistiken + Trend |
+| `backend/src/services/adaptive/behavior-engine.ts` | Adaptive Verhaltensentscheidungen |
+| `backend/src/services/adaptive/style-learner.ts` | Sprach-/Stil-Praeferenz-Learning |
+| 4 Test-Dateien | 31 + 25 + 41 + 40 = 136 Tests (1 extra due to rounding) |
+
+**Tests:** CLI 108 + Backend 7626 + Frontend 1400 = **9134 bestanden**, 24 uebersprungen, 0 Failures
 
 ---
 
