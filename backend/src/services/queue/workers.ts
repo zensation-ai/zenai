@@ -15,6 +15,7 @@
 
 import { logger } from '../../utils/logger';
 import { recordQueueJob } from '../observability/metrics';
+import { processTokenRefresh } from './workers/token-refresh-worker';
 
 // Worker references for shutdown
 type BullWorker = {
@@ -407,6 +408,7 @@ const processors: Record<string, (job: BullJob) => Promise<Record<string, unknow
   'embedding-drift': processEmbeddingDrift,
   'hebbian-decay': processHebbianDecay,
   'persistent-agent': processPersistentAgent,
+  'integration-sync': processTokenRefresh,
 };
 
 // --- Dead Letter Queue helper ---
@@ -465,6 +467,7 @@ export async function startWorkers(): Promise<boolean> {
       'embedding-drift': 1,
       'hebbian-decay': 1,
       'persistent-agent': 2,
+      'integration-sync': 1,
     };
 
     for (const [queueName, processor] of Object.entries(processors)) {

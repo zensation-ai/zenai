@@ -44,6 +44,7 @@ const QUEUE_NAMES = [
   'embedding-drift',
   'hebbian-decay',
   'persistent-agent',
+  'integration-sync',
 ] as const;
 
 export type QueueName = (typeof QUEUE_NAMES)[number];

@@ -44,6 +44,7 @@ import { MetacognitionModule } from './metacognition';
 import { CuriosityModule } from './curiosity';
 import { PredictionsModule } from './predictions';
 import { FeedbackAdaptiveModule } from './feedback-adaptive';
+import { IntegrationsModule } from './integrations';
 
 /**
  * All modules in registration order.
@@ -73,6 +74,9 @@ export const modules: Module[] = [
 
   // Email webhooks must be before generic webhooks in CoreRoutesModule
   new EmailModule(),
+
+  // Integration framework (must be before CoreRoutesModule to avoid /:context conflicts)
+  new IntegrationsModule(),
 
   // Core legacy routes (health, ideas, meetings, profile, webhooks, sync, analytics, etc.)
   new CoreRoutesModule(),

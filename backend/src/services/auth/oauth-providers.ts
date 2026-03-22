@@ -324,6 +324,55 @@ class OAuthProviderManager {
   async cleanupExpiredStates(): Promise<void> {
     await pool.query('DELETE FROM public.oauth_states WHERE expires_at < NOW()');
   }
+
+  /**
+   * Refresh an OAuth access token using a refresh token.
+   * Returns new access token and optionally a rotated refresh token.
+   */
+  async refreshAccessToken(
+    provider: string,
+    refreshToken: string,
+  ): Promise<{ accessToken: string; refreshToken?: string; expiresIn?: number }> {
+    const providerUrls = PROVIDER_URLS[provider];
+    if (!providerUrls) {
+      throw new OAuthError(`Unknown provider: ${provider}`, 'UNKNOWN_PROVIDER', 400);
+    }
+
+    const config = this.configs.get(provider);
+    if (!config) {
+      throw new OAuthError(`Provider ${provider} not configured`, 'PROVIDER_NOT_CONFIGURED', 400);
+    }
+
+    const body = new URLSearchParams({
+      grant_type: 'refresh_token',
+      refresh_token: refreshToken,
+      client_id: config.clientId,
+      client_secret: config.clientSecret,
+    });
+
+    const response = await fetch(providerUrls.tokenUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: body.toString(),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new OAuthError(
+        `Token refresh failed: ${(errorData as Record<string, string>).error || response.status}`,
+        'TOKEN_REFRESH_FAILED',
+        response.status,
+      );
+    }
+
+    const data = (await response.json()) as Record<string, unknown>;
+
+    return {
+      accessToken: data.access_token as string,
+      refreshToken: data.refresh_token as string | undefined,
+      expiresIn: data.expires_in as number | undefined,
+    };
+  }
 }
 
 // ===========================================
