@@ -30,7 +30,7 @@
   - Short-Term Memory (Session-Kontext)
   - Long-Term Memory (persistentes Wissen)
 
-## Current Phase: 124
+## Current Phase: 131
 
 ### Phase 31 Features (AI State-of-the-Art)
 
@@ -1089,13 +1089,13 @@ cd backend && npm test -- --coverage
 cd frontend && npx vitest run
 ```
 
-### Test-Status (2026-03-21)
+### Test-Status (2026-03-22)
 
 | Kategorie | Bestanden | Übersprungen | Fehlgeschlagen |
 |-----------|-----------|--------------|----------------|
-| **Backend** | 6445 | 24 | 0 |
+| **Backend** | 7209 | 24 | 0 |
 | **Frontend** | 1320 | 0 | 0 |
-| **Gesamt** | 7765 | 24 | 0 |
+| **Gesamt** | 8529 | 24 | 0 |
 
 **Absichtlich übersprungene Tests (24):**
 - 21x Code-Execution Sandbox (Docker nicht verfügbar)
@@ -1191,6 +1191,55 @@ mockQueryContext
 - API Docs: `/api-docs` (Swagger)
 
 ## Changelog
+
+### 2026-03-22: Phases 125-131 — Cognitive Architecture Foundation (764 neue Tests)
+
+**ZenAI's kognitive Architektur: 7 Phasen, 20 neue Services, 764 neue Tests, 4 neue npm Dependencies.**
+
+**Masterplan:** `docs/superpowers/specs/2026-03-22-cognitive-architecture-masterplan.md` (Phasen 125-140)
+**Implementation Plan (Phase 125):** `docs/superpowers/plans/2026-03-22-phase125-hebbian-fsrs-bayesian.md`
+
+| Phase | Saeule | Neue Tests | Highlights |
+|-------|--------|-----------|------------|
+| **125** | Memory | 143 | Hebbian KG (Co-Activation, Decay, Normalisierung), FSRS Spaced Repetition (ersetzt SM-2), Bayesian Confidence Propagation |
+| **126** | Memory | 56 | Pinned Core Memory Blocks (Letta-Pattern), Cross-Context Entity Merging, 3 neue Claude Tools |
+| **127** | Reasoning | 200 | Global Workspace Theory (kompetitives Context Assembly), Query Analyzer, 8 Specialist Modules, Fact Checker |
+| **128** | Reasoning | 63 | Chain-of-Thought Persistence (pgvector Similarity), Multi-Hop Inference Engine (Transitiv, Analogie, Negation) |
+| **129** | Agenten | 147 | Persistent Agent Loops (Checkpoints, Pause/Resume), Context Isolation, Reducer-Driven State, Debate Protocol |
+| **130** | Agenten | 75 | Tool Composition Engine (Chain-Validierung), Dynamic Team Builder (5 Spezialisten) |
+| **131** | Output | 80 | Document Generation Suite (PPTX, XLSX, PDF, DOCX), 5 Templates, Claude Tool |
+
+**Neue Dateien (Auswahl):**
+
+| Datei | Zweck |
+|-------|-------|
+| `backend/src/services/knowledge-graph/hebbian-dynamics.ts` | Hebbian Edge Strengthening + Decay |
+| `backend/src/services/memory/fsrs-scheduler.ts` | FSRS Spaced Repetition (ersetzt SM-2) |
+| `backend/src/services/knowledge-graph/confidence-propagation.ts` | Bayesian Belief Propagation |
+| `backend/src/services/memory/core-memory.ts` | Pinned Core Memory Blocks |
+| `backend/src/services/memory/cross-context-merger.ts` | Cross-Context Entity Merging |
+| `backend/src/services/memory/recall-tracker.ts` | Post-Response FSRS Feedback |
+| `backend/src/services/reasoning/global-workspace.ts` | GWT Kompetitives Context Assembly |
+| `backend/src/services/reasoning/query-analyzer.ts` | Heuristischer Query-Parser |
+| `backend/src/services/reasoning/workspace-modules.ts` | 8 GWT Specialist Modules |
+| `backend/src/services/reasoning/fact-checker.ts` | Post-Response Faktencheck |
+| `backend/src/services/reasoning/chain-store.ts` | Reasoning Chain Persistence |
+| `backend/src/services/reasoning/inference-engine.ts` | Multi-Hop Inference (3-Hop, Analogie, Negation) |
+| `backend/src/services/agents/persistent-loop.ts` | Ziel-orientierte Agent Loops |
+| `backend/src/services/agents/context-isolator.ts` | Rollen-basierte Context-Filterung |
+| `backend/src/services/agents/state-reducers.ts` | Reducer-Driven Shared State |
+| `backend/src/services/agents/debate-protocol.ts` | Multi-Turn Agent Debatten |
+| `backend/src/services/agents/tool-composer.ts` | Tool Chain Validierung + Planung |
+| `backend/src/services/agents/team-builder.ts` | Dynamic Team Composition |
+| `backend/src/services/documents/pptx-renderer.ts` | PowerPoint via PptxGenJS |
+| `backend/src/services/documents/xlsx-renderer.ts` | Excel via ExcelJS |
+| `backend/src/services/documents/pdf-renderer.ts` | PDF via pdfmake |
+| `backend/src/services/documents/docx-renderer.ts` | Word via docx |
+| `backend/src/services/documents/document-generator.ts` | Document Generator + 5 Templates |
+
+**Tests:** Backend 7209 + Frontend 1320 = **8529 bestanden**, 24 uebersprungen, 0 Failures
+
+---
 
 ### 2026-03-21: Phase 124 — Near-Complete Route Coverage + Security Fixes
 
