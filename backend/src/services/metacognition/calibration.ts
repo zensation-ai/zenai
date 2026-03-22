@@ -11,6 +11,7 @@
 
 import { logger } from '../../utils/logger';
 import { queryContext } from '../../utils/database-context';
+import type { AIContext } from '../../types/context';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -144,12 +145,12 @@ export async function recordCalibrationData(
 ): Promise<void> {
   try {
     await queryContext(
-      context,
+      context as AIContext,
       `INSERT INTO calibration_data (confidence, was_positive, created_at)
        VALUES ($1, $2, NOW())`,
       [confidence, wasPositive],
     );
-    logger.debug('Calibration data recorded', { context, confidence, wasPositive });
+    logger.debug('Calibration data recorded', { confidence, wasPositive });
   } catch (err) {
     // Fire-and-forget: log but do not throw
     logger.warn('Failed to record calibration data', { error: err });
@@ -169,7 +170,7 @@ export async function loadCalibrationReport(
     const params = userId ? [userId] : [];
 
     const result = await queryContext(
-      context,
+      context as AIContext,
       `SELECT confidence, was_positive FROM calibration_data WHERE 1=1${userClause} ORDER BY created_at DESC LIMIT 1000`,
       params,
     );
@@ -188,7 +189,7 @@ export async function loadCalibrationReport(
 
     return generateCalibrationReport(bins);
   } catch (err) {
-    logger.error('Failed to load calibration report', { error: err });
+    logger.error('Failed to load calibration report', err instanceof Error ? err : new Error(String(err)));
     return generateCalibrationReport(createBins());
   }
 }

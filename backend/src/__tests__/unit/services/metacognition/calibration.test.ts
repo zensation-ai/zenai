@@ -345,7 +345,7 @@ describe('loadCalibrationReport', () => {
     expect(report.expectedCalibrationError).toBe(0);
     expect(logger.error).toHaveBeenCalledWith(
       'Failed to load calibration report',
-      expect.objectContaining({ error: expect.any(Error) }),
+      expect.any(Error),
     );
   });
 

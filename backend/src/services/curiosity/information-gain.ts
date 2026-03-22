@@ -8,6 +8,7 @@
 
 import { logger } from '../../utils/logger';
 import { queryContext } from '../../utils/database-context';
+import type { AIContext } from '../../types/context';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -131,12 +132,12 @@ export async function recordInformationGain(
 ): Promise<void> {
   try {
     await queryContext(
-      context,
+      context as AIContext,
       `INSERT INTO information_gain_events (query_text, surprise, novelty, information_gain, created_at)
        VALUES ($1, $2, $3, $4, NOW())`,
       [params.queryText, params.surprise, params.novelty, params.informationGain],
     );
   } catch (err) {
-    logger.error('Failed to record information gain event', { error: err });
+    logger.error('Failed to record information gain event', err instanceof Error ? err : new Error(String(err)));
   }
 }

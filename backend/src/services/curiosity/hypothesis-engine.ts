@@ -7,6 +7,7 @@
 
 import { logger } from '../../utils/logger';
 import { queryContext } from '../../utils/database-context';
+import type { AIContext } from '../../types/context';
 
 // ---------------------------------------------------------------------------
 // Interfaces
@@ -262,11 +263,11 @@ export async function generateHypotheses(
   userId?: string,
 ): Promise<Hypothesis[]> {
   try {
-    logger.info('Generating hypotheses', { context, userId });
+    logger.info('Generating hypotheses', { context: context as AIContext, userId });
 
     // Fetch relations from knowledge graph
     const relationsResult = await queryContext(
-      context,
+      context as AIContext,
       `SELECT source_id, target_id, relation_type
        FROM idea_relations
        ${userId ? 'WHERE user_id = $1' : ''}
@@ -276,7 +277,7 @@ export async function generateHypotheses(
 
     // Fetch facts with timestamps for temporal gap detection
     const factsResult = await queryContext(
-      context,
+      context as AIContext,
       `SELECT id, content, entities, created_at
        FROM learned_facts
        ${userId ? 'WHERE user_id = $1' : ''}
@@ -287,7 +288,7 @@ export async function generateHypotheses(
 
     // Fetch facts for contradiction detection
     const contradictionFactsResult = await queryContext(
-      context,
+      context as AIContext,
       `SELECT id, content, entities
        FROM learned_facts
        WHERE entities IS NOT NULL AND array_length(entities, 1) > 0
@@ -329,7 +330,6 @@ export async function generateHypotheses(
     const result = all.slice(0, MAX_HYPOTHESES);
 
     logger.info('Hypotheses generated', {
-      context,
       total: result.length,
       patterns: patternHypotheses.length,
       temporal: temporalHypotheses.length,
@@ -338,7 +338,7 @@ export async function generateHypotheses(
 
     return result;
   } catch (error) {
-    logger.error('Failed to generate hypotheses', { context, error });
+    logger.error('Failed to generate hypotheses', error instanceof Error ? error : new Error(String(error)));
     return [];
   }
 }

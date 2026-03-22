@@ -8,6 +8,7 @@
 
 import { logger } from '../../utils/logger';
 import { queryContext } from '../../utils/database-context';
+import type { AIContext } from '../../types/context';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -196,12 +197,12 @@ export async function recordBehaviorSignal(
 ): Promise<void> {
   try {
     await queryContext(
-      context,
+      context as AIContext,
       `INSERT INTO behavior_signals (type, value, details, created_at)
        VALUES ($1, $2, $3, NOW())`,
       [signal.type, signal.value, JSON.stringify(signal.details ?? {})],
     );
-    logger.debug('Behavior signal recorded', { context, type: signal.type });
+    logger.debug('Behavior signal recorded', { type: signal.type });
   } catch (err) {
     logger.warn('Failed to record behavior signal', { error: err });
   }
@@ -219,7 +220,7 @@ export async function loadBehaviorPreferences(
     const userClause = userId ? 'AND user_id = $1' : '';
     const params = userId ? [userId] : [];
     const result = await queryContext(
-      context,
+      context as AIContext,
       `SELECT type, value, details FROM behavior_signals
        WHERE 1=1 ${userClause}
        ORDER BY created_at DESC LIMIT 200`,

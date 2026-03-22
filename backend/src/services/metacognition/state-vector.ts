@@ -9,6 +9,7 @@
 
 import { logger } from '../../utils/logger';
 import { queryContext } from '../../utils/database-context';
+import type { AIContext } from '../../types/context';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -160,7 +161,7 @@ export async function recordEvaluation(
       (confidence, coherence, conflict_level, knowledge_coverage, confusion_level, query, domain, created_at)
       VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())`;
 
-    await queryContext(context, sql, [
+    await queryContext(context as AIContext, sql, [
       state.confidence,
       state.coherence,
       state.conflictLevel,
@@ -170,9 +171,9 @@ export async function recordEvaluation(
       domain,
     ]);
 
-    logger.debug('Recorded metacognitive evaluation', { context, domain, confusionLevel: state.confusionLevel });
+    logger.debug('Recorded metacognitive evaluation', { domain, confusionLevel: state.confusionLevel });
   } catch (error) {
-    logger.error('Failed to record metacognitive evaluation', { error });
+    logger.error('Failed to record metacognitive evaluation', error instanceof Error ? error : new Error(String(error)));
   }
 }
 
@@ -190,7 +191,7 @@ export async function getRecentStates(
                  ORDER BY created_at DESC
                  LIMIT $1`;
 
-    const result = await queryContext(context, sql, [limit]);
+    const result = await queryContext(context as AIContext, sql, [limit]);
 
     if (!result.rows || result.rows.length === 0) return [];
 
@@ -202,7 +203,7 @@ export async function getRecentStates(
       confusionLevel: row.confusion_level as ConfusionLevel,
     }));
   } catch (error) {
-    logger.error('Failed to get recent metacognitive states', { error });
+    logger.error('Failed to get recent metacognitive states', error instanceof Error ? error : new Error(String(error)));
     return [];
   }
 }

@@ -9,6 +9,7 @@
 
 import { logger } from '../../utils/logger';
 import { queryContext } from '../../utils/database-context';
+import type { AIContext } from '../../types/context';
 import { randomUUID } from 'crypto';
 
 // ---------------------------------------------------------------------------
@@ -90,7 +91,7 @@ export async function checkBudget(
 ): Promise<ImprovementBudget> {
   try {
     const result = await queryContext(
-      context,
+      context as AIContext,
       `SELECT COUNT(*)::int AS cnt
        FROM improvement_actions
        WHERE created_at >= CURRENT_DATE`,
@@ -201,7 +202,7 @@ export async function recordImprovementAction(
 ): Promise<void> {
   try {
     await queryContext(
-      context,
+      context as AIContext,
       `INSERT INTO improvement_actions (id, type, description, risk_level, requires_approval, estimated_impact, basis)
        VALUES ($1, $2, $3, $4, $5, $6, $7)`,
       [
@@ -217,7 +218,7 @@ export async function recordImprovementAction(
     logger.info('Recorded improvement action', { id: action.id, type: action.type });
   } catch (err) {
     // fire-and-forget: log but don't throw
-    logger.error('Failed to record improvement action', { error: String(err) });
+    logger.error('Failed to record improvement action', err instanceof Error ? err : new Error(String(err)));
   }
 }
 
@@ -227,7 +228,7 @@ export async function getImprovementHistory(
 ): Promise<ImprovementAction[]> {
   try {
     const result = await queryContext(
-      context,
+      context as AIContext,
       `SELECT id, type, description, risk_level, requires_approval, estimated_impact, basis
        FROM improvement_actions
        ORDER BY created_at DESC
@@ -244,7 +245,7 @@ export async function getImprovementHistory(
       basis: typeof row.basis === 'string' ? JSON.parse(row.basis) : (row.basis as string[]),
     }));
   } catch (err) {
-    logger.error('Failed to get improvement history', { error: String(err) });
+    logger.error('Failed to get improvement history', err instanceof Error ? err : new Error(String(err)));
     return [];
   }
 }

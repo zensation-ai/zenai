@@ -8,6 +8,7 @@
 
 import { logger } from '../../utils/logger';
 import { queryContext } from '../../utils/database-context';
+import type { AIContext } from '../../types/context';
 import {
   extractTemporalPatterns,
   extractSequentialPatterns,
@@ -218,7 +219,7 @@ export async function updateModel(
                  (predicted_intent, predicted_domain, actual_intent, actual_domain,
                   error_magnitude, learning_signal, confidence, basis)
                  VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`;
-    await queryContext(context, sql, [
+    await queryContext(context as AIContext, sql, [
       error.predicted.predictedIntent,
       error.predicted.predictedDomain,
       error.actualIntent,
@@ -234,7 +235,7 @@ export async function updateModel(
     });
   } catch (err) {
     // Fire-and-forget
-    logger.error('Failed to log prediction error', { error: err });
+    logger.error('Failed to log prediction error', err instanceof Error ? err : new Error(String(err)));
   }
 }
 
@@ -265,7 +266,7 @@ export async function makePrediction(
          LIMIT 500`;
 
     const params = userId ? [userId] : [];
-    const result = await queryContext(context, activitySQL, params);
+    const result = await queryContext(context as AIContext, activitySQL, params);
 
     if (!result.rows || result.rows.length === 0) {
       logger.debug('No activity history for prediction, returning generic');
@@ -306,7 +307,7 @@ export async function makePrediction(
 
     return prediction;
   } catch (error) {
-    logger.error('Prediction failed, returning fallback', { error });
+    logger.error('Prediction failed, returning fallback', error instanceof Error ? error : new Error(String(error)));
     return {
       predictedIntent: DEFAULT_INTENT,
       predictedDomain: DEFAULT_DOMAIN,
@@ -330,9 +331,9 @@ export async function recordPredictionResult(
     const sql = `UPDATE prediction_log
                  SET actual_intent = $1, actual_domain = $2, resolved_at = NOW()
                  WHERE id = $3`;
-    await queryContext(context, sql, [actual.intent, actual.domain, predictionId]);
+    await queryContext(context as AIContext, sql, [actual.intent, actual.domain, predictionId]);
     logger.debug('Prediction result recorded', { predictionId });
   } catch (error) {
-    logger.error('Failed to record prediction result', { error });
+    logger.error('Failed to record prediction result', error instanceof Error ? error : new Error(String(error)));
   }
 }

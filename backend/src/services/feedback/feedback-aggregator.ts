@@ -7,6 +7,7 @@
 
 import { logger } from '../../utils/logger';
 import { queryContext } from '../../utils/database-context';
+import type { AIContext } from '../../types/context';
 import type { FeedbackEvent, FeedbackType } from './feedback-bus';
 
 // ---------------------------------------------------------------------------
@@ -131,7 +132,7 @@ export async function loadFeedbackSummary(
   type?: FeedbackType,
 ): Promise<FeedbackSummary[]> {
   try {
-    const params: unknown[] = [];
+    const params: (string | number | boolean | null)[] = [];
     let whereClause = '';
     if (type) {
       whereClause = 'WHERE type = $1';
@@ -139,7 +140,7 @@ export async function loadFeedbackSummary(
     }
 
     const result = await queryContext(
-      context,
+      context as AIContext,
       `SELECT type,
               COUNT(*)::int AS total_count,
               AVG(value)::float AS avg_value
@@ -157,7 +158,7 @@ export async function loadFeedbackSummary(
       recentTrend: 0,  // not computed from aggregate query
     }));
   } catch (err) {
-    logger.error('Failed to load feedback summary', { error: err, context });
+    logger.error('Failed to load feedback summary', err instanceof Error ? err : new Error(String(err)));
     return [];
   }
 }

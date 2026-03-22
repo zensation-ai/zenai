@@ -172,6 +172,7 @@ describe('recordFeedback', () => {
     const { logger } = jest.requireMock('../../../../utils/logger');
     expect(logger.error).toHaveBeenCalledWith(
       'Failed to record feedback event',
+      expect.any(Error),
       expect.objectContaining({ eventId: 'test-id' }),
     );
   });
@@ -305,7 +306,8 @@ describe('FeedbackBus', () => {
     const { logger } = jest.requireMock('../../../../utils/logger');
     expect(logger.error).toHaveBeenCalledWith(
       'Feedback handler threw an error',
-      expect.objectContaining({ type: 'response_rating' }),
+      expect.any(Error),
+      expect.objectContaining({ eventId: 'test-id' }),
     );
   });
 

@@ -9,6 +9,7 @@
 
 import { logger } from '../../utils/logger';
 import { queryContext } from '../../utils/database-context';
+import type { AIContext } from '../../types/context';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -141,13 +142,13 @@ export async function recordInteraction(
 ): Promise<void> {
   try {
     await queryContext(
-      context,
+      context as AIContext,
       `INSERT INTO capability_interactions (domain, was_positive, quality, created_at)
        VALUES ($1, $2, $3, NOW())`,
       [domain, wasPositive, quality ?? null],
     );
   } catch (err) {
-    logger.error('Failed to record capability interaction', { err, domain });
+    logger.error('Failed to record capability interaction', err instanceof Error ? err : new Error(String(err)), { domain });
   }
 }
 
@@ -171,7 +172,7 @@ export async function loadCapabilityProfile(
   try {
     // 1. Domain stats
     const domainResult = await queryContext(
-      context,
+      context as AIContext,
       `SELECT
          domain,
          COUNT(*) FILTER (WHERE was_positive) AS positive_queries,
@@ -196,7 +197,7 @@ export async function loadCapabilityProfile(
 
     // 2. Total interactions
     const totalResult = await queryContext(
-      context,
+      context as AIContext,
       `SELECT COUNT(*) AS total FROM capability_interactions`,
       [],
     );
@@ -205,7 +206,7 @@ export async function loadCapabilityProfile(
 
     // 3. Recent quality scores (last 7 days)
     const recentResult = await queryContext(
-      context,
+      context as AIContext,
       `SELECT quality FROM capability_interactions
        WHERE quality IS NOT NULL AND created_at > NOW() - INTERVAL '7 days'
        ORDER BY created_at DESC LIMIT 50`,
@@ -217,7 +218,7 @@ export async function loadCapabilityProfile(
 
     // 4. Older quality scores (8-30 days ago)
     const olderResult = await queryContext(
-      context,
+      context as AIContext,
       `SELECT quality FROM capability_interactions
        WHERE quality IS NOT NULL
          AND created_at > NOW() - INTERVAL '30 days'
@@ -236,7 +237,7 @@ export async function loadCapabilityProfile(
       olderScores,
     );
   } catch (err) {
-    logger.error('Failed to load capability profile', { err });
+    logger.error('Failed to load capability profile', err instanceof Error ? err : new Error(String(err)));
     return { ...DEFAULT_PROFILE };
   }
 }

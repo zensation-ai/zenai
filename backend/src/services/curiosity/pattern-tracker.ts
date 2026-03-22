@@ -8,6 +8,7 @@
 
 import { logger } from '../../utils/logger';
 import { queryContext } from '../../utils/database-context';
+import type { AIContext } from '../../types/context';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -190,7 +191,7 @@ export async function recordActivity(
   try {
     const sql = `INSERT INTO activity_patterns (timestamp, domain, intent, entities)
                  VALUES ($1, $2, $3, $4)`;
-    await queryContext(context, sql, [
+    await queryContext(context as AIContext, sql, [
       activity.timestamp.toISOString(),
       activity.domain,
       activity.intent,
@@ -199,7 +200,7 @@ export async function recordActivity(
     logger.debug('Recorded activity pattern', { domain: activity.domain, intent: activity.intent });
   } catch (error) {
     // Fire-and-forget: log but do not throw
-    logger.error('Failed to record activity pattern', { error });
+    logger.error('Failed to record activity pattern', error instanceof Error ? error : new Error(String(error)));
   }
 }
 
@@ -224,7 +225,7 @@ export async function loadPatterns(
          LIMIT 500`;
 
     const params = userId ? [userId] : [];
-    const result = await queryContext(context, sql, params);
+    const result = await queryContext(context as AIContext, sql, params);
 
     if (!result.rows || result.rows.length === 0) {
       return [];
@@ -239,7 +240,7 @@ export async function loadPatterns(
 
     return extractTemporalPatterns(activities);
   } catch (error) {
-    logger.error('Failed to load activity patterns', { error });
+    logger.error('Failed to load activity patterns', error instanceof Error ? error : new Error(String(error)));
     return [];
   }
 }

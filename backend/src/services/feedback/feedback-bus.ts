@@ -8,6 +8,7 @@
 import { randomUUID } from 'crypto';
 import { logger } from '../../utils/logger';
 import { queryContext } from '../../utils/database-context';
+import type { AIContext } from '../../types/context';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -79,7 +80,7 @@ export async function recordFeedback(
 ): Promise<void> {
   try {
     await queryContext(
-      context,
+      context as AIContext,
       `INSERT INTO feedback_events (id, type, source, target, value, details, created_at)
        VALUES ($1, $2, $3, $4, $5, $6, $7)`,
       [
@@ -93,7 +94,7 @@ export async function recordFeedback(
       ],
     );
   } catch (err) {
-    logger.error('Failed to record feedback event', { error: err, eventId: event.id });
+    logger.error('Failed to record feedback event', err instanceof Error ? err : new Error(String(err)), { eventId: event.id });
   }
 }
 
@@ -139,10 +140,8 @@ export class FeedbackBus {
       try {
         await handler(event);
       } catch (err) {
-        logger.error('Feedback handler threw an error', {
-          type: event.type,
+        logger.error('Feedback handler threw an error', err instanceof Error ? err : new Error(String(err)), {
           eventId: event.id,
-          error: err,
         });
       }
     });

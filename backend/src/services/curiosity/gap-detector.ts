@@ -8,6 +8,7 @@
 
 import { logger } from '../../utils/logger';
 import { queryContext } from '../../utils/database-context';
+import type { AIContext } from '../../types/context';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -204,7 +205,7 @@ export async function detectGaps(
          LIMIT 200`;
 
     const queryParams = userId ? [userId] : [];
-    const queryResult = await queryContext(context, queryHistorySQL, queryParams);
+    const queryResult = await queryContext(context as AIContext, queryHistorySQL, queryParams);
 
     if (!queryResult.rows || queryResult.rows.length === 0) {
       logger.debug('No query history found for gap detection');
@@ -215,7 +216,7 @@ export async function detectGaps(
     const factSQL = `SELECT domain, COUNT(*)::int AS fact_count
                      FROM learned_facts
                      GROUP BY domain`;
-    const factResult = await queryContext(context, factSQL);
+    const factResult = await queryContext(context as AIContext, factSQL);
 
     const factMap = new Map<string, number>();
     if (factResult?.rows) {
@@ -284,7 +285,7 @@ export async function detectGaps(
 
     return topGaps;
   } catch (error) {
-    logger.error('Gap detection failed', { error });
+    logger.error('Gap detection failed', error instanceof Error ? error : new Error(String(error)));
     return [];
   }
 }
