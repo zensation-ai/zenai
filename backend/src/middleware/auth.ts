@@ -177,6 +177,18 @@ export async function apiKeyAuth(req: Request, res: Response, next: NextFunction
 
   let apiKey: string | undefined;
 
+  // Phase 141: If Bearer token looks like a JWT (3 dot-separated segments, not ab_ prefix),
+  // delegate to jwtAuth instead of treating it as an API key.
+  if (authHeader?.startsWith('Bearer ') && !apiKeyHeader) {
+    const token = authHeader.substring(7);
+    const parts = token.split('.');
+    if (parts.length === 3 && !token.startsWith('ab_')) {
+      // This is a JWT — delegate to jwtAuth middleware
+      const { jwtAuth } = require('./jwt-auth');
+      return jwtAuth(req, res, next);
+    }
+  }
+
   // Accept API keys in multiple formats:
   // 1. Bearer ab_xxx - standard format
   // 2. Bearer <uuid> - legacy/alternative format (key ID lookup) - DEPRECATED
