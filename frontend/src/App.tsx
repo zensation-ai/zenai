@@ -57,6 +57,10 @@ import { AppLayout } from './components/layout/AppLayout';
 import { usePageHistory } from './hooks/usePageHistory';
 import { PageTransition } from './components/PageTransition';
 
+// Cockpit Mode (Phase 142 — opt-in feature flag)
+import { PanelProvider } from './contexts/PanelContext';
+import { CockpitLayout } from './components/cockpit/CockpitLayout';
+
 import './App.css';
 
 const PageLoader = () => (
@@ -146,6 +150,9 @@ function AuthenticatedApp() {
   const { currentPage, tabParam, navigateToPage } = useUrlNavigation();
   const [context, setContext] = useContextState();
   const keyboardShortcuts = useKeyboardShortcutsModal();
+
+  // Phase 142: Cockpit mode (opt-in via localStorage)
+  const cockpitMode = safeLocalStorage('get', 'zenai-cockpit-mode') === 'true';
 
   // Data loading (extracted to useIdeasData hook)
   const {
@@ -535,6 +542,46 @@ function AuthenticatedApp() {
 
   // ============================================
   // RENDER
+  // ============================================
+
+  // ============================================
+  // COCKPIT MODE (Phase 142 — opt-in feature flag)
+  // ============================================
+  if (cockpitMode) {
+    return (
+      <ShortcutHintProvider>
+      <ErrorBoundary>
+        <PanelProvider>
+          <CockpitLayout currentPage="chat" context={context} onContextChange={setContext}>
+            <ErrorBoundary fallback={<div className="chat-error-fallback">Chat nicht verfügbar.</div>}>
+              <GeneralChat context={context} isCompact={false} />
+            </ErrorBoundary>
+          </CockpitLayout>
+        </PanelProvider>
+
+        <ToastContainer />
+
+        {commandPalette.isOpen && (
+          <CommandPalette
+            isOpen={commandPalette.isOpen}
+            onClose={commandPalette.close}
+            commands={commandPalette.commands}
+            recentPages={pageHistory.recentPages}
+            currentPage={currentPage}
+          />
+        )}
+
+        <KeyboardShortcutsModal
+          isOpen={keyboardShortcuts.isOpen}
+          onClose={keyboardShortcuts.close}
+        />
+      </ErrorBoundary>
+      </ShortcutHintProvider>
+    );
+  }
+
+  // ============================================
+  // STANDARD MODE (existing AppLayout)
   // ============================================
 
   return (
