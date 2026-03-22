@@ -476,21 +476,29 @@ textarea::placeholder {
   /* ===== Dashboard ===== */
   --dashboard-card-bg: rgba(255, 255, 255, 0.75);
   --dashboard-stat-highlight: var(--primary);
+
+  /* Phase 2B: Accent tokens */
+  --accent: #FF6B35;
+  --accent-hover: #FF8F5A;
+  --accent-muted: rgba(255, 107, 53, 0.15);
+  --accent-ai: #6366F1;
+  --accent-ai-muted: rgba(99, 102, 241, 0.15);
 }
 
 /* Phase 102: Dark mode for new Calm Neurodesign tokens */
 [data-theme="dark"] {
-  --surface-bg: hsl(225, 18%, 10%);
-  --surface-1: hsl(225, 16%, 14%);
-  --surface-2: hsl(225, 14%, 18%);
-  --surface-3: hsl(225, 12%, 24%);
-  --text-primary: hsl(220, 15%, 95%);
-  --text-secondary: hsl(220, 10%, 72%);
-  --text-tertiary: hsl(220, 8%, 55%);
-  --glass-bg: rgba(30, 30, 46, 0.72);
+  --surface-bg: #0A1A24;
+  --surface-1: #0F2230;
+  --surface-2: #142A3A;
+  --surface-3: #1A3345;
+  --text-primary: #E5E5E5;
+  --text-secondary: rgba(255, 255, 255, 0.55);
+  --text-tertiary: rgba(255, 255, 255, 0.3);
+  --glass-bg: rgba(10, 26, 36, 0.8);
   --glass-border: rgba(255, 255, 255, 0.08);
-  --glass-l1-shadow: 0 2px 16px rgba(0, 0, 0, 0.15);
-  --glass-l2-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
+  --glass-l1-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  --glass-l2-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  --border-hover: rgba(255, 255, 255, 0.12);
 }
 
 /* ============================================
@@ -512,7 +520,7 @@ textarea::placeholder {
     --danger-light: rgba(239, 68, 68, 0.18);
 
     /* Background - Midnight Dark Petrol Theme */
-    --background: #0a1a24;
+    --background: #0A1A24;
     --background-gradient: linear-gradient(
       145deg,
       #0a1a24 0%,
@@ -524,10 +532,10 @@ textarea::placeholder {
     );
 
     /* Surfaces - Dark glass morphism with petrol depth */
-    --surface: rgba(22, 50, 62, 0.82);
-    --surface-solid: #183642;
-    --surface-light: rgba(28, 60, 72, 0.68);
-    --surface-hover: rgba(32, 72, 85, 0.88);
+    --surface: rgba(15, 34, 48, 0.6);
+    --surface-solid: #0F2230;
+    --surface-light: rgba(20, 42, 58, 0.4);
+    --surface-hover: rgba(26, 51, 69, 0.5);
     --surface-warm: rgba(40, 30, 25, 0.8);
     --surface-petrol: rgba(22, 56, 68, 0.78);
 
@@ -562,10 +570,10 @@ textarea::placeholder {
     --shadow-glass: 0 8px 32px rgba(5, 20, 30, 0.4), inset 0 1px 0 rgba(80, 180, 200, 0.05);
 
     /* Card and Filter specific - dark mode */
-    --card-bg: var(--glass-bg);
-    --hover-bg: rgba(32, 72, 85, 0.88);
-    --bg-secondary: rgba(40, 85, 105, 0.2);
-    --bg-tertiary: rgba(255, 122, 74, 0.12);
+    --card-bg: #142A3A;
+    --hover-bg: rgba(26, 51, 69, 0.5);
+    --bg-secondary: #0F2230;
+    --bg-tertiary: #142A3A;
     --text-primary: #f5f9fc;
     --border-color: var(--border);
 
