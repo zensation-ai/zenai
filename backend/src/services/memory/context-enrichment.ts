@@ -63,13 +63,13 @@ const TIME_SIMILARITY: Record<TimeOfDay, Record<TimeOfDay, number>> = {
 
 /** Day-of-week similarity: weekdays are similar to each other, weekends to each other */
 function dayOfWeekSimilarity(day1: number, day2: number): number {
-  if (day1 === day2) return 1.0;
+  if (day1 === day2) {return 1.0;}
 
   const isWeekend1 = day1 === 0 || day1 === 6;
   const isWeekend2 = day2 === 0 || day2 === 6;
 
   // Same type (both weekday or both weekend) = moderate similarity
-  if (isWeekend1 === isWeekend2) return 0.6;
+  if (isWeekend1 === isWeekend2) {return 0.6;}
 
   // Weekday vs weekend = low similarity
   return 0.2;
@@ -224,7 +224,7 @@ export function calculateContextSimilarity(
  * Exact match = 1.0, related tasks = 0.5, unrelated = 0.1
  */
 function calculateTaskSimilarity(task1: string, task2: string): number {
-  if (task1 === task2) return 1.0;
+  if (task1 === task2) {return 1.0;}
 
   // Define task type relationships (bidirectional)
   const RELATED_TASKS: Record<string, string[]> = {
@@ -265,14 +265,14 @@ export function serializeContext(ctx: EncodingContext): Record<string, unknown> 
  * Deserialize an EncodingContext from a database JSONB value.
  */
 export function deserializeContext(data: unknown): EncodingContext | null {
-  if (!data || typeof data !== 'object') return null;
+  if (!data || typeof data !== 'object') {return null;}
 
   const obj = data as Record<string, unknown>;
   const timeOfDay = obj.timeOfDay as TimeOfDay | undefined;
   const dayOfWeek = obj.dayOfWeek as number | undefined;
   const taskType = obj.taskType as string | undefined;
 
-  if (!timeOfDay || dayOfWeek === undefined) return null;
+  if (!timeOfDay || dayOfWeek === undefined) {return null;}
 
   return {
     timeOfDay,

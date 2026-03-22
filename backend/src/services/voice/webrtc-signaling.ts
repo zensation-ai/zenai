@@ -252,7 +252,7 @@ export class VoiceSignalingServer {
       }
 
       case 'config': {
-        if (!currentSessionId) return;
+        if (!currentSessionId) {return;}
         // Config updates could be applied to the session
         logger.info('Voice session config update', {
           sessionId: currentSessionId,

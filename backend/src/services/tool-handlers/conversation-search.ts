@@ -71,7 +71,7 @@ export const TOOL_CONVERSATION_SEARCH_DATE: ToolDefinition = {
 const DATE_REGEX = /^\d{4}-\d{2}-\d{2}$/;
 
 function isValidDate(dateStr: string): boolean {
-  if (!DATE_REGEX.test(dateStr)) return false;
+  if (!DATE_REGEX.test(dateStr)) {return false;}
   const d = new Date(dateStr);
   return !isNaN(d.getTime());
 }

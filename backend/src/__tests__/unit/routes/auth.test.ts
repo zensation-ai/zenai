@@ -102,9 +102,9 @@ import { authRouter } from '../../../routes/auth';
 import { errorHandler } from '../../../middleware/errorHandler';
 
 // Import the mocked module to get access to the class
-// eslint-disable-next-line @typescript-eslint/no-require-imports
+ 
 const { UserServiceError } = require('../../../services/auth/user-service');
-// eslint-disable-next-line @typescript-eslint/no-require-imports
+ 
 const { JwtError } = require('../../../services/auth/jwt-service');
 
 describe('Auth Routes', () => {

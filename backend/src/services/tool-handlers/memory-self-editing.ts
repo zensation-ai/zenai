@@ -14,7 +14,6 @@ import { ToolExecutionContext } from '../claude/tool-use';
 import { queryContext } from '../../utils/database-context';
 import { generateEmbedding } from '../ai';
 import { generateClaudeResponse } from '../claude/core';
-import { MODEL_CONFIG } from '../claude/client';
 import { v4 as uuidv4 } from 'uuid';
 
 // ===========================================
@@ -36,7 +35,7 @@ async function findFactByKeyOrContent(
      WHERE id = $1 AND is_active = true LIMIT 1`,
     [key]
   );
-  if (byId.rows.length > 0) return byId.rows[0];
+  if (byId.rows.length > 0) {return byId.rows[0];}
 
   // Fall back to content search
   const byContent = await queryContext(
@@ -46,7 +45,7 @@ async function findFactByKeyOrContent(
      ORDER BY confidence DESC LIMIT 1`,
     [key]
   );
-  if (byContent.rows.length > 0) return byContent.rows[0];
+  if (byContent.rows.length > 0) {return byContent.rows[0];}
 
   return null;
 }

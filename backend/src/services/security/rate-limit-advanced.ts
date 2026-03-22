@@ -86,16 +86,16 @@ let redisClient: {
 let redisAvailable = false;
 
 async function getRedisClient(): Promise<typeof redisClient> {
-  if (redisClient) return redisClient;
+  if (redisClient) {return redisClient;}
 
   const redisUrl = process.env.REDIS_URL;
-  if (!redisUrl) return null;
+  if (!redisUrl) {return null;}
 
   try {
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
+     
     const redisModule = 'redis';
     // Dynamic import erases module type information
-    const { createClient } = await import(/* webpackIgnore: true */ redisModule) as any;
+    const { createClient } = await import(/* webpackIgnore: true */ redisModule) as { createClient: (opts: { url: string }) => { on: (event: string, cb: () => void) => void; connect: () => Promise<void>; incr: (key: string) => Promise<number>; expire: (key: string, seconds: number) => Promise<unknown>; ttl: (key: string) => Promise<number>; get: (key: string) => Promise<string | null>; quit: () => Promise<void> } };
     const client = createClient({ url: redisUrl });
 
     client.on('error', () => {
@@ -216,8 +216,8 @@ function checkMemoryRateLimit(
 
 function defaultKeyGenerator(req: Request): string {
   // Prefer user ID from JWT, then API key ID, then IP
-  if (req.jwtUser?.id) return `user:${req.jwtUser.id}`;
-  if (req.apiKey?.id) return `apikey:${req.apiKey.id}`;
+  if (req.jwtUser?.id) {return `user:${req.jwtUser.id}`;}
+  if (req.apiKey?.id) {return `apikey:${req.apiKey.id}`;}
   return `ip:${req.ip || req.socket?.remoteAddress || 'unknown'}`;
 }
 

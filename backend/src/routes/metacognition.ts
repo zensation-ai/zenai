@@ -9,7 +9,6 @@
 
 import { Router } from 'express';
 import { asyncHandler } from '../middleware/errorHandler';
-import { logger } from '../utils/logger';
 import { queryContext } from '../utils/database-context';
 import type { AIContext } from '../types/context';
 import { getRecentStates, recordEvaluation, buildMetacognitiveState } from '../services/metacognition/state-vector';
@@ -123,8 +122,9 @@ router.get('/:context/metacognition/overview', asyncHandler(async (req, res) => 
   // --- Calibration ---
   const ece = cal?.expectedCalibrationError ?? 0;
   const calibrationScore = Math.max(0, 1 - ece);
-  const sampleSize = (cal as any)?.bins
-    ? (cal as any).bins.reduce((sum: number, b: any) => sum + (b.totalCount ?? 0), 0)
+  const calWithBins = cal as { bins?: Array<{ totalCount?: number }> } | null;
+  const sampleSize = calWithBins?.bins
+    ? calWithBins.bins.reduce((sum: number, b) => sum + (b.totalCount ?? 0), 0)
     : 0;
   const calibrationData = {
     score: Math.round(calibrationScore * 100) / 100,
@@ -143,10 +143,10 @@ router.get('/:context/metacognition/overview', asyncHandler(async (req, res) => 
 
   // --- Predictions from hypotheses table ---
   const predictions = hypothesesRes.status === 'fulfilled'
-    ? (hypothesesRes.value.rows ?? []).map((r: any) => ({
+    ? (hypothesesRes.value.rows ?? []).map((r: Record<string, unknown>) => ({
         id: r.id,
         prediction: r.prediction,
-        confidence: parseFloat(r.confidence) || 0,
+        confidence: parseFloat(r.confidence as string) || 0,
         status: r.status,
         created_at: r.created_at,
       }))
@@ -154,18 +154,18 @@ router.get('/:context/metacognition/overview', asyncHandler(async (req, res) => 
 
   // --- Knowledge gaps ---
   const knowledgeGaps = gapsRes.status === 'fulfilled'
-    ? (gapsRes.value.rows ?? []).map((r: any) => ({
+    ? (gapsRes.value.rows ?? []).map((r: Record<string, unknown>) => ({
         area: r.area,
         severity: r.severity,
-        description: r.description ?? '',
+        description: (r.description as string) ?? '',
       }))
     : [];
 
   // --- Curiosity from knowledge_gaps ---
   const curiosity = curiosityRes.status === 'fulfilled'
-    ? (curiosityRes.value.rows ?? []).map((r: any) => ({
+    ? (curiosityRes.value.rows ?? []).map((r: Record<string, unknown>) => ({
         topic: r.topic,
-        interest_score: parseFloat(r.interest_score) || 0,
+        interest_score: parseFloat(r.interest_score as string) || 0,
         last_explored: r.last_explored ?? null,
       }))
     : [];

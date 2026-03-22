@@ -69,7 +69,7 @@ export function computeHomeostaticNormalization(
   weights: number[],
   targetSum: number,
 ): number[] {
-  if (weights.length === 0) return [];
+  if (weights.length === 0) {return [];}
 
   const currentSum = weights.reduce((a, b) => a + b, 0);
   if (currentSum === 0) {
@@ -95,7 +95,7 @@ export async function recordCoactivation(
   context: AIContext,
   entityIds: string[],
 ): Promise<void> {
-  if (entityIds.length < 2) return;
+  if (entityIds.length < 2) {return;}
 
   const pairs = generatePairs(entityIds);
 
@@ -204,7 +204,7 @@ export async function applyHebbianDecayBatch(
   for (const row of rows) {
     const decayedWeight = computeHebbianDecay(row.hebbian_weight);
     const isPruned = decayedWeight === 0;
-    if (isPruned) pruned++;
+    if (isPruned) {pruned++;}
 
     const finalWeight = isPruned ? HEBBIAN_CONFIG.NEUTRAL_WEIGHT : decayedWeight;
 

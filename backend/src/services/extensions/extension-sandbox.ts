@@ -64,7 +64,7 @@ function checkRateLimit(extensionId: string, userId: string): boolean {
 let rateLimitCleanupInterval: ReturnType<typeof setInterval> | null = null;
 
 function startRateLimitCleanup(): void {
-  if (rateLimitCleanupInterval) return;
+  if (rateLimitCleanupInterval) {return;}
   rateLimitCleanupInterval = setInterval(() => {
     const now = Date.now();
     for (const [key, entry] of rateLimitMap.entries()) {

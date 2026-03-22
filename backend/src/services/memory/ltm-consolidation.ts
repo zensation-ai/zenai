@@ -249,7 +249,7 @@ Antworte als JSON:
  * From: decayRate = e^(-1/S) => S = -1 / ln(decayRate)
  */
 export function decayRateToStability(decayRate: number): number {
-  if (decayRate >= 1.0) return 365; // permanent
-  if (decayRate <= 0) return 0.1;
+  if (decayRate >= 1.0) {return 365;} // permanent
+  if (decayRate <= 0) {return 0.1;}
   return Math.max(0.1, Math.min(365, -1.0 / Math.log(decayRate)));
 }

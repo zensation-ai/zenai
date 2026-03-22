@@ -117,10 +117,10 @@ export function evaluateResults(
     reason = `Acceptable results (confidence: ${(confidence * 100).toFixed(0)}%)`;
   } else {
     const issues: string[] = [];
-    if (relevantResults.length < MIN_RESULT_COUNT) issues.push('few relevant results');
-    if (avgScore < 0.4) issues.push('low average relevance');
-    if (topScore < 0.5) issues.push('weak top result');
-    if (queryTermCoverage < 0.3) issues.push('poor query term coverage');
+    if (relevantResults.length < MIN_RESULT_COUNT) {issues.push('few relevant results');}
+    if (avgScore < 0.4) {issues.push('low average relevance');}
+    if (topScore < 0.5) {issues.push('weak top result');}
+    if (queryTermCoverage < 0.3) {issues.push('poor query term coverage');}
     reason = `Low confidence: ${issues.join(', ')}`;
   }
 
@@ -135,7 +135,7 @@ export function evaluateResults(
  * Compute variance of a number array.
  */
 function computeVariance(values: number[]): number {
-  if (values.length <= 1) return 0;
+  if (values.length <= 1) {return 0;}
   const mean = values.reduce((a, b) => a + b, 0) / values.length;
   return values.reduce((sum, v) => sum + Math.pow(v - mean, 2), 0) / values.length;
 }
@@ -149,7 +149,7 @@ function computeQueryTermCoverage(query: string, results: RetrievalResultItem[])
     .split(/\s+/)
     .filter(t => t.length > 2);
 
-  if (queryTerms.length === 0) return 1.0;
+  if (queryTerms.length === 0) {return 1.0;}
 
   const allContent = results
     .map(r => `${r.title || ''} ${r.content}`)

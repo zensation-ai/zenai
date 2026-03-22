@@ -62,13 +62,13 @@ export function createBins(binCount: number = 5): CalibrationBin[] {
 // ---------------------------------------------------------------------------
 
 export function assignToBin(confidence: number, bins: CalibrationBin[]): number {
-  if (bins.length === 0) return 0;
+  if (bins.length === 0) {return 0;}
 
   // Clamp to [0, 1]
   const clamped = Math.max(0, Math.min(1, confidence));
 
   // Edge case: exactly 1.0 goes into the last bin
-  if (clamped >= 1.0) return bins.length - 1;
+  if (clamped >= 1.0) {return bins.length - 1;}
 
   const step = 1.0 / bins.length;
   const index = Math.floor(clamped / step);
@@ -103,11 +103,11 @@ export function updateBin(bin: CalibrationBin, wasPositive: boolean): Calibratio
 
 export function computeECE(bins: CalibrationBin[]): number {
   const totalSamples = bins.reduce((sum, b) => sum + b.totalCount, 0);
-  if (totalSamples === 0) return 0;
+  if (totalSamples === 0) {return 0;}
 
   let ece = 0;
   for (const bin of bins) {
-    if (bin.totalCount === 0) continue;
+    if (bin.totalCount === 0) {continue;}
     ece += Math.abs(bin.overconfidence) * (bin.totalCount / totalSamples);
   }
 

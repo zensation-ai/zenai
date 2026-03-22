@@ -42,5 +42,5 @@ export const ERROR_MESSAGES_DE: Record<string, string> = {
  * Falls back to INTERNAL_ERROR message if the code is not found.
  */
 export function getGermanErrorMessage(code: string): string {
-  return ERROR_MESSAGES_DE[code] ?? ERROR_MESSAGES_DE['INTERNAL_ERROR']!;
+  return ERROR_MESSAGES_DE[code] ?? (ERROR_MESSAGES_DE['INTERNAL_ERROR'] || 'Ein interner Fehler ist aufgetreten.');
 }

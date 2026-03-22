@@ -91,7 +91,7 @@ export class HttpMCPTransport implements IMCPTransport {
   }
 
   async request(method: string, params?: Record<string, unknown>): Promise<MCPTransportResult> {
-    const url = this.config.url!.replace(/\/$/, '');
+    const url = (this.config.url ?? '').replace(/\/$/, '');
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
     };

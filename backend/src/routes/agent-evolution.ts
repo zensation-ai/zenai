@@ -10,7 +10,6 @@
 import { Router, Request, Response } from 'express';
 import { asyncHandler, ValidationError } from '../middleware/errorHandler';
 import { apiKeyAuth } from '../middleware/auth';
-import { logger } from '../utils/logger';
 import {
   recordFeedback,
   recordUserRating,

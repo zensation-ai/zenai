@@ -84,7 +84,7 @@ export class EntityResolver {
       this.batchTimer = null;
     }
 
-    if (this.pendingFacts.length === 0) return;
+    if (this.pendingFacts.length === 0) {return;}
 
     const batch = this.pendingFacts.splice(0);
 

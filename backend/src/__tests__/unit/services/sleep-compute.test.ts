@@ -2,7 +2,7 @@
  * Phase 63: Sleep-Time Compute + Context Engine V2 Tests
  */
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
+ 
 
 jest.mock('../../../utils/database-context', () => ({
   queryContext: jest.fn(),

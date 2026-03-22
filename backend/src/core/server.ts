@@ -51,7 +51,7 @@ for (const mod of modules) {
 
 // Phase 66: Sentry error handler (must be BEFORE 404 and app error handler)
 try {
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
+   
   const { Sentry, isSentryInitialized } = require('../services/observability/sentry');
   if (isSentryInitialized()) {
     Sentry.setupExpressErrorHandler(app);
@@ -109,12 +109,12 @@ async function startServer(): Promise<void> {
 
   // Start HTTP server
   httpServer = app.listen(PORT, async () => {
-    const server = httpServer!;
-
     // Phase 57: Initialize WebSocket for Voice Signaling
     try {
-      const { voiceSignaling } = await import('../services/voice/webrtc-signaling');
-      voiceSignaling.initialize(server);
+      if (httpServer) {
+        const { voiceSignaling } = await import('../services/voice/webrtc-signaling');
+        voiceSignaling.initialize(httpServer);
+      }
       logger.info('Voice WebSocket server initialized', { operation: 'startup' });
     } catch (error) {
       logger.error('Voice WebSocket initialization failed (non-critical)', error instanceof Error ? error : undefined, { operation: 'startup' });
@@ -257,7 +257,7 @@ const gracefulShutdown = async (signal: string) => {
 
   // Stop accepting new connections
   if (httpServer) {
-    await new Promise<void>((resolve) => httpServer!.close(() => resolve()));
+    await new Promise<void>((resolve) => httpServer?.close(() => resolve()) ?? resolve());
   }
 
   // Close database connections last

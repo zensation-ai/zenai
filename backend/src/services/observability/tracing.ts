@@ -26,11 +26,11 @@ export async function initTracing(): Promise<boolean> {
 
   try {
     // Dynamic imports so the app doesn't crash if packages aren't installed
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
+     
     const api = require('@opentelemetry/api');
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
+     
     const { NodeSDK } = require('@opentelemetry/sdk-node');
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
+     
     const { getNodeAutoInstrumentations } = require('@opentelemetry/auto-instrumentations-node');
 
     otelApi = api;
@@ -43,11 +43,11 @@ export async function initTracing(): Promise<boolean> {
     let metricReader;
 
     if (otlpEndpoint || isProduction) {
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
+       
       const { OTLPTraceExporter } = require('@opentelemetry/exporter-trace-otlp-http');
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
+       
       const { OTLPMetricExporter } = require('@opentelemetry/exporter-metrics-otlp-http');
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
+       
       const { PeriodicExportingMetricReader } = require('@opentelemetry/sdk-metrics');
 
       traceExporter = new OTLPTraceExporter({
@@ -66,7 +66,7 @@ export async function initTracing(): Promise<boolean> {
         endpoint: otlpEndpoint || 'default',
       });
     } else {
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
+       
       const { ConsoleSpanExporter } = require('@opentelemetry/sdk-trace-node');
       traceExporter = new ConsoleSpanExporter();
 

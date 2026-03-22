@@ -163,7 +163,7 @@ export async function getChain(context: AIContext, chainId: string): Promise<Rea
     [chainId]
   );
 
-  if (result.rows.length === 0) return null;
+  if (result.rows.length === 0) {return null;}
   return rowToChain(result.rows[0] as Record<string, unknown>);
 }
 

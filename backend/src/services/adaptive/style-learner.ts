@@ -66,7 +66,7 @@ const ENGLISH_INDICATORS = [
  * Counts formal and casual indicator matches, then normalises.
  */
 export function detectFormality(text: string): number {
-  if (!text || text.trim().length === 0) return 0.5;
+  if (!text || text.trim().length === 0) {return 0.5;}
 
   const lower = text.toLowerCase();
   const words = lower.split(/\s+/);
@@ -77,18 +77,18 @@ export function detectFormality(text: string): number {
   for (const indicator of FORMAL_INDICATORS) {
     if (indicator.includes(' ')) {
       // multi-word: substring match
-      if (lower.includes(indicator)) formalCount += 2;
+      if (lower.includes(indicator)) {formalCount += 2;}
     } else {
-      if (words.includes(indicator)) formalCount++;
+      if (words.includes(indicator)) {formalCount++;}
     }
   }
 
   for (const indicator of CASUAL_INDICATORS) {
-    if (words.includes(indicator)) casualCount++;
+    if (words.includes(indicator)) {casualCount++;}
   }
 
   const total = formalCount + casualCount;
-  if (total === 0) return 0.5;
+  if (total === 0) {return 0.5;}
 
   return Math.min(1, Math.max(0, formalCount / total));
 }
@@ -98,18 +98,18 @@ export function detectFormality(text: string): number {
  * Counts technical term occurrences relative to total word count.
  */
 export function detectTechnicality(text: string): number {
-  if (!text || text.trim().length === 0) return 0;
+  if (!text || text.trim().length === 0) {return 0;}
 
   const lower = text.toLowerCase();
   const words = lower.split(/\s+/);
-  if (words.length === 0) return 0;
+  if (words.length === 0) {return 0;}
 
   let techCount = 0;
   for (const indicator of TECHNICAL_INDICATORS) {
     for (const word of words) {
       // strip punctuation from word for matching
       const clean = word.replace(/[^a-zA-Z0-9äöü]/g, '');
-      if (clean === indicator) techCount++;
+      if (clean === indicator) {techCount++;}
     }
   }
 
@@ -123,9 +123,9 @@ export function detectTechnicality(text: string): number {
  * < 20 words → 0.2, 20-80 → linear 0.2-0.8, > 80 → 0.8
  */
 export function detectVerbosity(avgWordCount: number): number {
-  if (avgWordCount <= 0) return 0;
-  if (avgWordCount < 20) return 0.2;
-  if (avgWordCount > 80) return 0.8;
+  if (avgWordCount <= 0) {return 0;}
+  if (avgWordCount < 20) {return 0.2;}
+  if (avgWordCount > 80) {return 0.8;}
   // linear interpolation between 20 and 80
   return 0.2 + ((avgWordCount - 20) / 60) * 0.6;
 }
@@ -135,7 +135,7 @@ export function detectVerbosity(avgWordCount: number): number {
  * "Close" means the minority language has at least 35% of total indicators.
  */
 export function detectLanguage(texts: string[]): 'de' | 'en' | 'mixed' {
-  if (!texts || texts.length === 0) return 'en';
+  if (!texts || texts.length === 0) {return 'en';}
 
   const combined = texts.join(' ').toLowerCase();
   const words = combined.split(/\s+/);
@@ -145,21 +145,21 @@ export function detectLanguage(texts: string[]): 'de' | 'en' | 'mixed' {
   let enCount = 0;
 
   for (const w of GERMAN_INDICATORS) {
-    if (wordSet.has(w)) deCount++;
+    if (wordSet.has(w)) {deCount++;}
   }
   for (const w of ENGLISH_INDICATORS) {
-    if (wordSet.has(w)) enCount++;
+    if (wordSet.has(w)) {enCount++;}
   }
 
   const total = deCount + enCount;
-  if (total === 0) return 'en';
+  if (total === 0) {return 'en';}
 
   const deRatio = deCount / total;
   const enRatio = enCount / total;
 
   // If neither side has a strong majority (>65%), call it mixed
-  if (deRatio > 0.65) return 'de';
-  if (enRatio > 0.65) return 'en';
+  if (deRatio > 0.65) {return 'de';}
+  if (enRatio > 0.65) {return 'en';}
   return 'mixed';
 }
 

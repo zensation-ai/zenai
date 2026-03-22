@@ -37,7 +37,7 @@ interface BuildStateParams {
 // ---------------------------------------------------------------------------
 
 function cosineSimilarity(a: number[], b: number[]): number {
-  if (a.length === 0 || b.length === 0) return 0;
+  if (a.length === 0 || b.length === 0) {return 0;}
 
   let dot = 0;
   let magA = 0;
@@ -50,7 +50,7 @@ function cosineSimilarity(a: number[], b: number[]): number {
   }
 
   const denom = Math.sqrt(magA) * Math.sqrt(magB);
-  if (denom === 0) return 0;
+  if (denom === 0) {return 0;}
 
   return dot / denom;
 }
@@ -102,11 +102,11 @@ export function computeKnowledgeCoverage(
   queryEntities: string[],
   knownEntities: Set<string>,
 ): number {
-  if (queryEntities.length === 0) return 0;
+  if (queryEntities.length === 0) {return 0;}
 
   let found = 0;
   for (const entity of queryEntities) {
-    if (knownEntities.has(entity)) found++;
+    if (knownEntities.has(entity)) {found++;}
   }
 
   return found / queryEntities.length;
@@ -118,12 +118,12 @@ export function computeKnowledgeCoverage(
 
 export function detectConfusion(state: MetacognitiveState): ConfusionLevel {
   // High priority checks
-  if (state.conflictLevel > 2) return 'high';
-  if (state.knowledgeCoverage < 0.3) return 'high';
+  if (state.conflictLevel > 2) {return 'high';}
+  if (state.knowledgeCoverage < 0.3) {return 'high';}
 
   // Medium priority checks
-  if (state.confidence < 0.4) return 'medium';
-  if (state.coherence < 0.5) return 'medium';
+  if (state.confidence < 0.4) {return 'medium';}
+  if (state.coherence < 0.5) {return 'medium';}
 
   return 'low';
 }
@@ -193,9 +193,9 @@ export async function getRecentStates(
 
     const result = await queryContext(context as AIContext, sql, [limit]);
 
-    if (!result.rows || result.rows.length === 0) return [];
+    if (!result.rows || result.rows.length === 0) {return [];}
 
-    return result.rows.map((row: any) => ({
+    return result.rows.map((row: Record<string, unknown>) => ({
       confidence: Number(row.confidence),
       coherence: Number(row.coherence),
       conflictLevel: Number(row.conflict_level),

@@ -13,7 +13,6 @@ import { logger } from '../utils/logger';
 import { queryContext } from '../utils/database-context';
 import type { AIContext } from '../types/context';
 import { detectGaps } from '../services/curiosity/gap-detector';
-import { generateHypotheses } from '../services/curiosity/hypothesis-engine';
 
 const router = Router();
 

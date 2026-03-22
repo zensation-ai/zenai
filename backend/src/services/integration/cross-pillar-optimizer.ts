@@ -145,8 +145,8 @@ export function summarizePipelineRun(results: PipelineStepResult[]): PipelineSum
 
   for (const r of results) {
     totalDurationMs += r.durationMs;
-    if (r.success) successCount++;
-    else failureCount++;
+    if (r.success) {successCount++;}
+    else {failureCount++;}
   }
 
   return { totalDurationMs, successCount, failureCount };

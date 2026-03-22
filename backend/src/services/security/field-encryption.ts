@@ -68,7 +68,7 @@ export function initEncryption(): boolean {
  * Check if encryption is available (key is configured).
  */
 export function isEncryptionAvailable(): boolean {
-  if (!initialized) initEncryption();
+  if (!initialized) {initEncryption();}
   return encryptionKey !== null;
 }
 
@@ -82,7 +82,7 @@ export function isEncryptionAvailable(): boolean {
  * @returns Encrypted string or original plaintext if encryption unavailable
  */
 export function encrypt(plaintext: string): string {
-  if (!initialized) initEncryption();
+  if (!initialized) {initEncryption();}
 
   if (!encryptionKey) {
     if (process.env.NODE_ENV === 'production') {
@@ -123,7 +123,7 @@ export function encrypt(plaintext: string): string {
  * @returns Decrypted plaintext
  */
 export function decrypt(encrypted: string): string {
-  if (!initialized) initEncryption();
+  if (!initialized) {initEncryption();}
 
   // Not encrypted — return as-is (backward compat for unencrypted data)
   if (!encrypted.startsWith(ENCRYPTED_PREFIX)) {

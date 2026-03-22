@@ -120,7 +120,7 @@ async function processMemoryConsolidation(job: BullJob): Promise<Record<string, 
 
   // Calls into existing memory consolidation logic
   try {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
+     
     const memoryModule = require('../memory/index');
     if (typeof memoryModule.memoryCoordinator?.consolidateAll === 'function') {
       await job.updateProgress(30);
@@ -440,7 +440,7 @@ const MAX_STALLED_COUNT = 2; // mark as failed after 2 stall detections
  * Start all queue workers. No-op if REDIS_URL is not configured.
  */
 export async function startWorkers(): Promise<boolean> {
-  if (workersStarted) return true;
+  if (workersStarted) {return true;}
 
   const redisUrl = process.env.REDIS_URL;
   if (!redisUrl) {
@@ -452,7 +452,7 @@ export async function startWorkers(): Promise<boolean> {
   }
 
   try {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
+     
     const { Worker } = require('bullmq');
     const connection = { url: redisUrl };
 
@@ -470,7 +470,7 @@ export async function startWorkers(): Promise<boolean> {
     for (const [queueName, processor] of Object.entries(processors)) {
       const counters = getOrCreateCounters(queueName);
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+       
       const worker = new Worker(
         queueName,
         async (job: BullJob) => {
@@ -578,7 +578,7 @@ export async function startWorkers(): Promise<boolean> {
  * Stop all queue workers gracefully.
  */
 export async function stopWorkers(): Promise<void> {
-  if (workers.size === 0) return;
+  if (workers.size === 0) {return;}
 
   logger.info('Stopping queue workers...', { operation: 'worker' });
 

@@ -119,7 +119,7 @@ export async function register(input: RegisterInput): Promise<User> {
   // Validate password
   const pwValidation = validatePassword(password);
   if (!pwValidation.valid) {
-    throw new UserServiceError(pwValidation.message!, 'WEAK_PASSWORD');
+    throw new UserServiceError(pwValidation.message ?? 'Password too weak', 'WEAK_PASSWORD');
   }
 
   // Check for existing user
@@ -326,7 +326,7 @@ export async function updateProfile(userId: string, input: UpdateProfileInput): 
 
   if (setClauses.length === 0) {
     const user = await findById(userId);
-    if (!user) throw new UserServiceError('User not found', 'NOT_FOUND');
+    if (!user) {throw new UserServiceError('User not found', 'NOT_FOUND');}
     return user;
   }
 
@@ -350,6 +350,7 @@ export async function updateProfile(userId: string, input: UpdateProfileInput): 
  * Phase 66: Encrypts the secret before storing.
  */
 export async function setMfaSecret(userId: string, secret: string | null): Promise<void> {
+  // eslint-disable-next-line security/detect-possible-timing-attacks -- null check, not a secret comparison
   if (secret === null) {
     await queryPublic(
       'UPDATE public.users SET mfa_secret = NULL, updated_at = NOW() WHERE id = $1',
@@ -450,7 +451,7 @@ export async function createPasswordResetToken(email: string): Promise<string | 
 export async function resetPasswordWithToken(token: string, newPassword: string): Promise<void> {
   const pwValidation = validatePassword(newPassword);
   if (!pwValidation.valid) {
-    throw new UserServiceError(pwValidation.message!, 'WEAK_PASSWORD');
+    throw new UserServiceError(pwValidation.message ?? 'Password too weak', 'WEAK_PASSWORD');
   }
 
   const crypto = await import('crypto');

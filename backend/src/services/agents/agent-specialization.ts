@@ -135,9 +135,9 @@ export async function updateFromExecution(
       // Infer preferred sources for researchers
       if (agentRole === 'researcher') {
         const sources = new Set(updated.preferred_sources ?? []);
-        if (tools.includes('web_search')) sources.add('web');
-        if (tools.includes('search_ideas') || tools.includes('recall')) sources.add('memory');
-        if (tools.includes('search_documents') || tools.includes('analyze_document')) sources.add('docs');
+        if (tools.includes('web_search')) {sources.add('web');}
+        if (tools.includes('search_ideas') || tools.includes('recall')) {sources.add('memory');}
+        if (tools.includes('search_documents') || tools.includes('analyze_document')) {sources.add('docs');}
         updated.preferred_sources = Array.from(sources);
       }
 
@@ -146,7 +146,7 @@ export async function updateFromExecution(
         const langs = new Set(updated.language_preferences ?? []);
         if (tools.includes('execute_code')) {
           const lang = executionData.language as string | undefined;
-          if (lang) langs.add(lang);
+          if (lang) {langs.add(lang);}
         }
         updated.language_preferences = Array.from(langs);
       }

@@ -190,7 +190,7 @@ export class STTService {
 
   isAvailable(): boolean {
     for (const provider of this.providers.values()) {
-      if (provider.isAvailable()) return true;
+      if (provider.isAvailable()) {return true;}
     }
     return false;
   }

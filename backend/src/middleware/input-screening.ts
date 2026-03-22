@@ -32,14 +32,14 @@ import { logger } from '../utils/logger';
  * - Jailbreak keywords: "DAN mode", "developer mode", "jailbreak"
  */
 const INJECTION_PATTERNS: RegExp[] = [
-  /ignore\s+(all\s+)?previous\s+instructions/i,
+  /ignore\s+(?:all )?previous\s+instructions/i,
   /you\s+are\s+now\s+/i,
-  /forget\s+(all\s+)?your\s+(previous\s+)?instructions/i,
+  /forget\s+(?:all )?your\s+(?:previous )?instructions/i,
   /system\s*:\s*/i,
   /\[INST\]/i,
   /<\|im_start\|>/i,
   /<system>/i,
-  /act\s+as\s+(if\s+you\s+are\s+)?a\s+/i,
+  /act\s+as\s+(?:if you are )?a\s+/i,
   /pretend\s+(you\s+are|to\s+be)/i,
   /new\s+instruction/i,
   /override\s+(previous|system|all)/i,
@@ -101,11 +101,11 @@ export function screenUserInput(input: string): ScreeningResult {
   score += matchedPatterns.length * 0.3; // Each pattern match adds 0.3
 
   // Very long inputs with many special characters are more suspicious
-  const specialCharRatio = (input.match(/[<>\[\]{}|\\]/g) || []).length / Math.max(input.length, 1);
-  if (specialCharRatio > 0.1) score += 0.2;
+  const specialCharRatio = (input.match(/[<>[\]{}|\\]/g) || []).length / Math.max(input.length, 1);
+  if (specialCharRatio > 0.1) {score += 0.2;}
 
   // Multiple line breaks with different "personas"
-  if ((input.match(/\n/g) || []).length > 10) score += 0.1;
+  if ((input.match(/\n/g) || []).length > 10) {score += 0.1;}
 
   score = Math.min(score, 1.0);
 

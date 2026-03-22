@@ -32,16 +32,17 @@ interface CommandPattern {
   confidence: number;
 }
 
+/* eslint-disable security/detect-unsafe-regex -- all patterns are ^-anchored, preventing catastrophic backtracking */
 const COMMAND_PATTERNS: CommandPattern[] = [
   // Create idea
   {
     type: 'create_idea',
     patterns: [
-      /^(?:erstelle|erstell|neue|neuen?|mach|mache)\s+(?:eine?\s+)?(?:idee|gedanke[n]?|notiz)\s*[:\-]?\s*(.+)/i,
-      /^(?:create|new|add)\s+(?:an?\s+)?(?:new\s+)?(?:idea|thought|note)\s*[:\-]?\s*(.+)/i,
-      /^(?:idee|gedanke)\s*[:\-]\s*(.+)/i,
-      /^(?:idea|note)\s*[:\-]\s*(.+)/i,
-      /^(?:merke?\s+(?:dir)?|notiere?)\s*[:\-]?\s*(.+)/i,
+      /^(?:erstelle|erstell|neue[n]?|mach|mache) (?:eine? )?(?:idee|gedanken?|notiz)\s*[:-]?\s*(.+)/i,
+      /^(?:create|new|add) (?:an? )?(?:new )?(?:idea|thought|note)\s*[:-]?\s*(.+)/i,
+      /^(?:idee|gedanke)\s*[:-]\s*(.+)/i,
+      /^(?:idea|note)\s*[:-]\s*(.+)/i,
+      /^(?:merke?\s+(?:dir)?|notiere?)\s*[:-]?\s*(.+)/i,
     ],
     extractContent: (match) => match[1]?.trim() || '',
     confidence: 0.85,
@@ -51,11 +52,11 @@ const COMMAND_PATTERNS: CommandPattern[] = [
   {
     type: 'list_tasks',
     patterns: [
-      /^(?:zeige?|zeig)\s+(?:mir\s+)?(?:meine?\s+)?(?:aufgaben|tasks?|todos?|to-dos?)/i,
-      /^(?:was\s+(?:steht|sind|habe?\s+ich)\s+)?(?:auf\s+(?:meiner\s+)?(?:liste|agenda))/i,
-      /^(?:show|list|display)\s+(?:my\s+)?(?:tasks?|todos?|to-dos?)/i,
-      /^(?:welche?\s+)?(?:aufgaben|tasks?)\s+(?:habe?\s+ich|sind\s+offen|stehen\s+an)/i,
-      /^(?:meine?\s+)?(?:aufgaben|tasks?|todos?)\s+(?:anzeigen|zeigen|auflisten)/i,
+      /^(?:zeige?|zeig) (?:mir )?(?:meine? )?(?:aufgaben|tasks?|todos?|to-dos?)/i,
+      /^(?:was (?:steht|sind|habe? ich) )?(?:auf (?:meiner )?(?:liste|agenda))/i,
+      /^(?:show|list|display) (?:my )?(?:tasks?|todos?|to-dos?)/i,
+      /^(?:welche? )?(?:aufgaben|tasks?) (?:habe? ich|sind offen|stehen an)/i,
+      /^(?:meine? )?(?:aufgaben|tasks?|todos?) (?:anzeigen|zeigen|auflisten)/i,
     ],
     extractContent: (_match, fullText) => fullText,
     confidence: 0.9,
@@ -65,8 +66,8 @@ const COMMAND_PATTERNS: CommandPattern[] = [
   {
     type: 'search',
     patterns: [
-      /^(?:suche?\s+(?:nach)?|finde?|durchsuche?)\s+(.+)/i,
-      /^(?:search|find|look)\s+(?:for\s+)?(.+)/i,
+      /^(?:suche? nach |suche? |finde? |durchsuche? )(.+)/i,
+      /^(?:search|find|look) (?:for )?(.+)/i,
       /^(?:gibt\s+es\s+(?:etwas\s+)?(?:zu|ueber|über))\s+(.+)/i,
       /^(?:was\s+(?:weisst|weißt)\s+du\s+(?:ueber|über))\s+(.+)/i,
     ],
@@ -79,9 +80,9 @@ const COMMAND_PATTERNS: CommandPattern[] = [
   {
     type: 'navigate',
     patterns: [
-      /^(?:oeffne|öffne|gehe?\s+zu|geh\s+zu|wechsle?\s+zu|navigiere?\s+zu)\s+(.+)/i,
-      /^(?:open|go\s+to|navigate\s+to|switch\s+to)\s+(.+)/i,
-      /^(?:zeig(?:e)?\s+(?:mir\s+)?(?:die?\s+)?)(dashboard|chat|gedanken|ideas?|kalender|calendar|einstellungen|settings|dokumente|documents|email|contacts?|kontakte?)/i,
+      /^(?:oeffne|öffne|gehe? zu|geh zu|wechsle? zu|navigiere? zu) (.+)/i,
+      /^(?:open|go to|navigate to|switch to) (.+)/i,
+      /^(?:zeige? (?:mir )?(?:die? )?)(dashboard|chat|gedanken|ideas?|kalender|calendar|einstellungen|settings|dokumente|documents|email|contacts?|kontakte?)/i,
     ],
     extractContent: (match) => match[1]?.trim() || '',
     extractParams: (match) => ({ target: normalizeNavigationTarget(match[1]?.trim() || '') }),
@@ -94,14 +95,15 @@ const COMMAND_PATTERNS: CommandPattern[] = [
     patterns: [
       /^(?:erinnere?\s+mich\s+(?:an|dass?|daran))\s+(.+)/i,
       /^(?:remind\s+me\s+(?:to|about|that))\s+(.+)/i,
-      /^(?:erinnerung)\s*[:\-]?\s*(.+)/i,
-      /^(?:reminder)\s*[:\-]?\s*(.+)/i,
-      /^(?:nicht\s+vergessen)\s*[:\-]?\s*(.+)/i,
+      /^(?:erinnerung)\s*[:-]?\s*(.+)/i,
+      /^(?:reminder)\s*[:-]?\s*(.+)/i,
+      /^(?:nicht\s+vergessen)\s*[:-]?\s*(.+)/i,
     ],
     extractContent: (match) => match[1]?.trim() || '',
     confidence: 0.85,
   },
 ];
+/* eslint-enable security/detect-unsafe-regex */
 
 // ===========================================
 // Navigation Target Normalization

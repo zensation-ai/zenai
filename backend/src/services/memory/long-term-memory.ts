@@ -938,7 +938,7 @@ class LongTermMemoryService {
     if (negation.isNegated && negation.confidence >= 0.6) {
       const strippedNew = stripNegation(fact.content);
       for (const existing of memory.facts) {
-        if (existing.factType !== fact.factType) continue;
+        if (existing.factType !== fact.factType) {continue;}
         const strippedExisting = stripNegation(existing.content);
         const similarity = computeStringSimilarity(strippedNew, strippedExisting);
         const existingNegation = detectNegation(existing.content);
@@ -1256,7 +1256,7 @@ class LongTermMemoryService {
         `SELECT stability FROM learned_facts WHERE id = $1`,
         [factId]
       );
-      if (result.rows.length === 0) return;
+      if (result.rows.length === 0) {return;}
 
       const currentStability = parseFloat(result.rows[0].stability) || 1.0;
       const newStability = updateStability(currentStability, success);

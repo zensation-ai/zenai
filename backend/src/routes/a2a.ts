@@ -188,7 +188,7 @@ a2aRouter.get('/a2a/tasks/:id/stream', apiKeyAuth, requireScope('read'), asyncHa
       let task = null;
       for (const ctx of ['personal', 'work', 'learning', 'creative'] as AIContext[]) {
         task = await a2aTaskManager.getTask(ctx, taskId);
-        if (task) break;
+        if (task) {break;}
       }
 
       if (!task) {

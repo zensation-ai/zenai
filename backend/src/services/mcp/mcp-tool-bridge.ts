@@ -13,7 +13,7 @@
 
 import { logger } from '../../utils/logger';
 import { AIContext } from '../../utils/database-context';
-import { MCPClientManager, MCPExternalTool, MCPToolCallResult } from './mcp-client';
+import { MCPClientManager } from './mcp-client';
 import { mcpServerRegistry } from './mcp-registry';
 
 // ===========================================
@@ -97,7 +97,7 @@ export class MCPToolBridge {
     input: Record<string, unknown>,
     schema: Record<string, unknown>
   ): string | null {
-    if (schema.type !== 'object') return null; // Only validate object schemas
+    if (schema.type !== 'object') {return null;} // Only validate object schemas
 
     const properties = (schema.properties || {}) as Record<string, Record<string, unknown>>;
     const required = (schema.required || []) as string[];
@@ -112,7 +112,7 @@ export class MCPToolBridge {
     // Check basic types for provided fields
     for (const [key, value] of Object.entries(input)) {
       const propSchema = properties[key];
-      if (!propSchema || !propSchema.type) continue;
+      if (!propSchema || !propSchema.type) {continue;}
 
       const expectedType = propSchema.type as string;
       const actualType = Array.isArray(value) ? 'array' : typeof value;

@@ -179,9 +179,9 @@ export function scoreResult(text: string, query: string): number {
   const lower = text.toLowerCase();
   const queryLower = query.toLowerCase();
 
-  if (lower === queryLower) return 1.0;
-  if (lower.startsWith(queryLower)) return 0.8;
-  if (lower.includes(queryLower)) return 0.6;
+  if (lower === queryLower) {return 1.0;}
+  if (lower.startsWith(queryLower)) {return 0.8;}
+  if (lower.includes(queryLower)) {return 0.6;}
 
   // Check individual words
   const queryWords = queryLower.split(/\s+/);
@@ -611,7 +611,7 @@ export async function unifiedSearch(options: UnifiedSearchOptions): Promise<Unif
   // Execute searches in parallel
   const searchPromises = typesToSearch.map(async (type) => {
     const fn = SEARCH_FUNCTIONS[type];
-    if (!fn) return [];
+    if (!fn) {return [];}
     try {
       return await fn(context, userId, cleanQuery, perTypeLimit, timeRange);
     } catch (err) {
@@ -625,7 +625,7 @@ export async function unifiedSearch(options: UnifiedSearchOptions): Promise<Unif
 
   // Sort by score descending, then by timestamp descending
   flatResults.sort((a, b) => {
-    if (b.score !== a.score) return b.score - a.score;
+    if (b.score !== a.score) {return b.score - a.score;}
     return new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime();
   });
 
@@ -633,7 +633,7 @@ export async function unifiedSearch(options: UnifiedSearchOptions): Promise<Unif
   const seen = new Set<string>();
   const deduped = flatResults.filter(r => {
     const key = `${r.type}:${r.id}`;
-    if (seen.has(key)) return false;
+    if (seen.has(key)) {return false;}
     seen.add(key);
     return true;
   });
@@ -663,7 +663,7 @@ export async function unifiedSearch(options: UnifiedSearchOptions): Promise<Unif
 export async function getSearchSuggestions(
   context: AIContext, userId: string, prefix: string
 ): Promise<string[]> {
-  if (prefix.length < 2) return [];
+  if (prefix.length < 2) {return [];}
 
   // Get recent searches matching prefix
   const sql = `

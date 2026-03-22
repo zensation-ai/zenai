@@ -205,23 +205,23 @@ export function analyzeQuery(
 function detectIntent(
   query: string
 ): 'question' | 'task' | 'discussion' | 'creative' | 'recall' {
-  if (!query) return 'discussion';
+  if (!query) {return 'discussion';}
 
   // Recall takes highest priority — user is asking about memory
-  if (RECALL_KEYWORDS.test(query)) return 'recall';
+  if (RECALL_KEYWORDS.test(query)) {return 'recall';}
 
   // Creative next
   if (CREATIVE_KEYWORDS.test(query)) {
     // If no task verb accompanies, it's creative; otherwise creative still wins for "gedicht"
     const hasGedicht = /\b(gedicht|poem|story|erzähl)\b/i.test(query);
-    if (hasGedicht || !TASK_VERBS.test(query)) return 'creative';
+    if (hasGedicht || !TASK_VERBS.test(query)) {return 'creative';}
   }
 
   // Question: interrogative word at start OR ends with ?
-  if (INTERROGATIVES.test(query) || query.trim().endsWith('?')) return 'question';
+  if (INTERROGATIVES.test(query) || query.trim().endsWith('?')) {return 'question';}
 
   // Task: action verb present
-  if (TASK_VERBS.test(query)) return 'task';
+  if (TASK_VERBS.test(query)) {return 'task';}
 
   // Discussion: default
   return 'discussion';
@@ -239,7 +239,7 @@ function detectDomain(
 
   // Check finance first (high specificity)
   for (const [domain, pattern] of Object.entries(DOMAIN_KEYWORDS)) {
-    if (domain !== 'personal' && pattern.test(query)) return domain;
+    if (domain !== 'personal' && pattern.test(query)) {return domain;}
   }
 
   // Personal: either keyword set or first-person possessive
@@ -260,26 +260,26 @@ function detectDomain(
 // ─── Complexity Heuristic ──────────────────────────────────────────────────
 
 function computeComplexity(query: string): number {
-  if (!query) return 0;
+  if (!query) {return 0;}
 
   const words = query.split(/\s+/).filter(Boolean);
   const wordCount = words.length;
 
-  if (wordCount <= 1) return 0;
+  if (wordCount <= 1) {return 0;}
 
   let score = 0;
 
-  if (wordCount > 30) score += 0.3;
-  if (wordCount > 100) score += 0.4; // long queries are inherently complex
-  if (wordCount > 150) score += 0.3; // very long queries push to cap
-  if (CONJUNCTIONS.test(query)) score += 0.2;
+  if (wordCount > 30) {score += 0.3;}
+  if (wordCount > 100) {score += 0.4;} // long queries are inherently complex
+  if (wordCount > 150) {score += 0.3;} // very long queries push to cap
+  if (CONJUNCTIONS.test(query)) {score += 0.2;}
 
   // Entity count — compute inline to avoid circular dep
   const entities = extractEntities(query);
-  if (entities.length > 2) score += 0.2;
+  if (entities.length > 2) {score += 0.2;}
 
-  if (NUMBER_PATTERN.test(query)) score += 0.1;
-  if (COMPARISON_WORDS.test(query)) score += 0.2;
+  if (NUMBER_PATTERN.test(query)) {score += 0.1;}
+  if (COMPARISON_WORDS.test(query)) {score += 0.2;}
 
   return Math.min(1.0, score);
 }
@@ -287,11 +287,11 @@ function computeComplexity(query: string): number {
 // ─── Temporal Detection ───────────────────────────────────────────────────
 
 function detectTemporalReference(query: string): 'past' | 'present' | 'future' | null {
-  if (!query) return null;
+  if (!query) {return null;}
 
-  if (TEMPORAL_PAST.test(query)) return 'past';
-  if (TEMPORAL_FUTURE.test(query)) return 'future';
-  if (TEMPORAL_PRESENT.test(query)) return 'present';
+  if (TEMPORAL_PAST.test(query)) {return 'past';}
+  if (TEMPORAL_FUTURE.test(query)) {return 'future';}
+  if (TEMPORAL_PRESENT.test(query)) {return 'present';}
 
   return null;
 }
@@ -299,7 +299,7 @@ function detectTemporalReference(query: string): 'past' | 'present' | 'future' |
 // ─── Entity Extraction ────────────────────────────────────────────────────
 
 function extractEntities(query: string): string[] {
-  if (!query) return [];
+  if (!query) {return [];}
 
   const entities = new Set<string>();
 
@@ -308,7 +308,7 @@ function extractEntities(query: string): string[] {
   let match: RegExpExecArray | null;
   while ((match = quotedPattern.exec(query)) !== null) {
     const inner = match[1].trim();
-    if (inner) entities.add(inner);
+    if (inner) {entities.add(inner);}
   }
 
   // 2. Extract @mentions and #tags
@@ -327,13 +327,13 @@ function extractEntities(query: string): string[] {
     const matchIndex = match.index;
 
     // Skip if at position 0 (very first word of entire query)
-    if (matchIndex === 0) continue;
+    if (matchIndex === 0) {continue;}
 
     // Skip common German words
-    if (COMMON_GERMAN_CAPITALIZED.has(word)) continue;
+    if (COMMON_GERMAN_CAPITALIZED.has(word)) {continue;}
 
     // Skip short words
-    if (word.length < 2) continue;
+    if (word.length < 2) {continue;}
 
     entities.add(word);
   }
@@ -344,7 +344,7 @@ function extractEntities(query: string): string[] {
 // ─── Follow-up Detection ──────────────────────────────────────────────────
 
 function detectFollowUp(query: string): boolean {
-  if (!query) return false;
+  if (!query) {return false;}
   return FOLLOW_UP_STARTS.test(query.trim());
 }
 
@@ -353,19 +353,19 @@ function detectFollowUp(query: string): boolean {
 function detectOutputType(
   query: string
 ): 'text' | 'code' | 'document' | 'list' | 'analysis' {
-  if (!query) return 'text';
+  if (!query) {return 'text';}
 
   // Analysis check first (highest specificity for explicit "analyse" etc.)
-  if (OUTPUT_ANALYSIS_KEYWORDS.test(query)) return 'analysis';
+  if (OUTPUT_ANALYSIS_KEYWORDS.test(query)) {return 'analysis';}
 
   // Code: either code domain keywords or explicit mention
-  if (OUTPUT_CODE_KEYWORDS.test(query)) return 'code';
+  if (OUTPUT_CODE_KEYWORDS.test(query)) {return 'code';}
 
   // Document: task + document/report
-  if (OUTPUT_DOCUMENT_KEYWORDS.test(query)) return 'document';
+  if (OUTPUT_DOCUMENT_KEYWORDS.test(query)) {return 'document';}
 
   // List
-  if (OUTPUT_LIST_KEYWORDS.test(query)) return 'list';
+  if (OUTPUT_LIST_KEYWORDS.test(query)) {return 'list';}
 
   return 'text';
 }
@@ -373,12 +373,12 @@ function detectOutputType(
 // ─── Language Detection ───────────────────────────────────────────────────
 
 function detectLanguage(query: string): 'de' | 'en' | 'other' {
-  if (!query) return 'de';
+  if (!query) {return 'de';}
 
   const deMatches = (query.match(GERMAN_INDICATORS) ?? []).length;
   const enMatches = (query.match(ENGLISH_INDICATORS) ?? []).length;
 
-  if (deMatches === 0 && enMatches === 0) return 'de'; // default
-  if (enMatches > deMatches) return 'en';
+  if (deMatches === 0 && enMatches === 0) {return 'de';} // default
+  if (enMatches > deMatches) {return 'en';}
   return 'de'; // tie → German default
 }

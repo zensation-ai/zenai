@@ -53,7 +53,7 @@ export function getDayOfWeek(date: Date): number {
 // ---------------------------------------------------------------------------
 
 export function extractTemporalPatterns(activities: ActivityRecord[]): TemporalPattern[] {
-  if (activities.length === 0) return [];
+  if (activities.length === 0) {return [];}
 
   // Group by (hour, dayOfWeek, domain, intent)
   const groups = new Map<string, TemporalPattern>();
@@ -89,7 +89,7 @@ export function extractTemporalPatterns(activities: ActivityRecord[]): TemporalP
 // ---------------------------------------------------------------------------
 
 export function extractSequentialPatterns(activities: ActivityRecord[]): SequentialPattern[] {
-  if (activities.length < 2) return [];
+  if (activities.length < 2) {return [];}
 
   // Count bigrams
   const bigramCounts = new Map<string, number>();
@@ -134,7 +134,7 @@ export function findDominantPattern(
   currentHour: number,
   currentDay: number,
 ): TemporalPattern | null {
-  if (patterns.length === 0) return null;
+  if (patterns.length === 0) {return null;}
 
   // Find exact hour+day match first
   const exactMatches = patterns.filter(
@@ -231,11 +231,11 @@ export async function loadPatterns(
       return [];
     }
 
-    const activities: ActivityRecord[] = result.rows.map((r: any) => ({
-      timestamp: new Date(r.timestamp),
-      domain: r.domain,
-      intent: r.intent,
-      entities: typeof r.entities === 'string' ? JSON.parse(r.entities) : r.entities,
+    const activities: ActivityRecord[] = result.rows.map((r: Record<string, unknown>) => ({
+      timestamp: new Date(r.timestamp as string),
+      domain: r.domain as string,
+      intent: r.intent as string,
+      entities: typeof r.entities === 'string' ? JSON.parse(r.entities) : (r.entities as string[]),
     }));
 
     return extractTemporalPatterns(activities);

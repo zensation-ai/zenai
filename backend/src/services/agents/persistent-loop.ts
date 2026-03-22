@@ -108,9 +108,9 @@ export function getNextExecutableStep(plan: AgentPlan): PlannedStep | null {
   );
 
   for (const step of plan.steps) {
-    if (step.status !== 'pending') continue;
+    if (step.status !== 'pending') {continue;}
     const depsAllDone = step.dependsOn.every((dep) => completedNums.has(dep));
-    if (depsAllDone) return step;
+    if (depsAllDone) {return step;}
   }
   return null;
 }
@@ -183,7 +183,7 @@ export async function getTask(
     [taskId],
   );
 
-  if (!result.rows.length) return null;
+  if (!result.rows.length) {return null;}
   return rowToTask(result.rows[0] as Record<string, unknown>);
 }
 
@@ -221,7 +221,7 @@ export async function advanceStep(
   result: string,
 ): Promise<PlannedStep | null> {
   const task = await getTask(context, taskId);
-  if (!task) return null;
+  if (!task) {return null;}
 
   const plan = task.plan;
   const now = new Date();
@@ -262,7 +262,7 @@ export async function advanceStep(
     [JSON.stringify(plan), nextCurrentStep, nextStatus, now, taskId],
   );
 
-  if (!nextStep) return null;
+  if (!nextStep) {return null;}
 
   // Return the updated next step object
   return plan.steps.find((s) => s.stepNumber === nextStep.stepNumber) ?? null;
@@ -277,7 +277,7 @@ export async function failStep(
   error: string,
 ): Promise<void> {
   const task = await getTask(context, taskId);
-  if (!task) return;
+  if (!task) {return;}
 
   const plan = task.plan;
   const now = new Date();
@@ -328,7 +328,7 @@ export async function resumeTask(
   taskId: string,
 ): Promise<PlannedStep | null> {
   const task = await getTask(context, taskId);
-  if (!task) return null;
+  if (!task) {return null;}
 
   await queryContext(
     context,

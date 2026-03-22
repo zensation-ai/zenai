@@ -570,8 +570,8 @@ async function executeWithGraph(task: TeamTask, onProgress?: AgentProgressCallba
       if (matchNode) {
         const tokens = graphResult.state.variables[`_tokens_${matchNode.id}`] as { input: number; output: number } | undefined;
         const tools = graphResult.state.variables[`_tools_${matchNode.id}`] as string[] | undefined;
-        if (tokens) agentOutput.tokensUsed = tokens;
-        if (tools) agentOutput.toolsUsed = tools;
+        if (tokens) {agentOutput.tokensUsed = tokens;}
+        if (tools) {agentOutput.toolsUsed = tools;}
       }
     }
 
@@ -642,11 +642,11 @@ export async function executeTeamTaskStreaming(task: TeamTask, res: Response, op
 
 function aggregateResults(results: AgentOutput[]): string {
   const reviewerResult = results.find(r => r.role === 'reviewer' && r.success);
-  if (reviewerResult) return reviewerResult.content;
+  if (reviewerResult) {return reviewerResult.content;}
   const writerResult = results.find(r => r.role === 'writer' && r.success);
-  if (writerResult) return writerResult.content;
+  if (writerResult) {return writerResult.content;}
   const lastSuccess = [...results].reverse().find(r => r.success);
-  if (lastSuccess) return lastSuccess.content;
+  if (lastSuccess) {return lastSuccess.content;}
   return results.map(r => `[${r.role}]: ${r.error || 'Keine Ausgabe'}`).join('\n');
 }
 

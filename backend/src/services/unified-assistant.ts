@@ -217,10 +217,6 @@ function normalizeQuery(query: string): string {
     .trim();
 }
 
-function matchesKeywords(normalized: string, keywords: string[]): boolean {
-  return keywords.some(kw => normalized.includes(kw));
-}
-
 function scoreKeywordMatch(normalized: string, keywords: string[]): number {
   let score = 0;
   for (const kw of keywords) {

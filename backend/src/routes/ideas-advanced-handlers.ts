@@ -25,7 +25,6 @@ import {
 } from '../utils/validation';
 import { ValidationError, NotFoundError, AppError } from '../middleware/errorHandler';
 import { parseIdeaRows, IdeaDatabaseRow } from '../utils/idea-parser';
-import { trackActivity } from '../services/activity-tracker';
 import { moveIdea } from '../services/idea-move';
 import { invalidateCacheForContext } from '../middleware/response-cache';
 import { getUserId } from '../utils/user-context';

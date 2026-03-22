@@ -147,27 +147,27 @@ const TEMPLATES: DocumentTemplate[] = [
  * built in parallel (Task 1), because we use require() with explicit casts.
  */
 async function dispatchToRenderer(request: DocumentRequest): Promise<RendererResult> {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   type AnyRenderer = (req: DocumentRequest) => Promise<RendererResult>;
 
   switch (request.type) {
     case 'pptx': {
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
+       
       const mod = require('./pptx-renderer') as { renderPptx: AnyRenderer };
       return mod.renderPptx(request);
     }
     case 'xlsx': {
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
+       
       const mod = require('./xlsx-renderer') as { renderXlsx: AnyRenderer };
       return mod.renderXlsx(request);
     }
     case 'pdf': {
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
+       
       const mod = require('./pdf-renderer') as { renderPdf: AnyRenderer };
       return mod.renderPdf(request);
     }
     case 'docx': {
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
+       
       const mod = require('./docx-renderer') as { renderDocx: AnyRenderer };
       return mod.renderDocx(request);
     }
@@ -232,7 +232,7 @@ export async function generateDocument(request: DocumentRequest): Promise<Docume
  * Get a predefined template by ID. Returns null if not found.
  */
 export function getTemplate(templateId: string): DocumentTemplate | null {
-  if (!templateId) return null;
+  if (!templateId) {return null;}
   return TEMPLATES.find((t) => t.id === templateId) ?? null;
 }
 

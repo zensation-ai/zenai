@@ -6,9 +6,9 @@
 
 // pdfmake ships its own bundled build + virtual file system (VFS) for fonts.
 // The vfs_fonts module exposes font data at top-level keys (not under .pdfMake).
-// eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-explicit-any
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const pdfMake: any = require('pdfmake/build/pdfmake');
-// eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-explicit-any
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const pdfFonts: any = require('pdfmake/build/vfs_fonts');
 
 // Mount the VFS fonts. The object shape can vary across pdfmake versions.

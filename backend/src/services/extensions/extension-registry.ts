@@ -268,7 +268,7 @@ class ExtensionRegistry {
   async getExtension(id: string): Promise<Extension | null> {
     // Check built-in catalog first
     const builtIn = BUILT_IN_EXTENSIONS.find(e => e.id === id);
-    if (builtIn) return builtIn;
+    if (builtIn) {return builtIn;}
 
     // Check database
     try {

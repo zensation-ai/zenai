@@ -41,7 +41,7 @@ export interface JsonRpcResponse {
 }
 
 // JSON-RPC Error Codes
-const PARSE_ERROR = -32700;
+const _PARSE_ERROR = -32700;
 const INVALID_REQUEST = -32600;
 const METHOD_NOT_FOUND = -32601;
 const INVALID_PARAMS = -32602;

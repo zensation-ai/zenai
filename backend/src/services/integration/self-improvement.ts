@@ -71,7 +71,7 @@ export interface IdentifyParams {
 // ---------------------------------------------------------------------------
 
 export function assignRiskLevel(type: ImprovementType): RiskLevel {
-  if (type === 'knowledge_gap_research') return 'medium';
+  if (type === 'knowledge_gap_research') {return 'medium';}
   return 'low';
 }
 

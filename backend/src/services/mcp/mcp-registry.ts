@@ -142,7 +142,7 @@ class MCPServerRegistry {
     if (data.authConfig !== undefined) { sets.push(`auth_config = $${idx++}`); params.push(JSON.stringify(data.authConfig)); }
     if (data.enabled !== undefined) { sets.push(`enabled = $${idx++}`); params.push(data.enabled); }
 
-    if (sets.length === 0) return this.getById(context, id);
+    if (sets.length === 0) {return this.getById(context, id);}
 
     sets.push('updated_at = NOW()');
     params.push(id);
@@ -291,7 +291,7 @@ class MCPServerRegistry {
   }
 
   private parseJsonArray(val: unknown): string[] {
-    if (Array.isArray(val)) return val as string[];
+    if (Array.isArray(val)) {return val as string[];}
     if (typeof val === 'string') {
       try { return JSON.parse(val) as string[]; } catch { return []; }
     }
@@ -299,7 +299,7 @@ class MCPServerRegistry {
   }
 
   private parseJsonObject(val: unknown): Record<string, string> {
-    if (val && typeof val === 'object' && !Array.isArray(val)) return val as Record<string, string>;
+    if (val && typeof val === 'object' && !Array.isArray(val)) {return val as Record<string, string>;}
     if (typeof val === 'string') {
       try { return JSON.parse(val) as Record<string, string>; } catch { return {}; }
     }

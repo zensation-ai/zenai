@@ -179,7 +179,7 @@ function scoreTitleMatch(query: string, title: string): number {
     const titleTerms = new Set(tokenize(title));
     let matchCount = 0;
     for (const term of queryTerms) {
-      if (titleTerms.has(term)) matchCount++;
+      if (titleTerms.has(term)) {matchCount++;}
     }
     score += (matchCount / queryTerms.length) * 0.4;
   }
@@ -198,15 +198,15 @@ function scoreTitleMatch(query: string, title: string): number {
  * Score summary match quality
  */
 function scoreSummaryMatch(query: string, summary: string | undefined): number {
-  if (!summary) return 0;
+  if (!summary) {return 0;}
 
   const queryTerms = tokenize(query);
-  if (queryTerms.length === 0) return 0;
+  if (queryTerms.length === 0) {return 0;}
 
   const summaryTerms = new Set(tokenize(summary));
   let matchCount = 0;
   for (const term of queryTerms) {
-    if (summaryTerms.has(term)) matchCount++;
+    if (summaryTerms.has(term)) {matchCount++;}
   }
 
   const coverage = matchCount / queryTerms.length;
@@ -227,12 +227,12 @@ function scoreSummaryMatch(query: string, summary: string | undefined): number {
  */
 function scoreBigramOverlap(queryTokens: string[], docTokens: string[]): number {
   const queryBigrams = getBigrams(queryTokens);
-  if (queryBigrams.size === 0) return 0;
+  if (queryBigrams.size === 0) {return 0;}
 
   const docBigrams = getBigrams(docTokens);
   let matches = 0;
   for (const bigram of queryBigrams) {
-    if (docBigrams.has(bigram)) matches++;
+    if (docBigrams.has(bigram)) {matches++;}
   }
 
   return matches / queryBigrams.size;
@@ -250,19 +250,19 @@ function generateReason(
 ): string {
   const signals: string[] = [];
 
-  if (titleScore > 0.5) signals.push('Titel stimmt stark ueberein');
-  else if (titleScore > 0.2) signals.push('Titel teilweise relevant');
+  if (titleScore > 0.5) {signals.push('Titel stimmt stark ueberein');}
+  else if (titleScore > 0.2) {signals.push('Titel teilweise relevant');}
 
-  if (termScore > 0.6) signals.push('hohe Begriffsuebereinstimmung');
-  else if (termScore > 0.3) signals.push('einige Begriffe gefunden');
+  if (termScore > 0.6) {signals.push('hohe Begriffsuebereinstimmung');}
+  else if (termScore > 0.3) {signals.push('einige Begriffe gefunden');}
 
-  if (summaryScore > 0.5) signals.push('Zusammenfassung relevant');
+  if (summaryScore > 0.5) {signals.push('Zusammenfassung relevant');}
 
-  if (bigramScore > 0.3) signals.push('Phrasen-Uebereinstimmung');
+  if (bigramScore > 0.3) {signals.push('Phrasen-Uebereinstimmung');}
 
   if (signals.length === 0) {
-    if (finalScore >= 0.3) signals.push('Allgemeine thematische Naehe');
-    else signals.push('Geringe Relevanz');
+    if (finalScore >= 0.3) {signals.push('Allgemeine thematische Naehe');}
+    else {signals.push('Geringe Relevanz');}
   }
 
   return signals.join(', ');

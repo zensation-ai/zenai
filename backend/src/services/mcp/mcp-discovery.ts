@@ -8,7 +8,7 @@
  * with metadata for display, setup templates, and popularity ranking.
  */
 
-import { logger } from '../../utils/logger';
+// logger available if needed for future use
 
 // ===========================================
 // Types
@@ -319,7 +319,7 @@ class MCPDiscoveryService {
     const source = serverList || this.catalog;
     const lowerQuery = query.toLowerCase().trim();
 
-    if (lowerQuery.length === 0) return source;
+    if (lowerQuery.length === 0) {return source;}
 
     return source.filter(server => {
       const searchableText = [

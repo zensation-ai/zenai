@@ -96,7 +96,7 @@ export function getPersona(context: string): VoicePersona {
   const persona = DEFAULT_PERSONAS.find(p => p.context === context);
   if (!persona) {
     logger.debug('No persona found for context, using work-professional fallback', { requestedContext: context });
-    return DEFAULT_PERSONAS.find(p => p.id === 'work-professional')!;
+    return DEFAULT_PERSONAS.find(p => p.id === 'work-professional') ?? DEFAULT_PERSONAS[0];
   }
   return persona;
 }

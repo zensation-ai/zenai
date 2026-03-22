@@ -50,7 +50,7 @@ class ElevenLabsProvider implements TTSProvider {
   }
 
   async synthesize(text: string, options?: TTSOptions): Promise<Buffer> {
-    if (!this.apiKey) throw new Error('ElevenLabs API key not configured');
+    if (!this.apiKey) {throw new Error('ElevenLabs API key not configured');}
 
     const voiceId = options?.voice || '21m00Tcm4TlvDq8ikWAM'; // Rachel default
     const response = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`, {
@@ -80,14 +80,14 @@ class ElevenLabsProvider implements TTSProvider {
   }
 
   async getVoices(): Promise<TTSVoiceInfo[]> {
-    if (!this.apiKey) return [];
+    if (!this.apiKey) {return [];}
 
     try {
       const response = await fetch('https://api.elevenlabs.io/v1/voices', {
         headers: { 'xi-api-key': this.apiKey },
       });
 
-      if (!response.ok) return [];
+      if (!response.ok) {return [];}
 
       const data = await response.json() as {
         voices?: Array<{
@@ -231,7 +231,7 @@ class TTSCache {
   get(text: string, voice?: string, provider?: string): Buffer | null {
     const key = this.makeKey(text, voice, provider);
     const entry = this.cache.get(key);
-    if (!entry) return null;
+    if (!entry) {return null;}
 
     if (Date.now() - entry.createdAt > this.ttlMs) {
       this.cache.delete(key);
@@ -244,7 +244,7 @@ class TTSCache {
 
   set(text: string, audio: Buffer, voice?: string, provider?: string): void {
     // Only cache short phrases (< 200 chars) to avoid memory bloat
-    if (text.length > 200) return;
+    if (text.length > 200) {return;}
 
     if (this.cache.size >= this.maxEntries) {
       // Evict least-frequently-accessed entry
@@ -256,7 +256,7 @@ class TTSCache {
           minKey = k;
         }
       }
-      if (minKey) this.cache.delete(minKey);
+      if (minKey) {this.cache.delete(minKey);}
     }
 
     this.cache.set(this.makeKey(text, voice, provider), {
@@ -322,7 +322,7 @@ export class MultiTTSService {
   async synthesize(text: string, options?: TTSOptions): Promise<Buffer> {
     // Check phrase cache first
     const cached = this.phraseCache.get(text, options?.voice, options?.provider);
-    if (cached) return cached;
+    if (cached) {return cached;}
 
     const providerName = options?.provider || this.defaultProvider;
     const provider = this.providers.get(providerName);
@@ -427,7 +427,7 @@ export class MultiTTSService {
 
   isAvailable(): boolean {
     for (const provider of this.providers.values()) {
-      if (provider.isAvailable()) return true;
+      if (provider.isAvailable()) {return true;}
     }
     return false;
   }

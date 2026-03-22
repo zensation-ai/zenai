@@ -150,7 +150,7 @@ export class VoicePipeline {
    */
   async endSession(sessionId: string): Promise<void> {
     const session = this.sessions.get(sessionId);
-    if (!session) return;
+    if (!session) {return;}
 
     // Persist final state
     try {
@@ -503,7 +503,7 @@ export class VoicePipeline {
     // Helper: flush buffer as a sentence and trigger TTS
     const flushSentence = (sentence: string) => {
       const trimmed = sentence.trim();
-      if (trimmed.length === 0) return;
+      if (trimmed.length === 0) {return;}
 
       const idx = sentenceIndex++;
       logger.debug('Sentence detected, triggering TTS', {
@@ -538,7 +538,7 @@ export class VoicePipeline {
       while (true) {
         // Find the next potential sentence-ending punctuation
         const match = textBuffer.match(/[.!?]\s+/);
-        if (!match || match.index === undefined) break;
+        if (!match || match.index === undefined) {break;}
 
         const endPos = match.index + 1; // position right after the punctuation
         const candidate = textBuffer.substring(0, endPos);
@@ -601,7 +601,7 @@ export class VoicePipeline {
     totalDuration_ms: number;
   } | null {
     const session = this.sessions.get(sessionId);
-    if (!session) return null;
+    if (!session) {return null;}
 
     return {
       active: true,

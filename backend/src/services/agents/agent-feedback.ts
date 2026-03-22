@@ -125,8 +125,8 @@ export async function recordUserRating(executionId: string, rating: number): Pro
  */
 function computeTrend(recentRate: number, olderRate: number): 'improving' | 'stable' | 'declining' {
   const diff = recentRate - olderRate;
-  if (diff > 0.05) return 'improving';
-  if (diff < -0.05) return 'declining';
+  if (diff > 0.05) {return 'improving';}
+  if (diff < -0.05) {return 'declining';}
   return 'stable';
 }
 

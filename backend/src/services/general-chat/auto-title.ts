@@ -40,7 +40,7 @@ function heuristicTitle(userMessage: string): string {
 
   // Clean and tokenize
   const cleaned = userMessage
-    .replace(/[?!.,;:()[\]{}"'`~@#$%^&*+=<>|\\\/]/g, ' ')
+    .replace(/[?!.,;:()[\]{}"'`~@#$%^&*+=<>|\\/]/g, ' ')
     .replace(/\s+/g, ' ')
     .trim();
 

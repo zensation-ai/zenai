@@ -16,7 +16,7 @@ const TIER_ORDER: PlanTier[] = ['free', 'pro', 'enterprise'];
 
 export function requirePlan(minPlan: PlanTier) {
   return (req: Request, res: Response, next: NextFunction): void => {
-    const userPlan: PlanTier = ((req.jwtUser as any)?.plan as PlanTier) || 'free';
+    const userPlan: PlanTier = ((req.jwtUser as Record<string, unknown> | undefined)?.plan as PlanTier) || 'free';
 
     if (TIER_ORDER.indexOf(userPlan) < TIER_ORDER.indexOf(minPlan)) {
       res.status(403).json({

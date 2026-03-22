@@ -7,6 +7,7 @@
  */
 
 import { logger } from '../utils/logger';
+import type { AIContext } from '../utils/database-context';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -64,7 +65,7 @@ export function extractEntityCandidates(text: string): string[] {
  * This function NEVER throws. Callers can safely call it without await.
  */
 export async function runPostResponseHooks(params: PostResponseHookParams): Promise<void> {
-  const { context, userId, query, response, domain, confidence, toolsUsed, sessionId } = params;
+  const { context, userId: _userId, query, response, domain, confidence, toolsUsed, sessionId } = params;
 
   const hookResults = await Promise.allSettled([
 
@@ -74,7 +75,7 @@ export async function runPostResponseHooks(params: PostResponseHookParams): Prom
         const { recordCoactivation } = await import('./knowledge-graph/hebbian-dynamics');
         const entities = extractEntityCandidates(`${query} ${response}`);
         if (entities.length >= 2) {
-          await recordCoactivation(context as any, entities.slice(0, 10));
+          await recordCoactivation(context as AIContext, entities.slice(0, 10));
         }
       } catch (err) {
         logger.debug('Cognitive hook: Hebbian update skipped', {
@@ -108,7 +109,7 @@ export async function runPostResponseHooks(params: PostResponseHookParams): Prom
 
     // 3. Calibration update: track AI confidence calibration over time
     (async () => {
-      if (confidence === undefined) return;
+      if (confidence === undefined) {return;}
       try {
         const { recordCalibrationData } = await import('./metacognition/calibration');
         // Assume positive outcome (user did not immediately correct)
@@ -122,7 +123,7 @@ export async function runPostResponseHooks(params: PostResponseHookParams): Prom
 
     // 4. Capability model update: track domain competence
     (async () => {
-      if (!domain) return;
+      if (!domain) {return;}
       try {
         const { recordInteraction } = await import('./metacognition/capability-model');
         // Assume positive for now; negative feedback comes from explicit user signals
@@ -161,10 +162,10 @@ export async function runPostResponseHooks(params: PostResponseHookParams): Prom
     // 6. Confidence propagation: trigger batch propagation periodically
     // Only run on ~10% of requests to avoid excessive DB load
     (async () => {
-      if (Math.random() > 0.1) return;
+      if (Math.random() > 0.1) {return;}
       try {
         const { propagateBatch } = await import('./knowledge-graph/confidence-propagation');
-        await propagateBatch(context as any);
+        await propagateBatch(context as AIContext);
       } catch (err) {
         logger.debug('Cognitive hook: Confidence propagation skipped', {
           error: err instanceof Error ? err.message : String(err),
@@ -176,10 +177,10 @@ export async function runPostResponseHooks(params: PostResponseHookParams): Prom
     // FSRS recall tracking is handled separately by the memory coordinator
     // when it has the actual retrieved fact IDs available.
     (async () => {
-      if (Math.random() > 0.05) return;
+      if (Math.random() > 0.05) {return;}
       try {
         const { applyHebbianDecayBatch } = await import('./knowledge-graph/hebbian-dynamics');
-        await applyHebbianDecayBatch(context as any);
+        await applyHebbianDecayBatch(context as AIContext);
       } catch (err) {
         logger.debug('Cognitive hook: Hebbian decay skipped', {
           error: err instanceof Error ? err.message : String(err),

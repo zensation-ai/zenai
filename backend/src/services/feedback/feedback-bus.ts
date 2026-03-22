@@ -42,7 +42,7 @@ export type FeedbackHandler = (event: FeedbackEvent) => Promise<void>;
  * Clamp a numeric value to the [-1, +1] range.
  */
 export function clampValue(value: number): number {
-  if (!Number.isFinite(value)) return 0;
+  if (!Number.isFinite(value)) {return 0;}
   return Math.max(-1, Math.min(1, value));
 }
 
@@ -112,7 +112,7 @@ export class FeedbackBus {
     if (!this.handlers.has(type)) {
       this.handlers.set(type, new Set());
     }
-    this.handlers.get(type)!.add(handler);
+    this.handlers.get(type)?.add(handler);
   }
 
   /**
@@ -134,7 +134,7 @@ export class FeedbackBus {
    */
   async emit(event: FeedbackEvent): Promise<void> {
     const set = this.handlers.get(event.type);
-    if (!set || set.size === 0) return;
+    if (!set || set.size === 0) {return;}
 
     const promises = Array.from(set).map(async (handler) => {
       try {

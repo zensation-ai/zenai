@@ -106,31 +106,31 @@ export function buildDefaultPlan(query: string, availableInterfaces: RetrievalIn
 
   switch (queryType) {
     case 'simple_lookup':
-      if (has('semantic')) steps.push({ interface: 'semantic', params: { query } });
-      if (has('keyword')) steps.push({ interface: 'keyword', params: { terms: query } });
+      if (has('semantic')) {steps.push({ interface: 'semantic', params: { query } });}
+      if (has('keyword')) {steps.push({ interface: 'keyword', params: { terms: query } });}
       break;
 
     case 'temporal':
-      if (has('keyword')) steps.push({ interface: 'keyword', params: { terms: query } });
-      if (has('semantic')) steps.push({ interface: 'semantic', params: { query } });
+      if (has('keyword')) {steps.push({ interface: 'keyword', params: { terms: query } });}
+      if (has('semantic')) {steps.push({ interface: 'semantic', params: { query } });}
       break;
 
     case 'comparison':
-      if (has('semantic')) steps.push({ interface: 'semantic', params: { query } });
-      if (has('keyword')) steps.push({ interface: 'keyword', params: { terms: query } });
-      if (has('graph')) steps.push({ interface: 'graph', params: { query } });
+      if (has('semantic')) {steps.push({ interface: 'semantic', params: { query } });}
+      if (has('keyword')) {steps.push({ interface: 'keyword', params: { terms: query } });}
+      if (has('graph')) {steps.push({ interface: 'graph', params: { query } });}
       break;
 
     case 'multi_hop':
-      if (has('semantic')) steps.push({ interface: 'semantic', params: { query } });
-      if (has('graph')) steps.push({ interface: 'graph', params: { query }, dependsOn: 0 });
-      if (has('community')) steps.push({ interface: 'community', params: { query } });
+      if (has('semantic')) {steps.push({ interface: 'semantic', params: { query } });}
+      if (has('graph')) {steps.push({ interface: 'graph', params: { query }, dependsOn: 0 });}
+      if (has('community')) {steps.push({ interface: 'community', params: { query } });}
       break;
 
     case 'analytical':
-      if (has('semantic')) steps.push({ interface: 'semantic', params: { query } });
-      if (has('community')) steps.push({ interface: 'community', params: { query } });
-      if (has('keyword')) steps.push({ interface: 'keyword', params: { terms: query } });
+      if (has('semantic')) {steps.push({ interface: 'semantic', params: { query } });}
+      if (has('community')) {steps.push({ interface: 'community', params: { query } });}
+      if (has('keyword')) {steps.push({ interface: 'keyword', params: { terms: query } });}
       break;
   }
 
@@ -176,12 +176,12 @@ export async function expandQueryWithGraphContext(
 
     // Extract candidate entity names from the query (simple heuristic: capitalized words or quoted phrases)
     const words = query.split(/\s+/).filter(w => w.length > 3);
-    if (words.length === 0) return query;
+    if (words.length === 0) {return query;}
 
     // Look up entities that match query terms and fetch their relations
     const searchTerms = words.slice(0, 5).join(' | ');
     const sanitized = searchTerms.replace(/['"]/g, '').trim();
-    if (!sanitized) return query;
+    if (!sanitized) {return query;}
 
     const result = await queryContext(
       context as import('../../utils/database-context').AIContext,
@@ -217,7 +217,7 @@ export async function expandQueryWithGraphContext(
       }
     }
 
-    if (expansions.size === 0) return query;
+    if (expansions.size === 0) {return query;}
 
     const expansionTerms = Array.from(expansions).slice(0, maxEntities).join(', ');
     const expandedQuery = `${query} ${expansionTerms}`;

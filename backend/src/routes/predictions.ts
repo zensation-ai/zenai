@@ -50,11 +50,11 @@ router.get('/:context/predictions/patterns', asyncHandler(async (req, res) => {
        ORDER BY timestamp DESC LIMIT 500`,
     );
 
-    const activities: ActivityRecord[] = (result.rows ?? []).map((r: any) => ({
-      timestamp: new Date(r.timestamp),
-      domain: r.domain,
-      intent: r.intent,
-      entities: typeof r.entities === 'string' ? JSON.parse(r.entities) : (r.entities || []),
+    const activities: ActivityRecord[] = (result.rows ?? []).map((r: Record<string, unknown>) => ({
+      timestamp: new Date(r.timestamp as string),
+      domain: r.domain as string,
+      intent: r.intent as string,
+      entities: typeof r.entities === 'string' ? JSON.parse(r.entities) : ((r.entities as string[]) || []),
     }));
 
     const temporalPatterns = extractTemporalPatterns(activities);
@@ -99,10 +99,10 @@ router.get('/:context/predictions/accuracy', asyncHandler(async (req, res) => {
       ),
     ]);
 
-    const parse = (res: PromiseSettledResult<any>) => {
-      if (res.status !== 'fulfilled') return { total: 0, correct: 0, rate: 0 };
-      const total = parseInt(res.value.rows[0]?.total ?? '0');
-      const correct = parseInt(res.value.rows[0]?.correct ?? '0');
+    const parse = (res: PromiseSettledResult<{ rows: Array<Record<string, unknown>> }>) => {
+      if (res.status !== 'fulfilled') {return { total: 0, correct: 0, rate: 0 };}
+      const total = parseInt((res.value.rows[0]?.total as string) ?? '0');
+      const correct = parseInt((res.value.rows[0]?.correct as string) ?? '0');
       return { total, correct, rate: total > 0 ? Math.round((correct / total) * 100) / 100 : 0 };
     };
 

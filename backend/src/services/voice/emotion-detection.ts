@@ -8,7 +8,7 @@
  * No ML model required — purely heuristic, inspired by emotional-tagger.ts (Phase 72).
  */
 
-import { logger } from '../../utils/logger';
+// logger available if needed
 
 // ===========================================
 // Types
@@ -189,7 +189,7 @@ export function detectFromText(text: string): EmotionResult {
 
   for (const word of words) {
     const cleanWord = word.replace(/[.,!?;:'"()[\]{}]/g, '');
-    if (cleanWord.length < 2) continue;
+    if (cleanWord.length < 2) {continue;}
 
     for (const [category, lexicon] of lexicons) {
       const intensity = lexicon.get(cleanWord);

@@ -638,7 +638,7 @@ const semanticCache = new Map<string, CacheEntry>();
 
 function getCachedSemantic(key: string): ModeDetectionResult | null {
   const entry = semanticCache.get(key);
-  if (!entry) return null;
+  if (!entry) {return null;}
   if (Date.now() - entry.timestamp > SEMANTIC_CACHE_TTL_MS) {
     semanticCache.delete(key);
     return null;

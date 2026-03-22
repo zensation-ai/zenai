@@ -110,7 +110,7 @@ export class TurnTakingEngine {
    * Calculate RMS volume from audio buffer (16-bit PCM assumed)
    */
   private calculateVolume(chunk: Buffer): number {
-    if (chunk.length < 2) return 0;
+    if (chunk.length < 2) {return 0;}
 
     let sumSquares = 0;
     const numSamples = Math.floor(chunk.length / 2);

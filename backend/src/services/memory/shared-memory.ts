@@ -12,7 +12,7 @@
 
 import { v4 as uuidv4 } from 'uuid';
 import { logger } from '../../utils/logger';
-import { cache, getRedisClient } from '../../utils/cache';
+import { cache } from '../../utils/cache';
 
 // ===========================================
 // Types & Interfaces
@@ -105,7 +105,7 @@ class SharedMemoryService {
    */
   private async persistToRedis(teamId: string): Promise<void> {
     const store = this.stores.get(teamId);
-    if (!store) return;
+    if (!store) {return;}
 
     try {
       const key = `${CONFIG.REDIS_PREFIX}${teamId}`;
@@ -131,7 +131,7 @@ class SharedMemoryService {
         createdAt: string;
         lastActivity: string;
       }>(key);
-      if (!data) return;
+      if (!data) {return;}
 
       const parsed = data as {
         entries: SharedMemoryEntry[];
@@ -140,7 +140,7 @@ class SharedMemoryService {
       };
 
       const store = this.stores.get(teamId);
-      if (!store || store.entries.length > 0) return; // Don't overwrite if already populated
+      if (!store || store.entries.length > 0) {return;} // Don't overwrite if already populated
 
       store.entries = parsed.entries.map(e => ({
         ...e,
@@ -207,11 +207,11 @@ class SharedMemoryService {
         ORDER BY created_at ASC
       `, [teamId]);
 
-      if (!result.rows || result.rows.length === 0) return;
+      if (!result.rows || result.rows.length === 0) {return;}
 
       // Don't overwrite if L1 already has data
       const store = this.stores.get(teamId);
-      if (store && store.entries.length > 0) return;
+      if (store && store.entries.length > 0) {return;}
 
       // Initialize store if not present
       if (!store) {
@@ -223,7 +223,8 @@ class SharedMemoryService {
         });
       }
 
-      const targetStore = this.stores.get(teamId)!;
+      const targetStore = this.stores.get(teamId);
+      if (!targetStore) {return;}
       targetStore.entries = result.rows.map((row: Record<string, unknown>) => {
         const value = typeof row.value === 'string' ? JSON.parse(row.value as string) : (row.value as Record<string, unknown>) || {};
         return {

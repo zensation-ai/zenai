@@ -59,15 +59,15 @@ const NEGATION_PATTERNS = [
  * Generates hypotheses about potential connections between C and D.
  */
 export function generateFromIncompletePatterns(relations: Relation[]): Hypothesis[] {
-  if (relations.length < 2) return [];
+  if (relations.length < 2) {return [];}
 
   // Build adjacency list (source -> set of targets)
   const adj = new Map<string, Set<string>>();
   const edgeSet = new Set<string>();
 
   for (const rel of relations) {
-    if (!adj.has(rel.source)) adj.set(rel.source, new Set());
-    adj.get(rel.source)!.add(rel.target);
+    if (!adj.has(rel.source)) {adj.set(rel.source, new Set());}
+    adj.get(rel.source)?.add(rel.target);
     edgeSet.add(`${rel.source}->${rel.target}`);
   }
 
@@ -77,7 +77,7 @@ export function generateFromIncompletePatterns(relations: Relation[]): Hypothesi
   // For each node A with at least 2 outgoing edges
   for (const [a, neighbors] of adj) {
     const targets = Array.from(neighbors);
-    if (targets.length < 2) continue;
+    if (targets.length < 2) {continue;}
 
     // For each pair (B, C) of A's targets
     for (let i = 0; i < targets.length; i++) {
@@ -87,10 +87,10 @@ export function generateFromIncompletePatterns(relations: Relation[]): Hypothesi
 
         // Check if B->D exists for some D
         const bTargets = adj.get(b);
-        if (!bTargets) continue;
+        if (!bTargets) {continue;}
 
         for (const d of bTargets) {
-          if (d === c || d === a) continue;
+          if (d === c || d === a) {continue;}
 
           // Check if C->D is missing
           if (!edgeSet.has(`${c}->${d}`)) {
@@ -109,10 +109,10 @@ export function generateFromIncompletePatterns(relations: Relation[]): Hypothesi
 
         // Also check opposite direction: C->D exists, B->D missing
         const cTargets = adj.get(c);
-        if (!cTargets) continue;
+        if (!cTargets) {continue;}
 
         for (const d of cTargets) {
-          if (d === b || d === a) continue;
+          if (d === b || d === a) {continue;}
 
           if (!edgeSet.has(`${b}->${d}`)) {
             const key = [b, d].sort().join(',');
@@ -142,7 +142,7 @@ export function generateFromIncompletePatterns(relations: Relation[]): Hypothesi
  * Finds facts older than 30 days and generates "Is this still current?" hypotheses.
  */
 export function generateFromTemporalGaps(facts: FactWithTimestamp[]): Hypothesis[] {
-  if (facts.length === 0) return [];
+  if (facts.length === 0) {return [];}
 
   const now = Date.now();
   const thresholdMs = TEMPORAL_GAP_DAYS * 24 * 60 * 60 * 1000;
@@ -175,7 +175,7 @@ export function generateFromTemporalGaps(facts: FactWithTimestamp[]): Hypothesis
 export function generateFromContradictions(
   facts: Array<{ id: string; content: string; entities: string[] }>,
 ): Hypothesis[] {
-  if (facts.length < 2) return [];
+  if (facts.length < 2) {return [];}
 
   const hypotheses: Hypothesis[] = [];
   const seen = new Set<string>();
@@ -187,7 +187,7 @@ export function generateFromContradictions(
 
       // Check for overlapping entities
       const overlap = a.entities.filter((e) => b.entities.includes(e));
-      if (overlap.length === 0) continue;
+      if (overlap.length === 0) {continue;}
 
       // Check if one negates the other
       if (isContradiction(a.content, b.content)) {
@@ -235,7 +235,7 @@ function isContradiction(contentA: string, contentB: string): boolean {
   const intersection = cleanA.filter((w) => setB.has(w));
   const union = new Set([...setA, ...setB]);
 
-  if (union.size === 0) return false;
+  if (union.size === 0) {return false;}
 
   const jaccard = intersection.length / union.size;
   // High overlap + one negated = contradiction
@@ -299,23 +299,23 @@ export async function generateHypotheses(
     );
 
     // Transform DB rows to typed data
-    const relations: Relation[] = (relationsResult.rows || []).map((r: any) => ({
-      source: r.source_id,
-      target: r.target_id,
-      type: r.relation_type,
+    const relations: Relation[] = (relationsResult.rows || []).map((r: Record<string, unknown>) => ({
+      source: r.source_id as string,
+      target: r.target_id as string,
+      type: r.relation_type as string,
     }));
 
-    const factsWithTimestamps: FactWithTimestamp[] = (factsResult.rows || []).map((r: any) => ({
-      id: r.id,
-      content: r.content,
-      entities: r.entities || [],
-      createdAt: new Date(r.created_at),
+    const factsWithTimestamps: FactWithTimestamp[] = (factsResult.rows || []).map((r: Record<string, unknown>) => ({
+      id: r.id as string,
+      content: r.content as string,
+      entities: (r.entities as string[]) || [],
+      createdAt: new Date(r.created_at as string),
     }));
 
-    const contradictionFacts = (contradictionFactsResult.rows || []).map((r: any) => ({
-      id: r.id,
-      content: r.content,
-      entities: r.entities || [],
+    const contradictionFacts = (contradictionFactsResult.rows || []).map((r: Record<string, unknown>) => ({
+      id: r.id as string,
+      content: r.content as string,
+      entities: (r.entities as string[]) || [],
     }));
 
     // Run all generators

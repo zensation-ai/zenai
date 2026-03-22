@@ -166,7 +166,7 @@ export class GraphBuilder {
       });
 
       const content = response.content[0];
-      if (content.type !== 'text') return [];
+      if (content.type !== 'text') {return [];}
 
       return this.parseEntitiesJSON(content.text);
     } catch (error) {
@@ -179,7 +179,7 @@ export class GraphBuilder {
    * Extract relations from text using Claude
    */
   private async extractRelations(text: string, entities: Entity[]): Promise<Relation[]> {
-    if (entities.length < 2) return [];
+    if (entities.length < 2) {return [];}
 
     try {
       const entityList = entities.map(e => `- ${e.name} (${e.type})`).join('\n');
@@ -196,7 +196,7 @@ export class GraphBuilder {
       });
 
       const content = response.content[0];
-      if (content.type !== 'text') return [];
+      if (content.type !== 'text') {return [];}
 
       return this.parseRelationsJSON(content.text, entities);
     } catch (error) {
@@ -238,7 +238,7 @@ export class GraphBuilder {
   ): Promise<{ id: string; name: string; similarity: number } | null> {
     try {
       const embedding = await generateEmbedding(name);
-      if (!embedding || embedding.length === 0) return null;
+      if (!embedding || embedding.length === 0) {return null;}
 
       const result = await queryContext(
         context,
@@ -250,7 +250,7 @@ export class GraphBuilder {
         [`[${embedding.join(',')}]`]
       );
 
-      if (result.rows.length === 0) return null;
+      if (result.rows.length === 0) {return null;}
 
       const row = result.rows[0];
       const similarity = parseFloat(row.similarity) || 0;
@@ -358,8 +358,8 @@ export class GraphBuilder {
       const sourceEntityId = entityNameToId.get(relation.source);
       const targetEntityId = entityNameToId.get(relation.target);
 
-      if (!sourceEntityId || !targetEntityId) continue;
-      if (sourceEntityId === targetEntityId) continue;
+      if (!sourceEntityId || !targetEntityId) {continue;}
+      if (sourceEntityId === targetEntityId) {continue;}
 
       try {
         await queryContext(

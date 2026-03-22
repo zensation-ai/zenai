@@ -46,12 +46,12 @@ export async function renderXlsx(
 
     // Auto-fit columns (approximate)
     worksheet.columns.forEach((col) => {
-      if (!col.values) return;
+      if (!col.values) {return;}
       let maxLen = 10;
       col.values.forEach((v) => {
-        if (v != null) {
+        if (v !== null && v !== undefined) {
           const len = String(v).length;
-          if (len > maxLen) maxLen = len;
+          if (len > maxLen) {maxLen = len;}
         }
       });
       col.width = Math.min(maxLen + 2, 50);

@@ -131,7 +131,7 @@ export interface AssembledContext {
  * but specifically designed for budget allocation.
  */
 export function estimateTokensBudget(text: string): number {
-  if (!text || text.length === 0) return 0;
+  if (!text || text.length === 0) {return 0;}
 
   // Detect German content
   const germanMatches = text.match(GERMAN_PATTERN) || [];
@@ -156,10 +156,10 @@ export function estimateTokensBudget(text: string): number {
  * @returns Truncated text ending at a sentence boundary
  */
 export function truncateToTokenBudget(text: string, maxTokens: number): string {
-  if (!text || text.length === 0) return '';
+  if (!text || text.length === 0) {return '';}
 
   const currentTokens = estimateTokensBudget(text);
-  if (currentTokens <= maxTokens) return text;
+  if (currentTokens <= maxTokens) {return text;}
 
   // Estimate max chars based on ratio
   const germanMatches = text.match(GERMAN_PATTERN) || [];
@@ -234,7 +234,7 @@ export function assembleContextWithBudget(
 
   for (const [key, budget] of sectionEntries) {
     const content = sections[key];
-    if (!content || content.length === 0) continue;
+    if (!content || content.length === 0) {continue;}
 
     const truncated = truncateToTokenBudget(content, budget);
     const tokens = estimateTokensBudget(truncated);
@@ -319,7 +319,7 @@ export function assembleContextWithElasticBudget(
 
   for (const [key, budget] of sectionEntries) {
     const content = sections[key];
-    if (!content || content.length === 0) continue;
+    if (!content || content.length === 0) {continue;}
 
     const truncated = truncateToTokenBudget(content, budget);
     const tokens = estimateTokensBudget(truncated);

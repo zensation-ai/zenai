@@ -12,7 +12,7 @@ export class ShutdownCoordinator {
   }
 
   async shutdown(server?: http.Server): Promise<void> {
-    if (this.isShuttingDown) return;
+    if (this.isShuttingDown) {return;}
     this.isShuttingDown = true;
 
     logger.info('[Shutdown] Starting graceful shutdown...');

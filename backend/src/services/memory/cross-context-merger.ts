@@ -92,7 +92,7 @@ export function computeNameSimilarity(nameA: string, nameB: string): number {
   const wordsA = new Set(nameA.toLowerCase().split(/\s+/).filter(Boolean));
   const wordsB = new Set(nameB.toLowerCase().split(/\s+/).filter(Boolean));
 
-  if (wordsA.size === 0 && wordsB.size === 0) return 0.0;
+  if (wordsA.size === 0 && wordsB.size === 0) {return 0.0;}
 
   const intersection = new Set([...wordsA].filter((w) => wordsB.has(w)));
   const union = new Set([...wordsA, ...wordsB]);
@@ -115,7 +115,7 @@ export function computeNameSimilarity(nameA: string, nameB: string): number {
 function computeMergeScore(source: RawEntity, target: RawEntity): number {
   const nameSim = computeNameSimilarity(source.name, target.name);
 
-  const typeBonus = source.type === target.type ? TYPE_MATCH_BONUS : 0;
+  // type match is used inline below via TYPE_MATCH_BONUS constant
 
   const sourceAliases = (source.aliases ?? []).map((a) => a.toLowerCase());
   const targetAliases = (target.aliases ?? []).map((a) => a.toLowerCase());

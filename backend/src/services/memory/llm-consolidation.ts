@@ -97,7 +97,7 @@ function tokenize(text: string): string[] {
  */
 function computeTfIdfVectors(documents: string[]): TfIdfVector[] {
   const N = documents.length;
-  if (N === 0) return [];
+  if (N === 0) {return [];}
 
   // Tokenize all documents
   const tokenized = documents.map(doc => tokenize(doc));
@@ -145,7 +145,7 @@ function computeTfIdfVectors(documents: string[]): TfIdfVector[] {
  * @returns Similarity score 0-1
  */
 function cosineSimilarity(a: TfIdfVector, b: TfIdfVector): number {
-  if (a.magnitude === 0 || b.magnitude === 0) return 0;
+  if (a.magnitude === 0 || b.magnitude === 0) {return 0;}
 
   let dotProduct = 0;
   // Iterate over the smaller vector for efficiency
@@ -178,7 +178,7 @@ export function clusterEpisodesSemantic(
   episodes: EpisodeInput[],
   threshold = 0.5
 ): SemanticCluster[] {
-  if (episodes.length === 0) return [];
+  if (episodes.length === 0) {return [];}
   // Cap episodes to avoid O(n^2) pairwise similarity computation
   if (episodes.length > MAX_CLUSTER_EPISODES) {
     episodes = episodes.slice(0, MAX_CLUSTER_EPISODES);
@@ -306,10 +306,10 @@ export async function extractFactsFromEpisodes(
             const wordsA = new Set(fact.content.toLowerCase().split(/\s+/));
             const wordsB = new Set(existing.content.toLowerCase().split(/\s+/));
             let overlap = 0;
-            for (const w of wordsA) { if (wordsB.has(w)) overlap++; }
+            for (const w of wordsA) { if (wordsB.has(w)) {overlap++;} }
             return overlap / Math.max(1, Math.min(wordsA.size, wordsB.size)) > 0.8;
           });
-          if (!isDuplicate) uniqueFacts.push(fact);
+          if (!isDuplicate) {uniqueFacts.push(fact);}
         }
         return uniqueFacts.slice(0, 5); // Max 5 facts from multi-cluster
       }

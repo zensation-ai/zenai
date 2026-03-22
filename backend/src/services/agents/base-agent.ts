@@ -188,7 +188,7 @@ export abstract class BaseAgent {
             .filter((b): b is Anthropic.TextBlock => b.type === 'text')
             .map(b => b.text)
             .join('\n');
-          if (partialText) finalContent = partialText;
+          if (partialText) {finalContent = partialText;}
           break;
         }
 

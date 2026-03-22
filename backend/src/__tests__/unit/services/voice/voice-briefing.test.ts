@@ -46,7 +46,7 @@ jest.mock('../../../../services/voice/tts-service', () => ({
   },
 }));
 
-// eslint-disable-next-line @typescript-eslint/no-require-imports
+ 
 const { multiTTSService } = require('../../../../services/voice/tts-service');
 const mockSynthesize = multiTTSService.synthesize as jest.Mock;
 

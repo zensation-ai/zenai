@@ -12,7 +12,7 @@ import type { PageData, DocumentStyle, RenderResult } from './types';
 export async function renderDocx(
   pages: PageData[],
   title: string,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+   
   _style?: DocumentStyle,
 ): Promise<RenderResult> {
   logger.debug('renderDocx: starting', { pageCount: pages.length, title });

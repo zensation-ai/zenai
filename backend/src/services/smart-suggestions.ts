@@ -106,7 +106,7 @@ function getOrCreateActivity(context: AIContext, userId: string): ActivityRecord
     // Evict oldest entries if map exceeds limit
     if (userActivityMap.size >= MAX_ACTIVITY_ENTRIES) {
       const firstKey = userActivityMap.keys().next().value;
-      if (firstKey !== undefined) userActivityMap.delete(firstKey);
+      if (firstKey !== undefined) {userActivityMap.delete(firstKey);}
     }
     record = {
       hourCounts: new Array(24).fill(0),
@@ -216,9 +216,9 @@ export function computeRecencyDecay(ageMs: number): number {
   const FOUR_HOURS = 4 * ONE_HOUR;
   const TWENTY_FOUR_HOURS = 24 * ONE_HOUR;
 
-  if (ageMs <= ONE_HOUR) return 1.0;
-  if (ageMs <= FOUR_HOURS) return 0.85;
-  if (ageMs <= TWENTY_FOUR_HOURS) return 0.6;
+  if (ageMs <= ONE_HOUR) {return 1.0;}
+  if (ageMs <= FOUR_HOURS) {return 0.85;}
+  if (ageMs <= TWENTY_FOUR_HOURS) {return 0.6;}
   return 0.3;
 }
 
@@ -232,7 +232,7 @@ export function computeInteractionBoost(
   type: SuggestionType
 ): number {
   const record = userActivityMap.get(getActivityKey(context, userId));
-  if (!record) return 1.0;
+  if (!record) {return 1.0;}
 
   const acceptCount = record.acceptedTypeCounts[type] ?? 0;
   return acceptCount > 0 ? 1.2 : 1.0;
@@ -257,12 +257,12 @@ export function computeTitleSimilarity(a: string, b: string): number {
   const wordsA = new Set(normalize(a));
   const wordsB = new Set(normalize(b));
 
-  if (wordsA.size === 0 && wordsB.size === 0) return 1.0;
-  if (wordsA.size === 0 || wordsB.size === 0) return 0.0;
+  if (wordsA.size === 0 && wordsB.size === 0) {return 1.0;}
+  if (wordsA.size === 0 || wordsB.size === 0) {return 0.0;}
 
   let intersection = 0;
   for (const w of wordsA) {
-    if (wordsB.has(w)) intersection++;
+    if (wordsB.has(w)) {intersection++;}
   }
 
   const union = new Set([...wordsA, ...wordsB]).size;
@@ -576,13 +576,13 @@ export async function mergeRelatedSuggestions(
     let mergeCount = 0;
 
     for (let i = 0; i < suggestions.length; i++) {
-      if (merged.has(suggestions[i].id)) continue;
+      if (merged.has(suggestions[i].id)) {continue;}
 
       for (let j = i + 1; j < suggestions.length; j++) {
-        if (merged.has(suggestions[j].id)) continue;
+        if (merged.has(suggestions[j].id)) {continue;}
 
         // Only merge same type
-        if (suggestions[i].type !== suggestions[j].type) continue;
+        if (suggestions[i].type !== suggestions[j].type) {continue;}
 
         const similarity = computeTitleSimilarity(
           suggestions[i].title,
@@ -654,7 +654,7 @@ export async function enforceMaxActiveSuggestions(
     );
 
     const activeCount = parseInt(countResult.rows[0]?.cnt as string, 10) || 0;
-    if (activeCount <= MAX_ACTIVE_SUGGESTIONS) return 0;
+    if (activeCount <= MAX_ACTIVE_SUGGESTIONS) {return 0;}
 
     const excess = activeCount - MAX_ACTIVE_SUGGESTIONS;
 
@@ -697,8 +697,8 @@ function computeSnoozeInterval(duration: SnoozeDuration): string {
 
 function parseSuggestion(row: Record<string, unknown>): SmartSuggestion {
   const parseJSON = <T>(val: unknown, fallback: T): T => {
-    if (!val) return fallback;
-    if (typeof val === 'object') return val as T;
+    if (!val) {return fallback;}
+    if (typeof val === 'object') {return val as T;}
     if (typeof val === 'string') {
       try { return JSON.parse(val); } catch { return fallback; }
     }

@@ -67,7 +67,7 @@ const DOMAIN_KEYWORDS: Record<ContextDomain, string[]> = {
  * @returns Map of term -> normalized frequency
  */
 export function buildTermVector(text: string): Map<string, number> {
-  if (!text || text.length === 0) return new Map();
+  if (!text || text.length === 0) {return new Map();}
 
   const words = text
     .toLowerCase()
@@ -75,7 +75,7 @@ export function buildTermVector(text: string): Map<string, number> {
     .split(/\s+/)
     .filter(w => w.length > 2);
 
-  if (words.length === 0) return new Map();
+  if (words.length === 0) {return new Map();}
 
   const freq = new Map<string, number>();
   for (const word of words) {
@@ -99,7 +99,7 @@ export function buildTermVector(text: string): Map<string, number> {
  * @returns Cosine similarity 0-1
  */
 export function cosineSimilarity(vecA: Map<string, number>, vecB: Map<string, number>): number {
-  if (vecA.size === 0 || vecB.size === 0) return 0;
+  if (vecA.size === 0 || vecB.size === 0) {return 0;}
 
   let dotProduct = 0;
   let normA = 0;
@@ -118,7 +118,7 @@ export function cosineSimilarity(vecA: Map<string, number>, vecB: Map<string, nu
   }
 
   const denominator = Math.sqrt(normA) * Math.sqrt(normB);
-  if (denominator === 0) return 0;
+  if (denominator === 0) {return 0;}
 
   return dotProduct / denominator;
 }
@@ -132,7 +132,7 @@ export function cosineSimilarity(vecA: Map<string, number>, vecB: Map<string, nu
  * @returns Relevance score 0-1
  */
 export function scoreSemanticRelevance(query: string, contextSection: string): number {
-  if (!query || !contextSection) return 0;
+  if (!query || !contextSection) {return 0;}
 
   const queryVec = buildTermVector(query);
   const contextVec = buildTermVector(contextSection);
@@ -154,7 +154,7 @@ export function filterContextByRelevance(
   parts: ContextPartV2[],
   threshold: number = 0.3
 ): ContextPartV2[] {
-  if (!query || parts.length === 0) return parts;
+  if (!query || parts.length === 0) {return parts;}
 
   return parts.filter(part => {
     const relevance = scoreSemanticRelevance(query, part.content);
@@ -193,7 +193,7 @@ const llmDomainCache = new Map<string, CachedDomainResult>();
  */
 export function getLLMDomainFromCache(cacheKey: string): CachedDomainResult | null {
   const cached = llmDomainCache.get(cacheKey);
-  if (!cached) return null;
+  if (!cached) {return null;}
 
   if (Date.now() - cached.timestamp > LLM_DOMAIN_CACHE_TTL_MS) {
     llmDomainCache.delete(cacheKey);
@@ -248,7 +248,7 @@ export class ContextEngineV2 {
     const scores: Record<string, number> = {};
 
     for (const [domain, keywords] of Object.entries(DOMAIN_KEYWORDS)) {
-      if (domain === 'general') continue;
+      if (domain === 'general') {continue;}
       let score = 0;
       for (const keyword of keywords) {
         if (lowerQuery.includes(keyword)) {
@@ -304,7 +304,7 @@ export class ContextEngineV2 {
 
     // LLM fallback using Claude Haiku (~200 token prompt)
     try {
-      // eslint-disable-next-line @typescript-eslint/no-var-requires
+       
       const { generateClaudeResponse } = require('./claude/core');
       const response = await generateClaudeResponse({
         model: 'claude-haiku-4-5-20251001',
@@ -443,7 +443,7 @@ export class ContextEngineV2 {
       `, [domain.domain]);
 
       for (const rule of rules.rows) {
-        if (usedTokens >= totalBudget) break;
+        if (usedTokens >= totalBudget) {break;}
 
         const ruleBudget = Math.min(rule.token_budget || 500, totalBudget - usedTokens);
         const dataSources = typeof rule.data_sources === 'string'
@@ -451,7 +451,7 @@ export class ContextEngineV2 {
           : rule.data_sources;
 
         for (const source of (dataSources || [])) {
-          if (usedTokens >= totalBudget) break;
+          if (usedTokens >= totalBudget) {break;}
 
           const content = await this.executeSource(source, context, ruleBudget);
           if (content) {
@@ -520,17 +520,17 @@ export class ContextEngineV2 {
         case 'static':
           return source.content || null;
         case 'db_query': {
-          if (!source.query) return null;
+          if (!source.query) {return null;}
           // Whitelist validation: only allow safe SELECT queries
           const trimmedQuery = source.query.trim();
           const upperQuery = trimmedQuery.toUpperCase();
-          if (!upperQuery.startsWith('SELECT')) return null;
+          if (!upperQuery.startsWith('SELECT')) {return null;}
           const DANGEROUS_KEYWORDS = ['DROP', 'DELETE', 'UPDATE', 'INSERT', 'ALTER', 'TRUNCATE', 'GRANT', 'CREATE'];
           for (const keyword of DANGEROUS_KEYWORDS) {
-            if (upperQuery.includes(keyword)) return null;
+            if (upperQuery.includes(keyword)) {return null;}
           }
           // Reject multi-statement queries
-          if (trimmedQuery.replace(/;[\s]*$/, '').includes(';')) return null;
+          if (trimmedQuery.replace(/;[\s]*$/, '').includes(';')) {return null;}
           const result = await queryContext(context, trimmedQuery, []);
           return result.rows.length > 0 ? JSON.stringify(result.rows.slice(0, source.limit || 5)) : null;
         }

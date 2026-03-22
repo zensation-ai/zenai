@@ -164,9 +164,9 @@ const DEFAULT_CONFIG: EnhancedRAGConfig = {
  */
 export function enrichChunkWithContext(chunk: { content: string; title?: string; topic?: string; context?: string }): string {
   const parts: string[] = [];
-  if (chunk.title) parts.push(`From: "${chunk.title}"`);
-  if (chunk.topic) parts.push(`Topic: ${chunk.topic}`);
-  if (chunk.context) parts.push(`Context: ${chunk.context}`);
+  if (chunk.title) {parts.push(`From: "${chunk.title}"`);}
+  if (chunk.topic) {parts.push(`Topic: ${chunk.topic}`);}
+  if (chunk.context) {parts.push(`Context: ${chunk.context}`);}
 
   const prefix = parts.length > 0 ? `[${parts.join(' | ')}] ` : '';
   return prefix + chunk.content;
@@ -179,10 +179,10 @@ export function enrichChunkWithContext(chunk: { content: string; title?: string;
  */
 export function enrichQueryWithContext(query: string, context?: AIContext, topic?: string): string {
   const parts: string[] = [];
-  if (topic) parts.push(`Topic: ${topic}`);
-  if (context) parts.push(`Context: ${context}`);
+  if (topic) {parts.push(`Topic: ${topic}`);}
+  if (context) {parts.push(`Context: ${context}`);}
 
-  if (parts.length === 0) return query;
+  if (parts.length === 0) {return query;}
   return `[${parts.join(' | ')}] ${query}`;
 }
 
@@ -252,10 +252,10 @@ export function classifyQueryComplexity(query: string): 'simple' | 'complex' {
   const wordCount = query.trim().split(/\s+/).length;
 
   // Long queries are inherently complex
-  if (wordCount >= 10) return 'complex';
+  if (wordCount >= 10) {return 'complex';}
 
   // Check for complex query signals (comparison, causal, multi-part)
-  if (COMPLEX_QUERY_PATTERNS.test(query)) return 'complex';
+  if (COMPLEX_QUERY_PATTERNS.test(query)) {return 'complex';}
 
   return 'simple';
 }

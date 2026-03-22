@@ -261,19 +261,23 @@ export async function generateEnhancedResponse(
   }
 
   // Phase 128: Check for reusable reasoning chain (before RAG)
-  let reusableChain: any = null;
+  let reusableChain: { steps: Array<{ stepNumber: number; content: string }>; conclusion?: string | null; id?: string; similarity?: number } | null = null;
   try {
     const { getReusableChainForQuery } = await import('../reasoning/chain-store');
     reusableChain = await getReusableChainForQuery(contextType, userMessage);
     if (reusableChain) {
-      systemPrompt += `\n\n[FRÜHERER DENKPROZESS]\nBei einer ähnlichen Frage habe ich folgenden Denkprozess verwendet:\n${reusableChain.steps.map((s: any) => `${s.stepNumber}. ${s.content}`).join('\n')}\nSchlussfolgerung: ${reusableChain.conclusion || 'Keine'}\nPrüfe ob dieser Denkprozess noch gültig ist und passe ihn ggf. an.`;
+      systemPrompt += `\n\n[FRÜHERER DENKPROZESS]\nBei einer ähnlichen Frage habe ich folgenden Denkprozess verwendet:\n${reusableChain.steps.map((s) => `${s.stepNumber}. ${s.content}`).join('\n')}\nSchlussfolgerung: ${reusableChain.conclusion || 'Keine'}\nPrüfe ob dieser Denkprozess noch gültig ist und passe ihn ggf. an.`;
 
       // Increment reuse count (fire-and-forget)
-      import('../reasoning/chain-store').then(({ incrementReuseCount }) => {
-        incrementReuseCount(contextType, reusableChain.id).catch(() => {});
-      }).catch(() => {});
+      const chainId = reusableChain.id;
+      const chainSimilarity = reusableChain.similarity;
+      if (chainId) {
+        import('../reasoning/chain-store').then(({ incrementReuseCount }) => {
+          incrementReuseCount(contextType, chainId).catch(() => {});
+        }).catch(() => {});
+      }
 
-      logger.debug('Reusable chain found', { sessionId, chainId: reusableChain.id, similarity: reusableChain.similarity });
+      logger.debug('Reusable chain found', { sessionId, chainId, similarity: chainSimilarity });
     }
   } catch (error) {
     logger.debug('Chain lookup skipped', { error: error instanceof Error ? error.message : String(error) });

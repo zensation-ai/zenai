@@ -54,7 +54,7 @@ export interface RAGEvaluationStats {
  * @returns Precision@k value in [0, 1]
  */
 export function calculatePrecisionAtK(scores: number[], k: number, threshold: number): number {
-  if (scores.length === 0 || k <= 0) return 0.0;
+  if (scores.length === 0 || k <= 0) {return 0.0;}
 
   const topK = scores.slice(0, k);
   const relevantCount = topK.filter(score => score >= threshold).length;
@@ -76,7 +76,7 @@ export function calculatePrecisionAtK(scores: number[], k: number, threshold: nu
  * @returns MRR value in [0, 1]
  */
 export function calculateMRR(scores: number[], threshold: number): number {
-  if (scores.length === 0) return 0.0;
+  if (scores.length === 0) {return 0.0;}
 
   for (let i = 0; i < scores.length; i++) {
     if (scores[i] >= threshold) {
@@ -104,24 +104,24 @@ export function calculateMRR(scores: number[], threshold: number): number {
  * @returns NDCG value in [0, 1]
  */
 export function calculateNDCG(scores: number[], threshold: number): number {
-  if (scores.length === 0) return 0.0;
+  if (scores.length === 0) {return 0.0;}
 
   const relevance: number[] = scores.map(s => (s >= threshold ? 1 : 0));
 
   // DCG: actual ranked order
   const dcg = relevance.reduce((sum, rel, i) => {
-    if (rel === 0) return sum;
+    if (rel === 0) {return sum;}
     return sum + rel / Math.log2(i + 2); // i+2 because log2(1) = 0, use log2(rank+1) with rank starting at 1
   }, 0);
 
   // IDCG: ideal order (all relevant docs first)
   const sortedRelevance = [...relevance].sort((a, b) => b - a);
   const idcg = sortedRelevance.reduce((sum, rel, i) => {
-    if (rel === 0) return sum;
+    if (rel === 0) {return sum;}
     return sum + rel / Math.log2(i + 2);
   }, 0);
 
-  if (idcg === 0) return 0.0;
+  if (idcg === 0) {return 0.0;}
   return Math.min(dcg / idcg, 1.0);
 }
 

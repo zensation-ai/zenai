@@ -202,7 +202,10 @@ class OAuthProviderManager {
     // Delete used state (one-time use)
     await pool.query('DELETE FROM public.oauth_states WHERE state = $1', [state]);
 
-    const config = this.configs.get(provider)!;
+    const config = this.configs.get(provider);
+    if (!config) {
+      throw new Error(`OAuth provider ${provider} not configured`);
+    }
     const providerUrls = PROVIDER_URLS[provider];
 
     // Exchange code for access token

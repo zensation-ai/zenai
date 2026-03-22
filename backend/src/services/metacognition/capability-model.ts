@@ -93,7 +93,7 @@ export function computeImprovementTrend(
   recentScores: number[],
   olderScores: number[],
 ): number {
-  if (recentScores.length === 0 || olderScores.length === 0) return 0;
+  if (recentScores.length === 0 || olderScores.length === 0) {return 0;}
 
   const avgRecent =
     recentScores.reduce((sum, s) => sum + s, 0) / recentScores.length;

@@ -225,8 +225,8 @@ export async function generateRecommendations(): Promise<TuningRecommendation[]>
       }
 
       // Higher confidence with more data points
-      if (execCount >= 10) confidence += 0.1;
-      if (execCount >= 50) confidence += 0.1;
+      if (execCount >= 10) {confidence += 0.1;}
+      if (execCount >= 50) {confidence += 0.1;}
 
       // Only add recommendation if something changed
       if (reasons.length > 0) {

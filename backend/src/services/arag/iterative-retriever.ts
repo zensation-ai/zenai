@@ -60,7 +60,7 @@ const ALL_INTERFACES: RetrievalInterface[] = ['keyword', 'semantic', 'chunk_read
 async function executeStep(
   step: RetrievalStep,
   context: AIContext,
-  existingResults: RetrievalResultItem[]
+  _existingResults: RetrievalResultItem[]
 ): Promise<RetrievalResultItem[]> {
   const maxResults = (step.params.maxResults as number) || MAX_RESULTS_PER_INTERFACE;
   const query = (step.params.query as string) || (step.params.terms as string) || '';
@@ -91,7 +91,7 @@ async function executeKeywordSearch(
   limit: number
 ): Promise<RetrievalResultItem[]> {
   const sanitized = query.replace(/[^\w\s]/g, ' ').trim();
-  if (!sanitized) return [];
+  if (!sanitized) {return [];}
 
   const tsQuery = sanitized
     .split(/\s+/)
@@ -99,7 +99,7 @@ async function executeKeywordSearch(
     .map(w => `${w}:*`)
     .join(' & ');
 
-  if (!tsQuery) return [];
+  if (!tsQuery) {return [];}
 
   try {
     const result = await queryContext(
@@ -145,7 +145,7 @@ async function executeSemanticSearch(
 ): Promise<RetrievalResultItem[]> {
   try {
     const embedding = await generateEmbedding(query);
-    if (!embedding || embedding.length === 0) return [];
+    if (!embedding || embedding.length === 0) {return [];}
 
     const result = await queryContext(
       context,
@@ -180,7 +180,7 @@ async function executeChunkRead(
   context: AIContext
 ): Promise<RetrievalResultItem[]> {
   const ids = params.ids as string[] | undefined;
-  if (!ids || ids.length === 0) return [];
+  if (!ids || ids.length === 0) {return [];}
 
   try {
     const result = await queryContext(

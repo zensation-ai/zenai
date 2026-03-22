@@ -51,7 +51,7 @@ const DEFAULT_PREFERENCES: BehaviorPreferences = {
 
 function avgValue(signals: BehaviorSignal[], type: BehaviorSignal['type']): number | null {
   const filtered = signals.filter((s) => s.type === type);
-  if (filtered.length === 0) return null;
+  if (filtered.length === 0) {return null;}
   const sum = filtered.reduce((acc, s) => acc + s.value, 0);
   return sum / filtered.length;
 }
@@ -62,9 +62,9 @@ function avgValue(signals: BehaviorSignal[], type: BehaviorSignal['type']): numb
  */
 export function inferResponseLength(signals: BehaviorSignal[]): 'brief' | 'moderate' | 'detailed' {
   const avg = avgValue(signals, 'length_feedback');
-  if (avg === null) return 'moderate';
-  if (avg < -0.3) return 'brief';
-  if (avg > 0.3) return 'detailed';
+  if (avg === null) {return 'moderate';}
+  if (avg < -0.3) {return 'brief';}
+  if (avg > 0.3) {return 'detailed';}
   return 'moderate';
 }
 
@@ -76,9 +76,9 @@ export function inferDetailLevel(
   signals: BehaviorSignal[],
 ): 'beginner' | 'intermediate' | 'expert' {
   const avg = avgValue(signals, 'detail_feedback');
-  if (avg === null) return 'intermediate';
-  if (avg < -0.3) return 'beginner';
-  if (avg > 0.3) return 'expert';
+  if (avg === null) {return 'intermediate';}
+  if (avg < -0.3) {return 'beginner';}
+  if (avg > 0.3) {return 'expert';}
   return 'intermediate';
 }
 
@@ -89,11 +89,11 @@ export function inferDetailLevel(
  */
 export function inferProactivityLevel(signals: BehaviorSignal[]): 'low' | 'medium' | 'high' {
   const actions = signals.filter((s) => s.type === 'suggestion_action');
-  if (actions.length === 0) return 'medium';
+  if (actions.length === 0) {return 'medium';}
   const accepted = actions.filter((s) => s.value > 0).length;
   const rate = accepted / actions.length;
-  if (rate < 0.3) return 'low';
-  if (rate > 0.6) return 'high';
+  if (rate < 0.3) {return 'low';}
+  if (rate > 0.6) {return 'high';}
   return 'medium';
 }
 
@@ -105,11 +105,11 @@ export function inferPreferredTools(signals: BehaviorSignal[]): string[] {
   const toolSignals = signals.filter(
     (s) => s.type === 'tool_preference' && s.details?.toolName,
   );
-  if (toolSignals.length === 0) return [];
+  if (toolSignals.length === 0) {return [];}
 
   const toolScores = new Map<string, number>();
   for (const s of toolSignals) {
-    const name = s.details!.toolName as string;
+    const name = s.details?.toolName as string;
     toolScores.set(name, (toolScores.get(name) ?? 0) + s.value);
   }
 

@@ -27,7 +27,7 @@ const CODE_BLOCK_PATTERN = /```[\s\S]*?```/g;
  * @returns Estimated token count
  */
 export function estimateTokens(text: string): number {
-  if (!text || text.length === 0) return 0;
+  if (!text || text.length === 0) {return 0;}
 
   // Extract code blocks and compute them separately
   const codeBlocks = text.match(CODE_BLOCK_PATTERN) || [];

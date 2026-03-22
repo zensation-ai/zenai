@@ -202,7 +202,17 @@ export class AgentGraph {
       };
     }
 
-    let currentNode = this.nodes.get(this.startNodeId)!;
+    let currentNode = this.nodes.get(this.startNodeId);
+    if (!currentNode) {
+      return {
+        executionId,
+        success: false,
+        finalOutput: `Start node ${this.startNodeId} not found`,
+        nodeHistory,
+        totalDurationMs: Date.now() - startTime,
+        state: { ...state, status: 'failed' },
+      };
+    }
     let lastOutput = '';
 
     while (state.iteration < maxIterations && state.status === 'running') {
@@ -431,10 +441,10 @@ export class AgentGraph {
     const branchPromises = config.branches.map(async (branchEdges) => {
       // Each branch targets a single node (the `to` of the first edge)
       const targetNodeId = branchEdges[0]?.to;
-      if (!targetNodeId) return '';
+      if (!targetNodeId) {return '';}
 
       const targetNode = this.nodes.get(targetNodeId);
-      if (!targetNode) return '';
+      if (!targetNode) {return '';}
 
       // Clone state for branch isolation
       const branchState: WorkflowState = {
@@ -492,7 +502,7 @@ export class AgentGraph {
    */
   private getNextNode(currentId: string): GraphNode | null {
     const outEdges = this.edges.filter(e => e.from === currentId);
-    if (outEdges.length === 0) return null;
+    if (outEdges.length === 0) {return null;}
 
     const nextEdge = outEdges[0];
     return this.nodes.get(nextEdge.to) || null;

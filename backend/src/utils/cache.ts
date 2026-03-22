@@ -243,7 +243,7 @@ export const cache = {
    */
   async sAdd(key: string, member: string, ttlSeconds?: number): Promise<boolean> {
     const client = getClient();
-    if (!client || !isConnected) return false;
+    if (!client || !isConnected) {return false;}
 
     try {
       await client.sadd(key, member);
@@ -262,7 +262,7 @@ export const cache = {
    */
   async sMembers(key: string): Promise<string[]> {
     const client = getClient();
-    if (!client || !isConnected) return [];
+    if (!client || !isConnected) {return [];}
 
     try {
       return await client.smembers(key);

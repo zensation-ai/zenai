@@ -214,7 +214,10 @@ export class A2ATaskManager {
     );
 
     const updatedTask = await this.getTask(context, taskId);
-    return updatedTask!;
+    if (!updatedTask) {
+      throw new Error(`Task ${taskId} not found after update`);
+    }
+    return updatedTask;
   }
 
   /**

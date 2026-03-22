@@ -35,7 +35,7 @@ workspaceAutomationRouter.get(
   requireScope('read'),
   asyncHandler(async (req, res) => {
     const context = req.params.context as AIContext;
-    if (!isValidContext(context)) throw new ValidationError('Invalid context');
+    if (!isValidContext(context)) {throw new ValidationError('Invalid context');}
     const userId = getUserId(req);
 
     try {
@@ -55,7 +55,7 @@ workspaceAutomationRouter.get(
   requireScope('read'),
   asyncHandler(async (req, res) => {
     const context = req.params.context as AIContext;
-    if (!isValidContext(context)) throw new ValidationError('Invalid context');
+    if (!isValidContext(context)) {throw new ValidationError('Invalid context');}
 
     try {
       const templates = getTemplates();
@@ -75,12 +75,12 @@ workspaceAutomationRouter.get(
   requireUUID('id'),
   asyncHandler(async (req, res) => {
     const context = req.params.context as AIContext;
-    if (!isValidContext(context)) throw new ValidationError('Invalid context');
+    if (!isValidContext(context)) {throw new ValidationError('Invalid context');}
     const userId = getUserId(req);
 
     try {
       const automation = await getAutomation(context, req.params.id, userId);
-      if (!automation) throw new NotFoundError('Automation not found');
+      if (!automation) {throw new NotFoundError('Automation not found');}
 
       res.json({ success: true, data: automation });
     } catch (error) {
@@ -98,7 +98,7 @@ workspaceAutomationRouter.post(
   requireScope('write'),
   asyncHandler(async (req, res) => {
     const context = req.params.context as AIContext;
-    if (!isValidContext(context)) throw new ValidationError('Invalid context');
+    if (!isValidContext(context)) {throw new ValidationError('Invalid context');}
     const userId = getUserId(req);
 
     const { name, description, trigger_type, trigger_config, conditions, actions, enabled } = req.body;
@@ -139,7 +139,7 @@ workspaceAutomationRouter.post(
   requireScope('write'),
   asyncHandler(async (req, res) => {
     const context = req.params.context as AIContext;
-    if (!isValidContext(context)) throw new ValidationError('Invalid context');
+    if (!isValidContext(context)) {throw new ValidationError('Invalid context');}
     const userId = getUserId(req);
 
     const { template_id, name, description } = req.body;
@@ -167,7 +167,7 @@ workspaceAutomationRouter.put(
   requireUUID('id'),
   asyncHandler(async (req, res) => {
     const context = req.params.context as AIContext;
-    if (!isValidContext(context)) throw new ValidationError('Invalid context');
+    if (!isValidContext(context)) {throw new ValidationError('Invalid context');}
     const userId = getUserId(req);
 
     const { name, description, trigger_type, trigger_config, conditions, actions, enabled } = req.body;
@@ -187,7 +187,7 @@ workspaceAutomationRouter.put(
         enabled,
       });
 
-      if (!updated) throw new NotFoundError('Automation not found');
+      if (!updated) {throw new NotFoundError('Automation not found');}
       res.json({ success: true, data: updated });
     } catch (error) {
       if (error instanceof NotFoundError) { throw error; }
@@ -205,12 +205,12 @@ workspaceAutomationRouter.delete(
   requireUUID('id'),
   asyncHandler(async (req, res) => {
     const context = req.params.context as AIContext;
-    if (!isValidContext(context)) throw new ValidationError('Invalid context');
+    if (!isValidContext(context)) {throw new ValidationError('Invalid context');}
     const userId = getUserId(req);
 
     try {
       const deleted = await deleteAutomation(context, req.params.id, userId);
-      if (!deleted) throw new NotFoundError('Automation not found');
+      if (!deleted) {throw new NotFoundError('Automation not found');}
 
       res.json({ success: true, message: 'Automation deleted' });
     } catch (error) {
@@ -229,7 +229,7 @@ workspaceAutomationRouter.post(
   requireUUID('id'),
   asyncHandler(async (req, res) => {
     const context = req.params.context as AIContext;
-    if (!isValidContext(context)) throw new ValidationError('Invalid context');
+    if (!isValidContext(context)) {throw new ValidationError('Invalid context');}
     const userId = getUserId(req);
 
     const triggerData = req.body.trigger_data ?? {};
@@ -254,7 +254,7 @@ workspaceAutomationRouter.get(
   requireUUID('id'),
   asyncHandler(async (req, res) => {
     const context = req.params.context as AIContext;
-    if (!isValidContext(context)) throw new ValidationError('Invalid context');
+    if (!isValidContext(context)) {throw new ValidationError('Invalid context');}
     const userId = getUserId(req);
 
     try {

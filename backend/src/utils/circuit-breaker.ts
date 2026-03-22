@@ -200,7 +200,7 @@ export class CircuitBreaker extends EventEmitter {
   }
 
   private transitionTo(next: CircuitBreakerState): void {
-    if (this.state === next) return;
+    if (this.state === next) {return;}
 
     const previous = this.state;
     this.state = next;

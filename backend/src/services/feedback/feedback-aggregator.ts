@@ -37,7 +37,7 @@ export interface SubsystemReport {
  * Returns 0 for an empty array.
  */
 export function computePositiveRate(values: number[]): number {
-  if (values.length === 0) return 0;
+  if (values.length === 0) {return 0;}
   const positiveCount = values.filter((v) => v > 0).length;
   return positiveCount / values.length;
 }
@@ -50,14 +50,14 @@ export function computeTrend(
   values: number[],
   recentWindow: number = 10,
 ): number {
-  if (values.length < recentWindow) return 0;
+  if (values.length < recentWindow) {return 0;}
 
   const recent = values.slice(-recentWindow);
   const older = values.slice(0, -recentWindow);
 
   const avgRecent = recent.reduce((a, b) => a + b, 0) / recent.length;
 
-  if (older.length === 0) return 0;
+  if (older.length === 0) {return 0;}
   const avgOlder = older.reduce((a, b) => a + b, 0) / older.length;
 
   return avgRecent - avgOlder;
@@ -72,14 +72,14 @@ export function computeTrend(
  * Returns an empty array when no events are provided.
  */
 export function aggregateFeedback(events: FeedbackEvent[]): FeedbackSummary[] {
-  if (events.length === 0) return [];
+  if (events.length === 0) {return [];}
 
   const groups = new Map<FeedbackType, FeedbackEvent[]>();
   for (const event of events) {
     if (!groups.has(event.type)) {
       groups.set(event.type, []);
     }
-    groups.get(event.type)!.push(event);
+    groups.get(event.type)?.push(event);
   }
 
   const summaries: FeedbackSummary[] = [];

@@ -20,12 +20,12 @@
 import { Router, Request, Response } from 'express';
 import { apiKeyAuth, requireScope } from '../middleware/auth';
 import { asyncHandler } from '../middleware/errorHandler';
-import { isValidContext, AIContext } from '../utils/database-context';
+import { isValidContext } from '../utils/database-context';
 import { validateContextParam } from '../utils/validation';
 import { requireUUID } from '../middleware/validate-params';
 import { mcpServerRegistry } from '../services/mcp/mcp-registry';
 import { mcpClientManager, MCPServerConfig } from '../services/mcp/mcp-client';
-import { MCPToolBridge, createToolBridge } from '../services/mcp/mcp-tool-bridge';
+import { createToolBridge } from '../services/mcp/mcp-tool-bridge';
 import { validateTransportConfig, MCPTransportType } from '../services/mcp/mcp-transport';
 import { mcpDiscoveryService, MCPServerCategory } from '../services/mcp/mcp-discovery';
 import { mcpAutoConfigService } from '../services/mcp/mcp-auto-config';

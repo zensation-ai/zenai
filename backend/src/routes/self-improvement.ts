@@ -41,29 +41,29 @@ router.get('/:context/self-improvement/opportunities', asyncHandler(async (req, 
     const params: IdentifyParams = {};
 
     if (gapsRes.status === 'fulfilled' && gapsRes.value.rows.length > 0) {
-      params.gaps = gapsRes.value.rows.map((r: any): GapInput => ({
-        topic: r.topic,
-        gapScore: parseFloat(r.gap_score) || 0,
+      params.gaps = gapsRes.value.rows.map((r: Record<string, unknown>): GapInput => ({
+        topic: r.topic as string,
+        gapScore: parseFloat(r.gap_score as string) || 0,
       }));
     }
 
     if (proceduresRes.status === 'fulfilled' && proceduresRes.value.rows.length > 0) {
-      params.procedures = proceduresRes.value.rows.map((r: any): ProcedureInput => ({
-        name: r.name || 'unknown',
-        successRate: parseFloat(r.success_rate) || 0.5,
+      params.procedures = proceduresRes.value.rows.map((r: Record<string, unknown>): ProcedureInput => ({
+        name: (r.name as string) || 'unknown',
+        successRate: parseFloat(r.success_rate as string) || 0.5,
       }));
     }
 
     if (calibrationRes.status === 'fulfilled' && calibrationRes.value.rows.length > 0) {
       params.calibration = {
-        ece: parseFloat(calibrationRes.value.rows[0]?.ece ?? '0'),
-      } as CalibrationInput;
+        ece: parseFloat((calibrationRes.value.rows[0]?.ece as string) ?? '0'),
+      } satisfies CalibrationInput;
     }
 
     if (teamRes.status === 'fulfilled' && teamRes.value.rows.length > 0) {
-      params.teamStats = teamRes.value.rows.map((r: any): TeamStrategyInput => ({
-        strategy: r.strategy || 'unknown',
-        avgScore: parseFloat(r.avg_score) || 0.5,
+      params.teamStats = teamRes.value.rows.map((r: Record<string, unknown>): TeamStrategyInput => ({
+        strategy: (r.strategy as string) || 'unknown',
+        avgScore: parseFloat(r.avg_score as string) || 0.5,
       }));
     }
 
@@ -112,9 +112,9 @@ router.post('/:context/self-improvement/:id/execute', asyncHandler(async (req, r
     // Build a minimal action from the ID - the actual action should come from the opportunities list
     const action = {
       id,
-      type: (req.body.type || 'knowledge_gap_research') as any,
+      type: (req.body.type || 'knowledge_gap_research') as 'knowledge_gap_research' | 'procedural_optimization' | 'team_learning' | 'calibration_fix',
       description: req.body.description || `Improvement action ${id}`,
-      riskLevel: (req.body.riskLevel || 'low') as any,
+      riskLevel: (req.body.riskLevel || 'low') as 'low' | 'medium' | 'high',
       requiresApproval: req.body.requiresApproval ?? false,
       estimatedImpact: req.body.estimatedImpact ?? 0.5,
       basis: req.body.basis || [],

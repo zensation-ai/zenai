@@ -128,7 +128,7 @@ function isMetaStatement(sentence: string): boolean {
  *  6. Return unique keywords
  */
 export function extractKeywords(text: string): string[] {
-  if (!text) return [];
+  if (!text) {return [];}
 
   const words = text
     .toLowerCase()
@@ -173,7 +173,7 @@ export function extractKeywords(text: string): string[] {
  *  7. Take up to MAX_STATEMENTS
  */
 export function extractStatements(responseText: string): string[] {
-  if (!responseText) return [];
+  if (!responseText) {return [];}
 
   const cleaned = stripCodeBlocks(responseText);
 
@@ -184,7 +184,7 @@ export function extractStatements(responseText: string): string[] {
 
   for (const part of raw) {
     const sentence = part.trim();
-    if (!sentence) continue;
+    if (!sentence) {continue;}
 
     // Must end with sentence-ending punctuation (or be the last fragment)
     const normalized = sentence.endsWith('.') || sentence.endsWith('!') || sentence.endsWith('?')
@@ -193,13 +193,13 @@ export function extractStatements(responseText: string): string[] {
 
     // Filter: at least 6 words (> 5)
     const wordCount = normalized.split(/\s+/).filter(Boolean).length;
-    if (wordCount <= 5) continue;
+    if (wordCount <= 5) {continue;}
 
     // Filter: not a question
-    if (normalized.endsWith('?')) continue;
+    if (normalized.endsWith('?')) {continue;}
 
     // Filter: not a meta-statement
-    if (isMetaStatement(normalized)) continue;
+    if (isMetaStatement(normalized)) {continue;}
 
     sentences.push(normalized);
   }
@@ -284,12 +284,12 @@ function detectContradiction(
  * Returns 0–1 where 1 means identical keyword sets.
  */
 function keywordOverlap(kwA: string[], kwB: string[]): number {
-  if (kwA.length === 0 || kwB.length === 0) return 0;
+  if (kwA.length === 0 || kwB.length === 0) {return 0;}
   const setA = new Set(kwA);
   const setB = new Set(kwB);
   let intersection = 0;
   for (const k of setA) {
-    if (setB.has(k)) intersection++;
+    if (setB.has(k)) {intersection++;}
   }
   const union = setA.size + setB.size - intersection;
   return union === 0 ? 0 : intersection / union;
@@ -317,13 +317,13 @@ export async function checkFactContradictions(
   statements: string[],
   limit: number = DEFAULT_FACTS_LIMIT,
 ): Promise<Contradiction[]> {
-  if (statements.length === 0) return [];
+  if (statements.length === 0) {return [];}
 
   const contradictions: Contradiction[] = [];
 
   for (const statement of statements) {
     const keywords = extractKeywords(statement);
-    if (keywords.length === 0) continue;
+    if (keywords.length === 0) {continue;}
 
     // Build ILIKE conditions for each keyword
     const conditions = keywords
@@ -359,10 +359,10 @@ export async function checkFactContradictions(
       const overlap = keywordOverlap(statKws, factKws);
 
       // Only consider facts with >40% keyword overlap as candidates
-      if (overlap < 0.4) continue;
+      if (overlap < 0.4) {continue;}
 
       const detection = detectContradiction(statement, row.content);
-      if (!detection) continue;
+      if (!detection) {continue;}
 
       contradictions.push({
         responseStatement: statement,
@@ -393,15 +393,15 @@ export async function identifyNewFactCandidates(
   context: AIContext,
   statements: string[],
 ): Promise<string[]> {
-  if (statements.length === 0) return [];
+  if (statements.length === 0) {return [];}
 
   const candidates: string[] = [];
 
   for (const statement of statements) {
-    if (candidates.length >= MAX_NEW_CANDIDATES) break;
+    if (candidates.length >= MAX_NEW_CANDIDATES) {break;}
 
     const keywords = extractKeywords(statement);
-    if (keywords.length === 0) continue;
+    if (keywords.length === 0) {continue;}
 
     const conditions = keywords
       .slice(0, 5)

@@ -110,7 +110,7 @@ const MAX_SHARED_RESULTS_CHARS = 2000;
  * array will be empty.
  */
 function splitIntoSections(context: string): Array<{ header: string; body: string }> {
-  if (!context) return [];
+  if (!context) {return [];}
 
   const lines = context.split('\n');
   const sections: Array<{ header: string; body: string }> = [];
@@ -207,13 +207,13 @@ export function filterContextByAreas(
   includeAreas: string[],
   excludeAreas: string[]
 ): string {
-  if (!context) return context;
-  if (includeAreas.length === 0 && excludeAreas.length === 0) return context;
+  if (!context) {return context;}
+  if (includeAreas.length === 0 && excludeAreas.length === 0) {return context;}
 
   const sections = splitIntoSections(context);
 
   // No recognised section structure → return as-is
-  if (sections.length === 0) return context;
+  if (sections.length === 0) {return context;}
 
   // Determine which sections match the include keywords
   const includedSections = includeAreas.length > 0
@@ -221,7 +221,7 @@ export function filterContextByAreas(
     : sections;
 
   // If nothing matches includeAreas → return full context (fallback)
-  if (includedSections.length === 0) return context;
+  if (includedSections.length === 0) {return context;}
 
   // Apply exclude filter
   const finalSections = excludeAreas.length > 0
@@ -324,13 +324,13 @@ export function buildTeamContexts(
  * stays within MAX_SHARED_RESULTS_CHARS.
  */
 function truncateSharedResults(results: string[]): string[] {
-  if (results.length === 0) return [];
+  if (results.length === 0) {return [];}
 
   const truncated: string[] = [];
   let remaining = MAX_SHARED_RESULTS_CHARS;
 
   for (const result of results) {
-    if (remaining <= 0) break;
+    if (remaining <= 0) {break;}
     if (result.length <= remaining) {
       truncated.push(result);
       remaining -= result.length;

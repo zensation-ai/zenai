@@ -205,7 +205,7 @@ class MCPAutoConfigService {
     enabled: boolean;
   } | null {
     const template = this.getSetupTemplate(serverName);
-    if (!template) return null;
+    if (!template) {return null;}
 
     const config: {
       name: string;

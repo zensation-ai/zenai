@@ -261,7 +261,7 @@ export function tagEmotion(text: string, contextDomain?: string): EmotionalTag {
   // Check each word against lexicons
   for (const word of words) {
     const cleanWord = word.replace(/[.,!?;:'"()[\]{}]/g, '');
-    if (cleanWord.length < 2) continue;
+    if (cleanWord.length < 2) {continue;}
 
     const posIntensity = POSITIVE_WORDS.get(cleanWord);
     if (posIntensity !== undefined) {

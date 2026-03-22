@@ -73,7 +73,7 @@ export function captureException(
   error: Error | unknown,
   context?: Record<string, unknown>
 ): void {
-  if (!sentryInitialized) return;
+  if (!sentryInitialized) {return;}
 
   Sentry.withScope((scope) => {
     if (context) {
@@ -91,7 +91,7 @@ export function captureMessage(
   level: 'fatal' | 'error' | 'warning' | 'info' | 'debug' = 'info',
   context?: Record<string, unknown>
 ): void {
-  if (!sentryInitialized) return;
+  if (!sentryInitialized) {return;}
 
   Sentry.withScope((scope) => {
     if (context) {
@@ -105,7 +105,7 @@ export function captureMessage(
  * Set user context for Sentry (call after authentication).
  */
 export function setUser(user: { id: string; email?: string; role?: string } | null): void {
-  if (!sentryInitialized) return;
+  if (!sentryInitialized) {return;}
   Sentry.setUser(user);
 }
 
@@ -113,7 +113,7 @@ export function setUser(user: { id: string; email?: string; role?: string } | nu
  * Flush pending events before process exit.
  */
 export async function flushSentry(timeout = 2000): Promise<void> {
-  if (!sentryInitialized) return;
+  if (!sentryInitialized) {return;}
   await Sentry.flush(timeout);
 }
 

@@ -64,8 +64,8 @@ export function predictNextIntent(
   lastIntent?: string,
 ): UserPrediction {
   const basis: string[] = [];
-  let intentScores = new Map<string, number>();
-  let domainScores = new Map<string, number>();
+  const intentScores = new Map<string, number>();
+  const domainScores = new Map<string, number>();
   let totalWeight = 0;
 
   // --- Temporal signal (weight 0.4) ---
@@ -279,11 +279,11 @@ export async function makePrediction(
       };
     }
 
-    const activities = result.rows.map((r: any) => ({
-      timestamp: new Date(r.timestamp),
-      domain: r.domain,
-      intent: r.intent,
-      entities: typeof r.entities === 'string' ? JSON.parse(r.entities) : (r.entities || []),
+    const activities = result.rows.map((r: Record<string, unknown>) => ({
+      timestamp: new Date(r.timestamp as string),
+      domain: r.domain as string,
+      intent: r.intent as string,
+      entities: typeof r.entities === 'string' ? JSON.parse(r.entities) : ((r.entities as string[]) || []),
     }));
 
     const temporalPatterns = extractTemporalPatterns(activities);

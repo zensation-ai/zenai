@@ -152,7 +152,7 @@ export class HybridRetriever {
     limit: number
   ): Promise<HybridRetrievalResult[]> {
     const embedding = await generateEmbedding(query);
-    if (!embedding || embedding.length === 0) return [];
+    if (!embedding || embedding.length === 0) {return [];}
 
     const result = await queryContext(
       context,
@@ -186,7 +186,7 @@ export class HybridRetriever {
   ): Promise<HybridRetrievalResult[]> {
     // Step 1: Extract entities from query
     const queryEntities = await this.extractQueryEntities(query);
-    if (queryEntities.length === 0) return [];
+    if (queryEntities.length === 0) {return [];}
 
     // Step 2: Find matching knowledge_entities
     const matchingEntities = await queryContext(
@@ -206,7 +206,7 @@ export class HybridRetriever {
          LIMIT 10`,
         [queryEntities.map(e => `%${e.toLowerCase()}%`)]
       );
-      if (fuzzyResult.rows.length === 0) return [];
+      if (fuzzyResult.rows.length === 0) {return [];}
       matchingEntities.rows.push(...fuzzyResult.rows);
     }
 
@@ -314,7 +314,7 @@ export class HybridRetriever {
   ): Promise<HybridRetrievalResult[]> {
     // Sanitize query for PostgreSQL ts_query
     const sanitized = query.replace(/[^\w\s]/g, ' ').trim();
-    if (!sanitized) return [];
+    if (!sanitized) {return [];}
 
     // Split into words and join with & for AND search
     const tsQuery = sanitized
@@ -323,7 +323,7 @@ export class HybridRetriever {
       .map(w => `${w}:*`)
       .join(' & ');
 
-    if (!tsQuery) return [];
+    if (!tsQuery) {return [];}
 
     const result = await queryContext(
       context,

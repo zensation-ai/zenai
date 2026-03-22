@@ -1,5 +1,3 @@
-import type { Router } from 'express';
-
 export interface Module {
   name: string;
 

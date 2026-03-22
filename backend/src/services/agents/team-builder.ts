@@ -140,7 +140,7 @@ export const SPECIALIST_LIBRARY: SpecialistProfile[] = [
  * Counts case-insensitive keyword matches and normalises to [0, 1].
  */
 export function scoreSpecialist(goal: string, specialist: SpecialistProfile): number {
-  if (!goal || !specialist.triggerKeywords.length) return 0;
+  if (!goal || !specialist.triggerKeywords.length) {return 0;}
 
   const lowerGoal = goal.toLowerCase();
   let matchCount = 0;
@@ -151,7 +151,7 @@ export function scoreSpecialist(goal: string, specialist: SpecialistProfile): nu
     }
   }
 
-  if (matchCount === 0) return 0;
+  if (matchCount === 0) {return 0;}
   // Normalise: score = matched / total keywords, capped at 1
   return Math.min(matchCount / specialist.triggerKeywords.length, 1);
 }

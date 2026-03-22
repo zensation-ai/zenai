@@ -126,7 +126,7 @@ router.get('/:context/adaptive/style', asyncHandler(async (req, res) => {
        ORDER BY created_at DESC LIMIT 50`,
     );
 
-    const messages = (result.rows ?? []).map((r: any) => ({ text: r.text || '' }));
+    const messages = (result.rows ?? []).map((r: Record<string, unknown>) => ({ text: (r.text as string) || '' }));
 
     if (messages.length === 0) {
       res.json({

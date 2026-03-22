@@ -220,7 +220,7 @@ let _recordPoolMetric: ((event: 'acquire' | 'release' | 'error' | 'waiting') => 
 function emitPoolMetric(event: 'acquire' | 'release' | 'error' | 'waiting'): void {
   if (!_recordPoolMetric) {
     try {
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
+       
       const metrics = require('../services/observability/metrics');
       _recordPoolMetric = metrics.recordPoolMetric;
     } catch {

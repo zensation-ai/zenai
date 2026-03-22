@@ -40,7 +40,7 @@ class SleepComputeEngine {
    */
   private async acquireLock(key: string, ttlMs: number): Promise<string | null> {
     const redis = getRedisClient();
-    if (!redis) return uuidv4(); // No Redis = allow execution (single instance fallback)
+    if (!redis) {return uuidv4();} // No Redis = allow execution (single instance fallback)
 
     const lockValue = uuidv4();
     try {
@@ -57,7 +57,7 @@ class SleepComputeEngine {
    */
   private async releaseLock(key: string, lockValue: string): Promise<void> {
     const redis = getRedisClient();
-    if (!redis) return;
+    if (!redis) {return;}
 
     try {
       // Lua script for atomic compare-and-delete
@@ -473,7 +473,7 @@ class SleepComputeEngine {
     const used = new Set<number>();
 
     for (let i = 0; i < episodes.length; i++) {
-      if (used.has(i)) continue;
+      if (used.has(i)) {continue;}
       const group = [episodes[i]];
       used.add(i);
 
@@ -482,7 +482,7 @@ class SleepComputeEngine {
       );
 
       for (let j = i + 1; j < episodes.length; j++) {
-        if (used.has(j)) continue;
+        if (used.has(j)) {continue;}
         const words2 = new Set(
           String(episodes[j].content || '').toLowerCase().split(/\s+/).filter((w: string) => w.length > 3)
         );
@@ -490,7 +490,7 @@ class SleepComputeEngine {
         // Calculate Jaccard similarity
         let intersection = 0;
         for (const w of words1) {
-          if (words2.has(w)) intersection++;
+          if (words2.has(w)) {intersection++;}
         }
         const union = words1.size + words2.size - intersection;
         const similarity = union > 0 ? intersection / union : 0;

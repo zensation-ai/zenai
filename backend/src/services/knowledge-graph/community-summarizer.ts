@@ -80,7 +80,7 @@ export class CommunitySummarizer {
         const entities = entitiesResult.rows;
         const relations = relationsResult.rows;
 
-        if (entities.length === 0) continue;
+        if (entities.length === 0) {continue;}
 
         // Step 3: Generate summary via Claude
         const { summary, keyThemes } = await this.summarizeCommunity(entities, relations);
@@ -201,7 +201,7 @@ export class CommunitySummarizer {
   ): Promise<CommunitySummary[]> {
     try {
       const embedding = await generateEmbedding(query);
-      if (!embedding || embedding.length === 0) return [];
+      if (!embedding || embedding.length === 0) {return [];}
 
       const result = await queryContext(
         context,

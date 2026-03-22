@@ -74,11 +74,11 @@ import {
 import type { PoolStatsResult } from '../../../utils/database-context';
 
 // Access test helpers from mocks
-// eslint-disable-next-line @typescript-eslint/no-require-imports
+ 
 const { __testListeners: poolListeners } = require('pg') as {
   __testListeners: Record<string, Array<(...args: unknown[]) => void>>;
 };
-// eslint-disable-next-line @typescript-eslint/no-require-imports
+ 
 const { __testAdd: mockAddFn } = require('@opentelemetry/api') as { __testAdd: jest.Mock };
 
 describe('Pool Monitoring', () => {

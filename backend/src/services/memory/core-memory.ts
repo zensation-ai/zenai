@@ -122,7 +122,7 @@ export async function getCoreMemoryBlock(
   `;
 
   const result = await queryContext(context, sql, [userId, blockType]);
-  if (result.rows.length === 0) return null;
+  if (result.rows.length === 0) {return null;}
   return rowToBlock(result.rows[0]);
 }
 
@@ -203,7 +203,7 @@ export async function appendToCoreMemoryBlock(
  */
 export function buildCoreMemoryPromptSection(blocks: CoreMemoryBlock[]): string {
   const nonEmpty = blocks.filter(b => b.content && b.content.trim().length > 0);
-  if (nonEmpty.length === 0) return '';
+  if (nonEmpty.length === 0) {return '';}
 
   const sections = nonEmpty.map(block => {
     const label = BLOCK_LABELS[block.blockType];

@@ -40,9 +40,9 @@ declare global {
 function isLikelyJwt(token: string): boolean {
   // JWTs have 3 base64url segments separated by dots
   const parts = token.split('.');
-  if (parts.length !== 3) return false;
+  if (parts.length !== 3) {return false;}
   // API keys start with "ab_" prefix
-  if (token.startsWith('ab_')) return false;
+  if (token.startsWith('ab_')) {return false;}
   return true;
 }
 
@@ -98,9 +98,10 @@ export async function jwtAuth(req: Request, res: Response, next: NextFunction): 
       role: payload.role,
     };
 
-    if ((payload as any).isDemo) {
-      req.jwtUser!.isDemo = true;
-      req.jwtUser!.plan = (payload as any).plan || 'pro';
+    const payloadRecord = payload as unknown as Record<string, unknown>;
+    if (payloadRecord.isDemo && req.jwtUser) {
+      req.jwtUser.isDemo = true;
+      req.jwtUser.plan = (payloadRecord.plan as string) || 'pro';
       // Force demo context
       if (req.params.context) {
         req.params.context = 'demo';

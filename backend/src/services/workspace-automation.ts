@@ -397,7 +397,7 @@ export async function updateAutomation(
       values.push(updates.enabled);
     }
 
-    if (fields.length === 0) return getAutomation(context, automationId, userId);
+    if (fields.length === 0) {return getAutomation(context, automationId, userId);}
 
     fields.push(`updated_at = NOW()`);
     values.push(automationId, userId);
@@ -548,7 +548,7 @@ export async function getExecutionHistory(
   try {
     // Verify ownership
     const automation = await getAutomation(context, automationId, userId);
-    if (!automation) return [];
+    if (!automation) {return [];}
 
     const result = await queryContext(
       context,
@@ -574,7 +574,7 @@ export function evaluateConditions(
   conditions: AutomationCondition[],
   data: Record<string, unknown>,
 ): boolean {
-  if (conditions.length === 0) return true;
+  if (conditions.length === 0) {return true;}
 
   return conditions.every(condition => {
     const value = getNestedValue(data, condition.field);
@@ -635,7 +635,7 @@ export function matchesTrigger(
   automation: WorkspaceAutomation,
   eventType: string,
 ): boolean {
-  if (automation.trigger_type !== 'event') return false;
-  if (!automation.enabled) return false;
+  if (automation.trigger_type !== 'event') {return false;}
+  if (!automation.enabled) {return false;}
   return automation.trigger_config.eventType === eventType;
 }

@@ -103,7 +103,7 @@ const sseClients = new Map<string, Set<Response>>();
 
 export function notifySuggestionClients(context: AIContext, event: Record<string, unknown>): void {
   const clients = sseClients.get(context);
-  if (!clients || clients.size === 0) return;
+  if (!clients || clients.size === 0) {return;}
   const data = JSON.stringify(event);
   for (const res of clients) {
     try { res.write(`data: ${data}\n\n`); } catch { clients.delete(res); }

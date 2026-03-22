@@ -26,7 +26,7 @@ export interface InformationGainEvent {
 // ---------------------------------------------------------------------------
 
 export function cosineSimilarity(a: number[], b: number[]): number {
-  if (a.length !== b.length || a.length === 0) return 0;
+  if (a.length !== b.length || a.length === 0) {return 0;}
 
   let dot = 0;
   let magA = 0;
@@ -39,7 +39,7 @@ export function cosineSimilarity(a: number[], b: number[]): number {
   }
 
   const denominator = Math.sqrt(magA) * Math.sqrt(magB);
-  if (denominator === 0) return 0;
+  if (denominator === 0) {return 0;}
 
   return dot / denominator;
 }
@@ -52,7 +52,7 @@ export function computeSurpriseScore(
   queryEmbedding: number[],
   retrievedEmbeddings: number[][],
 ): number {
-  if (retrievedEmbeddings.length === 0) return 1.0;
+  if (retrievedEmbeddings.length === 0) {return 1.0;}
 
   const totalSim = retrievedEmbeddings.reduce(
     (sum, emb) => sum + cosineSimilarity(queryEmbedding, emb),
@@ -72,7 +72,7 @@ export function computeNoveltyScore(
   retrievedIds: string[],
   familiarityBuffer: Set<string>,
 ): number {
-  if (retrievedIds.length === 0) return 0;
+  if (retrievedIds.length === 0) {return 0;}
 
   const newCount = retrievedIds.filter((id) => !familiarityBuffer.has(id)).length;
   return newCount / retrievedIds.length;
@@ -101,12 +101,14 @@ export class FamiliarityBuffer {
   }
 
   add(id: string): void {
-    if (this.maxSize <= 0) return;
-    if (this.items.has(id)) return;
+    if (this.maxSize <= 0) {return;}
+    if (this.items.has(id)) {return;}
 
     if (this.order.length >= this.maxSize) {
-      const oldest = this.order.shift()!;
-      this.items.delete(oldest);
+      const oldest = this.order.shift();
+      if (oldest !== undefined) {
+        this.items.delete(oldest);
+      }
     }
 
     this.items.add(id);

@@ -77,7 +77,7 @@ class QueueService {
     }
 
     try {
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
+       
       const { Queue } = require('bullmq');
       const connection = { url: redisUrl };
 

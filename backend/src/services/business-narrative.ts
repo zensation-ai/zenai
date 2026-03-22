@@ -106,26 +106,26 @@ export interface TrendData {
 // ===========================================
 
 function calculateTrend(current: number, previous: number): TrendDirection {
-  if (previous === 0) return current > 0 ? 'up' : 'stable';
+  if (previous === 0) {return current > 0 ? 'up' : 'stable';}
   const change = ((current - previous) / Math.abs(previous)) * 100;
-  if (change > 2) return 'up';
-  if (change < -2) return 'down';
+  if (change > 2) {return 'up';}
+  if (change < -2) {return 'down';}
   return 'stable';
 }
 
 function calculateChangePercent(current: number, previous: number): number {
-  if (previous === 0) return current > 0 ? 100 : 0;
+  if (previous === 0) {return current > 0 ? 100 : 0;}
   return Math.round(((current - previous) / Math.abs(previous)) * 100 * 10) / 10;
 }
 
 function detectAnomalies(values: number[], currentValue: number, metricName: string): AnomalyInfo | null {
-  if (values.length < 3) return null;
+  if (values.length < 3) {return null;}
 
   const mean = values.reduce((a, b) => a + b, 0) / values.length;
   const variance = values.reduce((a, b) => a + (b - mean) ** 2, 0) / values.length;
   const stdDev = Math.sqrt(variance);
 
-  if (stdDev === 0) return null;
+  if (stdDev === 0) {return null;}
 
   const deviation = Math.abs(currentValue - mean) / stdDev;
 
@@ -146,10 +146,10 @@ function detectAnomalies(values: number[], currentValue: number, metricName: str
 }
 
 function formatNumber(value: number, unit?: string): string {
-  if (unit === '%') return `${value.toFixed(1)}%`;
-  if (unit === 'EUR' || unit === 'USD') return `${value.toLocaleString('de-DE', { minimumFractionDigits: 2 })} ${unit}`;
-  if (value >= 1000000) return `${(value / 1000000).toFixed(1)}M`;
-  if (value >= 1000) return `${(value / 1000).toFixed(1)}K`;
+  if (unit === '%') {return `${value.toFixed(1)}%`;}
+  if (unit === 'EUR' || unit === 'USD') {return `${value.toLocaleString('de-DE', { minimumFractionDigits: 2 })} ${unit}`;}
+  if (value >= 1000000) {return `${(value / 1000000).toFixed(1)}M`;}
+  if (value >= 1000) {return `${(value / 1000).toFixed(1)}K`;}
   return value.toString();
 }
 
@@ -170,7 +170,7 @@ function generateNarrativeText(section: string, metrics: MetricPoint[]): string 
     parts.push(`${m.label}: ${formatNumber(m.value, m.unit)} ${arrow}${change}`);
   }
 
-  if (parts.length === 0) return `No ${section.toLowerCase()} data available for this period.`;
+  if (parts.length === 0) {return `No ${section.toLowerCase()} data available for this period.`;}
   return parts.join('. ') + '.';
 }
 
@@ -368,8 +368,8 @@ export async function generateDailyDigest(
   ];
 
   const revenueAnomalies = revenueAnomaly ? [revenueAnomaly] : [];
-  if (revenueAnomaly) allAnomalies.push(revenueAnomaly);
-  if (finance.currentRevenue === 0) allActionItems.push('Keine Umsaetze heute erfasst - Pruefen Sie die Zahlungseingaenge.');
+  if (revenueAnomaly) {allAnomalies.push(revenueAnomaly);}
+  if (finance.currentRevenue === 0) {allActionItems.push('Keine Umsaetze heute erfasst - Pruefen Sie die Zahlungseingaenge.');}
 
   sections.push({
     title: 'Revenue',
@@ -386,8 +386,8 @@ export async function generateDailyDigest(
   const emailChange = calculateChangePercent(email.todayCount, email.counts[1] ?? 0);
   const emailAnomaly = detectAnomalies(email.counts, email.todayCount, 'Email-Volumen');
   const emailAnomalies = emailAnomaly ? [emailAnomaly] : [];
-  if (emailAnomaly) allAnomalies.push(emailAnomaly);
-  if (email.importantCount > 0) allActionItems.push(`${email.importantCount} wichtige E-Mail(s) erfordern Aufmerksamkeit.`);
+  if (emailAnomaly) {allAnomalies.push(emailAnomaly);}
+  if (email.importantCount > 0) {allActionItems.push(`${email.importantCount} wichtige E-Mail(s) erfordern Aufmerksamkeit.`);}
 
   const emailMetrics: MetricPoint[] = [
     { label: 'E-Mails heute', value: email.todayCount, trend: emailTrend, changePercent: emailChange },
@@ -407,7 +407,7 @@ export async function generateDailyDigest(
   const tasks = await fetchTaskMetrics(context, userId, 7);
   const taskTrend = calculateTrend(tasks.currentCompletionRate, tasks.completionRates[1] ?? 0);
   const taskChange = calculateChangePercent(tasks.currentCompletionRate, tasks.completionRates[1] ?? 0);
-  if (tasks.overdueTasks > 0) allActionItems.push(`${tasks.overdueTasks} ueberfaellige Aufgabe(n) bearbeiten.`);
+  if (tasks.overdueTasks > 0) {allActionItems.push(`${tasks.overdueTasks} ueberfaellige Aufgabe(n) bearbeiten.`);}
 
   const taskMetrics: MetricPoint[] = [
     { label: 'Abschlussrate', value: tasks.currentCompletionRate, unit: '%', trend: taskTrend, changePercent: taskChange },
@@ -464,10 +464,10 @@ export async function generateDailyDigest(
 
   // Overall narrative
   const overallParts: string[] = [];
-  if (finance.currentRevenue > 0) overallParts.push(`Umsatz ${formatNumber(finance.currentRevenue, 'EUR')}`);
-  if (email.todayCount > 0) overallParts.push(`${email.todayCount} E-Mails`);
-  if (tasks.completedTasks > 0) overallParts.push(`${tasks.completedTasks}/${tasks.totalTasks} Aufgaben erledigt`);
-  if (calendar.todayCount > 0) overallParts.push(`${calendar.todayCount} Termine`);
+  if (finance.currentRevenue > 0) {overallParts.push(`Umsatz ${formatNumber(finance.currentRevenue, 'EUR')}`);}
+  if (email.todayCount > 0) {overallParts.push(`${email.todayCount} E-Mails`);}
+  if (tasks.completedTasks > 0) {overallParts.push(`${tasks.completedTasks}/${tasks.totalTasks} Aufgaben erledigt`);}
+  if (calendar.todayCount > 0) {overallParts.push(`${calendar.todayCount} Termine`);}
 
   const overallNarrative = overallParts.length > 0
     ? `Tagesuebersicht: ${overallParts.join(', ')}.${allAnomalies.length > 0 ? ` ${allAnomalies.length} Anomalie(n) erkannt.` : ''}`
@@ -570,11 +570,11 @@ export async function detectAllAnomalies(
 
   const finance = await fetchFinanceMetrics(context, userId, 7);
   const revenueAnomaly = detectAnomalies(finance.revenue, finance.currentRevenue, 'Revenue');
-  if (revenueAnomaly) anomalies.push(revenueAnomaly);
+  if (revenueAnomaly) {anomalies.push(revenueAnomaly);}
 
   const email = await fetchEmailActivity(context, userId, 7);
   const emailAnomaly = detectAnomalies(email.counts, email.todayCount, 'Email-Volumen');
-  if (emailAnomaly) anomalies.push(emailAnomaly);
+  if (emailAnomaly) {anomalies.push(emailAnomaly);}
 
   return anomalies;
 }
@@ -630,7 +630,7 @@ export async function updateKPI(
   if (data.currentValue !== undefined) { sets.push(`current_value = $${idx++}`); params.push(data.currentValue); sets.push(`last_calculated_at = NOW()`); }
   if (data.trend !== undefined) { sets.push(`trend = $${idx++}`); params.push(data.trend); }
 
-  if (sets.length === 0) return null;
+  if (sets.length === 0) {return null;}
 
   const result = await queryContext(
     context,

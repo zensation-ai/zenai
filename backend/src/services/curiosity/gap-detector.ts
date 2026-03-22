@@ -90,10 +90,10 @@ export function suggestAction(
   factCount: number,
   avgConfidence: number,
 ): string {
-  if (gapScore > 0.8 && factCount === 0) return 'web_research';
-  if (gapScore > 0.6 && avgConfidence < 0.3) return 'web_research';
-  if (gapScore > 0.5 && factCount > 0) return 'consolidate_existing';
-  if (gapScore > 0.3) return 'ask_user';
+  if (gapScore > 0.8 && factCount === 0) {return 'web_research';}
+  if (gapScore > 0.6 && avgConfidence < 0.3) {return 'web_research';}
+  if (gapScore > 0.5 && factCount > 0) {return 'consolidate_existing';}
+  if (gapScore > 0.3) {return 'ask_user';}
   return 'monitor';
 }
 
@@ -110,14 +110,14 @@ function extractKeywords(text: string): string[] {
 }
 
 export function groupQueriesByTopic(queries: QueryInput[]): TopicGroup[] {
-  if (queries.length === 0) return [];
+  if (queries.length === 0) {return [];}
 
   // Build keyword-to-query index
   const groups = new Map<string, { domain: string; count: number }>();
 
   for (const q of queries) {
     const keywords = extractKeywords(q.text);
-    if (keywords.length === 0) continue;
+    if (keywords.length === 0) {continue;}
 
     // Use sorted keywords as group key for dedup
     const key = keywords.sort().join(' ');
@@ -135,29 +135,29 @@ export function groupQueriesByTopic(queries: QueryInput[]): TopicGroup[] {
   const used = new Set<number>();
 
   for (let i = 0; i < entries.length; i++) {
-    if (used.has(i)) continue;
+    if (used.has(i)) {continue;}
 
     const [keyA, valA] = entries[i];
     const wordsA = new Set(keyA.split(' '));
-    let combinedWords = new Set(wordsA);
+    const combinedWords = new Set(wordsA);
     let totalCount = valA.count;
-    let domain = valA.domain;
+    const domain = valA.domain;
 
     for (let j = i + 1; j < entries.length; j++) {
-      if (used.has(j)) continue;
+      if (used.has(j)) {continue;}
       const [keyB, valB] = entries[j];
       const wordsB = new Set(keyB.split(' '));
 
       // Jaccard-like overlap check
       let overlap = 0;
       for (const w of wordsB) {
-        if (wordsA.has(w)) overlap++;
+        if (wordsA.has(w)) {overlap++;}
       }
       const union = new Set([...wordsA, ...wordsB]).size;
       if (union > 0 && overlap / union >= 0.3) {
         used.add(j);
         totalCount += valB.count;
-        for (const w of wordsB) combinedWords.add(w);
+        for (const w of wordsB) {combinedWords.add(w);}
       }
     }
 
@@ -226,9 +226,9 @@ export async function detectGaps(
     }
 
     // Build query inputs for grouping
-    const queryInputs: QueryInput[] = queryResult.rows.map((r: any) => ({
-      text: r.query_text,
-      domain: r.domain || context,
+    const queryInputs: QueryInput[] = queryResult.rows.map((r: Record<string, unknown>) => ({
+      text: r.query_text as string,
+      domain: (r.domain as string) || context,
     }));
 
     // Group queries by topic

@@ -28,20 +28,20 @@ export interface NegationResult {
  * Each pattern includes a regex and the group index for the negation target.
  */
 const NEGATION_PATTERNS_WITH_TARGET = [
-  // English patterns
-  { regex: /\b(?:does(?:n't|n't| not)|doesn't)\s+(\w+(?:\s+\w+)?)/i, lang: 'en' as const },
-  { regex: /\b(?:is(?:n't|n't| not)|isn't)\s+(\w+(?:\s+\w+)?)/i, lang: 'en' as const },
-  { regex: /\b(?:has(?:n't|n't| not)|hasn't)\s+(\w+(?:\s+\w+)?)/i, lang: 'en' as const },
-  { regex: /\b(?:do(?:n't|n't| not)|don't)\s+(\w+(?:\s+\w+)?)/i, lang: 'en' as const },
-  { regex: /\bnot\s+(\w+(?:\s+\w+)?)/i, lang: 'en' as const },
-  { regex: /\bnever\s+(\w+(?:\s+\w+)?)/i, lang: 'en' as const },
-  { regex: /\bno longer\s+(\w+(?:\s+\w+)?)/i, lang: 'en' as const },
-  { regex: /\bno\s+(\w+(?:\s+\w+)?)/i, lang: 'en' as const },
+  // English patterns — capture up to 2 words after negation
+  { regex: /\bdoes(?:n't| not) (\S+ ?\S*)/i, lang: 'en' as const },
+  { regex: /\bisn't (\S+ ?\S*)/i, lang: 'en' as const },
+  { regex: /\bhasn't (\S+ ?\S*)/i, lang: 'en' as const },
+  { regex: /\bdon't (\S+ ?\S*)/i, lang: 'en' as const },
+  { regex: /\bnot (\S+ ?\S*)/i, lang: 'en' as const },
+  { regex: /\bnever (\S+ ?\S*)/i, lang: 'en' as const },
+  { regex: /\bno longer (\S+ ?\S*)/i, lang: 'en' as const },
+  { regex: /\bno (\S+ ?\S*)/i, lang: 'en' as const },
   // German patterns
-  { regex: /\bnicht\s+(?:mehr\s+)?(\w+(?:\s+\w+)?)/i, lang: 'de' as const },
-  { regex: /\bkein(?:e|en|em|er|es)?\s+(\w+(?:\s+\w+)?)/i, lang: 'de' as const },
-  { regex: /\bnie(?:mals)?\s+(\w+(?:\s+\w+)?)/i, lang: 'de' as const },
-  { regex: /\bnicht mehr\s+(\w+(?:\s+\w+)?)/i, lang: 'de' as const },
+  { regex: /\bnicht (?:mehr )?(\S+ ?\S*)/i, lang: 'de' as const },
+  { regex: /\bkeine?n? (\S+ ?\S*)/i, lang: 'de' as const },
+  { regex: /\bnie (\S+ ?\S*)/i, lang: 'de' as const },
+  { regex: /\bnicht mehr (\S+ ?\S*)/i, lang: 'de' as const },
 ] as const;
 
 /** Simple negation keyword patterns (no target extraction) - order matters for counting */
@@ -142,11 +142,11 @@ export function detectNegation(text: string): NegationResult {
 export function computeStringSimilarity(a: string, b: string): number {
   const wordsA = new Set(a.toLowerCase().split(/\s+/).filter(w => w.length > 2));
   const wordsB = new Set(b.toLowerCase().split(/\s+/).filter(w => w.length > 2));
-  if (wordsA.size === 0 || wordsB.size === 0) return 0;
+  if (wordsA.size === 0 || wordsB.size === 0) {return 0;}
 
   let intersection = 0;
   for (const word of wordsA) {
-    if (wordsB.has(word)) intersection++;
+    if (wordsB.has(word)) {intersection++;}
   }
   const union = new Set([...wordsA, ...wordsB]).size;
   return union > 0 ? intersection / union : 0;

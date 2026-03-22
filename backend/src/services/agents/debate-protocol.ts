@@ -150,8 +150,8 @@ export function isDebateComplete(
   rounds: DebateRound[],
   config: DebateConfig = DEFAULT_DEBATE_CONFIG,
 ): boolean {
-  if (rounds.length === 0) return false;
-  if (rounds.length >= config.maxRounds) return true;
+  if (rounds.length === 0) {return false;}
+  if (rounds.length >= config.maxRounds) {return true;}
 
   const lastResolution = rounds[rounds.length - 1].resolution;
   return lastResolution === 'accepted' || lastResolution === 'escalated';

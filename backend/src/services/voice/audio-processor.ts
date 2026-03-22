@@ -45,7 +45,7 @@ export class AudioProcessor {
    */
   isSentenceEnd(text: string): boolean {
     const trimmed = text.trimEnd();
-    if (trimmed.length === 0) return false;
+    if (trimmed.length === 0) {return false;}
     return /[.!?]\s*$/.test(trimmed);
   }
 
@@ -53,7 +53,7 @@ export class AudioProcessor {
    * Split text into sentence chunks for progressive TTS
    */
   splitIntoSentences(text: string): string[] {
-    if (!text || text.trim().length === 0) return [];
+    if (!text || text.trim().length === 0) {return [];}
 
     const sentences: string[] = [];
     // Split on sentence-ending punctuation followed by whitespace
@@ -73,8 +73,8 @@ export class AudioProcessor {
    * Concatenate multiple audio buffers
    */
   concatenateAudio(chunks: Buffer[]): Buffer {
-    if (chunks.length === 0) return Buffer.alloc(0);
-    if (chunks.length === 1) return chunks[0];
+    if (chunks.length === 0) {return Buffer.alloc(0);}
+    if (chunks.length === 1) {return chunks[0];}
     return Buffer.concat(chunks);
   }
 
@@ -171,10 +171,10 @@ export class AudioProcessor {
    * Calculate Root Mean Square (RMS) amplitude from 16-bit PCM audio.
    */
   calculateRMS(audioBuffer: Buffer): number {
-    if (audioBuffer.length < 2) return 0;
+    if (audioBuffer.length < 2) {return 0;}
 
     const sampleCount = Math.floor(audioBuffer.length / 2);
-    if (sampleCount === 0) return 0;
+    if (sampleCount === 0) {return 0;}
 
     let sumOfSquares = 0;
     for (let i = 0; i < sampleCount; i++) {
@@ -196,7 +196,7 @@ export class AudioProcessor {
   ): number {
     const bytesPerSample = bitsPerSample / 8;
     const bytesPerSecond = sampleRate * channels * bytesPerSample;
-    if (bytesPerSecond === 0) return 0;
+    if (bytesPerSecond === 0) {return 0;}
     return Math.round((bufferSize / bytesPerSecond) * 1000);
   }
 }

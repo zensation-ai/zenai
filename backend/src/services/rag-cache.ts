@@ -202,7 +202,7 @@ export const ragResultCache = {
       if (cacheKeys && cacheKeys.length > 0) {
         for (const key of cacheKeys) {
           const deleted = await cache.del(key);
-          if (deleted) totalDeleted++;
+          if (deleted) {totalDeleted++;}
         }
         await cache.del(mappingKey);
       }

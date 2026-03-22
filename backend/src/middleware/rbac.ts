@@ -65,7 +65,7 @@ const PERMISSION_MATRIX: Record<Role, Set<PermissionAction>> = {
  */
 export function hasPermission(role: string, action: PermissionAction): boolean {
   const permissions = PERMISSION_MATRIX[role as Role];
-  if (!permissions) return false;
+  if (!permissions) {return false;}
   return permissions.has(action);
 }
 

@@ -124,7 +124,7 @@ export async function findTransitiveInferences(
     type_2: string;
   }>) {
     // Skip self-loops
-    if (row.target_id === row.source_id) continue;
+    if (row.target_id === row.source_id) {continue;}
     // Skip if direct relation already exists in either direction
     if (
       directSet.has(`${row.source_id}:${row.target_id}`) ||
@@ -133,7 +133,7 @@ export async function findTransitiveInferences(
       continue;
     }
 
-    const confidence = row.strength_1 * row.strength_2 * CONFIDENCE_DECAY; // hop=1 → decay^0=1... wait
+    // confidence = s1 * s2 * 0.7^(hops-1) where hops=2, so 0.7^1 = 0.7
     // confidence = s1 * s2 * 0.7^(hops-1) where hops=2, so 0.7^1 = 0.7
     const conf = row.strength_1 * row.strength_2 * Math.pow(CONFIDENCE_DECAY, 2 - 1);
 
@@ -190,7 +190,7 @@ export async function findTransitiveInferences(
       strength_2: number;
       strength_3: number;
     }>) {
-      if (row.target_id === row.source_id) continue;
+      if (row.target_id === row.source_id) {continue;}
       if (
         directSet.has(`${row.source_id}:${row.target_id}`) ||
         directSet.has(`${row.target_id}:${row.source_id}`)
@@ -431,7 +431,7 @@ export async function storeInferredFacts(
   context: AIContext | string,
   inferences: InferredRelation[],
 ): Promise<number> {
-  if (inferences.length === 0) return 0;
+  if (inferences.length === 0) {return 0;}
 
   const ctx = context as AIContext;
 

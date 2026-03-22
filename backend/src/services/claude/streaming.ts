@@ -164,7 +164,7 @@ const MAX_TOOL_ITERATIONS_HARD_CAP = 10;
  * Full result is still sent to Claude; only the SSE client gets truncated output.
  */
 function truncateForSSE(result: string): string {
-  if (result.length <= MAX_TOOL_RESULT_SSE_BYTES) return result;
+  if (result.length <= MAX_TOOL_RESULT_SSE_BYTES) {return result;}
   const truncated = result.substring(0, MAX_TOOL_RESULT_SSE_BYTES);
   return `${truncated}\n\n[Output truncated: ${result.length} bytes, showing first 64KB]`;
 }
@@ -174,7 +174,7 @@ function truncateForSSE(result: string): string {
  * Prevents token explosion from oversized tool outputs.
  */
 function truncateToolResult(result: string, maxSize: number = MAX_TOOL_RESULT_HISTORY_BYTES): string {
-  if (result.length <= maxSize) return result;
+  if (result.length <= maxSize) {return result;}
   const truncated = result.substring(0, maxSize);
   return `${truncated}\n\n[Result truncated: ${result.length} bytes, showing first ${Math.round(maxSize / 1024)}KB]`;
 }

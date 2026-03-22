@@ -146,7 +146,7 @@ export class MCPClientInstance {
    * List tools exposed by the remote server
    */
   async listTools(useCache = true): Promise<MCPExternalTool[]> {
-    if (useCache && this.cachedTools) return this.cachedTools;
+    if (useCache && this.cachedTools) {return this.cachedTools;}
 
     const result = await this.transport.request('tools/list');
     const tools = (result.tools as MCPExternalTool[]) || [];
@@ -172,7 +172,7 @@ export class MCPClientInstance {
    * List resources exposed by the remote server
    */
   async listResources(useCache = true): Promise<MCPExternalResource[]> {
-    if (useCache && this.cachedResources) return this.cachedResources;
+    if (useCache && this.cachedResources) {return this.cachedResources;}
 
     const result = await this.transport.request('resources/list');
     const resources = (result.resources as MCPExternalResource[]) || [];
@@ -270,7 +270,7 @@ export class MCPClientManager {
       }
 
       return client.getStatus();
-    } catch (error) {
+    } catch (_error) {
       // Store client even on failure so we can retry
       this.clients.set(config.id, client);
       return client.getStatus();
@@ -307,7 +307,7 @@ export class MCPClientManager {
    */
   async listTools(serverId: string): Promise<MCPExternalTool[]> {
     const client = this.clients.get(serverId);
-    if (!client) throw new Error(`MCP server not connected: ${serverId}`);
+    if (!client) {throw new Error(`MCP server not connected: ${serverId}`);}
     return client.listTools();
   }
 
@@ -316,7 +316,7 @@ export class MCPClientManager {
    */
   async callTool(serverId: string, toolName: string, args: Record<string, unknown>): Promise<MCPToolCallResult> {
     const client = this.clients.get(serverId);
-    if (!client) throw new Error(`MCP server not connected: ${serverId}`);
+    if (!client) {throw new Error(`MCP server not connected: ${serverId}`);}
     return client.callTool(toolName, args);
   }
 
@@ -325,7 +325,7 @@ export class MCPClientManager {
    */
   async listResources(serverId: string): Promise<MCPExternalResource[]> {
     const client = this.clients.get(serverId);
-    if (!client) throw new Error(`MCP server not connected: ${serverId}`);
+    if (!client) {throw new Error(`MCP server not connected: ${serverId}`);}
     return client.listResources();
   }
 
@@ -334,7 +334,7 @@ export class MCPClientManager {
    */
   async readResource(serverId: string, uri: string): Promise<MCPResourceReadResult> {
     const client = this.clients.get(serverId);
-    if (!client) throw new Error(`MCP server not connected: ${serverId}`);
+    if (!client) {throw new Error(`MCP server not connected: ${serverId}`);}
     return client.readResource(uri);
   }
 
@@ -343,7 +343,7 @@ export class MCPClientManager {
    */
   async healthCheck(serverId: string): Promise<boolean> {
     const client = this.clients.get(serverId);
-    if (!client) return false;
+    if (!client) {return false;}
     return client.healthCheck();
   }
 

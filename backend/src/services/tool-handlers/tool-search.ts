@@ -35,7 +35,7 @@ interface ToolEmbeddingEntry {
 // ===========================================
 
 function cosineSimilarity(a: number[], b: number[]): number {
-  if (a.length !== b.length || a.length === 0) return 0;
+  if (a.length !== b.length || a.length === 0) {return 0;}
 
   let dotProduct = 0;
   let normA = 0;

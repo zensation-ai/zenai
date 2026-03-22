@@ -19,7 +19,7 @@ interface MetricSnapshot {
 const metricSnapshots: MetricSnapshot[] = [];
 const MAX_SNAPSHOTS = 10_000;
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+ 
 type OtelInstrument = { add(value: number, attributes?: Record<string, string>): void } | { record(value: number, attributes?: Record<string, string>): void } | null;
 
 let tokenCounter: OtelInstrument = null;
@@ -53,7 +53,7 @@ export async function initMetrics(): Promise<boolean> {
   if (metricsInitialized) {return true;}
 
   try {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
+     
     const { metrics } = require('@opentelemetry/api');
     const meter = metrics.getMeter('zenai-backend', '1.0.0');
 

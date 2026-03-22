@@ -171,11 +171,11 @@ export function computeRadarFromSections(sections: ProfileEntry[]): RadarScores 
       case 'personality': {
         if (data.radar && typeof data.radar === 'object') {
           const radar = data.radar as Partial<RadarScores>;
-          if (typeof radar.analytical === 'number') scores.analytical = clampScore(radar.analytical);
-          if (typeof radar.creative === 'number') scores.creative = clampScore(radar.creative);
-          if (typeof radar.organized === 'number') scores.organized = clampScore(radar.organized);
-          if (typeof radar.social === 'number') scores.social = clampScore(radar.social);
-          if (typeof radar.technical === 'number') scores.technical = clampScore(radar.technical);
+          if (typeof radar.analytical === 'number') {scores.analytical = clampScore(radar.analytical);}
+          if (typeof radar.creative === 'number') {scores.creative = clampScore(radar.creative);}
+          if (typeof radar.organized === 'number') {scores.organized = clampScore(radar.organized);}
+          if (typeof radar.social === 'number') {scores.social = clampScore(radar.social);}
+          if (typeof radar.technical === 'number') {scores.technical = clampScore(radar.technical);}
         }
         break;
       }
@@ -184,8 +184,8 @@ export function computeRadarFromSections(sections: ProfileEntry[]): RadarScores 
         const techCount = areas.filter((a: unknown) =>
           typeof a === 'string' && /typescript|python|react|code|programming|api|backend|frontend|devops|docker|git/i.test(a),
         ).length;
-        if (techCount > 0) scores.technical = clampScore(50 + techCount * 10);
-        if (areas.length > 3) scores.analytical = clampScore(scores.analytical + 10);
+        if (techCount > 0) {scores.technical = clampScore(50 + techCount * 10);}
+        if (areas.length > 3) {scores.analytical = clampScore(scores.analytical + 10);}
         break;
       }
       case 'work_patterns': {
@@ -199,12 +199,12 @@ export function computeRadarFromSections(sections: ProfileEntry[]): RadarScores 
         const creativeTopics = topics.filter((t: unknown) =>
           typeof t === 'string' && /design|art|music|writing|creative|photography/i.test(t),
         ).length;
-        if (creativeTopics > 0) scores.creative = clampScore(50 + creativeTopics * 15);
+        if (creativeTopics > 0) {scores.creative = clampScore(50 + creativeTopics * 15);}
         break;
       }
       case 'goals': {
         const goalList = Array.isArray(data.items) ? data.items : [];
-        if (goalList.length > 0) scores.organized = clampScore(scores.organized + 10);
+        if (goalList.length > 0) {scores.organized = clampScore(scores.organized + 10);}
         break;
       }
       case 'preferences': {

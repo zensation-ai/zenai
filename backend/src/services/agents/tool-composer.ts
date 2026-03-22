@@ -215,7 +215,7 @@ export function validateChain(steps: ChainStep[]): ToolChain {
     }
 
     estimatedDuration += sig.estimatedDurationMs;
-    if (sig.sideEffects) hasSideEffects = true;
+    if (sig.sideEffects) {hasSideEffects = true;}
 
     // Check for forward references in inputMapping
     for (const value of Object.values(step.inputMapping)) {
@@ -265,7 +265,7 @@ export function estimateChainCost(
 
   for (const step of chain.steps) {
     const sig = getToolSignature(step.toolName);
-    if (!sig) continue;
+    if (!sig) {continue;}
     if ((COST_TIER_RANK[sig.costTier] ?? 0) > (COST_TIER_RANK[highestTier] ?? 0)) {
       highestTier = sig.costTier;
     }
@@ -368,17 +368,17 @@ const GOAL_PATTERNS: GoalPattern[] = [
  */
 export function buildChainFromGoal(goal: string, availableTools?: string[]): ChainStep[] {
   for (const pattern of GOAL_PATTERNS) {
-    if (!pattern.test(goal)) continue;
+    if (!pattern.test(goal)) {continue;}
 
     const steps = pattern.build();
 
-    if (!availableTools) return steps;
+    if (!availableTools) {return steps;}
 
     // Filter to available tools only
     const filtered = steps.filter((s) => availableTools.includes(s.toolName));
 
     // If we lost all steps, skip this pattern
-    if (filtered.length === 0) continue;
+    if (filtered.length === 0) {continue;}
 
     // Re-check that every kept step's inputMapping step-refs still point to a
     // step that exists in the filtered list.  Simple index-based re-mapping is

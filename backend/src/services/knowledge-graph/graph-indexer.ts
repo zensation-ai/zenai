@@ -111,7 +111,7 @@ export class GraphIndexer {
       for (const idea of ideasResult.rows) {
         try {
           const text = `${idea.title}\n\n${idea.summary}\n\n${idea.raw_content}`.trim();
-          if (!text || text.length < 10) continue;
+          if (!text || text.length < 10) {continue;}
 
           const extraction = await graphBuilder.extractFromText(text, idea.id, context);
           processedCount++;

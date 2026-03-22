@@ -30,7 +30,7 @@ export class ObservabilityModule implements Module {
 
     // Phase 61: Initialize OpenTelemetry tracing
     try {
-      const { initTracing, shutdownTracing } = await import('../../services/observability/tracing');
+      const { initTracing, shutdownTracing: _shutdownTracing } = await import('../../services/observability/tracing');
       const { initMetrics } = await import('../../services/observability/metrics');
       const tracingEnabled = await initTracing();
       if (tracingEnabled) {
