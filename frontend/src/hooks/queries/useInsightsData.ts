@@ -66,7 +66,7 @@ export function useAITracesQuery(
         if (filters?.limit) params.set('limit', String(filters.limit));
         if (filters?.model) params.set('model', filters.model);
         const response = await axios.get(
-          `/api/${context}/ai-traces?${params.toString()}`,
+          `/api/observability/ai-traces?${params.toString()}`,
           { signal }
         );
         return response.data?.data ?? response.data ?? [];

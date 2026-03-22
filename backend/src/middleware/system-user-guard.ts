@@ -85,6 +85,11 @@ function isBlockedRoute(path: string): boolean {
  * AND the route is in the blocked list.
  */
 export function systemUserGuard(req: Request, res: Response, next: NextFunction): void {
+  // Opt-out: Allow SYSTEM_USER_ID access during development/API-key-only mode
+  if (process.env.ALLOW_SYSTEM_USER_ACCESS === 'true') {
+    return next();
+  }
+
   // Only check if auth middleware has already run and set user context.
   // If neither jwtUser nor apiKey is present, auth hasn't run yet — skip.
   const hasJwt = !!req.jwtUser;

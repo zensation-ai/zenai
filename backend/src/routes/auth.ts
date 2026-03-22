@@ -272,6 +272,55 @@ authRouter.put('/me', requireJwt, asyncHandler(async (req: Request, res: Respons
 }));
 
 // ===========================================
+// Profile aliases (accept both /me and /profile)
+// ===========================================
+
+authRouter.get('/profile', requireJwt, asyncHandler(async (req: Request, res: Response) => {
+  const userId = getAuthUserId(req);
+  const user = await userService.findById(userId);
+
+  if (!user) {
+    return res.status(404).json({
+      success: false,
+      error: 'User not found',
+      code: 'NOT_FOUND',
+    });
+  }
+
+  return res.json({
+    success: true,
+    data: userService.toUserProfile(user),
+  });
+}));
+
+authRouter.put('/profile', requireJwt, asyncHandler(async (req: Request, res: Response) => {
+  const userId = getAuthUserId(req);
+  const { display_name, avatar_url, preferences } = req.body;
+
+  try {
+    const user = await userService.updateProfile(userId, {
+      display_name,
+      avatar_url,
+      preferences,
+    });
+
+    return res.json({
+      success: true,
+      data: userService.toUserProfile(user),
+    });
+  } catch (error) {
+    if (error instanceof userService.UserServiceError) {
+      return res.status(error.statusCode).json({
+        success: false,
+        error: error.message,
+        code: error.code,
+      });
+    }
+    throw error;
+  }
+}));
+
+// ===========================================
 // OAuth
 // ===========================================
 

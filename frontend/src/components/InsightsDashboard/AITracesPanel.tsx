@@ -115,7 +115,7 @@ type DateRange = '7d' | '30d';
 
 // --- Component ---
 
-export function AITracesPanel({ context }: AITracesPanelProps) {
+export function AITracesPanel({ context: _context }: AITracesPanelProps) {
   const [traces, setTraces] = useState<AITrace[]>([]);
   const [stats, setStats] = useState<StatsData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -137,14 +137,14 @@ export function AITracesPanel({ context }: AITracesPanelProps) {
   // Fetch stats
   const fetchStats = useCallback(async () => {
     try {
-      const res = await axios.get(`/api/${context}/ai-traces/stats`);
+      const res = await axios.get(`/api/observability/ai-traces/stats`);
       if (res.data.success) {
         setStats(res.data.data);
       }
     } catch {
       // stats are optional, don't block
     }
-  }, [context]);
+  }, []);
 
   // Fetch traces
   const fetchTraces = useCallback(async () => {
@@ -154,7 +154,7 @@ export function AITracesPanel({ context }: AITracesPanelProps) {
       const params: Record<string, string> = { limit: '50', from: dateFrom };
       if (modelFilter !== 'all') params.model = modelFilter;
 
-      const res = await axios.get(`/api/${context}/ai-traces`, { params });
+      const res = await axios.get(`/api/observability/ai-traces`, { params });
       if (res.data.success) {
         let list: AITrace[] = res.data.data;
         if (statusFilter !== 'all') {
@@ -167,7 +167,7 @@ export function AITracesPanel({ context }: AITracesPanelProps) {
     } finally {
       setLoading(false);
     }
-  }, [context, dateFrom, modelFilter, statusFilter]);
+  }, [dateFrom, modelFilter, statusFilter]);
 
   useEffect(() => { fetchStats(); }, [fetchStats]);
   useEffect(() => { fetchTraces(); }, [fetchTraces]);
@@ -181,14 +181,14 @@ export function AITracesPanel({ context }: AITracesPanelProps) {
     }
     setExpandedTraceId(traceId);
     try {
-      const res = await axios.get(`/api/${context}/ai-traces/${traceId}`);
+      const res = await axios.get(`/api/observability/ai-traces/${traceId}`);
       if (res.data.success) {
         setExpandedTrace(res.data.data);
       }
     } catch {
       setExpandedTrace(null);
     }
-  }, [context, expandedTraceId]);
+  }, [expandedTraceId]);
 
   // Available models for filter
   const availableModels = useMemo(() => {
