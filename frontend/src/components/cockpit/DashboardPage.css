@@ -8,7 +8,7 @@
   font-size: 24px;
   font-weight: 600;
   margin-bottom: 24px;
-  color: var(--text-primary, #e5e5e5);
+  color: var(--text-primary);
 }
 
 .dashboard-grid {
@@ -18,20 +18,22 @@
 }
 
 .dashboard-widget {
-  background: var(--surface-secondary, #111);
-  border: 1px solid var(--border-primary, rgba(255,255,255,0.08));
+  background: var(--surface-2);
+  border: 1px solid var(--border);
   border-radius: 12px;
   padding: 16px;
   text-align: left;
   cursor: pointer;
-  transition: background 150ms, border-color 150ms;
+  transition: background 150ms, border-color 150ms, transform 150ms, box-shadow 150ms;
   color: inherit;
   font: inherit;
 }
 
 .dashboard-widget:hover {
-  background: var(--surface-hover, rgba(255,255,255,0.04));
-  border-color: var(--border-hover, rgba(255,255,255,0.12));
+  background: var(--surface-3);
+  border-color: var(--border-hover);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
 
 .dashboard-widget__header {
@@ -41,7 +43,7 @@
   font-size: 13px;
   font-weight: 600;
   margin-bottom: 12px;
-  color: var(--text-secondary, rgba(255,255,255,0.6));
+  color: var(--text-secondary);
 }
 
 .dashboard-widget__content {
@@ -49,7 +51,7 @@
 }
 
 .dashboard-widget__placeholder {
-  color: var(--text-tertiary, rgba(255,255,255,0.3));
+  color: var(--text-tertiary);
   font-size: 12px;
   margin: 0;
 }

@@ -268,20 +268,22 @@
 
 .chat-message-text {
   padding: 0.75rem 1rem;
-  border-radius: var(--radius-md);
+  border-radius: 16px;
   font-size: 0.9rem;
   line-height: 1.5;
   word-wrap: break-word;
 }
 
 .chat-message.assistant .chat-message-text {
-  background: var(--surface-light);
+  background: var(--surface-2);
+  border-radius: 16px;
   border-bottom-left-radius: 4px;
 }
 
 .chat-message.user .chat-message-text {
-  background: var(--ctx-accent, var(--primary));
-  color: white;
+  background: var(--accent-ai-muted);
+  color: var(--text);
+  border-radius: 16px;
   border-bottom-right-radius: 4px;
 }
 
@@ -349,7 +351,7 @@
 }
 
 .chat-message.user .inline-code {
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(99, 102, 241, 0.15);
 }
 
 /* Lists */
@@ -514,9 +516,9 @@
   min-height: 40px;
   max-height: 120px;
   padding: 0.6rem 1rem;
-  border-radius: var(--radius-md);
-  border: 1.5px solid var(--glass-border);
-  background: rgba(255, 255, 255, 0.8);
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--surface-1);
   color: var(--text);
   font-size: 16px; /* Prevents iOS auto-zoom on focus — must be >= 16px */
   font-family: inherit;
@@ -532,8 +534,8 @@
 
 .chat-input:focus {
   outline: none;
-  border-color: var(--ctx-accent, var(--primary));
-  background: rgba(255, 255, 255, 0.95);
+  border-color: var(--accent);
+  background: var(--surface-1);
   box-shadow: 0 0 0 3px var(--ctx-accent-surface, var(--primary-glow));
 }
 
@@ -543,7 +545,7 @@
 }
 
 .chat-input::placeholder {
-  color: var(--text-placeholder, #1a2a38);
+  color: var(--text-tertiary);
   opacity: 1;
 }
 
@@ -1266,16 +1268,16 @@
 }
 
 .chat-tool-pill--done {
-  background: color-mix(in srgb, var(--ctx-accent, var(--primary)) 8%, transparent);
-  color: var(--text-muted);
-  border: 1px solid color-mix(in srgb, var(--ctx-accent, var(--primary)) 15%, transparent);
+  background: var(--accent-ai-muted);
+  color: var(--accent-ai);
+  border: 1px solid color-mix(in srgb, var(--accent-ai) 25%, transparent);
   opacity: 0.85;
   cursor: pointer;
 }
 
 .chat-tool-pill--done:hover {
   opacity: 1;
-  background: color-mix(in srgb, var(--ctx-accent, var(--primary)) 12%, transparent);
+  background: color-mix(in srgb, var(--accent-ai) 20%, transparent);
 }
 
 .chat-tool-pill--error {
@@ -1292,9 +1294,9 @@
 }
 
 .chat-tool-pill--active {
-  background: color-mix(in srgb, var(--ctx-accent, var(--primary)) 15%, transparent);
-  color: var(--ctx-accent, var(--primary));
-  border: 1px solid color-mix(in srgb, var(--ctx-accent, var(--primary)) 30%, transparent);
+  background: var(--accent-ai-muted);
+  color: var(--accent-ai);
+  border: 1px solid color-mix(in srgb, var(--accent-ai) 35%, transparent);
   animation: chat-tool-pulse 1.5s ease-in-out infinite;
 }
 
