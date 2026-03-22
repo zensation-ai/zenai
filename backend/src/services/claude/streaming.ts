@@ -647,6 +647,14 @@ export async function streamToSSE(
       hadThinking: thinkingContent.length > 0,
       compactionOccurred: compactionDetected,
     });
+
+    // Phase 125 TODO: Co-activation for entities mentioned in the response should be
+    // recorded by the caller (e.g. general-chat.ts), which has access to the RAG entity
+    // IDs that were used to build the prompt context. The streaming layer does not have
+    // knowledge of which entities were retrieved, so recording here would be a no-op.
+    // Callers with entity context should call:
+    //   recordCoactivation(context, entityIds).catch(() => {})
+    // after stream completion to strengthen Hebbian associations.
   } catch (error) {
     clearTimeout(streamTimeout);
     const sanitized = sanitizeError(error);

@@ -131,6 +131,16 @@ export class GraphBuilder {
       updated: stats.entitiesUpdated,
     });
 
+    // Phase 125: Record co-activation for all entities that appeared together in the same text.
+    // Entities co-occurring in the same source strengthen their Hebbian association.
+    // Fire-and-forget: errors must not affect the extraction result.
+    const entityIds = resolvedEntities.map(e => e.id).filter((id): id is string => Boolean(id));
+    if (entityIds.length >= 2) {
+      import('./hebbian-dynamics').then(({ recordCoactivation }) => {
+        recordCoactivation(context, entityIds).catch(() => {});
+      }).catch(() => {});
+    }
+
     return {
       entities: resolvedEntities,
       relations,
