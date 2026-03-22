@@ -1,0 +1,75 @@
+.session-tabs {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 4px 8px;
+  border-bottom: 1px solid var(--border-primary, rgba(255,255,255,0.08));
+  overflow-x: auto;
+  flex-shrink: 0;
+}
+
+.session-tabs__tab {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border: none;
+  background: transparent;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 12px;
+  color: var(--text-secondary, rgba(255,255,255,0.5));
+  white-space: nowrap;
+  max-width: 160px;
+  transition: background 150ms, color 150ms;
+}
+
+.session-tabs__tab:hover {
+  background: var(--surface-hover, rgba(255,255,255,0.06));
+  color: var(--text-primary, #fff);
+}
+
+.session-tabs__tab--active {
+  background: var(--surface-hover, rgba(255,255,255,0.06));
+  color: var(--text-primary, #fff);
+}
+
+.session-tabs__title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.session-tabs__close {
+  display: flex;
+  padding: 2px;
+  border-radius: 4px;
+  opacity: 0;
+  transition: opacity 150ms;
+}
+
+.session-tabs__tab:hover .session-tabs__close {
+  opacity: 1;
+}
+
+.session-tabs__close:hover {
+  background: var(--surface-hover, rgba(255,255,255,0.1));
+}
+
+.session-tabs__new {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: none;
+  background: transparent;
+  border-radius: 6px;
+  cursor: pointer;
+  color: var(--text-tertiary, rgba(255,255,255,0.3));
+  flex-shrink: 0;
+}
+
+.session-tabs__new:hover {
+  background: var(--surface-hover, rgba(255,255,255,0.06));
+  color: var(--text-primary, #fff);
+}
