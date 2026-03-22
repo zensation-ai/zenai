@@ -40,6 +40,7 @@ import { ProactiveModule } from './proactive';
 import { SecurityModule } from './security';
 import { ExtensionsModule } from './extensions';
 import { SleepModule } from './sleep';
+import { MetacognitionModule } from './metacognition';
 
 /**
  * All modules in registration order.
@@ -101,4 +102,5 @@ export const modules: Module[] = [
   new SecurityModule(),
   new ExtensionsModule(),
   new SleepModule(),
+  new MetacognitionModule(),
 ];

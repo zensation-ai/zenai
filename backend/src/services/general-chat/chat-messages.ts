@@ -708,6 +708,18 @@ export async function sendMessage(
     logger.debug('Implicit feedback analysis failed', { sessionId, error });
   });
 
+  // Phase 125-140: Cognitive Architecture hooks (fire-and-forget)
+  import('../cognitive-hooks').then(m => m.runPostResponseHooks({
+    context: contextType,
+    userId,
+    query: userMessage,
+    response: aiResponse,
+    domain: metadata?.gwtAnalysis?.domain,
+    confidence: metadata?.ragQuality?.confidence,
+    toolsUsed: metadata?.toolsCalled?.map((t: { name: string }) => t.name),
+    sessionId,
+  })).catch(() => {});
+
   logger.info('Chat message exchange complete', {
     sessionId,
     userMessageId: storedUserMessage.id,

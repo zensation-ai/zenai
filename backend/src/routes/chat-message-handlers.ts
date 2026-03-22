@@ -947,6 +947,18 @@ export async function handleStreamMessage(req: Request, res: Response): Promise<
       // Only triggers on first response (when title is still NULL)
       generateSessionTitle(id, message, fullResponse).catch((err) => logger.debug('Non-critical: session title generation failed', { error: err, sessionId: id }));
 
+      // Phase 125-140: Cognitive Architecture hooks (fire-and-forget)
+      import('../services/cognitive-hooks').then(m => m.runPostResponseHooks({
+        context: contextType,
+        userId,
+        query: message,
+        response: fullResponse,
+        domain: undefined,
+        confidence: undefined,
+        toolsUsed: collectedToolCalls.map((t: { name?: string }) => t.name || 'unknown'),
+        sessionId: id,
+      })).catch(() => {});
+
       logger.info('Streaming chat complete', {
         sessionId: id,
         responseLength: fullResponse.length,
