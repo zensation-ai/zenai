@@ -251,7 +251,7 @@ export class HybridRetriever {
       [entityIds, limit]
     );
 
-    return result.rows.map((row: Record<string, unknown>) => ({
+    const baseResults = result.rows.map((row: Record<string, unknown>) => ({
       id: row.id as string,
       title: row.title as string,
       content: row.content as string,
@@ -259,6 +259,27 @@ export class HybridRetriever {
       source: 'graph' as const,
       metadata: { traversalType: '2-hop', matchedEntities: entityIds.length },
     }));
+
+    // Phase 125: Apply Hebbian weight boost to graph-sourced results.
+    // Co-activated entity pairs get stronger Hebbian weights → boost their scores.
+    if (entityIds.length >= 2) {
+      try {
+        const { getHebbianWeight, HEBBIAN_CONFIG } = await import('./hebbian-dynamics');
+        // Sample the weight between the first two matched entities as a proxy
+        const hebbianWeight = await getHebbianWeight(context, entityIds[0] as string, entityIds[1] as string);
+        if (hebbianWeight > 1.0) {
+          const hebbianBoost = (hebbianWeight - 1.0) / (HEBBIAN_CONFIG.MAX_WEIGHT - 1.0);
+          return baseResults.map(r => ({
+            ...r,
+            score: Math.min(r.score * (1 + hebbianBoost * 0.3), 1.0),
+          }));
+        }
+      } catch {
+        // Hebbian boost is non-critical; return base results on any error
+      }
+    }
+
+    return baseResults;
   }
 
   // ===========================================

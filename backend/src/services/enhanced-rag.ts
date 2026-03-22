@@ -749,6 +749,18 @@ class EnhancedRAGService {
       confidence *= 0.9;
     }
 
+    // Phase 125: If any results have Bayesian propagated_confidence, blend it in.
+    // propagated_confidence is added to result metadata by the confidence-propagation
+    // batch worker. Only present after the first hebbian-decay job has run.
+    const propagatedScores = results
+      .map(r => (r.scores as Record<string, number | undefined>).propagated_confidence)
+      .filter((s): s is number => typeof s === 'number' && s > 0);
+    if (propagatedScores.length > 0) {
+      const propagatedAvg = propagatedScores.reduce((a, b) => a + b, 0) / propagatedScores.length;
+      // Blend: 85% base confidence + 15% propagated average
+      confidence = confidence * 0.85 + propagatedAvg * 0.15;
+    }
+
     return Math.min(confidence, 1.0);
   }
 
