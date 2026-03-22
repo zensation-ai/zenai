@@ -385,6 +385,18 @@ async function processHebbianDecay(job: BullJob): Promise<Record<string, unknown
   }
 }
 
+/**
+ * Process a persistent agent loop job (Phase 129).
+ * Placeholder processor — actual agent execution will be wired in later phases.
+ */
+async function processPersistentAgent(job: BullJob): Promise<Record<string, unknown>> {
+  const taskId = job.data.taskId as string | undefined;
+  const context = (job.data.context as 'personal' | 'work' | 'learning' | 'creative' | 'demo') || 'personal';
+  logger.info('Persistent agent job received', { taskId, context });
+  await job.updateProgress(100);
+  return { taskId, status: 'processed' };
+}
+
 // Worker processor map — now receives the full BullJob for progress reporting
 const processors: Record<string, (job: BullJob) => Promise<Record<string, unknown>>> = {
   'memory-consolidation': processMemoryConsolidation,
@@ -394,6 +406,7 @@ const processors: Record<string, (job: BullJob) => Promise<Record<string, unknow
   'sleep-compute': processSleepCompute,
   'embedding-drift': processEmbeddingDrift,
   'hebbian-decay': processHebbianDecay,
+  'persistent-agent': processPersistentAgent,
 };
 
 // --- Dead Letter Queue helper ---
@@ -451,6 +464,7 @@ export async function startWorkers(): Promise<boolean> {
       'sleep-compute': 1,
       'embedding-drift': 1,
       'hebbian-decay': 1,
+      'persistent-agent': 2,
     };
 
     for (const [queueName, processor] of Object.entries(processors)) {

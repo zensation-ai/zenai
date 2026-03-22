@@ -103,7 +103,7 @@ describe('QueueService', () => {
       const service = getQueueService();
       await service.initialize();
       const allStats = await service.getAllStats();
-      expect(allStats.length).toBe(7);
+      expect(allStats.length).toBe(8);
       allStats.forEach(s => {
         expect(s.active).toBe(0);
       });
@@ -140,7 +140,7 @@ describe('QueueService', () => {
       await service.initialize();
 
       const { Queue } = await import('bullmq');
-      expect(Queue).toHaveBeenCalledTimes(7);
+      expect(Queue).toHaveBeenCalledTimes(8);
     });
 
     it('should return correct queue names', () => {
@@ -256,7 +256,7 @@ describe('QueueService', () => {
     it('should return stats for all queues', async () => {
       const service = getQueueService();
       const allStats = await service.getAllStats();
-      expect(allStats.length).toBe(7);
+      expect(allStats.length).toBe(8);
       expect(allStats[0].name).toBe('memory-consolidation');
     });
   });
