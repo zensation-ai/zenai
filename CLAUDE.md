@@ -30,7 +30,7 @@
   - Short-Term Memory (Session-Kontext)
   - Long-Term Memory (persistentes Wissen)
 
-## Current Phase: 140
+## Current Phase: 141
 
 ### Phase 31 Features (AI State-of-the-Art)
 
@@ -145,7 +145,7 @@
 - Each module implements `Module` interface: `registerRoutes(app)` + optional `onStartup()`
 - Module index: `backend/src/modules/index.ts` registers all modules
 - To add a new route: create route file, import in appropriate module's `index.ts`
-- 32 modules: agents, analytics, auth, browser, business, calendar, canvas, chat, code, contacts, core-routes, documents, email, extensions, finance, governance, ideas, inbox, knowledge, learning, mcp, memory, misc, observability, planner, proactive, project-context, search, security, sleep, voice
+- 35 modules: agents, analytics, auth, browser, business, calendar, canvas, chat, code, contacts, core-routes, curiosity, documents, email, extensions, feedback-adaptive, finance, governance, ideas, inbox, knowledge, learning, mcp, memory, misc, observability, planner, predictions, proactive, project-context, search, security, sleep, voice
 
 ## Quality Audit Checklist (for new phases)
 
@@ -304,6 +304,13 @@
 - Request Timeout: `backend/src/middleware/request-timeout.ts`
 - Error Sanitization: `backend/src/utils/sanitize-error.ts`
 - Safe JSON Stringify: `backend/src/utils/safe-stringify.ts`
+- Mistral Service: `backend/src/services/mistral.ts`
+- Curiosity Routes: `backend/src/routes/curiosity.ts`
+- Predictions Routes: `backend/src/routes/predictions.ts`
+- Feedback/Adaptive Routes: `backend/src/routes/feedback-adaptive.ts`
+- FSRS Review Routes: `backend/src/routes/fsrs-review.ts`
+- Self-Improvement Routes: `backend/src/routes/self-improvement.ts`
+- Cognitive Health: `backend/src/services/metacognition/cognitive-health.ts`
 
 ### Frontend
 
@@ -365,6 +372,12 @@
 - System Admin Page: `frontend/src/components/SystemAdminPage/` (6 files)
 - Procedural Memory Panel: `frontend/src/components/ProceduralMemoryPanel/` (7 files)
 - Agent Teams Page: `frontend/src/components/AgentTeamsPage/` (3 files)
+- Cognitive Data Hooks: `frontend/src/hooks/queries/useCognitiveData.ts`
+- Cognitive Overview: `frontend/src/components/MyAIPage/CognitiveOverview.tsx`
+- Curiosity Panel: `frontend/src/components/MyAIPage/CuriosityPanel.tsx`
+- Prediction Panel: `frontend/src/components/MyAIPage/PredictionPanel.tsx`
+- Review Queue Panel: `frontend/src/components/MyAIPage/ReviewQueuePanel.tsx`
+- Improvement Panel: `frontend/src/components/MyAIPage/ImprovementPanel.tsx`
 
 ### CLI
 
@@ -844,6 +857,52 @@ PUT    /api/security/rate-limits/:tier                           - Update rate l
 GET    /api/security/rate-limits/stats                           - Rate limit hit statistics
 ```
 
+### Curiosity API (Phase 141)
+
+```
+GET    /api/:context/curiosity/gaps                     - Detect knowledge gaps (top-5)
+GET    /api/:context/curiosity/hypotheses                - List hypotheses (status filter)
+POST   /api/:context/curiosity/hypotheses/:id/status     - Update hypothesis (confirmed/refuted)
+GET    /api/:context/curiosity/information-gain          - Recent information gain events
+GET    /api/:context/curiosity/summary                   - Aggregated curiosity stats
+```
+
+### Prediction API (Phase 141)
+
+```
+GET    /api/:context/predictions/history                 - Prediction history (last 50)
+GET    /api/:context/predictions/patterns                - Temporal + sequential patterns
+GET    /api/:context/predictions/accuracy                - Accuracy over 7d/30d windows
+GET    /api/:context/predictions/next                    - Current intent prediction
+```
+
+### Feedback & Adaptive API (Phase 141)
+
+```
+GET    /api/:context/feedback/summary                    - Feedback statistics by type
+POST   /api/:context/feedback/emit                       - Record feedback event
+GET    /api/:context/adaptive/preferences                - Learned behavior preferences
+PUT    /api/:context/adaptive/preferences                - Override preferences
+GET    /api/:context/adaptive/style                      - Language style profile
+```
+
+### FSRS Review API (Phase 141)
+
+```
+GET    /api/:context/memory/review-queue                 - Facts due for review (FSRS)
+POST   /api/:context/memory/review/:factId               - Grade fact recall (1-5)
+GET    /api/:context/memory/fsrs/stats                   - FSRS statistics
+```
+
+### Self-Improvement API (Phase 141)
+
+```
+GET    /api/:context/self-improvement/opportunities      - Identify improvement actions
+GET    /api/:context/self-improvement/budget              - Daily budget (max 3/day)
+GET    /api/:context/self-improvement/history             - Past improvement actions
+POST   /api/:context/self-improvement/:id/execute         - Execute improvement action
+```
+
 ### Sleep Compute API (Phase 63)
 
 ```
@@ -985,6 +1044,10 @@ OPENAI_MODEL=gpt-4o-mini              # OpenAI model (default: gpt-4o-mini)
 OLLAMA_URL=http://localhost:11434      # Ollama local LLM URL
 OLLAMA_MODEL=                          # Ollama text model name
 OLLAMA_EMBEDDING_MODEL=               # Ollama embedding model name
+
+# Mistral AI (Cloud Fallback)
+MISTRAL_API_KEY=                       # Mistral API key (cloud fallback between Claude and Ollama)
+MISTRAL_MODEL=mistral-small-latest     # Mistral model (default: mistral-small-latest)
 WHISPER_MODEL=base                     # Local Whisper STT model size
 
 # Memory Scheduler (additional)
@@ -1042,6 +1105,7 @@ APNS_PRIVATE_KEY=                     # APNS P8 private key content
 | `RESEND_API_KEY` | Backend | Gesetzt | Resend Email API |
 | `RESEND_WEBHOOK_SECRET` | Backend | Gesetzt | Resend Svix Webhook Signing |
 | `RESEND_DEFAULT_FROM` | Backend | Gesetzt | Default Sender Address |
+| `MISTRAL_API_KEY` | Backend | Gesetzt | Mistral AI Cloud Fallback |
 
 **Health Check:** `GET /api/health/detailed` zeigt Status aller Services (4 DBs, Claude, Redis, Brave, Judge0).
 
@@ -1104,10 +1168,10 @@ cd frontend && npx vitest run
 
 | Kategorie | Bestanden | Übersprungen | Fehlgeschlagen |
 |-----------|-----------|--------------|----------------|
-| **Backend** | 7692 | 24 | 0 |
+| **Backend** | 7720 | 24 | 0 |
 | **Frontend** | 1400 | 0 | 0 |
 | **CLI** | 108 | 0 | 0 |
-| **Gesamt** | 9200 | 24 | 0 |
+| **Gesamt** | 9228 | 24 | 0 |
 
 **Absichtlich übersprungene Tests (24):**
 - 21x Code-Execution Sandbox (Docker nicht verfügbar)
@@ -1203,6 +1267,67 @@ mockQueryContext
 - API Docs: `/api-docs` (Swagger)
 
 ## Changelog
+
+### 2026-03-22: Phase 141 — Cognitive Architecture Frontend Visibility + Mistral Integration + Auth Fix
+
+**Alle 20+ kognitive Backend-Services (Phase 125-140) mit Frontend-UI verbunden.**
+
+| Feature | Details |
+|---------|---------|
+| **CognitiveDashboard Redesign** | 5 Sub-Tabs: Uebersicht, Neugier, Vorhersagen, Gedaechtnis, Verbesserung |
+| **23 neue API-Endpoints** | Curiosity (5), Predictions (4), Feedback/Adaptive (5), FSRS Review (3), Self-Improvement (4), Cognitive Health (1) |
+| **14 React Query Hooks** | 11 Queries + 3 Mutations fuer alle kognitiven Services |
+| **Gamifizierte FSRS Review Queue** | 5-Grad Bewertungsskala (Vergessen/Schwer/Okay/Leicht/Perfekt) |
+| **Chat Feedback Buttons** | Daumen hoch/runter auf AI-Antworten (feeds Feedback Bus) |
+| **SmartSurface Erweiterung** | knowledge_gap + hypothesis Suggestion-Typen |
+| **Metacognition Overview Fix** | Response-Format Mismatch behoben (Backend → Frontend Alignment) |
+| **JWT Auth Fix (KRITISCH)** | apiKeyAuth delegiert JWT-Tokens an jwtAuth statt sie als ungueltige API-Keys abzulehnen |
+| **AI Traces 404 Fix** | Frontend-Pfad korrigiert (/api/observability/ai-traces) |
+| **systemUserGuard Opt-Out** | ALLOW_SYSTEM_USER_ACCESS env var fuer API-Key Development |
+| **Auth Profile Alias** | /profile Route als Alias fuer /me hinzugefuegt |
+| **Mistral AI Integration** | Cloud-Provider zwischen Claude und Ollama: mistral-small + mistral-large |
+| **ESLint 596→0** | 5 Errors + 591 Warnings komplett behoben (130 Dateien) |
+
+**Neue Dateien (14 Backend + 6 Frontend):**
+
+| Datei | Zweck |
+|-------|-------|
+| `backend/src/routes/curiosity.ts` | Knowledge Gaps, Hypotheses, Information Gain API |
+| `backend/src/routes/predictions.ts` | Prediction History, Patterns, Accuracy API |
+| `backend/src/routes/feedback-adaptive.ts` | Feedback Summary, Adaptive Preferences, Style API |
+| `backend/src/routes/fsrs-review.ts` | FSRS Review Queue, Grade Facts, Stats API |
+| `backend/src/routes/self-improvement.ts` | Improvement Opportunities, Budget, Execute API |
+| `backend/src/services/mistral.ts` | Mistral AI Provider (Text, Embeddings, JSON) |
+| `backend/src/services/metacognition/cognitive-health.ts` | Composite Health Score (0-100) |
+| `backend/src/modules/curiosity/index.ts` | CuriosityModule |
+| `backend/src/modules/predictions/index.ts` | PredictionsModule |
+| `backend/src/modules/feedback-adaptive/index.ts` | FeedbackAdaptiveModule |
+| `frontend/src/hooks/queries/useCognitiveData.ts` | 14 React Query Hooks |
+| `frontend/src/components/MyAIPage/CognitiveOverview.tsx` | Health Ring + Metrikkarten |
+| `frontend/src/components/MyAIPage/CuriosityPanel.tsx` | Wissensluecken + Hypothesen |
+| `frontend/src/components/MyAIPage/PredictionPanel.tsx` | Vorhersage-Timeline + Accuracy |
+| `frontend/src/components/MyAIPage/ReviewQueuePanel.tsx` | Gamifizierte Fakten-Review |
+| `frontend/src/components/MyAIPage/ImprovementPanel.tsx` | Verbesserungen + Praeferenzen |
+
+**Geaenderte Dateien (12):**
+
+| Datei | Aenderung |
+|-------|-----------|
+| `backend/src/routes/metacognition.ts` | /overview Response-Format korrigiert |
+| `backend/src/middleware/auth.ts` | JWT-Delegation in apiKeyAuth |
+| `backend/src/services/smart-suggestions.ts` | +knowledge_gap, +hypothesis Types |
+| `backend/src/services/model-orchestrator.ts` | +mistral-small, +mistral-large, Fallback-Order |
+| `backend/src/services/ai.ts` | Mistral in Fallback-Kette (Claude→Mistral→Ollama) |
+| `frontend/src/components/MyAIPage/CognitiveDashboard.tsx` | 5-Tab Sub-Layout |
+| `frontend/src/components/GeneralChat/ChatMessageList.tsx` | Feedback Buttons |
+| `frontend/src/components/InsightsDashboard/AITracesPanel.tsx` | Pfad-Fix |
+| `frontend/src/lib/query-keys.ts` | 11 neue cognitive Query Keys |
+| `backend/src/modules/index.ts` | 3 neue Module registriert |
+| 130 Dateien | ESLint Auto-Fix (curly, prefer-const, eqeqeq, etc.) |
+
+**Tests:** Backend 7720 + Frontend 1400 + CLI 108 = **9228 bestanden**, 24 uebersprungen, 0 Failures
+
+---
 
 ### 2026-03-22: Phase 132 — CLI Agent (108 neue Tests)
 
