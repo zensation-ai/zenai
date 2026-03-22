@@ -62,6 +62,8 @@ import { PanelProvider, usePanelContext } from './contexts/PanelContext';
 import type { PanelType } from './contexts/PanelContext';
 import { CockpitLayout } from './components/cockpit/CockpitLayout';
 import { ChatSessionTabs } from './components/cockpit/ChatSessionTabs';
+import { WelcomeChatMessage } from './components/cockpit/WelcomeChatMessage';
+import { ContextSelectorCards } from './components/cockpit/ContextSelectorCards';
 
 import './App.css';
 
@@ -718,6 +720,11 @@ function CockpitShell({ context, onContextChange, currentPage, navigateToPage, p
 }) {
   const { dispatch: panelDispatch } = usePanelContext();
 
+  // Task 4: Onboarding state for cockpit mode
+  const onboardingComplete = safeLocalStorage('get', 'zenai-onboarding-complete') === 'true';
+  const [showWelcome, setShowWelcome] = useState(!onboardingComplete);
+  const [showContextSelector, setShowContextSelector] = useState(!onboardingComplete);
+
   // Task B: Command palette with panel commands wired
   const commandPalette = useCommandPalette({
     onNavigate: navigateToPage,
@@ -752,6 +759,28 @@ function CockpitShell({ context, onContextChange, currentPage, navigateToPage, p
           onCloseTab={() => { /* tab close will be implemented later */ }}
           onNewTab={() => { /* new session will be implemented later */ }}
         />
+        {showWelcome && (
+          <WelcomeChatMessage
+            onSendMessage={() => {
+              setShowWelcome(false);
+              safeLocalStorage('set', 'zenai-welcome-shown', 'true');
+            }}
+            onOpenCommandPalette={() => {
+              setShowWelcome(false);
+              commandPalette.open();
+            }}
+          />
+        )}
+        {showContextSelector && (
+          <ContextSelectorCards
+            selectedContext={context}
+            onSelect={(ctx) => {
+              setShowContextSelector(false);
+              safeLocalStorage('set', 'zenai-onboarding-complete', 'true');
+              onContextChange(ctx as AIContext);
+            }}
+          />
+        )}
         <ErrorBoundary fallback={<div className="chat-error-fallback">Chat nicht verfuegbar.</div>}>
           <GeneralChat context={context} isCompact={false} onSessionChange={handleSessionChange} />
         </ErrorBoundary>

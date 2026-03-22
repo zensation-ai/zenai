@@ -1,0 +1,82 @@
+.context-selector-cards {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  padding: 4px;
+}
+
+.context-selector-cards__card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  padding: 12px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 150ms, background 150ms;
+}
+
+.context-selector-cards__card:hover,
+.context-selector-cards__card--selected {
+  background: var(--surface-2);
+}
+
+.context-selector-cards__card--personal:hover,
+.context-selector-cards__card--personal.context-selector-cards__card--selected {
+  border-color: var(--context-personal);
+}
+
+.context-selector-cards__card--work:hover,
+.context-selector-cards__card--work.context-selector-cards__card--selected {
+  border-color: var(--context-work);
+}
+
+.context-selector-cards__card--learning:hover,
+.context-selector-cards__card--learning.context-selector-cards__card--selected {
+  border-color: var(--context-learning);
+}
+
+.context-selector-cards__card--creative:hover,
+.context-selector-cards__card--creative.context-selector-cards__card--selected {
+  border-color: var(--context-creative);
+}
+
+.context-selector-cards__dot {
+  display: block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.context-selector-cards__card--personal .context-selector-cards__dot {
+  background: var(--context-personal);
+}
+
+.context-selector-cards__card--work .context-selector-cards__dot {
+  background: var(--context-work);
+}
+
+.context-selector-cards__card--learning .context-selector-cards__dot {
+  background: var(--context-learning);
+}
+
+.context-selector-cards__card--creative .context-selector-cards__dot {
+  background: var(--context-creative);
+}
+
+.context-selector-cards__label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+  line-height: 1.2;
+}
+
+.context-selector-cards__desc {
+  font-size: 11px;
+  color: var(--text-secondary);
+  line-height: 1.4;
+}

@@ -1,0 +1,41 @@
+@keyframes shortcut-hint-slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.shortcut-hint {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1000;
+
+  padding: 10px 18px;
+  border-radius: 8px;
+  background: var(--surface-2, #2a2a2e);
+  border: 1px solid var(--border, rgba(255, 255, 255, 0.1));
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+
+  cursor: pointer;
+  user-select: none;
+
+  animation: shortcut-hint-slide-up 200ms ease-out both;
+}
+
+.shortcut-hint__message {
+  font-size: 0.8125rem;
+  color: var(--text-secondary, rgba(255, 255, 255, 0.7));
+  white-space: nowrap;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .shortcut-hint {
+    animation: none;
+  }
+}
