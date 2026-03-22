@@ -10,9 +10,12 @@
 import { Router } from 'express';
 import { asyncHandler } from '../middleware/errorHandler';
 import { logger } from '../utils/logger';
+import { queryContext } from '../utils/database-context';
+import type { AIContext } from '../types/context';
 import { getRecentStates, recordEvaluation, buildMetacognitiveState } from '../services/metacognition/state-vector';
 import { loadCalibrationReport, recordCalibrationData } from '../services/metacognition/calibration';
 import { loadCapabilityProfile, recordInteraction } from '../services/metacognition/capability-model';
+import { computeCognitiveHealth } from '../services/metacognition/cognitive-health';
 
 const router = Router();
 
@@ -83,12 +86,33 @@ router.post('/:context/metacognition/interaction', asyncHandler(async (req, res)
 /** GET /api/:context/metacognition/overview — Single-call aggregated cognitive overview */
 router.get('/:context/metacognition/overview', asyncHandler(async (req, res) => {
   const { context } = req.params;
+  const ctx = context as AIContext;
 
   // Run all queries in parallel for speed
-  const [calibration, capabilities, recentStates] = await Promise.allSettled([
+  const [calibration, capabilities, recentStates, hypothesesRes, gapsRes, curiosityRes, predAccRes] = await Promise.allSettled([
     loadCalibrationReport(context),
     loadCapabilityProfile(context),
     getRecentStates(context, 10),
+    queryContext(ctx,
+      `SELECT id, hypothesis as prediction, confidence, status, created_at
+       FROM hypotheses WHERE status = 'pending'
+       ORDER BY confidence DESC LIMIT 10`),
+    queryContext(ctx,
+      `SELECT topic as area,
+        CASE WHEN gap_score > 0.7 THEN 'high' WHEN gap_score > 0.4 THEN 'medium' ELSE 'low' END as severity,
+        suggested_action as description
+       FROM knowledge_gaps WHERE status = 'active'
+       ORDER BY gap_score DESC LIMIT 10`),
+    queryContext(ctx,
+      `SELECT topic, gap_score as interest_score, updated_at as last_explored
+       FROM knowledge_gaps WHERE status = 'active'
+       ORDER BY gap_score DESC LIMIT 5`),
+    queryContext(ctx,
+      `SELECT
+        COUNT(*) as total,
+        COUNT(*) FILTER (WHERE was_correct = true) as correct
+       FROM prediction_history
+       WHERE created_at > NOW() - INTERVAL '30 days'`),
   ]);
 
   // Extract values with fallbacks
@@ -96,7 +120,57 @@ router.get('/:context/metacognition/overview', asyncHandler(async (req, res) => 
   const cap = capabilities.status === 'fulfilled' ? capabilities.value : null;
   const states = recentStates.status === 'fulfilled' ? recentStates.value : [];
 
-  // Compute averages from recent states
+  // --- Calibration ---
+  const ece = cal?.expectedCalibrationError ?? 0;
+  const calibrationScore = Math.max(0, 1 - ece);
+  const sampleSize = (cal as any)?.bins
+    ? (cal as any).bins.reduce((sum: number, b: any) => sum + (b.totalCount ?? 0), 0)
+    : 0;
+  const calibrationData = {
+    score: Math.round(calibrationScore * 100) / 100,
+    trend: 'stable' as string,
+    sample_size: sampleSize,
+  };
+
+  // --- Strengths from capability profile ---
+  const strengths = cap
+    ? Object.values(cap.domains).map((d) => ({
+        domain: d.domain ?? 'unknown',
+        confidence: d.avgConfidence ?? 0,
+        evidence_count: d.factCount ?? 0,
+      }))
+    : [];
+
+  // --- Predictions from hypotheses table ---
+  const predictions = hypothesesRes.status === 'fulfilled'
+    ? (hypothesesRes.value.rows ?? []).map((r: any) => ({
+        id: r.id,
+        prediction: r.prediction,
+        confidence: parseFloat(r.confidence) || 0,
+        status: r.status,
+        created_at: r.created_at,
+      }))
+    : [];
+
+  // --- Knowledge gaps ---
+  const knowledgeGaps = gapsRes.status === 'fulfilled'
+    ? (gapsRes.value.rows ?? []).map((r: any) => ({
+        area: r.area,
+        severity: r.severity,
+        description: r.description ?? '',
+      }))
+    : [];
+
+  // --- Curiosity from knowledge_gaps ---
+  const curiosity = curiosityRes.status === 'fulfilled'
+    ? (curiosityRes.value.rows ?? []).map((r: any) => ({
+        topic: r.topic,
+        interest_score: parseFloat(r.interest_score) || 0,
+        last_explored: r.last_explored ?? null,
+      }))
+    : [];
+
+  // --- Recent state averages ---
   const avgConfidence = states.length > 0
     ? states.reduce((sum, s) => sum + (s.confidence ?? 0), 0) / states.length
     : 0;
@@ -107,72 +181,35 @@ router.get('/:context/metacognition/overview', asyncHandler(async (req, res) => 
     ? states.reduce((sum, s) => sum + (s.knowledgeCoverage ?? 0), 0) / states.length
     : 0;
 
-  // Load curiosity data (fire-and-forget, non-critical)
-  let curiosity = { activeGaps: 0, pendingHypotheses: 0, recentGain: 0 };
-  try {
-    const { queryContext } = await import('../utils/database-context');
-    const [gapsRes, hypoRes] = await Promise.allSettled([
-      queryContext(context as 'personal' | 'work' | 'learning' | 'creative',
-        "SELECT COUNT(*) as count FROM knowledge_gaps WHERE status = 'active'"),
-      queryContext(context as 'personal' | 'work' | 'learning' | 'creative',
-        "SELECT COUNT(*) as count FROM hypotheses WHERE status = 'pending'"),
-    ]);
-    curiosity = {
-      activeGaps: gapsRes.status === 'fulfilled' ? parseInt(gapsRes.value.rows[0]?.count ?? '0') : 0,
-      pendingHypotheses: hypoRes.status === 'fulfilled' ? parseInt(hypoRes.value.rows[0]?.count ?? '0') : 0,
-      recentGain: 0, // Would need information_gain_events aggregation
-    };
-  } catch {
-    // Non-critical, use defaults
+  // --- Prediction accuracy for health score ---
+  let predictionAccuracy = 0;
+  if (predAccRes.status === 'fulfilled') {
+    const total = parseInt(predAccRes.value.rows[0]?.total ?? '0');
+    const correct = parseInt(predAccRes.value.rows[0]?.correct ?? '0');
+    predictionAccuracy = total > 0 ? correct / total : 0;
   }
 
-  // Load prediction accuracy (fire-and-forget, non-critical)
-  let predictions = { accuracy: 0, totalPredictions: 0, recentTrend: 0 };
-  try {
-    const { queryContext } = await import('../utils/database-context');
-    const predRes = await queryContext(
-      context as 'personal' | 'work' | 'learning' | 'creative',
-      `SELECT
-        COUNT(*) as total,
-        COUNT(*) FILTER (WHERE was_correct = true) as correct
-       FROM prediction_history
-       WHERE created_at > NOW() - INTERVAL '30 days'`,
-    );
-    const total = parseInt(predRes.rows[0]?.total ?? '0');
-    const correct = parseInt(predRes.rows[0]?.correct ?? '0');
-    predictions = {
-      accuracy: total > 0 ? correct / total : 0,
-      totalPredictions: total,
-      recentTrend: 0,
-    };
-  } catch {
-    // Non-critical, use defaults
-  }
+  // --- Health score ---
+  const healthScore = computeCognitiveHealth({
+    calibrationScore,
+    coverageScore: avgCoverage,
+    predictionAccuracy,
+    feedbackPositivity: 0.5, // placeholder — would need feedback aggregation
+    fsrsCurrency: 0.5, // placeholder — would need FSRS stats
+  });
 
   res.json({
     success: true,
     data: {
-      calibration: cal ? {
-        ece: cal.expectedCalibrationError ?? 0,
-        isWellCalibrated: cal.isWellCalibrated ?? true,
-        overconfidenceRate: cal.overconfidenceRate ?? 0,
-      } : { ece: 0, isWellCalibrated: true, overconfidenceRate: 0 },
-      capabilities: cap ? {
-        strengths: cap.strengths ?? [],
-        weaknesses: cap.weaknesses ?? [],
-        trend: cap.improvementTrend ?? 0,
-      } : { strengths: [], weaknesses: [], trend: 0 },
-      recentState: {
-        avgConfidence: Math.round(avgConfidence * 100) / 100,
-        avgCoherence: Math.round(avgCoherence * 100) / 100,
-        avgCoverage: Math.round(avgCoverage * 100) / 100,
-      },
+      calibration: calibrationData,
+      strengths,
+      predictions,
       curiosity,
-      predictions: {
-        accuracy: Math.round(predictions.accuracy * 100) / 100,
-        totalPredictions: predictions.totalPredictions,
-        recentTrend: predictions.recentTrend,
-      },
+      knowledge_gaps: knowledgeGaps,
+      confidence_score: Math.round(avgConfidence * 100) / 100,
+      coherence_score: Math.round(avgCoherence * 100) / 100,
+      coverage_score: Math.round(avgCoverage * 100) / 100,
+      healthScore,
     },
   });
 }));

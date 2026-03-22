@@ -3,6 +3,7 @@ import type { Module } from '../../core/module';
 import { memoryInsightsRouter } from '../../routes/memory-insights';
 import { memoryProceduresRouter } from '../../routes/memory-procedures';
 import { prospectiveMemoryRouter } from '../../routes/prospective-memory';
+import fsrsReviewRouter from '../../routes/fsrs-review';
 
 export class MemoryModule implements Module {
   name = 'memory';
@@ -14,6 +15,8 @@ export class MemoryModule implements Module {
     app.use('/api', memoryProceduresRouter);
     // Phase 87: Prospective Memory + Metamemory
     app.use('/api', prospectiveMemoryRouter);
+    // Phase 141: FSRS Spaced Repetition Review Queue
+    app.use('/api', fsrsReviewRouter);
   }
 
   async onStartup(): Promise<void> {

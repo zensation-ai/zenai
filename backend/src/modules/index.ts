@@ -41,6 +41,9 @@ import { SecurityModule } from './security';
 import { ExtensionsModule } from './extensions';
 import { SleepModule } from './sleep';
 import { MetacognitionModule } from './metacognition';
+import { CuriosityModule } from './curiosity';
+import { PredictionsModule } from './predictions';
+import { FeedbackAdaptiveModule } from './feedback-adaptive';
 
 /**
  * All modules in registration order.
@@ -103,4 +106,7 @@ export const modules: Module[] = [
   new ExtensionsModule(),
   new SleepModule(),
   new MetacognitionModule(),
+  new CuriosityModule(),
+  new PredictionsModule(),
+  new FeedbackAdaptiveModule(),
 ];

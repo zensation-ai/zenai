@@ -17,7 +17,8 @@ import { ToolResultRenderer } from './ToolResultRenderer';
 import { ThinkingBlock } from './ThinkingBlock';
 import { ToolDisclosure } from './ToolDisclosure';
 import { ConfidenceBadge } from './ConfidenceBadge';
-import { Brain, User, BookOpen, Link, Pencil, RotateCcw } from 'lucide-react';
+import { Brain, User, BookOpen, Link, Pencil, RotateCcw, ThumbsUp, ThumbsDown } from 'lucide-react';
+import axios from 'axios';
 import { slideUp, springs, usePrefersReducedMotion } from '../../utils/animations';
 
 /* ------------------------------------------------------------------ */
@@ -443,6 +444,38 @@ export function ChatMessageList({
                         >
                           <RotateCcw size={14} />
                         </button>
+                      )}
+                      {message.role === 'assistant' && (
+                        <>
+                          <button
+                            type="button"
+                            className="chat-action-btn chat-feedback-btn"
+                            title="Gute Antwort"
+                            aria-label="Positive Bewertung"
+                            onClick={() => {
+                              axios.post(`/api/personal/feedback/emit`, {
+                                type: 'response_rating', source: message.id,
+                                target: 'assistant', value: 1, details: {},
+                              }).catch(() => { /* fire-and-forget */ });
+                            }}
+                          >
+                            <ThumbsUp size={13} />
+                          </button>
+                          <button
+                            type="button"
+                            className="chat-action-btn chat-feedback-btn"
+                            title="Verbesserungswuerdig"
+                            aria-label="Negative Bewertung"
+                            onClick={() => {
+                              axios.post(`/api/personal/feedback/emit`, {
+                                type: 'response_rating', source: message.id,
+                                target: 'assistant', value: -1, details: {},
+                              }).catch(() => { /* fire-and-forget */ });
+                            }}
+                          >
+                            <ThumbsDown size={13} />
+                          </button>
+                        </>
                       )}
                     </div>
                   )}

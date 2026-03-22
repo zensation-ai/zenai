@@ -753,10 +753,12 @@ describe('SmartSuggestionsService', () => {
   // ─── Constants & Exports ─────────────────────────────
 
   describe('constants', () => {
-    it('exports TYPE_WEIGHTS with all 8 suggestion types', () => {
-      expect(Object.keys(TYPE_WEIGHTS)).toHaveLength(8);
+    it('exports TYPE_WEIGHTS with all 10 suggestion types', () => {
+      expect(Object.keys(TYPE_WEIGHTS)).toHaveLength(10);
       expect(TYPE_WEIGHTS.contradiction_alert).toBe(90);
       expect(TYPE_WEIGHTS.context_switch).toBe(30);
+      expect(TYPE_WEIGHTS.knowledge_gap).toBe(65);
+      expect(TYPE_WEIGHTS.hypothesis).toBe(55);
     });
 
     it('exports MAX_ACTIVE_SUGGESTIONS as 10', () => {

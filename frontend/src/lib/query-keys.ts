@@ -216,6 +216,17 @@ export const queryKeys = {
   cognitive: {
     all: (ctx: string) => ['cognitive', ctx] as const,
     overview: (ctx: string) => ['cognitive', ctx, 'overview'] as const,
+    gaps: (ctx: string) => ['cognitive', ctx, 'gaps'] as const,
+    hypotheses: (ctx: string) => ['cognitive', ctx, 'hypotheses'] as const,
+    infoGain: (ctx: string) => ['cognitive', ctx, 'info-gain'] as const,
+    predictions: (ctx: string) => ['cognitive', ctx, 'predictions'] as const,
+    predictionAccuracy: (ctx: string) => ['cognitive', ctx, 'prediction-accuracy'] as const,
+    reviewQueue: (ctx: string) => ['cognitive', ctx, 'review-queue'] as const,
+    fsrsStats: (ctx: string) => ['cognitive', ctx, 'fsrs-stats'] as const,
+    feedback: (ctx: string) => ['cognitive', ctx, 'feedback'] as const,
+    preferences: (ctx: string) => ['cognitive', ctx, 'preferences'] as const,
+    improvements: (ctx: string) => ['cognitive', ctx, 'improvements'] as const,
+    budget: (ctx: string) => ['cognitive', ctx, 'budget'] as const,
   },
 
   // Settings

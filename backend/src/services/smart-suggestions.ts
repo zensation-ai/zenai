@@ -27,7 +27,9 @@ export type SuggestionType =
   | 'context_switch'
   | 'meeting_prep'
   | 'learning_opportunity'
-  | 'contradiction_alert';
+  | 'contradiction_alert'
+  | 'knowledge_gap'
+  | 'hypothesis';
 
 export type SuggestionStatus = 'active' | 'dismissed' | 'snoozed' | 'accepted';
 
@@ -63,6 +65,8 @@ export const TYPE_WEIGHTS: Record<SuggestionType, number> = {
   connection_discovered: 50,
   learning_opportunity: 40,
   context_switch: 30,
+  knowledge_gap: 65,
+  hypothesis: 55,
 };
 
 /** Max active suggestions per user before auto-cleanup */
