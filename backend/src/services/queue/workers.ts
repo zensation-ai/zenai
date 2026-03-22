@@ -334,6 +334,57 @@ async function processEmbeddingDrift(job: BullJob): Promise<Record<string, unkno
   }
 }
 
+/**
+ * Process a hebbian decay + Bayesian confidence propagation job (Phase 125).
+ * Runs across all 4 contexts to strengthen/weaken entity relationships
+ * and propagate updated confidence scores through the knowledge graph.
+ */
+async function processHebbianDecay(job: BullJob): Promise<Record<string, unknown>> {
+  const contexts = ['personal', 'work', 'learning', 'creative'] as const;
+  const results: Record<string, unknown> = {};
+
+  try {
+    const { applyHebbianDecayBatch } = await import('../knowledge-graph/hebbian-dynamics');
+    const { propagateBatch } = await import('../knowledge-graph/confidence-propagation');
+
+    for (const ctx of contexts) {
+      await job.updateProgress(contexts.indexOf(ctx) * 25);
+      try {
+        const hebbianResult = await applyHebbianDecayBatch(ctx);
+        results[`${ctx}_hebbian`] = hebbianResult;
+      } catch (err) {
+        logger.warn(`Hebbian decay failed for context ${ctx}`, {
+          operation: 'worker',
+          queue: 'hebbian-decay',
+          error: err instanceof Error ? err.message : String(err),
+        });
+        results[`${ctx}_hebbian`] = { status: 'skipped', error: err instanceof Error ? err.message : String(err) };
+      }
+      try {
+        const bayesianResult = await propagateBatch(ctx);
+        results[`${ctx}_bayesian`] = bayesianResult;
+      } catch (err) {
+        logger.warn(`Bayesian propagation failed for context ${ctx}`, {
+          operation: 'worker',
+          queue: 'hebbian-decay',
+          error: err instanceof Error ? err.message : String(err),
+        });
+        results[`${ctx}_bayesian`] = { status: 'skipped', error: err instanceof Error ? err.message : String(err) };
+      }
+    }
+
+    await job.updateProgress(100);
+    return { status: 'completed', ...results };
+  } catch (error) {
+    logger.warn('Hebbian decay worker: services not available', {
+      operation: 'worker',
+      queue: 'hebbian-decay',
+      error: error instanceof Error ? error.message : String(error),
+    });
+    return { status: 'skipped' };
+  }
+}
+
 // Worker processor map — now receives the full BullJob for progress reporting
 const processors: Record<string, (job: BullJob) => Promise<Record<string, unknown>>> = {
   'memory-consolidation': processMemoryConsolidation,
@@ -342,6 +393,7 @@ const processors: Record<string, (job: BullJob) => Promise<Record<string, unknow
   'graph-indexing': processGraphIndexing,
   'sleep-compute': processSleepCompute,
   'embedding-drift': processEmbeddingDrift,
+  'hebbian-decay': processHebbianDecay,
 };
 
 // --- Dead Letter Queue helper ---
@@ -398,6 +450,7 @@ export async function startWorkers(): Promise<boolean> {
       'graph-indexing': 1,
       'sleep-compute': 1,
       'embedding-drift': 1,
+      'hebbian-decay': 1,
     };
 
     for (const [queueName, processor] of Object.entries(processors)) {

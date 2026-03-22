@@ -163,6 +163,23 @@ class SleepComputeEngine {
         });
       }
 
+      // 6. Hebbian decay + Bayesian propagation (Phase 125)
+      try {
+        const { getQueueService } = await import('../queue/job-queue');
+        const queueService = getQueueService();
+        await queueService.enqueue('hebbian-decay', 'daily-decay', { triggeredBy: 'sleep-compute' });
+        logger.info('Sleep compute: Hebbian decay + Bayesian propagation queued', {
+          operation: 'sleep-compute',
+          context,
+        });
+      } catch (error) {
+        logger.warn('Sleep compute: Failed to queue Hebbian decay', {
+          operation: 'sleep-compute',
+          context,
+          error: error instanceof Error ? error.message : String(error),
+        });
+      }
+
       result.durationMs = Date.now() - startTime;
 
       // Log the cycle
