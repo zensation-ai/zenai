@@ -30,7 +30,7 @@
   - Short-Term Memory (Session-Kontext)
   - Long-Term Memory (persistentes Wissen)
 
-## Current Phase: 132
+## Current Phase: 133
 
 ### Phase 31 Features (AI State-of-the-Art)
 
@@ -1104,10 +1104,10 @@ cd frontend && npx vitest run
 
 | Kategorie | Bestanden | Übersprungen | Fehlgeschlagen |
 |-----------|-----------|--------------|----------------|
-| **Backend** | 7209 | 24 | 0 |
+| **Backend** | 7311 | 24 | 0 |
 | **Frontend** | 1400 | 0 | 0 |
 | **CLI** | 108 | 0 | 0 |
-| **Gesamt** | 8717 | 24 | 0 |
+| **Gesamt** | 8819 | 24 | 0 |
 
 **Absichtlich übersprungene Tests (24):**
 - 21x Code-Execution Sandbox (Docker nicht verfügbar)
@@ -1239,6 +1239,34 @@ mockQueryContext
 | `cli/jest.config.js` | Jest Config |
 
 **Tests:** CLI 108 + Backend 7209 + Frontend 1400 = **8717 bestanden**, 24 uebersprungen, 0 Failures
+
+---
+
+### 2026-03-22: Phase 133 — Artificial Curiosity Engine (102 neue Tests)
+
+**ZenAI wird neugierig: Knowledge Gap Detection, Information Gain, Hypothesis Generation.**
+
+| Feature | Details |
+|---------|---------|
+| **Knowledge Gap Detection** | Gap-Score Berechnung (4 gewichtete Faktoren), Topic-Gruppierung (TF-IDF Keywords), Top-5 Gaps mit Aktionsvorschlaegen |
+| **Information Gain Scoring** | ICM-adaptiert: Cosine Surprise + Novelty Score, FamiliarityBuffer (FIFO), fire-and-forget DB Tracking |
+| **Hypothesis Engine** | 3 Generatoren: Incomplete Patterns (Graph-Luecken), Temporal Gaps (30d Stale), Contradictions (Negation Detection) |
+| **Gap-Score Formel** | `(queryCount/maxQueries)*0.4 + (1-factCount/maxFacts)*0.3 + (1-avgConfidence)*0.2 + (1-avgRAGScore)*0.1` |
+| **Suggested Actions** | web_research, consolidate_existing, ask_user, monitor — basierend auf Score-Schwellenwerten |
+
+**Neue Dateien:**
+
+| Datei | Zweck |
+|-------|-------|
+| `backend/src/services/curiosity/gap-detector.ts` | Knowledge Gap Detection + Topic Grouping |
+| `backend/src/services/curiosity/information-gain.ts` | ICM Surprise/Novelty + FamiliarityBuffer |
+| `backend/src/services/curiosity/hypothesis-engine.ts` | 3 Hypothesis Generators + Orchestrator |
+| `backend/sql/migrations/phase133_curiosity.sql` | knowledge_gaps + hypotheses + information_gain_events x4 Schemas |
+| `backend/src/__tests__/unit/services/curiosity/gap-detector.test.ts` | 35 Gap Detection Tests |
+| `backend/src/__tests__/unit/services/curiosity/information-gain.test.ts` | 38 Information Gain Tests |
+| `backend/src/__tests__/unit/services/curiosity/hypothesis-engine.test.ts` | 29 Hypothesis Engine Tests |
+
+**Tests:** CLI 108 + Backend 7311 + Frontend 1400 = **8819 bestanden**, 24 uebersprungen, 0 Failures
 
 ---
 
