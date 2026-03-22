@@ -81,6 +81,21 @@ export async function handleNavigateTo(
   });
 }
 
+export async function handleOpenPanel(
+  input: Record<string, unknown>,
+  _execContext: ToolExecutionContext
+): Promise<string> {
+  const panel = input.panel as string;
+  const filter = input.filter as string | undefined;
+
+  return JSON.stringify({
+    success: true,
+    panel,
+    filter,
+    message: `Panel "${panel}" opened`,
+  });
+}
+
 export async function handleAppHelp(
   input: Record<string, unknown>,
   _execContext: ToolExecutionContext

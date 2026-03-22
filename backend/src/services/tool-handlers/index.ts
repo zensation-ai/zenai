@@ -84,12 +84,13 @@ import {
   TOOL_CORE_MEMORY_READ,
   TOOL_CORE_MEMORY_UPDATE,
   TOOL_CORE_MEMORY_APPEND,
+  TOOL_OPEN_PANEL,
 } from '../claude/tool-use';
 
 // Sub-module imports — extracted handlers
 import { handleSearchIdeas, handleCreateIdea, handleGetRelated, handleCalculate, handleUpdateIdea, handleArchiveIdea, handleDeleteIdea } from './idea-tools';
 import { handleRemember, handleRecall, handleMemoryIntrospect } from './memory-recall-tools';
-import { handleCreateMeeting, handleNavigateTo, handleAppHelp, handleCreateCalendarEvent, handleListCalendarEvents, handleDraftEmail, handleEstimateTravel } from './assistant-tools';
+import { handleCreateMeeting, handleNavigateTo, handleAppHelp, handleCreateCalendarEvent, handleListCalendarEvents, handleDraftEmail, handleEstimateTravel, handleOpenPanel } from './assistant-tools';
 
 // Sub-module imports — pre-existing
 import { handleWebSearch, handleFetchUrl } from './web-tools';
@@ -194,6 +195,7 @@ export function registerAllToolHandlers(): void {
   toolRegistry.register(TOOL_CREATE_MEETING, handleCreateMeeting);
   toolRegistry.register(TOOL_NAVIGATE_TO, handleNavigateTo);
   toolRegistry.register(TOOL_APP_HELP, handleAppHelp);
+  toolRegistry.register(TOOL_OPEN_PANEL, handleOpenPanel);
 
   // Business Manager tools (business-tools.ts)
   toolRegistry.register(TOOL_GET_REVENUE_METRICS, handleGetRevenueMetrics);
@@ -259,7 +261,7 @@ export function registerAllToolHandlers(): void {
       'analyze_project', 'get_project_summary', 'list_project_files',
       'execute_code',
       'analyze_document', 'search_documents', 'synthesize_knowledge',
-      'create_meeting', 'navigate_to', 'app_help',
+      'create_meeting', 'navigate_to', 'app_help', 'open_panel',
       'get_revenue_metrics', 'get_traffic_analytics', 'get_seo_performance',
       'get_system_health', 'generate_business_report', 'identify_anomalies', 'compare_periods',
       'create_calendar_event', 'list_calendar_events', 'draft_email', 'estimate_travel',

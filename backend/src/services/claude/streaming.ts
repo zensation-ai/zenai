@@ -498,6 +498,16 @@ export async function streamToSSE(
               type: 'tool_use_end',
               data: { tool: { name: toolBlock.name, result: truncateForSSE(result) } },
             });
+
+            // Emit panel_action SSE event for open_panel tool calls
+            if (toolBlock.name === 'open_panel') {
+              try {
+                const panelResult = JSON.parse(rawResult) as { panel?: string; filter?: string };
+                res.write(`event: panel_action\ndata: ${JSON.stringify({ action: 'open', panel: panelResult.panel, filter: panelResult.filter })}\n\n`);
+              } catch {
+                // Ignore JSON parse errors — panel_action is best-effort
+              }
+            }
           } catch (error) {
             const errorMsg = error instanceof Error ? error.message : 'Tool execution failed';
             toolResults.push({
