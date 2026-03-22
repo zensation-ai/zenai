@@ -53,9 +53,9 @@
 .command-palette-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.6);
-  -webkit-backdrop-filter: blur(8px);
-  backdrop-filter: blur(8px);
+  background: var(--glass-bg);
+  -webkit-backdrop-filter: blur(var(--glass-blur, 12px));
+  backdrop-filter: blur(var(--glass-blur, 12px));
   display: flex;
   align-items: flex-start;
   justify-content: center;
@@ -108,7 +108,7 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  background: var(--surface-light, rgba(235, 242, 248, 0.65));
+  background: var(--surface-1);
   border: 1px solid var(--border, rgba(20, 50, 70, 0.15));
   border-radius: var(--radius-md);
   padding: 12px 16px;
@@ -116,7 +116,7 @@
 }
 
 .command-palette-search:focus-within {
-  border-color: var(--primary, #ff6b35);
+  border-color: var(--accent);
   box-shadow: 0 0 0 3px var(--primary-glow, rgba(255, 107, 53, 0.2));
 }
 
@@ -233,12 +233,12 @@
 
 .command-palette-item:hover,
 .command-palette-item.selected {
-  background: var(--surface-hover, rgba(242, 248, 252, 0.88));
+  background: var(--accent-ai-muted);
 }
 
 .command-palette-item.selected {
-  background: var(--primary-glow, rgba(255, 107, 53, 0.15));
-  outline: 2px solid var(--primary, #ff6b35);
+  background: var(--accent-ai-muted);
+  outline: 2px solid var(--accent-ai);
   outline-offset: -2px;
 }
 
@@ -352,11 +352,11 @@
 
 :root.dark-mode .command-palette-item:hover,
 :root.dark-mode .command-palette-item.selected {
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--accent-ai-muted);
 }
 
 :root.dark-mode .command-palette-item.selected {
-  background: var(--primary-glow, rgba(255, 107, 53, 0.2));
+  background: var(--accent-ai-muted);
 }
 
 :root.dark-mode .command-palette-item-label {
