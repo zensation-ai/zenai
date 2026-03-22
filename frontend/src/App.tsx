@@ -6,7 +6,7 @@ import axios from 'axios';
 import type { Page } from './types';
 
 // Route definitions (centralized)
-import { resolvePathToPage, resolvePagePath, createLegacyRedirects } from './routes';
+import { resolvePathToPage, resolvePagePath, createLegacyRedirects, legacyPageToPanel } from './routes';
 
 // Lazy-loaded page components (centralized)
 import {
@@ -148,11 +148,31 @@ function App() {
 
 function AuthenticatedApp() {
   const { currentPage, tabParam, navigateToPage } = useUrlNavigation();
+  const location = useLocation();
+  const navigate = useNavigate();
   const [context, setContext] = useContextState();
   const keyboardShortcuts = useKeyboardShortcutsModal();
 
   // Phase 142: Cockpit mode (opt-in via localStorage)
   const cockpitMode = safeLocalStorage('get', 'zenai-cockpit-mode') === 'true';
+
+  // Phase 142: Redirect legacy URLs to /?panel=X in cockpit mode
+  useEffect(() => {
+    if (!cockpitMode) return;
+    const currentPath = location.pathname;
+    // If already on root, /dashboard, or /settings, do nothing
+    if (currentPath === '/' || currentPath === '/dashboard' || currentPath.startsWith('/settings') || currentPath.startsWith('/system')) {
+      return;
+    }
+    // Try to resolve old path to a panel
+    const page = resolvePathToPage(currentPath);
+    if (page) {
+      const panel = legacyPageToPanel(page);
+      if (panel) {
+        navigate(`/?panel=${panel}`, { replace: true });
+      }
+    }
+  }, [cockpitMode, location.pathname, navigate]);
 
   // Data loading (extracted to useIdeasData hook)
   const {

@@ -1,4 +1,5 @@
-import { createContext, useContext, useReducer, type ReactNode, type Dispatch } from 'react';
+import { createContext, useContext, useReducer, useEffect, useRef, type ReactNode, type Dispatch } from 'react';
+import { useSearchParams } from 'react-router-dom';
 
 export type PanelType = 'tasks' | 'email' | 'ideas' | 'calendar' | 'contacts'
   | 'documents' | 'memory' | 'finance' | 'agents' | 'search';
@@ -25,6 +26,11 @@ export const initialPanelState: PanelState = {
   pinned: false,
   width: DEFAULT_WIDTH,
 };
+
+const VALID_PANELS: PanelType[] = [
+  'tasks', 'email', 'ideas', 'calendar', 'contacts',
+  'documents', 'memory', 'finance', 'agents', 'search',
+];
 
 export function panelReducer(state: PanelState, action: PanelAction): PanelState {
   switch (action.type) {
@@ -63,6 +69,39 @@ const PanelContext = createContext<PanelContextValue | null>(null);
 
 export function PanelProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(panelReducer, initialPanelState);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const isInitialMount = useRef(true);
+
+  // On mount: read URL → open panel if specified
+  useEffect(() => {
+    const panel = searchParams.get('panel') as PanelType | null;
+    const filter = searchParams.get('filter') ?? undefined;
+    if (panel && VALID_PANELS.includes(panel)) {
+      dispatch({ type: 'OPEN_PANEL', panel, filter });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Only on mount
+
+  // On state change: update URL
+  useEffect(() => {
+    // Skip the initial render to avoid overwriting URL before mount-read fires
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      return;
+    }
+
+    if (state.activePanel) {
+      const params: Record<string, string> = { panel: state.activePanel };
+      if (state.filter) {
+        params.filter = state.filter;
+      }
+      setSearchParams(params, { replace: true });
+    } else {
+      // Panel closed — remove query params
+      setSearchParams({}, { replace: true });
+    }
+  }, [state.activePanel, state.filter, setSearchParams]);
+
   return (
     <PanelContext.Provider value={{ state, dispatch }}>
       {children}
