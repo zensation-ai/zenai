@@ -3,7 +3,7 @@
   align-items: center;
   gap: 2px;
   padding: 4px 8px;
-  border-bottom: 1px solid var(--border-primary, rgba(255,255,255,0.08));
+  border-bottom: 1px solid var(--border);
   overflow-x: auto;
   flex-shrink: 0;
 }
@@ -18,20 +18,20 @@
   border-radius: 6px;
   cursor: pointer;
   font-size: 12px;
-  color: var(--text-secondary, rgba(255,255,255,0.5));
+  color: var(--text-secondary);
   white-space: nowrap;
   max-width: 160px;
   transition: background 150ms, color 150ms;
 }
 
 .session-tabs__tab:hover {
-  background: var(--surface-hover, rgba(255,255,255,0.06));
-  color: var(--text-primary, #fff);
+  background: var(--surface-3);
+  color: var(--text-primary);
 }
 
 .session-tabs__tab--active {
-  background: var(--surface-hover, rgba(255,255,255,0.06));
-  color: var(--text-primary, #fff);
+  background: var(--accent-ai-muted);
+  color: var(--accent-ai);
 }
 
 .session-tabs__title {
@@ -52,7 +52,7 @@
 }
 
 .session-tabs__close:hover {
-  background: var(--surface-hover, rgba(255,255,255,0.1));
+  background: var(--surface-3);
 }
 
 .session-tabs__new {
@@ -65,11 +65,11 @@
   background: transparent;
   border-radius: 6px;
   cursor: pointer;
-  color: var(--text-tertiary, rgba(255,255,255,0.3));
+  color: var(--text-tertiary);
   flex-shrink: 0;
 }
 
 .session-tabs__new:hover {
-  background: var(--surface-hover, rgba(255,255,255,0.06));
-  color: var(--text-primary, #fff);
+  background: var(--surface-3);
+  color: var(--text-primary);
 }
