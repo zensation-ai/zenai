@@ -797,6 +797,30 @@ export const TOOL_MEMORY_SEARCH_AND_LINK: ToolDefinition = {
 };
 
 // ===========================================
+// UI Interaction Tools
+// ===========================================
+
+export const TOOL_OPEN_PANEL: ToolDefinition = {
+  name: 'open_panel',
+  description: 'Opens a context panel in the ZenAI UI. Use this when the user asks to see their tasks, emails, ideas, calendar, contacts, documents, memory, finances, or agents. The panel slides out on the right side of the chat.',
+  input_schema: {
+    type: 'object',
+    properties: {
+      panel: {
+        type: 'string',
+        enum: ['tasks', 'email', 'ideas', 'calendar', 'contacts', 'documents', 'memory', 'finance', 'agents', 'search'],
+        description: 'Which panel to open',
+      },
+      filter: {
+        type: 'string',
+        description: 'Optional filter (e.g. "today", "unread", "high-priority")',
+      },
+    },
+    required: ['panel'],
+  },
+};
+
+// ===========================================
 // Phase 126: Core Memory Tools
 // ===========================================
 

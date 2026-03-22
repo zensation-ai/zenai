@@ -1,0 +1,28 @@
+.cockpit-layout {
+  display: flex;
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
+  background: var(--surface-primary, #0a0a0f);
+  color: var(--text-primary, #e5e5e5);
+}
+
+.cockpit-layout__chat {
+  flex: 1;
+  min-width: 400px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+@media (max-width: 767px) {
+  .cockpit-layout {
+    flex-direction: column;
+  }
+  .cockpit-layout > .rail {
+    display: none;
+  }
+  .cockpit-layout__chat {
+    min-width: 0;
+  }
+}

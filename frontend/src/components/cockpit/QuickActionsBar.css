@@ -1,0 +1,25 @@
+.quick-actions-bar {
+  display: flex;
+  gap: 4px;
+  padding: 4px 12px;
+  flex-shrink: 0;
+}
+
+.quick-actions-bar__btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: transparent;
+  border-radius: 6px;
+  cursor: pointer;
+  color: var(--text-tertiary, rgba(255,255,255,0.3));
+  transition: background 150ms, color 150ms;
+}
+
+.quick-actions-bar__btn:hover {
+  background: var(--surface-hover, rgba(255,255,255,0.06));
+  color: var(--text-primary, #fff);
+}

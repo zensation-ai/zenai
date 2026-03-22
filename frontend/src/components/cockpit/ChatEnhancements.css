@@ -1,0 +1,119 @@
+/* Panel Trigger Link */
+.panel-trigger-link {
+  display: inline;
+  border: none;
+  background: none;
+  color: var(--color-accent, #6366f1);
+  cursor: pointer;
+  font-size: inherit;
+  font-family: inherit;
+  padding: 0;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.panel-trigger-link:hover {
+  text-decoration: underline;
+}
+
+/* Action Buttons */
+.action-buttons {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+  flex-wrap: wrap;
+}
+
+.action-buttons__btn {
+  padding: 6px 14px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: background 150ms, border-color 150ms;
+}
+
+.action-buttons__btn--primary {
+  background: var(--color-accent, #6366f1);
+  color: #fff;
+  border-color: var(--color-accent, #6366f1);
+}
+
+.action-buttons__btn--primary:hover {
+  opacity: 0.9;
+}
+
+.action-buttons__btn--secondary {
+  background: transparent;
+  color: var(--text-primary, #e5e5e5);
+  border-color: var(--border-primary, rgba(255,255,255,0.15));
+}
+
+.action-buttons__btn--secondary:hover {
+  background: var(--surface-hover, rgba(255,255,255,0.06));
+}
+
+.action-buttons__btn--danger {
+  background: transparent;
+  color: var(--color-danger, #ef4444);
+  border-color: var(--color-danger, rgba(239,68,68,0.3));
+}
+
+.action-buttons__btn--danger:hover {
+  background: rgba(239,68,68,0.1);
+}
+
+/* Inline Widget */
+.inline-widget {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  background: var(--surface-secondary, rgba(255,255,255,0.03));
+  border: 1px solid var(--border-primary, rgba(255,255,255,0.08));
+  border-radius: 8px;
+  margin: 4px 0;
+  font-size: 13px;
+}
+
+.inline-widget--clickable {
+  cursor: pointer;
+  transition: background 150ms;
+}
+
+.inline-widget--clickable:hover {
+  background: var(--surface-hover, rgba(255,255,255,0.06));
+}
+
+.inline-widget__icon {
+  color: var(--text-tertiary, rgba(255,255,255,0.4));
+  flex-shrink: 0;
+}
+
+.inline-widget__content {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.inline-widget__title {
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.inline-widget__subtitle {
+  color: var(--text-tertiary, rgba(255,255,255,0.4));
+  font-size: 11px;
+}
+
+.inline-widget__status {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  margin-left: auto;
+  flex-shrink: 0;
+}

@@ -95,4 +95,7 @@ export type Page =
   | 'sync'           // → settings
   | 'profile';       // → settings
 
+// Cockpit mode page types (Phase 142)
+export type CockpitPage = 'chat' | 'dashboard' | 'settings';
+
 export type { AIContext as Context } from '../components/ContextSwitcher';

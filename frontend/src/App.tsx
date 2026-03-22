@@ -6,7 +6,7 @@ import axios from 'axios';
 import type { Page } from './types';
 
 // Route definitions (centralized)
-import { resolvePathToPage, resolvePagePath, createLegacyRedirects } from './routes';
+import { resolvePathToPage, resolvePagePath, createLegacyRedirects, legacyPageToPanel } from './routes';
 
 // Lazy-loaded page components (centralized)
 import {
@@ -56,6 +56,12 @@ import { ScrollProgress } from './components/AnticipatoryUI';
 import { AppLayout } from './components/layout/AppLayout';
 import { usePageHistory } from './hooks/usePageHistory';
 import { PageTransition } from './components/PageTransition';
+
+// Cockpit Mode (Phase 142 — opt-in feature flag)
+import { PanelProvider, usePanelContext } from './contexts/PanelContext';
+import type { PanelType } from './contexts/PanelContext';
+import { CockpitLayout } from './components/cockpit/CockpitLayout';
+import { ChatSessionTabs } from './components/cockpit/ChatSessionTabs';
 
 import './App.css';
 
@@ -144,8 +150,31 @@ function App() {
 
 function AuthenticatedApp() {
   const { currentPage, tabParam, navigateToPage } = useUrlNavigation();
+  const location = useLocation();
+  const navigate = useNavigate();
   const [context, setContext] = useContextState();
   const keyboardShortcuts = useKeyboardShortcutsModal();
+
+  // Phase 142: Cockpit mode (opt-in via localStorage)
+  const cockpitMode = safeLocalStorage('get', 'zenai-cockpit-mode') === 'true';
+
+  // Phase 142: Redirect legacy URLs to /?panel=X in cockpit mode
+  useEffect(() => {
+    if (!cockpitMode) return;
+    const currentPath = location.pathname;
+    // If already on root, /dashboard, or /settings, do nothing
+    if (currentPath === '/' || currentPath === '/dashboard' || currentPath.startsWith('/settings') || currentPath.startsWith('/system')) {
+      return;
+    }
+    // Try to resolve old path to a panel
+    const page = resolvePathToPage(currentPath);
+    if (page) {
+      const panel = legacyPageToPanel(page);
+      if (panel) {
+        navigate(`/?panel=${panel}`, { replace: true });
+      }
+    }
+  }, [cockpitMode, location.pathname, navigate]);
 
   // Data loading (extracted to useIdeasData hook)
   const {
@@ -537,6 +566,32 @@ function AuthenticatedApp() {
   // RENDER
   // ============================================
 
+  // ============================================
+  // COCKPIT MODE (Phase 142 — opt-in feature flag)
+  // ============================================
+  if (cockpitMode) {
+    return (
+      <ShortcutHintProvider>
+      <ErrorBoundary>
+        <PanelProvider>
+          <CockpitShell
+            context={context}
+            onContextChange={setContext}
+            currentPage={currentPage}
+            navigateToPage={navigateToPage}
+            pageHistory={pageHistory}
+            keyboardShortcuts={keyboardShortcuts}
+          />
+        </PanelProvider>
+      </ErrorBoundary>
+      </ShortcutHintProvider>
+    );
+  }
+
+  // ============================================
+  // STANDARD MODE (existing AppLayout)
+  // ============================================
+
   return (
     <ShortcutHintProvider>
     <ErrorBoundary>
@@ -651,6 +706,76 @@ function AuthenticatedApp() {
 // ============================================
 // HELPER COMPONENTS
 // ============================================
+
+/** Cockpit mode shell — rendered inside PanelProvider so it can use usePanelContext */
+function CockpitShell({ context, onContextChange, currentPage, navigateToPage, pageHistory, keyboardShortcuts }: {
+  context: AIContext;
+  onContextChange: (c: AIContext) => void;
+  currentPage: Page;
+  navigateToPage: (page: Page, options?: { tab?: string }) => void;
+  pageHistory: { recentPages: Page[]; favoritePages: Page[]; toggleFavorite: (page: Page) => void; isFavorited: (page: Page) => boolean; addRecentPage: (page: Page) => void };
+  keyboardShortcuts: { isOpen: boolean; close: () => void };
+}) {
+  const { dispatch: panelDispatch } = usePanelContext();
+
+  // Task B: Command palette with panel commands wired
+  const commandPalette = useCommandPalette({
+    onNavigate: navigateToPage,
+    externalRecentPages: pageHistory.recentPages,
+    onAction: (action) => {
+      if (action === 'new-idea') {
+        navigateToPage('ideas');
+      } else if (action === 'voice-input') {
+        navigateToPage('ideas');
+      }
+    },
+    onOpenPanel: (panelId: string) => panelDispatch({ type: 'OPEN_PANEL', panel: panelId as PanelType }),
+  });
+
+  // Task A: Chat session tabs state
+  const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
+  const chatTabs = useMemo(() => [
+    { sessionId: activeSessionId || 'default', title: 'Chat' },
+  ], [activeSessionId]);
+
+  const handleSessionChange = useCallback((sessionId: string | null) => {
+    setActiveSessionId(sessionId);
+  }, []);
+
+  return (
+    <>
+      <CockpitLayout currentPage="chat" context={context} onContextChange={onContextChange}>
+        <ChatSessionTabs
+          tabs={chatTabs}
+          activeSessionId={activeSessionId || 'default'}
+          onSelectTab={() => { /* session switching will be implemented later */ }}
+          onCloseTab={() => { /* tab close will be implemented later */ }}
+          onNewTab={() => { /* new session will be implemented later */ }}
+        />
+        <ErrorBoundary fallback={<div className="chat-error-fallback">Chat nicht verfuegbar.</div>}>
+          <GeneralChat context={context} isCompact={false} onSessionChange={handleSessionChange} />
+        </ErrorBoundary>
+      </CockpitLayout>
+
+      <ToastContainer />
+
+      {commandPalette.isOpen && (
+        <CommandPalette
+          isOpen={commandPalette.isOpen}
+          onClose={commandPalette.close}
+          commands={commandPalette.commands}
+          recentPages={pageHistory.recentPages}
+          currentPage={currentPage}
+        />
+      )}
+
+      <KeyboardShortcutsModal
+        isOpen={keyboardShortcuts.isOpen}
+        onClose={keyboardShortcuts.close}
+      />
+    </>
+  );
+}
 
 /** Calendar route handler — maps tab param to planner tab */
 function CalendarRouteHandler({ context, tabParam, navigateToPage }: {

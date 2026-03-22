@@ -180,6 +180,27 @@ export function createLegacyRedirects() {
   });
 }
 
+// ============================================
+// COCKPIT MODE ROUTES (Phase 142)
+// ============================================
+
+export const COCKPIT_ROUTES = {
+  chat: '/chat',
+  dashboard: '/dashboard',
+  settings: '/settings',
+} as const;
+
+export function legacyPageToPanel(page: string): string | null {
+  const mapping: Record<string, string> = {
+    'ideas': 'ideas', 'ideas/incubator': 'ideas', 'ideas/archive': 'ideas', 'ideas/triage': 'ideas',
+    'calendar': 'calendar', 'calendar/tasks': 'tasks', 'calendar/kanban': 'tasks',
+    'email': 'email', 'contacts': 'contacts', 'documents': 'documents',
+    'finance': 'finance', 'my-ai': 'memory', 'my-ai/memory': 'memory',
+    'workshop': 'agents', 'workshop/agent-teams': 'agents',
+  };
+  return mapping[page] ?? null;
+}
+
 /**
  * Resolve a Page to its URL path, with optional tab suffix.
  */
