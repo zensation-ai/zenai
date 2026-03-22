@@ -30,7 +30,7 @@
   - Short-Term Memory (Session-Kontext)
   - Long-Term Memory (persistentes Wissen)
 
-## Current Phase: 131
+## Current Phase: 132
 
 ### Phase 31 Features (AI State-of-the-Art)
 
@@ -366,10 +366,21 @@
 - Procedural Memory Panel: `frontend/src/components/ProceduralMemoryPanel/` (7 files)
 - Agent Teams Page: `frontend/src/components/AgentTeamsPage/` (3 files)
 
+### CLI
+
+- Entry Point: `cli/src/index.ts`
+- Agent Loop: `cli/src/agent-loop.ts`
+- Filesystem Tools: `cli/src/filesystem-tools.ts`
+- Backend Bridge: `cli/src/backend-bridge.ts`
+- Context Management: `cli/src/context.ts`
+- Terminal UI: `cli/src/ui/terminal-ui.ts`
+- Types: `cli/src/types.ts`
+
 ### Tests
 
 - Backend: `backend/src/__tests__/`
 - Frontend: `frontend/src/__tests__/` and `frontend/src/components/__tests__/`
+- CLI: `cli/src/__tests__/`
 
 ## API Endpoints (Phase 41)
 
@@ -1094,8 +1105,9 @@ cd frontend && npx vitest run
 | Kategorie | Bestanden | Übersprungen | Fehlgeschlagen |
 |-----------|-----------|--------------|----------------|
 | **Backend** | 7209 | 24 | 0 |
-| **Frontend** | 1320 | 0 | 0 |
-| **Gesamt** | 8529 | 24 | 0 |
+| **Frontend** | 1400 | 0 | 0 |
+| **CLI** | 108 | 0 | 0 |
+| **Gesamt** | 8717 | 24 | 0 |
 
 **Absichtlich übersprungene Tests (24):**
 - 21x Code-Execution Sandbox (Docker nicht verfügbar)
@@ -1191,6 +1203,44 @@ mockQueryContext
 - API Docs: `/api-docs` (Swagger)
 
 ## Changelog
+
+### 2026-03-22: Phase 132 — CLI Agent (108 neue Tests)
+
+**ZenAI im Terminal: Agent Loop, File Tools, Backend Bridge, Session Persistence.**
+
+**Masterplan:** `docs/superpowers/specs/2026-03-22-cognitive-architecture-masterplan.md` (Phase 132)
+
+| Feature | Details |
+|---------|---------|
+| **Agent Loop** | Claude Code Pattern: Single-threaded loop mit Tool-Execution, Max-Iterations Guard, Error Recovery |
+| **Filesystem Tools** | 6 Tools: read_file (offset/limit), write_file (mkdir -p), edit_file (search/replace), list_files (glob), search_content (grep), run_command (shell) |
+| **Backend Bridge** | API-Client fuer ZenAI Backend: Memory (remember/recall), Web Search, Idea Search, Core Memory Blocks |
+| **Terminal UI** | Chalk-basierte Ausgabe: Markdown Rendering, Spinner, Tool Activity Display |
+| **Context Management** | .zenai/ Directory, Session Persistence (JSON), Projekt-Erkennung (11 Typen) |
+| **Hybrid Architecture** | Lokale File-Tools + Backend-API fuer Memory/KG/RAG — ein Memory-Store fuer Web-UI UND CLI |
+
+**Neue Dateien:**
+
+| Datei | Zweck |
+|-------|-------|
+| `cli/src/index.ts` | CLI Entry Point (REPL + One-Shot Mode) |
+| `cli/src/agent-loop.ts` | Single-threaded Agent Loop (Claude Code Pattern) |
+| `cli/src/filesystem-tools.ts` | 6 File/Shell Tools + Tool Definitions |
+| `cli/src/backend-bridge.ts` | Backend API Client (Memory, Search, Core Memory) |
+| `cli/src/context.ts` | .zenai/ Session + Project Detection |
+| `cli/src/ui/terminal-ui.ts` | Terminal Output (Chalk, Spinner, Markdown) |
+| `cli/src/types.ts` | Shared Type Definitions |
+| `cli/src/logger.ts` | Simple Logger |
+| `cli/src/__tests__/agent-loop.test.ts` | 33 Agent Loop Tests |
+| `cli/src/__tests__/filesystem-tools.test.ts` | 44 Filesystem Tools Tests |
+| `cli/src/__tests__/backend-bridge.test.ts` | 31 Backend Bridge Tests |
+| `cli/package.json` | @zenai/cli Package Config |
+| `cli/tsconfig.json` | TypeScript Config |
+| `cli/jest.config.js` | Jest Config |
+
+**Tests:** CLI 108 + Backend 7209 + Frontend 1400 = **8717 bestanden**, 24 uebersprungen, 0 Failures
+
+---
 
 ### 2026-03-22: Phases 125-131 — Cognitive Architecture Foundation (764 neue Tests)
 
