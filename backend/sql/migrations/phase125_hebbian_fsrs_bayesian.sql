@@ -141,7 +141,7 @@ BEGIN
 
     -- Index for review-queue queries: fetch overdue facts efficiently
     EXECUTE format(
-      'CREATE INDEX IF NOT EXISTS idx_%s_learned_facts_fsrs_next_review ON %I.learned_facts (fsrs_next_review ASC) WHERE is_active = true',
+      'CREATE INDEX IF NOT EXISTS idx_%s_learned_facts_fsrs_next_review ON %I.learned_facts (fsrs_next_review ASC)',
       s, s
     );
 
