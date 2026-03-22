@@ -74,6 +74,12 @@ export interface ResponseMetadata {
     episodesRetrieved: number;
     workingMemorySlots: number;
   };
+  /** Phase 127: GWT query analysis metadata (optional) */
+  gwtAnalysis?: {
+    intent: string;
+    domain: string;
+    complexity: number;
+  };
 }
 
 /**

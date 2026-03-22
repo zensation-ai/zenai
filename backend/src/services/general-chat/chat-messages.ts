@@ -133,6 +133,22 @@ export async function generateEnhancedResponse(
     timestamp: row.created_at,
   }));
 
+  // Phase 127: GWT Query Analysis (heuristic, no LLM call)
+  let gwtAnalysis: { intent: string; domain: string; complexity: number; temporalReference: string | null; entityMentions: string[]; isFollowUp: boolean } | null = null;
+  try {
+    const { analyzeQuery } = await import('../reasoning/query-analyzer');
+    gwtAnalysis = analyzeQuery(userMessage);
+
+    logger.debug('GWT query analysis', {
+      sessionId,
+      intent: gwtAnalysis.intent,
+      domain: gwtAnalysis.domain,
+      complexity: gwtAnalysis.complexity,
+    });
+  } catch (error) {
+    logger.debug('GWT analysis skipped', { error: error instanceof Error ? error.message : String(error) });
+  }
+
   // Build enhanced system prompt with HiMeS memory context
   let systemPrompt = GENERAL_CHAT_SYSTEM_PROMPT;
 
@@ -195,6 +211,21 @@ export async function generateEnhancedResponse(
     } catch (error) {
       // Non-critical: Core Memory is a bonus, not required
       logger.debug('Core Memory injection skipped', { error: error instanceof Error ? error.message : String(error) });
+    }
+
+    // Phase 127: GWT context guidance
+    if (gwtAnalysis) {
+      const gwtSection = [
+        '\n\n[KONTEXT-ANALYSE]',
+        `Absicht: ${gwtAnalysis.intent}`,
+        `Bereich: ${gwtAnalysis.domain}`,
+        `Komplexität: ${gwtAnalysis.complexity > 0.5 ? 'hoch' : 'normal'}`,
+        gwtAnalysis.temporalReference ? `Zeitbezug: ${gwtAnalysis.temporalReference}` : null,
+        gwtAnalysis.entityMentions.length > 0 ? `Erwähnte Entitäten: ${gwtAnalysis.entityMentions.join(', ')}` : null,
+        gwtAnalysis.isFollowUp ? 'Dies ist eine Folgefrage zum vorherigen Thema.' : null,
+      ].filter(Boolean).join('\n');
+
+      systemPrompt += gwtSection;
     }
 
     logger.debug('Enhanced context prepared', {
@@ -542,6 +573,13 @@ export async function generateEnhancedResponse(
       ragQuality,
       processingTimeMs,
       memoryStats,
+      ...(gwtAnalysis ? {
+        gwtAnalysis: {
+          intent: gwtAnalysis.intent,
+          domain: gwtAnalysis.domain,
+          complexity: gwtAnalysis.complexity,
+        },
+      } : {}),
     },
   };
 }
@@ -599,6 +637,21 @@ export async function sendMessage(
   recordEpisode(sessionId, userMessage, aiResponse, contextType).catch(error => {
     logger.warn('Failed to record episodic memory - conversation may not be remembered', { sessionId, error });
   });
+
+  // Phase 127: Post-response fact check (fire-and-forget)
+  if (aiResponse && aiResponse.length > 100) {
+    import('../reasoning/fact-checker').then(({ runFactCheck }) => {
+      runFactCheck(contextType as 'personal' | 'work' | 'learning' | 'creative', aiResponse).then(result => {
+        if (result.hasContradictions) {
+          logger.warn('Fact check found contradictions', {
+            sessionId,
+            contradictions: result.contradictions.length,
+            newFactCandidates: result.newFactCandidates.length,
+          });
+        }
+      }).catch(() => { /* non-critical */ });
+    }).catch(() => { /* module load failure, non-critical */ });
+  }
 
   // Analyze implicit feedback signals (non-blocking)
   implicitFeedback.analyzeInteraction(
