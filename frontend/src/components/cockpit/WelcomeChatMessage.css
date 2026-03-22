@@ -1,0 +1,82 @@
+.welcome-chat-message {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 32px 24px;
+  background: var(--surface-2, #1a2332);
+  border: 1px solid var(--border, rgba(255, 255, 255, 0.08));
+  border-radius: 16px;
+  text-align: center;
+  max-width: 520px;
+  margin: 0 auto;
+}
+
+.welcome-chat-message__icon {
+  font-size: 2.5rem;
+  line-height: 1;
+  margin-bottom: 4px;
+}
+
+.welcome-chat-message__heading {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--text-primary, #e8eaf0);
+  letter-spacing: -0.01em;
+}
+
+.welcome-chat-message__subtitle {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--text-secondary, rgba(232, 234, 240, 0.6));
+  line-height: 1.5;
+}
+
+.welcome-chat-message__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+  margin-top: 8px;
+}
+
+.welcome-chat-message__chip {
+  padding: 8px 16px;
+  background: var(--accent-ai-muted, rgba(94, 129, 244, 0.12));
+  border: 1px solid var(--border, rgba(255, 255, 255, 0.08));
+  border-radius: 9999px;
+  color: var(--text-primary, #e8eaf0);
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 150ms ease, border-color 150ms ease, transform 100ms ease;
+  white-space: nowrap;
+}
+
+.welcome-chat-message__chip:hover {
+  background: var(--accent-ai-muted-hover, rgba(94, 129, 244, 0.22));
+  border-color: var(--accent-ai, rgba(94, 129, 244, 0.5));
+  transform: translateY(-1px);
+}
+
+.welcome-chat-message__chip:active {
+  transform: translateY(0);
+}
+
+.welcome-chat-message__chip:focus-visible {
+  outline: 2px solid var(--accent-ai, #5e81f4);
+  outline-offset: 2px;
+}
+
+.welcome-chat-message__chip--palette {
+  background: transparent;
+  border-color: var(--border, rgba(255, 255, 255, 0.12));
+  color: var(--text-secondary, rgba(232, 234, 240, 0.6));
+}
+
+.welcome-chat-message__chip--palette:hover {
+  background: var(--surface-3, rgba(255, 255, 255, 0.05));
+  border-color: var(--border-hover, rgba(255, 255, 255, 0.2));
+  color: var(--text-primary, #e8eaf0);
+}
