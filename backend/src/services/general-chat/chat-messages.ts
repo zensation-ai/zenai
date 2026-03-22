@@ -260,6 +260,25 @@ export async function generateEnhancedResponse(
     }
   }
 
+  // Phase 128: Check for reusable reasoning chain (before RAG)
+  let reusableChain: any = null;
+  try {
+    const { getReusableChainForQuery } = await import('../reasoning/chain-store');
+    reusableChain = await getReusableChainForQuery(contextType, userMessage);
+    if (reusableChain) {
+      systemPrompt += `\n\n[FRÜHERER DENKPROZESS]\nBei einer ähnlichen Frage habe ich folgenden Denkprozess verwendet:\n${reusableChain.steps.map((s: any) => `${s.stepNumber}. ${s.content}`).join('\n')}\nSchlussfolgerung: ${reusableChain.conclusion || 'Keine'}\nPrüfe ob dieser Denkprozess noch gültig ist und passe ihn ggf. an.`;
+
+      // Increment reuse count (fire-and-forget)
+      import('../reasoning/chain-store').then(({ incrementReuseCount }) => {
+        incrementReuseCount(contextType, reusableChain.id).catch(() => {});
+      }).catch(() => {});
+
+      logger.debug('Reusable chain found', { sessionId, chainId: reusableChain.id, similarity: reusableChain.similarity });
+    }
+  } catch (error) {
+    logger.debug('Chain lookup skipped', { error: error instanceof Error ? error.message : String(error) });
+  }
+
   // === Adaptive RAG: Intent Classification (Phase 32A-1) ===
   // Classify query intent BEFORE deciding whether to run RAG.
   // This prevents unnecessary retrieval for greetings, confirmations, etc.
@@ -651,6 +670,31 @@ export async function sendMessage(
         }
       }).catch(() => { /* non-critical */ });
     }).catch(() => { /* module load failure, non-critical */ });
+  }
+
+  // Phase 128: Store reasoning chain for tool-assisted responses (fire-and-forget)
+  const toolsCalled = metadata?.toolsCalled;
+  if (toolsCalled && toolsCalled.length >= 2) {
+    import('../reasoning/chain-store').then(({ storeChain }) => {
+      const steps = toolsCalled.map((t: { name: string; result: string }, i: number) => ({
+        stepNumber: i + 1,
+        type: 'inference' as const,
+        content: `Tool: ${t.name || 'unknown'} → ${typeof t.result === 'string' ? t.result.slice(0, 200) : 'result'}`,
+      }));
+      const gwtDomain = metadata?.gwtAnalysis?.domain || null;
+      storeChain(contextType as 'personal' | 'work' | 'learning' | 'creative', {
+        userId: userId || '00000000-0000-0000-0000-000000000001',
+        query: userMessage,
+        steps,
+        conclusion: aiResponse?.slice(0, 500) || null,
+        confidence: 0.7,
+        domain: gwtDomain,
+        usedFacts: [],
+        usedTools: toolsCalled.map((t: { name: string }) => t.name || 'unknown'),
+        userFeedback: null,
+        reusable: false,
+      }).catch(() => {});
+    }).catch(() => {});
   }
 
   // Analyze implicit feedback signals (non-blocking)

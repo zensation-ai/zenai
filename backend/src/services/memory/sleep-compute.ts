@@ -180,6 +180,33 @@ class SleepComputeEngine {
         });
       }
 
+      // 7. Knowledge Graph Inference (Phase 128)
+      try {
+        const { runFullInference, storeInferredFacts } = await import('../reasoning/inference-engine');
+
+        // Get top 10 most active entities (by hebbian_activation) for inference
+        const entities = await queryContext(context, `
+          SELECT id FROM knowledge_entities
+          WHERE hebbian_activation > 1.2
+          ORDER BY hebbian_activation DESC LIMIT 10
+        `, []);
+
+        let totalInferred = 0;
+        for (const entity of entities.rows) {
+          const inferences = await runFullInference(context, entity.id);
+          if (inferences.length > 0) {
+            const stored = await storeInferredFacts(context, inferences);
+            totalInferred += stored;
+          }
+        }
+
+        if (totalInferred > 0) {
+          logger.info('Sleep compute: inference complete', { context, totalInferred });
+        }
+      } catch (error) {
+        logger.warn('Sleep compute: inference failed', { context, error: error instanceof Error ? error.message : String(error) });
+      }
+
       result.durationMs = Date.now() - startTime;
 
       // Log the cycle
