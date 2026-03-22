@@ -22,7 +22,7 @@ import { logger } from '../utils/logger';
 // Types
 // ===========================================
 
-export type ModelProvider = 'anthropic' | 'openai' | 'ollama';
+export type ModelProvider = 'anthropic' | 'mistral' | 'openai' | 'ollama';
 
 export type ModelTier = 'fast' | 'balanced' | 'premium';
 
@@ -110,6 +110,24 @@ const MODELS: Record<string, ModelConfig> = {
     maxTokens: 8192,
     available: true,
   },
+  'mistral-small': {
+    provider: 'mistral',
+    modelId: process.env.MISTRAL_MODEL || 'mistral-small-latest',
+    tier: 'fast',
+    inputCostPer1K: 0.001,
+    outputCostPer1K: 0.003,
+    maxTokens: 8192,
+    available: !!process.env.MISTRAL_API_KEY,
+  },
+  'mistral-large': {
+    provider: 'mistral',
+    modelId: 'mistral-large-latest',
+    tier: 'balanced',
+    inputCostPer1K: 0.003,
+    outputCostPer1K: 0.009,
+    maxTokens: 8192,
+    available: !!process.env.MISTRAL_API_KEY,
+  },
   'ollama-local': {
     provider: 'ollama',
     modelId: 'mistral',
@@ -129,7 +147,7 @@ const DEFAULT_CONFIG: OrchestratorConfig = {
   monthlyBudgetUSD: 0, // Unlimited by default
   defaultTier: 'balanced',
   enableCostTracking: true,
-  fallbackOrder: ['anthropic', 'ollama'],
+  fallbackOrder: ['anthropic', 'mistral', 'ollama'],
 };
 
 // ===========================================

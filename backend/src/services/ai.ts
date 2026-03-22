@@ -16,6 +16,7 @@
 import { logger } from '../utils/logger';
 import { isClaudeAvailable, structureWithClaude, structureWithClaudePersonalized, generateClaudeResponse } from './claude';
 import { structureWithOllama, generateEmbedding as generateOllamaEmbedding, StructuredIdea } from '../utils/ollama';
+import { isMistralAvailable, structureWithMistral, generateMistralEmbedding } from './mistral';
 import { AIContext } from '../utils/database-context';
 import OpenAI from 'openai';
 
@@ -158,7 +159,7 @@ function validateTranscript(transcript: string): void {
 
 /**
  * Structure a transcript into a structured idea
- * Falls back through: Claude → Ollama → Basic
+ * Falls back through: Claude → Mistral → Ollama → Basic
  *
  * @param transcript - The raw transcript text to structure
  * @returns Structured idea with title, type, category, etc.
@@ -172,14 +173,27 @@ export async function structureIdea(transcript: string): Promise<StructuredIdea>
       logger.info('Structuring with Claude', { operation: 'structureIdea' });
       return await structureWithClaude(transcript);
     } catch (error: unknown) {
-      logger.warn('Claude structuring failed, falling back to Ollama', {
+      logger.warn('Claude structuring failed, falling back to Mistral', {
         error: getErrorMessage(error),
         operation: 'structureIdea'
       });
     }
   }
 
-  // Try Ollama as fallback (local)
+  // Try Mistral as cloud fallback
+  if (isMistralAvailable()) {
+    try {
+      logger.info('Structuring with Mistral', { operation: 'structureIdea' });
+      return await structureWithMistral(transcript);
+    } catch (error: unknown) {
+      logger.warn('Mistral structuring failed, falling back to Ollama', {
+        error: getErrorMessage(error),
+        operation: 'structureIdea'
+      });
+    }
+  }
+
+  // Try Ollama as local fallback
   try {
     logger.info('Structuring with Ollama', { operation: 'structureIdea' });
     return await structureWithOllama(transcript);
@@ -198,7 +212,7 @@ export async function structureIdea(transcript: string): Promise<StructuredIdea>
 /**
  * Structure a transcript with personalized context
  * Uses business profile, learning insights, and recent topics for better results
- * Falls back through: Claude (personalized) → Claude (basic) → Ollama → Basic
+ * Falls back through: Claude (personalized) → Claude (basic) → Mistral → Ollama → Basic
  *
  * @param transcript - The raw transcript text to structure
  * @param context - The AI context (personal/work) for personalization
@@ -228,7 +242,7 @@ export async function structureIdeaPersonalized(
       try {
         return await structureWithClaude(transcript);
       } catch (basicError: unknown) {
-        logger.warn('Claude basic structuring also failed, falling back to Ollama', {
+        logger.warn('Claude basic structuring also failed, falling back to Mistral', {
           error: getErrorMessage(basicError),
           operation: 'structureIdeaPersonalized'
         });
@@ -236,7 +250,20 @@ export async function structureIdeaPersonalized(
     }
   }
 
-  // Try Ollama as fallback (local)
+  // Try Mistral as cloud fallback
+  if (isMistralAvailable()) {
+    try {
+      logger.info('Structuring with Mistral', { operation: 'structureIdeaPersonalized' });
+      return await structureWithMistral(transcript);
+    } catch (error: unknown) {
+      logger.warn('Mistral structuring failed, falling back to Ollama', {
+        error: getErrorMessage(error),
+        operation: 'structureIdeaPersonalized'
+      });
+    }
+  }
+
+  // Try Ollama as local fallback
   try {
     logger.info('Structuring with Ollama', { operation: 'structureIdeaPersonalized' });
     return await structureWithOllama(transcript);
@@ -254,7 +281,7 @@ export async function structureIdeaPersonalized(
 
 /**
  * Generate embedding for text
- * Falls back through: Ollama → OpenAI → empty array
+ * Falls back through: Ollama → OpenAI → Mistral → empty array
  *
  * @param text - The text to generate embedding for
  * @returns 768-dimensional embedding vector, or empty array on failure
@@ -292,6 +319,25 @@ export async function generateEmbedding(text: string): Promise<number[]> {
       logger.warn('OpenAI embedding failed', {
         error: getErrorMessage(error),
         operation: 'generateEmbedding'
+      });
+    }
+  }
+
+  // Try Mistral as fallback (cloud)
+  if (isMistralAvailable()) {
+    try {
+      logger.debug('Generating embedding with Mistral', { operation: 'generateEmbedding' });
+      const embedding = await generateMistralEmbedding(text);
+      const validated = validateEmbedding(embedding, 'mistral');
+      logger.info('Mistral embedding generated successfully', {
+        operation: 'generateEmbedding',
+        dimensions: validated.length,
+      });
+      return validated;
+    } catch (error: unknown) {
+      logger.warn('Mistral embedding failed', {
+        error: getErrorMessage(error),
+        operation: 'generateEmbedding',
       });
     }
   }

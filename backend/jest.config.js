@@ -37,6 +37,7 @@ module.exports = {
     }
   },
   moduleNameMapper: {
+    '^@mistralai/mistralai$': '<rootDir>/src/__tests__/__mocks__/mistralai.ts',
     '^@/(.*)$': '<rootDir>/src/$1'
   },
   setupFilesAfterEnv: ['<rootDir>/src/__tests__/setup.ts'],
