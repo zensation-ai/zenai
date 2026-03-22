@@ -30,7 +30,7 @@
   - Short-Term Memory (Session-Kontext)
   - Long-Term Memory (persistentes Wissen)
 
-## Current Phase: 138
+## Current Phase: 140
 
 ### Phase 31 Features (AI State-of-the-Art)
 
@@ -1104,10 +1104,10 @@ cd frontend && npx vitest run
 
 | Kategorie | Bestanden | Übersprungen | Fehlgeschlagen |
 |-----------|-----------|--------------|----------------|
-| **Backend** | 7626 | 24 | 0 |
+| **Backend** | 7692 | 24 | 0 |
 | **Frontend** | 1400 | 0 | 0 |
 | **CLI** | 108 | 0 | 0 |
-| **Gesamt** | 9134 | 24 | 0 |
+| **Gesamt** | 9200 | 24 | 0 |
 
 **Absichtlich übersprungene Tests (24):**
 - 21x Code-Execution Sandbox (Docker nicht verfügbar)
@@ -1343,6 +1343,30 @@ mockQueryContext
 | 4 Test-Dateien | 31 + 25 + 41 + 40 = 136 Tests (1 extra due to rounding) |
 
 **Tests:** CLI 108 + Backend 7626 + Frontend 1400 = **9134 bestanden**, 24 uebersprungen, 0 Failures
+
+---
+
+### 2026-03-22: Phase 139-140 — Integration + Self-Improvement (66 neue Tests)
+
+**Capstone: Alle Saeulen verbunden + autonome Verbesserung.**
+
+| Feature | Details |
+|---------|---------|
+| **Cross-Pillar Pipeline** | 6-Schritt Post-Response Pipeline: Hebbian → FSRS → Information Gain → Prediction Error → Calibration → Feedback |
+| **Pipeline Execution** | Priority-basiert, Error-Isolation (ein Schritt-Fehler stoppt nicht andere), Duration Tracking |
+| **Self-Improvement** | 4 Verbesserungstypen: Knowledge Gap Research, Procedural Optimization, Team Learning, Calibration Fix |
+| **Improvement Budget** | Max 3 Aktionen/Tag (Anti-Feedback-Loop), Risk-Level-basierte Governance-Integration |
+| **Risk Governance** | knowledge_gap_research → medium risk (requiresApproval), alle anderen → low risk (auto-approve) |
+
+**Neue Dateien:**
+
+| Datei | Zweck |
+|-------|-------|
+| `backend/src/services/integration/cross-pillar-optimizer.ts` | Post-Response Pipeline Orchestrator |
+| `backend/src/services/integration/self-improvement.ts` | Autonome Verbesserungserkennung + Budget |
+| 2 Test-Dateien | 31 + 35 = 66 Tests |
+
+**Tests:** CLI 108 + Backend 7692 + Frontend 1400 = **9200 bestanden**, 24 uebersprungen, 0 Failures
 
 ---
 
