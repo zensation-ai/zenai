@@ -69,16 +69,22 @@ csrfFetchPromise = fetchCsrfToken();
 
 // Configure axios interceptors
 axios.interceptors.request.use(async (config) => {
-  // Phase 56: Prefer JWT token over API key
-  const jwtToken = safeLocalStorage('get', 'zenai_access_token');
-  const apiKey = safeLocalStorage('get', 'apiKey') || ENV_API_KEY;
+  // If this is a retry with API key (from 401 handler), don't overwrite the header
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  if ((config as any)._retryWithApiKey || (config as any)._retryAfterRefresh) {
+    // Auth header already set by the 401 retry handler — skip JWT override
+  } else {
+    // Phase 56: Prefer JWT token over API key
+    const jwtToken = safeLocalStorage('get', 'zenai_access_token');
+    const apiKey = safeLocalStorage('get', 'apiKey') || ENV_API_KEY;
 
-  if (jwtToken) {
-    config.headers.Authorization = `Bearer ${jwtToken}`;
-  } else if (apiKey) {
-    config.headers.Authorization = `Bearer ${apiKey}`;
-  } else if (import.meta.env.DEV) {
-    logger.warn('No JWT token or API key configured.');
+    if (jwtToken) {
+      config.headers.Authorization = `Bearer ${jwtToken}`;
+    } else if (apiKey) {
+      config.headers.Authorization = `Bearer ${apiKey}`;
+    } else if (import.meta.env.DEV) {
+      logger.warn('No JWT token or API key configured.');
+    }
   }
 
   // Attach CSRF token to mutating requests (defense-in-depth)
@@ -93,20 +99,75 @@ axios.interceptors.request.use(async (config) => {
   return config;
 });
 
+// Token refresh promise deduplication — prevents multiple parallel refresh attempts
+let activeRefreshPromise: Promise<string | null> | null = null;
+
+/**
+ * Attempt to refresh JWT tokens. Deduplicates concurrent calls so only one
+ * refresh request is in-flight at a time.
+ */
+async function tryRefreshToken(): Promise<string | null> {
+  if (activeRefreshPromise) {
+    return activeRefreshPromise;
+  }
+
+  activeRefreshPromise = (async () => {
+    try {
+      const refreshToken = safeLocalStorage('get', 'zenai_refresh_token');
+      if (!refreshToken) return null;
+
+      const apiUrl = import.meta.env.VITE_API_URL || '';
+      const response = await fetch(`${apiUrl}/api/auth/refresh`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ refreshToken }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        const { accessToken, refreshToken: newRefresh } = data.data;
+        // Store new tokens so the next request picks them up
+        safeLocalStorage('set', 'zenai_access_token', accessToken);
+        safeLocalStorage('set', 'zenai_refresh_token', newRefresh);
+        return accessToken as string;
+      }
+    } catch {
+      // Refresh failed — fall through to API key fallback
+    }
+    return null;
+  })();
+
+  try {
+    return await activeRefreshPromise;
+  } finally {
+    activeRefreshPromise = null;
+  }
+}
+
 // Handle 401 (expired JWT) and 403 (CSRF) errors with automatic retry
 axios.interceptors.response.use(
   (response) => response,
   async (error) => {
     const config = error.config;
 
-    // 401: If JWT was used but expired, retry with API key for safe (non-mutating) requests only.
-    // Retrying POST/PUT/DELETE could cause duplicate side effects (e.g., sending email twice).
-    if (error.response?.status === 401 && !config._retryWithApiKey) {
-      const apiKey = safeLocalStorage('get', 'apiKey') || ENV_API_KEY;
+    // 401: Try refreshing the JWT first, then fall back to API key
+    if (error.response?.status === 401 && !config._retryWithApiKey && !config._retryAfterRefresh) {
       const isAuthEndpoint = config.url?.includes('/api/auth/');
-      const isSafeMethod = ['get', 'head', 'options'].includes((config.method || '').toLowerCase());
+      if (isAuthEndpoint) {
+        return Promise.reject(error);
+      }
 
-      if (apiKey && !isAuthEndpoint && isSafeMethod) {
+      // Step 1: Try to refresh the JWT token
+      const newToken = await tryRefreshToken();
+      if (newToken) {
+        config._retryAfterRefresh = true;
+        config.headers.Authorization = `Bearer ${newToken}`;
+        return axios(config);
+      }
+
+      // Step 2: Fall back to API key (safe for all methods since we couldn't refresh)
+      const apiKey = safeLocalStorage('get', 'apiKey') || ENV_API_KEY;
+      if (apiKey) {
         config._retryWithApiKey = true;
         config.headers.Authorization = `Bearer ${apiKey}`;
         return axios(config);
