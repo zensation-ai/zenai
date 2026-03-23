@@ -273,9 +273,12 @@ export async function streamToSSE(
     // Add Extended Thinking if enabled (requires specific model and settings)
     if (opts.enableThinking) {
       // Use adaptive budget (generous default) when enabled, otherwise use calculated budget
-      const budgetTokens = isAdaptiveEnabled()
+      const rawBudget = isAdaptiveEnabled()
         ? getAdaptiveBudget()
         : (opts.thinkingBudget ?? 10000);
+      // API requires max_tokens > budget_tokens — cap budget to leave room for response
+      const maxTokens = (params.max_tokens as number) || 16000;
+      const budgetTokens = Math.min(rawBudget, maxTokens - 1024);
       params.thinking = {
         type: 'enabled',
         budget_tokens: budgetTokens,
@@ -864,7 +867,7 @@ export async function thinkingStream(
     enableThinking: true,
     thinkingBudget,
     systemPrompt,
-    maxTokens: 16000,
+    maxTokens: 32000,
     compactionConfig,
     sessionId,
     tools,

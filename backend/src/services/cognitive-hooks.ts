@@ -70,18 +70,18 @@ export async function runPostResponseHooks(params: PostResponseHookParams): Prom
   const hookResults = await Promise.allSettled([
 
     // 1. Hebbian co-activation: strengthen connections between co-occurring entities
+    // NOTE: recordCoactivation expects UUID entity IDs from the knowledge graph,
+    // NOT raw text keywords. We skip this hook until we have a proper entity
+    // resolution step that maps keywords → entity UUIDs.
+    // TODO: Wire this up via GraphBuilder.extractEntities when performance allows.
     (async () => {
-      try {
-        const { recordCoactivation } = await import('./knowledge-graph/hebbian-dynamics');
-        const entities = extractEntityCandidates(`${query} ${response}`);
-        if (entities.length >= 2) {
-          await recordCoactivation(context as AIContext, entities.slice(0, 10));
-        }
-      } catch (err) {
-        logger.debug('Cognitive hook: Hebbian update skipped', {
-          error: err instanceof Error ? err.message : String(err),
-        });
-      }
+      // Intentionally no-op: extractEntityCandidates returns keywords (strings),
+      // but entity_coactivations.entity_a_id is UUID. Passing keywords here
+      // causes "invalid input syntax for type uuid" errors that trip the
+      // circuit breaker and cascade to unrelated queries.
+      logger.debug('Cognitive hook: Hebbian co-activation skipped (no entity resolution)', {
+        entityCandidateCount: extractEntityCandidates(`${query} ${response}`).length,
+      });
     })(),
 
     // 2. Information Gain tracking: measure surprise/novelty of the interaction

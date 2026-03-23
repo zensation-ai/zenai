@@ -135,7 +135,7 @@ export async function recordInformationGain(
   try {
     await queryContext(
       context as AIContext,
-      `INSERT INTO information_gain_events (query_text, surprise, novelty, information_gain, created_at)
+      `INSERT INTO information_gain_events (query_text, surprise_score, novelty_score, information_gain, created_at)
        VALUES ($1, $2, $3, $4, NOW())`,
       [params.queryText, params.surprise, params.novelty, params.informationGain],
     );
