@@ -135,7 +135,7 @@ const MODELS: Record<string, ModelConfig> = {
     inputCostPer1K: 0,
     outputCostPer1K: 0,
     maxTokens: 4096,
-    available: !!process.env.OLLAMA_BASE_URL,
+    available: !!process.env.OLLAMA_URL,
   },
 };
 

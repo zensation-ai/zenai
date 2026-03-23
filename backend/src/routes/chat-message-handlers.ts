@@ -817,7 +817,7 @@ export async function handleStreamMessage(req: Request, res: Response): Promise<
               collectedToolCalls.push({
                 name: data.tool.name || currentToolName,
                 duration_ms,
-                status: data.tool.is_error ? 'error' : 'success',
+                status: (data.tool.is_error || (typeof data.tool.result === 'string' && data.tool.result.startsWith('Error: '))) ? 'error' : 'success',
               });
               currentToolName = '';
               currentToolStart = 0;

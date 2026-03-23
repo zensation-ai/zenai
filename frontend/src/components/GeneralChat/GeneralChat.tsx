@@ -313,9 +313,11 @@ export function GeneralChat({ context, isCompact = false, assistantMode = false,
     if (!userContent) return;
     dispatchChat({ type: 'REGENERATE_MESSAGE', messageId });
     setInputValue(userContent);
-    // Small delay then auto-send
+    // Click the send button scoped to THIS component's input wrapper
+    // (avoid global DOM query that breaks with multiple chat instances)
     setTimeout(() => {
-      const sendBtn = document.querySelector('.chat-send-button') as HTMLButtonElement;
+      const wrapper = inputRef.current?.closest('.chat-input-wrapper');
+      const sendBtn = wrapper?.querySelector('.chat-send-btn') as HTMLButtonElement | null;
       sendBtn?.click();
     }, 100);
   }, [sending, sessionId, messages]);
@@ -441,10 +443,13 @@ export function GeneralChat({ context, isCompact = false, assistantMode = false,
         const streamAbortController = new AbortController();
         streamAbortRef.current = streamAbortController;
 
-        // Timeout: abort if no response starts within 30 seconds
+        // Timeout: abort if no response starts within 60 seconds.
+        // Cleared as soon as the first SSE byte is received to avoid
+        // killing long-running tool calls (backend tool budget is 60s).
         const streamTimeout = setTimeout(() => {
           streamAbortController.abort();
-        }, 30000);
+        }, 60000);
+        let streamTimeoutCleared = false;
 
         try {
           // Build full URL: native fetch doesn't use axios baseURL
@@ -491,6 +496,12 @@ export function GeneralChat({ context, isCompact = false, assistantMode = false,
                 const { done, value } = await reader.read();
                 if (done) break;
 
+                // Clear connection timeout on first byte — stream is alive
+                if (!streamTimeoutCleared) {
+                  clearTimeout(streamTimeout);
+                  streamTimeoutCleared = true;
+                }
+
                 buffer += decoder.decode(value, { stream: true });
 
                 // Process complete SSE events from buffer
@@ -525,7 +536,8 @@ export function GeneralChat({ context, isCompact = false, assistantMode = false,
                         setActiveToolName(null);
                         const toolName = data.tool.name || 'unknown';
                         const toolResult = data.tool.result || '';
-                        const toolError = !!data.tool.error;
+                        // Backend embeds errors in result as "Error: ..." string (no separate error field)
+                        const toolError = !!data.tool.is_error || typeof toolResult === 'string' && toolResult.startsWith('Error: ');
                         const duration_ms = toolStartTimeRef.current > 0
                           ? Date.now() - toolStartTimeRef.current
                           : 0;
@@ -534,7 +546,7 @@ export function GeneralChat({ context, isCompact = false, assistantMode = false,
                         setToolResults(prev => {
                           const next = [...prev, {
                             name: toolName,
-                            result: toolError ? (data.tool.error || toolResult) : toolResult,
+                            result: toolResult,
                             duration_ms,
                             success: !toolError,
                           }];

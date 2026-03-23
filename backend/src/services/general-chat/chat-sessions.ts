@@ -287,9 +287,9 @@ export async function getSession(sessionId: string, userId?: string): Promise<Ch
   if (_hasMessageUserId !== false) {
     try {
       messagesResult = await query(`
-        SELECT id, session_id, role, content, created_at
+        SELECT id, session_id, role, content, created_at, tool_calls, thinking_content
         FROM general_chat_messages
-        WHERE session_id = $1 AND user_id = $2
+        WHERE session_id = $1 AND user_id = $2 AND (is_active = true OR is_active IS NULL)
         ORDER BY created_at ASC
       `, [sessionId, uid]);
     } catch (err: unknown) {
@@ -302,9 +302,9 @@ export async function getSession(sessionId: string, userId?: string): Promise<Ch
   }
   if (!messagesResult) {
     messagesResult = await query(`
-      SELECT id, session_id, role, content, created_at
+      SELECT id, session_id, role, content, created_at, tool_calls, thinking_content
       FROM general_chat_messages
-      WHERE session_id = $1
+      WHERE session_id = $1 AND (is_active = true OR is_active IS NULL)
       ORDER BY created_at ASC
     `, [sessionId]);
   }
@@ -315,6 +315,8 @@ export async function getSession(sessionId: string, userId?: string): Promise<Ch
     role: row.role,
     content: row.content,
     createdAt: row.created_at,
+    ...(row.tool_calls && { tool_calls: row.tool_calls }),
+    ...(row.thinking_content && { thinking_content: row.thinking_content }),
   }));
 
   return {
@@ -525,7 +527,7 @@ export async function addMessage(
  * Helper to update session title (extracted for reuse)
  * Uses a single atomic UPDATE to avoid TOCTOU race conditions
  */
-export async function updateSessionTitle(sessionId: string, userMessage: string): Promise<void> {
+export async function updateSessionTitle(sessionId: string, userMessage: string, userId?: string): Promise<void> {
   // Generate a short title from the first message (max 50 chars)
   // Use Array.from to correctly handle multi-byte/emoji characters
   const chars = Array.from(userMessage);
@@ -534,11 +536,15 @@ export async function updateSessionTitle(sessionId: string, userMessage: string)
     : userMessage;
 
   // Atomic: only sets title if it is currently NULL or empty
+  // user_id filter ensures multi-user isolation when available
+  const userFilter = userId ? ' AND user_id = $3' : '';
+  const params: string[] = [sessionId, title];
+  if (userId) params.push(userId);
   const result = await query(`
     UPDATE general_chat_sessions
     SET title = $2, updated_at = NOW()
-    WHERE id = $1 AND (title IS NULL OR title = '')
-  `, [sessionId, title]);
+    WHERE id = $1 AND (title IS NULL OR title = '')${userFilter}
+  `, params);
 
   if (result.rowCount && result.rowCount > 0) {
     logger.debug('Session title set', { sessionId, title });

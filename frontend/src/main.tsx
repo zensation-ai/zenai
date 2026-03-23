@@ -174,8 +174,9 @@ axios.interceptors.response.use(
       }
     }
 
-    // 403 CSRF: Refresh CSRF token and retry
-    if (error.response?.status === 403 && error.response?.data?.error === 'CSRF_TOKEN_INVALID') {
+    // 403 CSRF: Refresh CSRF token and retry (once only — guard flag prevents infinite loop)
+    if (error.response?.status === 403 && error.response?.data?.error === 'CSRF_TOKEN_INVALID' && !config._csrfRetried) {
+      config._csrfRetried = true;
       await fetchCsrfToken();
       if (csrfToken) {
         config.headers['X-CSRF-Token'] = csrfToken;
