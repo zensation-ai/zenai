@@ -122,12 +122,11 @@ describe('cognitive-hooks', () => {
       await expect(runPostResponseHooks(minimal)).resolves.toBeUndefined();
     });
 
-    it('should call Hebbian recordCoactivation when entities found', async () => {
+    it('should skip Hebbian recordCoactivation (no entity resolution yet)', async () => {
       await runPostResponseHooks(minimal);
-      expect(mockRecordCoactivation).toHaveBeenCalled();
-      const [context, entities] = mockRecordCoactivation.mock.calls[0];
-      expect(context).toBe('personal');
-      expect(entities.length).toBeGreaterThan(0);
+      // recordCoactivation is intentionally skipped because extractEntityCandidates
+      // returns keywords (strings), not UUID entity IDs that the DB expects.
+      expect(mockRecordCoactivation).not.toHaveBeenCalled();
     });
 
     it('should call recordInformationGain', async () => {
