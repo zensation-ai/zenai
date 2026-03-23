@@ -44,6 +44,7 @@ const QUEUE_NAMES = [
   'embedding-drift',
   'hebbian-decay',
   'persistent-agent',
+  'gmail-sync',
   'integration-sync',
 ] as const;
 

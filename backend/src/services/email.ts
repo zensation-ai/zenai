@@ -16,7 +16,7 @@ import { logger } from '../utils/logger';
 // ============================================================
 
 export type EmailDirection = 'inbound' | 'outbound';
-export type EmailStatus = 'received' | 'read' | 'draft' | 'sending' | 'sent' | 'failed' | 'archived' | 'trash';
+export type EmailStatus = 'received' | 'read' | 'draft' | 'sending' | 'sent' | 'failed' | 'archived' | 'trash' | 'spam';
 export type EmailCategory = 'business' | 'personal' | 'newsletter' | 'notification' | 'spam';
 export type EmailPriority = 'low' | 'medium' | 'high' | 'urgent';
 
@@ -589,6 +589,41 @@ export async function sendEmailById(context: AIContext, id: string, userId?: str
 
 export async function sendNewEmail(context: AIContext, input: CreateEmailInput, userId?: string): Promise<Email> {
   const draft = await createDraft(context, input, userId);
+
+  // Check if account is Gmail → use GmailProvider instead of Resend
+  if (input.account_id) {
+    const accountResult = await queryContext(context,
+      'SELECT provider, google_token_id, email_address FROM email_accounts WHERE id = $1',
+      [input.account_id]
+    );
+    const account = accountResult.rows[0] as { provider?: string; google_token_id?: string; email_address?: string } | undefined;
+
+    if (account?.provider === 'gmail' && account.google_token_id) {
+      const { getEmailProvider } = await import('./email/email-provider');
+      const gmailProvider = getEmailProvider('gmail');
+      const result = await gmailProvider.sendMessage(input.account_id, {
+        to: input.to_addresses,
+        cc: input.cc_addresses,
+        bcc: input.bcc_addresses,
+        subject: input.subject || '',
+        bodyHtml: input.body_html,
+        bodyText: input.body_text,
+        attachments: undefined,
+      }, context);
+
+      await queryContext(context,
+        `UPDATE emails SET
+           status = 'sent', direction = 'outbound', provider = 'gmail',
+           provider_message_id = $1, thread_id = $2,
+           from_address = $3, sent_at = now(), updated_at = now()
+         WHERE id = $4`,
+        [result.messageId, result.threadId || null, account.email_address, draft.id]
+      );
+
+      return { ...draft, status: 'sent' as EmailStatus, sent_at: new Date().toISOString() };
+    }
+  }
+
   const sent = await sendEmailById(context, draft.id, userId);
   if (!sent) {throw new Error('Failed to send email — draft was created but send returned null');}
   return sent;
@@ -624,6 +659,40 @@ export async function replyToEmail(
     WHERE id = $1
   `, [draft.id, original.thread_id || originalId, original.message_id]);
 
+  // Check if account is Gmail → use GmailProvider instead of Resend
+  const replyAccountId = options?.account_id || original.account_id;
+  if (replyAccountId) {
+    const accountResult = await queryContext(context,
+      'SELECT provider, google_token_id, email_address FROM email_accounts WHERE id = $1',
+      [replyAccountId]
+    );
+    const account = accountResult.rows[0] as { provider?: string; google_token_id?: string; email_address?: string } | undefined;
+
+    if (account?.provider === 'gmail' && account.google_token_id) {
+      const { getEmailProvider } = await import('./email/email-provider');
+      const gmailProvider = getEmailProvider('gmail');
+      const result = await gmailProvider.sendMessage(replyAccountId, {
+        to: [{ email: original.from_address, name: original.from_name || undefined }],
+        cc: options?.cc,
+        subject: draft.subject || `Re: ${original.subject || ''}`,
+        bodyHtml: body.html,
+        bodyText: body.text,
+        inReplyTo: original.message_id || undefined,
+        threadId: original.thread_id || undefined,
+      }, context);
+
+      await queryContext(context,
+        `UPDATE emails SET
+           status = 'sent', direction = 'outbound', provider = 'gmail',
+           provider_message_id = $1, from_address = $2, sent_at = now(), updated_at = now()
+         WHERE id = $3`,
+        [result.messageId, account.email_address, draft.id]
+      );
+
+      return { ...draft, status: 'sent' as EmailStatus, sent_at: new Date().toISOString() };
+    }
+  }
+
   return await sendEmailById(context, draft.id, userId) || draft;
 }
 
@@ -641,13 +710,47 @@ export async function forwardEmail(
   // Build forwarded body
   const fwdPrefix = `\n\n---------- Weitergeleitete Nachricht ----------\nVon: ${original.from_name || original.from_address}\nDatum: ${original.received_at}\nBetreff: ${original.subject}\nAn: ${original.to_addresses.map(a => a.email).join(', ')}\n\n`;
 
+  const fwdBodyHtml = (body?.html || '') + fwdPrefix.replace(/\n/g, '<br>') + (original.body_html || '');
+  const fwdBodyText = (body?.text || '') + fwdPrefix + (original.body_text || '');
+
   const draft = await createDraft(context, {
     to_addresses: to,
     subject: original.subject?.startsWith('Fwd: ') ? original.subject : `Fwd: ${original.subject || ''}`,
-    body_html: (body?.html || '') + fwdPrefix.replace(/\n/g, '<br>') + (original.body_html || ''),
-    body_text: (body?.text || '') + fwdPrefix + (original.body_text || ''),
+    body_html: fwdBodyHtml,
+    body_text: fwdBodyText,
     account_id: options?.account_id || original.account_id || undefined,
   }, userId);
+
+  // Check if account is Gmail → use GmailProvider instead of Resend
+  const fwdAccountId = options?.account_id || original.account_id;
+  if (fwdAccountId) {
+    const accountResult = await queryContext(context,
+      'SELECT provider, google_token_id, email_address FROM email_accounts WHERE id = $1',
+      [fwdAccountId]
+    );
+    const account = accountResult.rows[0] as { provider?: string; google_token_id?: string; email_address?: string } | undefined;
+
+    if (account?.provider === 'gmail' && account.google_token_id) {
+      const { getEmailProvider } = await import('./email/email-provider');
+      const gmailProvider = getEmailProvider('gmail');
+      const result = await gmailProvider.sendMessage(fwdAccountId, {
+        to,
+        subject: draft.subject || `Fwd: ${original.subject || ''}`,
+        bodyHtml: fwdBodyHtml,
+        bodyText: fwdBodyText,
+      }, context);
+
+      await queryContext(context,
+        `UPDATE emails SET
+           status = 'sent', direction = 'outbound', provider = 'gmail',
+           provider_message_id = $1, from_address = $2, sent_at = now(), updated_at = now()
+         WHERE id = $3`,
+        [result.messageId, account.email_address, draft.id]
+      );
+
+      return { ...draft, status: 'sent' as EmailStatus, sent_at: new Date().toISOString() };
+    }
+  }
 
   return await sendEmailById(context, draft.id, userId) || draft;
 }

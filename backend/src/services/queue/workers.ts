@@ -398,6 +398,22 @@ async function processPersistentAgent(job: BullJob): Promise<Record<string, unkn
   return { taskId, status: 'processed' };
 }
 
+/**
+ * Process a Gmail incremental sync job (Phase 3A).
+ */
+async function processGmailSync(job: BullJob): Promise<Record<string, unknown>> {
+  const { processGmailSyncJob } = await import('./workers/gmail-sync-worker');
+  const result = await processGmailSyncJob(job.data as any);
+  await job.updateProgress(100);
+  return {
+    status: 'completed',
+    newMessages: result.newMessages,
+    updatedMessages: result.updatedMessages,
+    deletedMessages: result.deletedMessages,
+    errors: result.errors.length,
+  };
+}
+
 // Worker processor map — now receives the full BullJob for progress reporting
 const processors: Record<string, (job: BullJob) => Promise<Record<string, unknown>>> = {
   'memory-consolidation': processMemoryConsolidation,
@@ -408,6 +424,7 @@ const processors: Record<string, (job: BullJob) => Promise<Record<string, unknow
   'embedding-drift': processEmbeddingDrift,
   'hebbian-decay': processHebbianDecay,
   'persistent-agent': processPersistentAgent,
+  'gmail-sync': processGmailSync,
   'integration-sync': processTokenRefresh,
 };
 
@@ -467,6 +484,7 @@ export async function startWorkers(): Promise<boolean> {
       'embedding-drift': 1,
       'hebbian-decay': 1,
       'persistent-agent': 2,
+      'gmail-sync': 3,
       'integration-sync': 1,
     };
 

@@ -551,6 +551,8 @@ function isRelatedToCurrentPage(cmd: Command, currentPage: Page): boolean {
 interface UseCommandPaletteOptions {
   onNavigate: (page: Page) => void;
   onAction?: (action: string) => void;
+  /** Callback to open a cockpit panel */
+  onOpenPanel?: (panelId: string) => void;
   /** External recent pages from usePageHistory (shared state) */
   externalRecentPages?: string[];
   /** Current page for context-awareness */

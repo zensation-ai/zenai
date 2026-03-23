@@ -20,6 +20,7 @@ import { BusinessModule } from './business';
 import { ChatModule } from './chat';
 import { CalendarModule } from './calendar';
 import { EmailModule } from './email';
+import { GmailModule } from './gmail';
 import { CoreRoutesModule } from './core-routes';
 import { VoiceModule } from './voice';
 import { CanvasModule } from './canvas';
@@ -74,6 +75,7 @@ export const modules: Module[] = [
 
   // Email webhooks must be before generic webhooks in CoreRoutesModule
   new EmailModule(),
+  new GmailModule(),
 
   // Integration framework (must be before CoreRoutesModule to avoid /:context conflicts)
   new IntegrationsModule(),

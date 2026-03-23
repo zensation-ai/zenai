@@ -29,7 +29,10 @@ export type SuggestionType =
   | 'learning_opportunity'
   | 'contradiction_alert'
   | 'knowledge_gap'
-  | 'hypothesis';
+  | 'hypothesis'
+  | 'email_reply'
+  | 'email_task'
+  | 'email_calendar';
 
 export type SuggestionStatus = 'active' | 'dismissed' | 'snoozed' | 'accepted';
 
@@ -67,6 +70,9 @@ export const TYPE_WEIGHTS: Record<SuggestionType, number> = {
   context_switch: 30,
   knowledge_gap: 65,
   hypothesis: 55,
+  email_reply: 60,
+  email_task: 60,
+  email_calendar: 60,
 };
 
 /** Max active suggestions per user before auto-cleanup */

@@ -22,6 +22,7 @@ import { apiKeyAuth, requireScope } from '../middleware/auth';
 import { asyncHandler, ValidationError, NotFoundError } from '../middleware/errorHandler';
 import { isValidUUID, validateEmailAddresses, validateContextParam } from '../utils/validation';
 import { getUserId } from '../utils/user-context';
+import { queryContext } from '../utils/database-context';
 import { logger } from '../utils/logger';
 import { parseNaturalLanguageQuery, searchEmails, getInboxSummary, EmailSearchQuery } from '../services/email-search';
 import { generateEmailDigest, formatDigestForChat } from '../services/email-digest';
@@ -273,6 +274,27 @@ emailRouter.get('/:context/emails/:id', apiKeyAuth, asyncHandler(async (req, res
   if (email.status === 'received') {
     const updated = await markAsRead(context, id, userId);
     if (updated) {email = updated;}
+  }
+
+  // On-demand body fetch for Gmail emails
+  const emailRow = email as unknown as Record<string, unknown>;
+  if (emailRow['provider'] === 'gmail' && !email.body_html && !email.body_text && emailRow['provider_message_id'] && email.account_id) {
+    try {
+      const { getEmailProvider } = await import('../services/email/email-provider');
+      const provider = getEmailProvider('gmail');
+      const body = await provider.fetchMessageBody(email.account_id, emailRow['provider_message_id'] as string);
+
+      // Cache in DB (fire-and-forget)
+      queryContext(context,
+        'UPDATE emails SET body_html = $1, body_text = $2, updated_at = now() WHERE id = $3',
+        [body.bodyHtml, body.bodyText, email.id]
+      ).catch(() => { /* fire and forget */ });
+
+      email.body_html = body.bodyHtml;
+      email.body_text = body.bodyText;
+    } catch (err) {
+      logger.warn('Failed to fetch Gmail body on-demand', { emailId: email.id, error: (err as Error).message });
+    }
   }
 
   res.json({ success: true, data: email });
