@@ -18,6 +18,10 @@
   gap: 8px;
 }
 
+.rail__item-wrapper {
+  position: relative;
+}
+
 .rail__item {
   width: 40px;
   height: 40px;
@@ -30,6 +34,7 @@
   justify-content: center;
   color: var(--text-tertiary);
   transition: background 150ms, color 150ms;
+  position: relative;
 }
 
 .rail__item:hover {
@@ -70,4 +75,82 @@
   height: 20px;
   border-radius: 50%;
   border: 2px solid var(--context-color, #3B82F6);
+}
+
+/* Activity dot */
+.rail__activity-dot {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--color-primary, #f97316);
+  animation: rail-dot-pulse 2s ease-in-out infinite;
+}
+
+@keyframes rail-dot-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.6; transform: scale(0.85); }
+}
+
+/* Session hover popup */
+.rail__session-popup {
+  position: absolute;
+  left: calc(100% + 8px);
+  top: 0;
+  min-width: 200px;
+  max-width: 260px;
+  background: rgba(15, 23, 42, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  padding: 6px;
+  z-index: 200;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.rail__session-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 10px;
+  border: none;
+  background: transparent;
+  border-radius: 6px;
+  cursor: pointer;
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 13px;
+  text-align: left;
+  transition: background 120ms;
+}
+
+.rail__session-item:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.rail__session-title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+  min-width: 0;
+}
+
+.rail__session-time {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.45);
+  flex-shrink: 0;
+}
+
+/* Hide session popup on touch devices */
+@media (pointer: coarse) {
+  .rail__session-popup {
+    display: none;
+  }
 }

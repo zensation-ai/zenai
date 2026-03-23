@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback, Suspense } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef, Suspense } from 'react';
 import { useNavigate, useLocation, Routes, Route } from 'react-router-dom';
 import axios from 'axios';
 
@@ -65,6 +65,9 @@ import { ChatSessionTabs } from './components/cockpit/ChatSessionTabs';
 import { WelcomeChatMessage } from './components/cockpit/WelcomeChatMessage';
 import { ContextSelectorCards } from './components/cockpit/ContextSelectorCards';
 import { DashboardPage } from './components/cockpit/DashboardPage';
+import { useCockpitSessions } from './hooks/useCockpitSessions';
+import { useCockpitShortcuts } from './components/cockpit/useCockpitShortcuts';
+import { QuickActionsBar } from './components/cockpit/QuickActionsBar';
 
 import './App.css';
 
@@ -740,27 +743,64 @@ function CockpitShell({ context, onContextChange, currentPage, navigateToPage, p
     onOpenPanel: (panelId: string) => panelDispatch({ type: 'OPEN_PANEL', panel: panelId as PanelType }),
   });
 
-  // Task A: Chat session tabs state
-  const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
-  const chatTabs = useMemo(() => [
-    { sessionId: activeSessionId || 'default', title: 'Chat' },
-  ], [activeSessionId]);
+  // Task 4: Hidden file input refs for attach/image upload
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const imageInputRef = useRef<HTMLInputElement>(null);
 
-  const handleSessionChange = useCallback((sessionId: string | null) => {
-    setActiveSessionId(sessionId);
+  const handleAttachFile = useCallback(() => {
+    console.log('attach file');
+    fileInputRef.current?.click();
   }, []);
+
+  const handleUploadImage = useCallback(() => {
+    console.log('upload image');
+    imageInputRef.current?.click();
+  }, []);
+
+  const handleVoiceInput = useCallback(() => {
+    console.log('voice input');
+  }, []);
+
+  const handleQuickCreate = useCallback(() => {
+    panelDispatch({ type: 'OPEN_PANEL', panel: 'ideas' as PanelType });
+  }, [panelDispatch]);
+
+  // Task 2: Chat session management via hook
+  const sessionManager = useCockpitSessions(context);
+  const chatTabs = useMemo(() =>
+    sessionManager.visibleSessions.map(s => ({ sessionId: s.id, title: s.title })),
+    [sessionManager.visibleSessions],
+  );
+
+  // Task 2: Cockpit keyboard shortcuts
+  useCockpitShortcuts({
+    onOpenPanel: (panel) => panelDispatch({ type: 'OPEN_PANEL', panel }),
+    onClosePanel: () => panelDispatch({ type: 'CLOSE_PANEL' }),
+    onNavigate: (path) => navigateToPage(path as Page),
+    onNewTab: () => { void sessionManager.createSession(); },
+    onPrevTab: () => sessionManager.switchToPrev(),
+    onNextTab: () => sessionManager.switchToNext(),
+    onCloseTab: () => { if (sessionManager.activeSessionId) sessionManager.closeSession(sessionManager.activeSessionId); },
+  });
 
   return (
     <>
-      <CockpitLayout currentPage={currentPage === 'settings' ? 'settings' : currentPage === 'hub' || currentPage === 'chat' ? 'chat' : 'dashboard'} context={context} onContextChange={onContextChange}>
+      <CockpitLayout
+        currentPage={currentPage === 'settings' ? 'settings' : currentPage === 'hub' || currentPage === 'chat' ? 'chat' : 'dashboard'}
+        context={context}
+        onContextChange={onContextChange}
+        hasActivity={false}
+        sessions={sessionManager.visibleSessions.map(s => ({ id: s.id, title: s.title, updatedAt: s.createdAt }))}
+        onSwitchSession={(id) => sessionManager.switchSession(id)}
+      >
         {currentPage === 'hub' || currentPage === 'chat' || !currentPage ? (
           <>
             <ChatSessionTabs
               tabs={chatTabs}
-              activeSessionId={activeSessionId || 'default'}
-              onSelectTab={() => { /* session switching will be implemented later */ }}
-              onCloseTab={() => { /* tab close will be implemented later */ }}
-              onNewTab={() => { /* new session will be implemented later */ }}
+              activeSessionId={sessionManager.activeSessionId || 'default'}
+              onSelectTab={(sessionId) => sessionManager.switchSession(sessionId)}
+              onCloseTab={(sessionId) => sessionManager.closeSession(sessionId)}
+              onNewTab={() => { void sessionManager.createSession(); }}
             />
             {showWelcome && (
               <WelcomeChatMessage
@@ -784,14 +824,25 @@ function CockpitShell({ context, onContextChange, currentPage, navigateToPage, p
                 }}
               />
             )}
+            <QuickActionsBar
+              onAttachFile={handleAttachFile}
+              onUploadImage={handleUploadImage}
+              onVoiceInput={handleVoiceInput}
+              onQuickCreate={handleQuickCreate}
+            />
             <ErrorBoundary fallback={<div className="chat-error-fallback">Chat nicht verfuegbar.</div>}>
               <GeneralChat
+                key={sessionManager.activeSessionId}
                 context={context}
                 isCompact={false}
-                onSessionChange={handleSessionChange}
+                initialSessionId={sessionManager.activeSessionId}
+                onSessionChange={(id) => { if (id) sessionManager.switchSession(id); }}
                 onPanelAction={(panel, filter) => panelDispatch({ type: 'OPEN_PANEL', panel: panel as PanelType, filter })}
               />
             </ErrorBoundary>
+            {/* Hidden file inputs for attach/image callbacks */}
+            <input ref={fileInputRef} type="file" style={{ display: 'none' }} aria-hidden="true" />
+            <input ref={imageInputRef} type="file" accept="image/*" style={{ display: 'none' }} aria-hidden="true" />
           </>
         ) : (
           <DashboardPage context={context} />

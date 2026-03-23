@@ -9,6 +9,12 @@ vi.mock('../Rail', () => ({
 vi.mock('../PanelArea', () => ({
   PanelArea: () => <div data-testid="panel-area" />,
 }));
+vi.mock('../CockpitBottomBar', () => ({
+  CockpitBottomBar: (props: any) => <div data-testid="bottom-bar" />,
+}));
+vi.mock('../../../hooks/useMediaQuery', () => ({
+  useMediaQuery: () => false,
+}));
 
 describe('CockpitLayout', () => {
   const renderLayout = () =>

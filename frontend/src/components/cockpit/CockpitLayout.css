@@ -24,5 +24,6 @@
   }
   .cockpit-layout__chat {
     min-width: 0;
+    padding-bottom: calc(56px + env(safe-area-inset-bottom));
   }
 }
