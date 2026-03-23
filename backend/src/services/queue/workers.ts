@@ -414,6 +414,36 @@ async function processGmailSync(job: BullJob): Promise<Record<string, unknown>> 
   };
 }
 
+/**
+ * Process an integration sync job (Phase 5).
+ * Dispatches to the appropriate connector based on connectorId.
+ * Falls back to token refresh for unknown connectors.
+ */
+async function processIntegrationSync(job: BullJob): Promise<Record<string, unknown>> {
+  const { connectorId, userId, fullSync } = job.data as Record<string, unknown>;
+
+  if (connectorId === 'slack') {
+    try {
+      const { SlackConnector } = await import('../integrations/slack/slack-connector');
+      const connector = new SlackConnector();
+      await job.updateProgress(10);
+      const result = await connector.sync(userId as string, { fullSync: fullSync as boolean });
+      await job.updateProgress(100);
+      return { ...result };
+    } catch (error) {
+      logger.warn('Slack sync failed', {
+        operation: 'worker',
+        queue: 'integration-sync',
+        error: error instanceof Error ? error.message : String(error),
+      });
+      return { status: 'failed', connectorId };
+    }
+  }
+
+  // Default: token refresh for other connectors
+  return processTokenRefresh(job);
+}
+
 // Worker processor map — now receives the full BullJob for progress reporting
 const processors: Record<string, (job: BullJob) => Promise<Record<string, unknown>>> = {
   'memory-consolidation': processMemoryConsolidation,
@@ -425,7 +455,7 @@ const processors: Record<string, (job: BullJob) => Promise<Record<string, unknow
   'hebbian-decay': processHebbianDecay,
   'persistent-agent': processPersistentAgent,
   'gmail-sync': processGmailSync,
-  'integration-sync': processTokenRefresh,
+  'integration-sync': processIntegrationSync,
 };
 
 // --- Dead Letter Queue helper ---

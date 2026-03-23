@@ -28,3 +28,15 @@ export {
   SYNC_INTERVAL_MAX,
   SYNC_INTERVAL_DEFAULT,
 } from './types';
+
+// Slack connector (Phase 5)
+export type {
+  SlackConnectorTokens,
+  SlackWorkspace,
+  SlackChannel,
+  SlackMessage,
+  ProactiveConfig,
+  SlackWorkflowTemplate,
+  SlackSyncJobData,
+} from './slack/types';
+export { DEFAULT_PROACTIVE_CONFIG, DEFAULT_CHANNEL_CONTEXT_MAP, inferChannelContext } from './slack/types';

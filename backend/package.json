@@ -48,6 +48,7 @@
     "@opentelemetry/sdk-node": "^0.56.0",
     "@opentelemetry/sdk-trace-node": "^1.29.0",
     "@sentry/node": "^10.43.0",
+    "@slack/bolt": "^4.6.0",
     "@supabase/supabase-js": "^2.90.1",
     "@types/mailparser": "^3.4.6",
     "@types/pdfkit": "^0.17.4",

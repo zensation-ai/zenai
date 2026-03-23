@@ -1,8 +1,7 @@
 /**
  * Integrations Route Tests
  *
- * Tests integration listing, provider details, settings update,
- * and Slack events endpoint.
+ * Tests integration listing, provider details, and settings update.
  */
 
 import express from 'express';
@@ -41,19 +40,6 @@ jest.mock('../../../services/microsoft', () => ({
   disconnectMicrosoft: jest.fn().mockResolvedValue(undefined),
 }));
 
-const mockIsSlackConnected = jest.fn();
-
-jest.mock('../../../services/slack', () => ({
-  isSlackConnected: () => mockIsSlackConnected(),
-  getAuthorizationUrl: jest.fn(),
-  exchangeCodeForTokens: jest.fn(),
-  storeTokens: jest.fn(),
-  handleSlackEvent: jest.fn().mockResolvedValue(undefined),
-  handleSlashCommand: jest.fn().mockResolvedValue({ text: 'ok' }),
-  getChannels: jest.fn().mockResolvedValue([]),
-  disconnectSlack: jest.fn().mockResolvedValue(undefined),
-}));
-
 jest.mock('../../../utils/validation', () => ({
   toInt: (val: string | undefined, def: number) => parseInt(val || '', 10) || def,
 }));
@@ -72,7 +58,6 @@ describe('Integrations Routes', () => {
     jest.clearAllMocks();
     mockPoolQuery.mockResolvedValue({ rows: [] });
     mockIsMicrosoftConnected.mockResolvedValue(false);
-    mockIsSlackConnected.mockResolvedValue(false);
   });
 
   it('GET / — lists integrations with default status', async () => {
@@ -136,26 +121,5 @@ describe('Integrations Routes', () => {
     expect(res.body.message).toBe('Microsoft disconnected');
   });
 
-  it('POST /slack/events — handles URL verification challenge', async () => {
-    const res = await request(app)
-      .post('/api/integrations/slack/events')
-      .send({ type: 'url_verification', challenge: 'test-challenge' });
-
-    expect(res.status).toBe(200);
-    expect(res.body.challenge).toBe('test-challenge');
-  });
-
-  it('GET /slack/channels — returns channels', async () => {
-    const res = await request(app).get('/api/integrations/slack/channels');
-
-    expect(res.status).toBe(200);
-    expect(res.body.channels).toEqual([]);
-  });
-
-  it('DELETE /slack — disconnects Slack', async () => {
-    const res = await request(app).delete('/api/integrations/slack');
-
-    expect(res.status).toBe(200);
-    expect(res.body.message).toBe('Slack disconnected');
-  });
+  // Slack-specific route tests removed — legacy routes superseded by Phase 5
 });

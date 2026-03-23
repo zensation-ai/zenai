@@ -1,19 +1,18 @@
 /**
  * Phase 4: Integrations Routes
- * Manage external integrations (Microsoft, Slack, etc.)
+ * Manage external integrations (Microsoft, etc.)
  * SECURITY: All endpoints require authentication (handles OAuth tokens!)
  *
  * Security Hardening (2026-01-30):
  * - OAuth state parameter validation to prevent CSRF attacks
- * - Slack request signature verification for webhook endpoints
+ *
+ * Note: Slack routes were removed in Phase 5 — see backend/src/routes/slack.ts
  */
 
 import { Router, Request, Response } from 'express';
 import { v4 as uuidv4 } from 'uuid';
-import crypto from 'crypto';
 import { pool } from '../utils/database';
 import * as microsoft from '../services/microsoft';
-import * as slack from '../services/slack';
 import { apiKeyAuth, requireScope } from '../middleware/auth';
 import { logger } from '../utils/logger';
 import { asyncHandler, ValidationError } from '../middleware/errorHandler';
@@ -76,67 +75,12 @@ function validateOAuthState(state: string, expectedProvider: string): boolean {
   return true;
 }
 
-// ===========================================
-// Security: Slack Signature Verification
-// ===========================================
-
-/**
- * Verify Slack request signature
- * https://api.slack.com/authentication/verifying-requests-from-slack
- */
-function verifySlackSignature(req: Request): boolean {
-  const signingSecret = process.env.SLACK_SIGNING_SECRET;
-  if (!signingSecret) {
-    logger.warn('SLACK_SIGNING_SECRET not configured - signature verification disabled');
-    // In production, we should reject. In development, we allow for testing.
-    return process.env.NODE_ENV !== 'production';
-  }
-
-  const signature = req.headers['x-slack-signature'] as string;
-  const timestamp = req.headers['x-slack-request-timestamp'] as string;
-
-  if (!signature || !timestamp) {
-    logger.warn('Missing Slack signature headers');
-    return false;
-  }
-
-  // Prevent replay attacks - reject requests older than 5 minutes
-  const requestTime = parseInt(timestamp, 10);
-  const now = Math.floor(Date.now() / 1000);
-  if (Math.abs(now - requestTime) > 300) {
-    logger.warn('Slack request timestamp too old', { requestTime, now, diff: now - requestTime });
-    return false;
-  }
-
-  // Compute signature
-  // Note: We need the raw body for signature verification
-  // Express.json() middleware must preserve it via verify option
-  const rawBody = (req as Request & { rawBody?: string }).rawBody || JSON.stringify(req.body);
-  const sigBasestring = `v0:${timestamp}:${rawBody}`;
-
-  const mySignature = 'v0=' + crypto
-    .createHmac('sha256', signingSecret)
-    .update(sigBasestring, 'utf8')
-    .digest('hex');
-
-  // Timing-safe comparison
-  try {
-    return crypto.timingSafeEqual(
-      Buffer.from(mySignature, 'utf8'),
-      Buffer.from(signature, 'utf8')
-    );
-  } catch {
-    // Length mismatch
-    return false;
-  }
-}
-
 export const integrationsRouter = Router();
 
 // Helper to get redirect URI with production safety check
-function getRedirectUri(provider: 'microsoft' | 'slack'): string {
+function getRedirectUri(provider: 'microsoft'): string {
   const isProduction = process.env.NODE_ENV === 'production';
-  const envKey = provider === 'microsoft' ? 'MICROSOFT_REDIRECT_URI' : 'SLACK_REDIRECT_URI';
+  const envKey = 'MICROSOFT_REDIRECT_URI';
   const uri = process.env[envKey];
 
   if (!uri && isProduction) {
@@ -175,7 +119,7 @@ integrationsRouter.get('/', apiKeyAuth, asyncHandler(async (req: Request, res: R
 
   // Check connection status for each provider
   const microsoftConnected = await microsoft.isMicrosoftConnected();
-  const slackConnected = await slack.isSlackConnected();
+  const slackConnected = false; // Legacy removed — Phase 5 SlackConnector will handle this
 
   // Default integrations if none exist
   const defaultIntegrations = [
@@ -246,7 +190,7 @@ integrationsRouter.get('/:provider', apiKeyAuth, asyncHandler(async (req: Reques
   if (provider === 'microsoft') {
     isConnected = await microsoft.isMicrosoftConnected();
   } else if (provider === 'slack') {
-    isConnected = await slack.isSlackConnected();
+    isConnected = false; // Legacy removed — Phase 5 SlackConnector will handle this
   }
 
   res.json({
@@ -467,163 +411,6 @@ integrationsRouter.delete('/microsoft', apiKeyAuth, requireScope('write'), async
 }));
 
 // ==========================================
-// Slack Integration
+// Slack Integration — Legacy routes removed (Phase 5 supersedes)
+// New Slack routes will be registered via backend/src/routes/slack.ts
 // ==========================================
-
-/**
- * GET /api/integrations/slack/auth
- * Get Slack OAuth authorization URL
- */
-integrationsRouter.get('/slack/auth', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
-  const clientId = process.env.SLACK_CLIENT_ID;
-  const redirectUri = getRedirectUri('slack');
-
-  if (!clientId) {
-    throw new ValidationError('Slack not configured. Set SLACK_CLIENT_ID environment variable');
-  }
-
-  const state = uuidv4();
-
-  // Store state for CSRF validation on callback
-  storeOAuthState(state, 'slack');
-
-  const authUrl = slack.getAuthorizationUrl(clientId, redirectUri, state);
-
-  logger.info('Slack OAuth flow initiated', { statePrefix: state.substring(0, 8) });
-
-  res.json({
-    success: true,
-    authUrl,
-    state
-  });
-}));
-
-/**
- * GET /api/integrations/slack/callback
- * Handle Slack OAuth callback
- */
-integrationsRouter.get('/slack/callback', asyncHandler(async (req: Request, res: Response) => {
-  const { code, state, error: oauthError } = req.query;
-
-  if (oauthError) {
-    logger.warn('Slack OAuth error', { error: oauthError });
-    return res.redirect(`/settings/integrations?error=${oauthError}`);
-  }
-
-  if (!code || !state) {
-    logger.warn('Slack OAuth callback missing params', { hasCode: !!code, hasState: !!state });
-    return res.redirect('/settings/integrations?error=missing_params');
-  }
-
-  // SECURITY: Validate OAuth state to prevent CSRF attacks
-  if (!validateOAuthState(state as string, 'slack')) {
-    logger.warn('Slack OAuth state validation failed', { statePrefix: (state as string).substring(0, 8) });
-    return res.redirect('/settings/integrations?error=invalid_state');
-  }
-
-  const clientId = process.env.SLACK_CLIENT_ID ?? '';
-  const clientSecret = process.env.SLACK_CLIENT_SECRET ?? '';
-  if (!clientId || !clientSecret) {
-    throw new ValidationError('Slack OAuth not configured. Missing client credentials.');
-  }
-  const redirectUri = getRedirectUri('slack');
-
-  const tokens = await slack.exchangeCodeForTokens(
-    code as string,
-    clientId,
-    clientSecret,
-    redirectUri
-  );
-
-  await slack.storeTokens(tokens, 'default');
-
-  // Enable integration
-  await pool.query(
-    `INSERT INTO integrations (id, provider, name, is_enabled, config)
-     VALUES ('slack', 'slack', 'Slack', true, $1)
-     ON CONFLICT (id) DO UPDATE SET is_enabled = true, config = $1, updated_at = NOW()`,
-    [JSON.stringify({ team: tokens.teamName, teamId: tokens.teamId })]
-  );
-
-  res.redirect('/settings/integrations?success=slack');
-}));
-
-/**
- * POST /api/integrations/slack/events
- * Slack Events API endpoint
- * SECURITY: Verifies Slack request signature before processing
- */
-integrationsRouter.post('/slack/events', asyncHandler(async (req: Request, res: Response) => {
-  const { type, challenge, event } = req.body;
-
-  // URL verification challenge - must respond before signature check for initial setup
-  // Slack sends this during app configuration without signatures
-  if (type === 'url_verification') {
-    logger.info('Slack URL verification challenge received');
-    return res.json({ challenge });
-  }
-
-  // SECURITY: Verify Slack request signature for all other requests
-  if (!verifySlackSignature(req)) {
-    logger.warn('Slack signature verification failed', {
-      hasSignature: !!req.headers['x-slack-signature'],
-      hasTimestamp: !!req.headers['x-slack-request-timestamp'],
-    });
-    return res.status(401).json({ success: false, error: 'Invalid signature', code: 'UNAUTHORIZED' });
-  }
-
-  // Handle events
-  if (type === 'event_callback' && event) {
-    await slack.handleSlackEvent(event);
-  }
-
-  res.status(200).json({ success: true });
-}));
-
-/**
- * POST /api/integrations/slack/commands
- * Slack Slash Commands endpoint
- * SECURITY: Verifies Slack request signature before processing
- */
-integrationsRouter.post('/slack/commands', asyncHandler(async (req: Request, res: Response) => {
-  // SECURITY: Verify Slack request signature
-  if (!verifySlackSignature(req)) {
-    logger.warn('Slack command signature verification failed', {
-      command: req.body.command,
-      hasSignature: !!req.headers['x-slack-signature'],
-    });
-    return res.status(401).json({ success: false, error: 'Invalid signature', code: 'UNAUTHORIZED' });
-  }
-
-  const { command, text, user_id, channel_id, response_url } = req.body;
-
-  const result = await slack.handleSlashCommand(command, text, user_id, channel_id, response_url);
-
-  res.json(result);
-}));
-
-/**
- * GET /api/integrations/slack/channels
- * Get list of Slack channels
- */
-integrationsRouter.get('/slack/channels', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
-  const channels = await slack.getChannels();
-
-  res.json({
-    success: true,
-    channels
-  });
-}));
-
-/**
- * DELETE /api/integrations/slack
- * Disconnect Slack integration
- */
-integrationsRouter.delete('/slack', apiKeyAuth, requireScope('write'), asyncHandler(async (req: Request, res: Response) => {
-  await slack.disconnectSlack();
-
-  res.json({
-    success: true,
-    message: 'Slack disconnected'
-  });
-}));
