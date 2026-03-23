@@ -319,7 +319,7 @@
 }
 
 .neuro-page-enter {
-  animation: pageEnter var(--neuro-timing-deliberate) ease-out;
+  opacity: 1;
 }
 
 .neuro-page-exit {

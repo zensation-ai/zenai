@@ -40,16 +40,16 @@ export function CognitiveLoadIndicator({ context }: CognitiveLoadIndicatorProps)
 
   const fetchStatus = useCallback(async () => {
     try {
-      const [interruptRes, focusRes] = await Promise.all([
+      const [interruptRes, focusRes] = await Promise.allSettled([
         axios.get(`/api/${context}/interruptibility`),
         axios.get(`/api/${context}/focus/status`),
       ]);
 
-      if (interruptRes.data.success) {
-        setData(interruptRes.data.data);
+      if (interruptRes.status === 'fulfilled' && interruptRes.value.data.success) {
+        setData(interruptRes.value.data.data);
       }
-      if (focusRes.data.success) {
-        setFocusActive(focusRes.data.data.active ?? false);
+      if (focusRes.status === 'fulfilled' && focusRes.value.data.success) {
+        setFocusActive(focusRes.value.data.data.active ?? false);
       }
     } catch {
       // Silently fail

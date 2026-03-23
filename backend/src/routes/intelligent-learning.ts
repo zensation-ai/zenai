@@ -157,11 +157,12 @@ router.post('/:context/focus', apiKeyAuth, requireScope('write'), asyncHandler(a
  * GET /api/:context/focus/:id
  * Get a specific domain focus
  */
-router.get('/:context/focus/:id', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
+router.get('/:context/focus/:id', apiKeyAuth, asyncHandler(async (req: Request, res: Response, next) => {
+  const { id } = req.params;
+  // Skip to next route if :id is not a UUID (e.g. "status", "history")
+  if (!isValidUUID(id)) { return next(); }
   const context = validateContext(req.params.context);
   getUserId(req); // auth check
-  const { id } = req.params;
-  validateId(id, 'Focus ID');
 
   const focus = await getDomainFocus(id, context);
 
@@ -179,11 +180,11 @@ router.get('/:context/focus/:id', apiKeyAuth, asyncHandler(async (req: Request, 
  * PUT /api/:context/focus/:id
  * Update a domain focus
  */
-router.put('/:context/focus/:id', apiKeyAuth, requireScope('write'), asyncHandler(async (req: Request, res: Response) => {
+router.put('/:context/focus/:id', apiKeyAuth, requireScope('write'), asyncHandler(async (req: Request, res: Response, next) => {
+  const { id } = req.params;
+  if (!isValidUUID(id)) { return next(); }
   const context = validateContext(req.params.context);
   getUserId(req); // auth check
-  const { id } = req.params;
-  validateId(id, 'Focus ID');
 
   const { name, description, keywords, learning_goals, document_sources, api_connections, priority } = req.body;
 
@@ -214,12 +215,12 @@ router.put('/:context/focus/:id', apiKeyAuth, requireScope('write'), asyncHandle
  * PUT /api/:context/focus/:id/toggle
  * Activate/deactivate a domain focus
  */
-router.put('/:context/focus/:id/toggle', apiKeyAuth, requireScope('write'), asyncHandler(async (req: Request, res: Response) => {
+router.put('/:context/focus/:id/toggle', apiKeyAuth, requireScope('write'), asyncHandler(async (req: Request, res: Response, next) => {
+  const { id } = req.params;
+  if (!isValidUUID(id)) { return next(); }
   const context = validateContext(req.params.context);
   getUserId(req); // auth check
-  const { id } = req.params;
   const { is_active } = req.body;
-  validateId(id, 'Focus ID');
 
   if (typeof is_active !== 'boolean') {
     throw new ValidationError('is_active must be a boolean');
@@ -241,11 +242,11 @@ router.put('/:context/focus/:id/toggle', apiKeyAuth, requireScope('write'), asyn
  * DELETE /api/:context/focus/:id
  * Delete a domain focus
  */
-router.delete('/:context/focus/:id', apiKeyAuth, requireScope('write'), asyncHandler(async (req: Request, res: Response) => {
+router.delete('/:context/focus/:id', apiKeyAuth, requireScope('write'), asyncHandler(async (req: Request, res: Response, next) => {
+  const { id } = req.params;
+  if (!isValidUUID(id)) { return next(); }
   const context = validateContext(req.params.context);
   getUserId(req); // auth check
-  const { id } = req.params;
-  validateId(id, 'Focus ID');
 
   const success = await deleteDomainFocus(id, context);
 

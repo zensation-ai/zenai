@@ -15,16 +15,14 @@
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
   box-shadow: 0 1px 8px rgba(0, 0, 0, 0.12);
   -webkit-app-region: drag;
-  animation: pageHeaderSlideIn 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+  animation: pageHeaderSlideIn 0.35s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
 @keyframes pageHeaderSlideIn {
   from {
-    opacity: 0;
-    transform: translateY(-100%);
+    transform: translateY(-8px);
   }
   to {
-    opacity: 1;
     transform: translateY(0);
   }
 }

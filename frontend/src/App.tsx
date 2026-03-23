@@ -64,6 +64,7 @@ import { CockpitLayout } from './components/cockpit/CockpitLayout';
 import { ChatSessionTabs } from './components/cockpit/ChatSessionTabs';
 import { WelcomeChatMessage } from './components/cockpit/WelcomeChatMessage';
 import { ContextSelectorCards } from './components/cockpit/ContextSelectorCards';
+import { DashboardPage } from './components/cockpit/DashboardPage';
 
 import './App.css';
 
@@ -751,44 +752,50 @@ function CockpitShell({ context, onContextChange, currentPage, navigateToPage, p
 
   return (
     <>
-      <CockpitLayout currentPage="chat" context={context} onContextChange={onContextChange}>
-        <ChatSessionTabs
-          tabs={chatTabs}
-          activeSessionId={activeSessionId || 'default'}
-          onSelectTab={() => { /* session switching will be implemented later */ }}
-          onCloseTab={() => { /* tab close will be implemented later */ }}
-          onNewTab={() => { /* new session will be implemented later */ }}
-        />
-        {showWelcome && (
-          <WelcomeChatMessage
-            onSendMessage={() => {
-              setShowWelcome(false);
-              safeLocalStorage('set', 'zenai-welcome-shown', 'true');
-            }}
-            onOpenCommandPalette={() => {
-              setShowWelcome(false);
-              commandPalette.open();
-            }}
-          />
+      <CockpitLayout currentPage={currentPage === 'settings' ? 'settings' : currentPage === 'hub' || currentPage === 'chat' ? 'chat' : 'dashboard'} context={context} onContextChange={onContextChange}>
+        {currentPage === 'hub' || currentPage === 'chat' || !currentPage ? (
+          <>
+            <ChatSessionTabs
+              tabs={chatTabs}
+              activeSessionId={activeSessionId || 'default'}
+              onSelectTab={() => { /* session switching will be implemented later */ }}
+              onCloseTab={() => { /* tab close will be implemented later */ }}
+              onNewTab={() => { /* new session will be implemented later */ }}
+            />
+            {showWelcome && (
+              <WelcomeChatMessage
+                onSendMessage={() => {
+                  setShowWelcome(false);
+                  safeLocalStorage('set', 'zenai-welcome-shown', 'true');
+                }}
+                onOpenCommandPalette={() => {
+                  setShowWelcome(false);
+                  commandPalette.open();
+                }}
+              />
+            )}
+            {showContextSelector && (
+              <ContextSelectorCards
+                selectedContext={context}
+                onSelect={(ctx) => {
+                  setShowContextSelector(false);
+                  safeLocalStorage('set', 'zenai-onboarding-complete', 'true');
+                  onContextChange(ctx as AIContext);
+                }}
+              />
+            )}
+            <ErrorBoundary fallback={<div className="chat-error-fallback">Chat nicht verfuegbar.</div>}>
+              <GeneralChat
+                context={context}
+                isCompact={false}
+                onSessionChange={handleSessionChange}
+                onPanelAction={(panel, filter) => panelDispatch({ type: 'OPEN_PANEL', panel: panel as PanelType, filter })}
+              />
+            </ErrorBoundary>
+          </>
+        ) : (
+          <DashboardPage context={context} />
         )}
-        {showContextSelector && (
-          <ContextSelectorCards
-            selectedContext={context}
-            onSelect={(ctx) => {
-              setShowContextSelector(false);
-              safeLocalStorage('set', 'zenai-onboarding-complete', 'true');
-              onContextChange(ctx as AIContext);
-            }}
-          />
-        )}
-        <ErrorBoundary fallback={<div className="chat-error-fallback">Chat nicht verfuegbar.</div>}>
-          <GeneralChat
-            context={context}
-            isCompact={false}
-            onSessionChange={handleSessionChange}
-            onPanelAction={(panel, filter) => panelDispatch({ type: 'OPEN_PANEL', panel: panel as PanelType, filter })}
-          />
-        </ErrorBoundary>
       </CockpitLayout>
 
       <ToastContainer />

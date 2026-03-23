@@ -63,7 +63,7 @@ export const PAGE_PATHS: Record<Page, string> = {
   'learning-tasks': '/planer/tasks',
   'personalization': '/meine-ki',
   'stories': '/wissen/connections',
-  'dashboard': '/',
+  'dashboard': '/dashboard',
   'ai-workshop': '/ideen/workshop',
   'mcp-servers': '/system/integrations/mcp',
   'automations': '/system/automations',
@@ -76,6 +76,7 @@ export const PAGE_PATHS: Record<Page, string> = {
 /** Maps canonical URL paths to Page identifiers */
 export const PATH_PAGES: Record<string, Page> = {
   '/': 'hub',
+  '/dashboard': 'dashboard',
   '/ideen': 'ideas',
   '/planer': 'calendar',
   '/inbox': 'email',
@@ -144,7 +145,7 @@ export const LEGACY_REDIRECTS: Array<{ from: string; to: string; rewritePrefix?:
   { from: '/personalization', to: '/meine-ki' },
   { from: '/voice-chat', to: '/meine-ki/voice-chat' },
   { from: '/agent-teams', to: '/' },
-  { from: '/dashboard', to: '/' },
+  // /dashboard is a valid cockpit-mode route — no redirect needed
   { from: '/analytics', to: '/cockpit/trends' },
   { from: '/digest', to: '/cockpit/digest' },
   { from: '/knowledge-graph', to: '/wissen/connections' },

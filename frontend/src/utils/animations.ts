@@ -82,8 +82,8 @@ export const pageVariants: Variants = {
 };
 
 export const pageTransition: Transition = {
-  ...springs.gentle,
-  opacity: { duration: durations.normal },
+  duration: durations.page,
+  ease: [0.22, 1, 0.36, 1],
 };
 
 export const pageExitTransition: Transition = {

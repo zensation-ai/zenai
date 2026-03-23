@@ -65,7 +65,7 @@ describe('Route Mappings (Phase 105)', () => {
     expect(fromPaths).toContain('/personalization');
     expect(fromPaths).toContain('/voice-chat');
     expect(fromPaths).toContain('/agent-teams');
-    expect(fromPaths).toContain('/dashboard');
+    // /dashboard is now a valid cockpit-mode route, not a legacy redirect
     expect(fromPaths).toContain('/analytics');
     expect(fromPaths).toContain('/digest');
     expect(fromPaths).toContain('/knowledge-graph');

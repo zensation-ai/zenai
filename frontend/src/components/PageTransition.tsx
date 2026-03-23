@@ -11,7 +11,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   pageVariants,
   pageTransition,
-  pageExitTransition,
   reducedMotionVariants,
   reducedMotionTransition,
   usePrefersReducedMotion,
@@ -28,26 +27,19 @@ export function PageTransition({ pageKey, children }: PageTransitionProps) {
 
   const variants = reducedMotion ? reducedMotionVariants : pageVariants;
   const enterTransition = reducedMotion ? reducedMotionTransition : pageTransition;
-  const exitTransition = reducedMotion ? reducedMotionTransition : pageExitTransition;
 
   return (
-    <AnimatePresence mode="wait">
+    <AnimatePresence mode="wait" initial={false}>
       <motion.div
         key={pageKey}
-        variants={variants}
         initial="initial"
         animate="animate"
         exit="exit"
+        variants={variants}
         transition={enterTransition}
         style={{ width: '100%' }}
       >
-        <motion.div
-          exit="exit"
-          variants={variants}
-          transition={exitTransition}
-        >
-          {children}
-        </motion.div>
+        {children}
       </motion.div>
     </AnimatePresence>
   );
