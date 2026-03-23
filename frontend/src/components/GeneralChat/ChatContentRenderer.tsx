@@ -37,19 +37,23 @@ export function useChatContentRenderer({ artifacts, setArtifacts, setActiveArtif
     const { text, artifacts: extracted } = extractArtifacts(content);
 
     // Cache if any found (with LRU eviction at MAX_ARTIFACT_CACHE)
+    // setTimeout defers past React's commit phase to avoid "setState during render" warning
     if (extracted.length > 0) {
-      setArtifacts(prev => {
-        const next = new Map(prev);
-        next.set(messageId, extracted);
-        // Evict oldest entries when cache exceeds limit
-        if (next.size > MAX_ARTIFACT_CACHE) {
-          const keysToDelete = Array.from(next.keys()).slice(0, next.size - MAX_ARTIFACT_CACHE);
-          for (const key of keysToDelete) {
-            next.delete(key);
+      setTimeout(() => {
+        setArtifacts(prev => {
+          // Double-check not already cached (race guard)
+          if (prev.has(messageId)) return prev;
+          const next = new Map(prev);
+          next.set(messageId, extracted);
+          if (next.size > MAX_ARTIFACT_CACHE) {
+            const keysToDelete = Array.from(next.keys()).slice(0, next.size - MAX_ARTIFACT_CACHE);
+            for (const key of keysToDelete) {
+              next.delete(key);
+            }
           }
-        }
-        return next;
-      });
+          return next;
+        });
+      }, 0);
     }
 
     return { text, messageArtifacts: extracted };
