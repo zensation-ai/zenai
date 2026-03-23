@@ -21,6 +21,23 @@ const MIN_WIDTH = 360;
 const MAX_WIDTH = 600;
 const DEFAULT_WIDTH = 420;
 
+export function savePanelWidth(panelType: PanelType, width: number): void {
+  try {
+    localStorage.setItem(`panel-width-${panelType}`, String(width));
+  } catch { /* quota exceeded — ignore */ }
+}
+
+export function loadPanelWidth(panelType: PanelType): number | null {
+  try {
+    const raw = localStorage.getItem(`panel-width-${panelType}`);
+    if (!raw) return null;
+    const parsed = Number(raw);
+    return Number.isFinite(parsed) ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+
 export const initialPanelState: PanelState = {
   activePanel: null,
   pinned: false,
@@ -34,13 +51,16 @@ const VALID_PANELS: PanelType[] = [
 
 export function panelReducer(state: PanelState, action: PanelAction): PanelState {
   switch (action.type) {
-    case 'OPEN_PANEL':
+    case 'OPEN_PANEL': {
+      const savedWidth = loadPanelWidth(action.panel);
       return {
         ...state,
         activePanel: action.panel,
         pinned: false,
         filter: action.filter,
+        width: savedWidth ?? DEFAULT_WIDTH,
       };
+    }
     case 'CLOSE_PANEL':
       return {
         ...state,
@@ -50,11 +70,16 @@ export function panelReducer(state: PanelState, action: PanelAction): PanelState
       };
     case 'TOGGLE_PIN':
       return { ...state, pinned: !state.pinned };
-    case 'SET_WIDTH':
+    case 'SET_WIDTH': {
+      const clamped = Math.max(MIN_WIDTH, Math.min(MAX_WIDTH, action.width));
+      if (state.activePanel) {
+        savePanelWidth(state.activePanel, clamped);
+      }
       return {
         ...state,
-        width: Math.max(MIN_WIDTH, Math.min(MAX_WIDTH, action.width)),
+        width: clamped,
       };
+    }
     default:
       return state;
   }
