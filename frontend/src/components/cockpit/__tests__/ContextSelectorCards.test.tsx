@@ -23,4 +23,20 @@ describe('ContextSelectorCards', () => {
     render(<ContextSelectorCards onSelect={onSelect} />);
     expect(screen.getByText(/Projekte, Meetings/)).toBeInTheDocument();
   });
+
+  it('all buttons have type="button"', () => {
+    render(<ContextSelectorCards onSelect={onSelect} />);
+    const buttons = screen.getAllByRole('button');
+    buttons.forEach(btn => {
+      expect(btn).toHaveAttribute('type', 'button');
+    });
+  });
+
+  it('shows aria-pressed for selected context', () => {
+    render(<ContextSelectorCards onSelect={onSelect} selectedContext="work" />);
+    const workBtn = screen.getByText('Arbeit').closest('button');
+    expect(workBtn).toHaveAttribute('aria-pressed', 'true');
+    const personalBtn = screen.getByText('Persoenlich').closest('button');
+    expect(personalBtn).toHaveAttribute('aria-pressed', 'false');
+  });
 });

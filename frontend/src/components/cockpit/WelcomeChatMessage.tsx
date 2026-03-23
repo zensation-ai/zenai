@@ -8,7 +8,7 @@ interface WelcomeChatMessageProps {
 const MESSAGE_CHIPS = [
   'Zeig mir meine Aufgaben',
   'Schreib eine Email',
-  'Was habe ich heute gelernt?',
+  'Was kannst du alles?',
 ] as const;
 
 export function WelcomeChatMessage({ onSendMessage, onOpenCommandPalette }: WelcomeChatMessageProps) {

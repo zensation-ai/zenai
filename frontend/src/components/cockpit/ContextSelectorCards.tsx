@@ -42,6 +42,7 @@ export function ContextSelectorCards({ onSelect, selectedContext }: ContextSelec
       {CONTEXTS.map(ctx => (
         <button
           key={ctx.id}
+          type="button"
           className={`context-selector-cards__card context-selector-cards__card--${ctx.id}${selectedContext === ctx.id ? ' context-selector-cards__card--selected' : ''}`}
           onClick={() => onSelect(ctx.id)}
           aria-pressed={selectedContext === ctx.id}

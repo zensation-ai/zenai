@@ -10,10 +10,11 @@ describe('WelcomeChatMessage', () => {
     expect(screen.getByText(/Willkommen bei ZenAI/)).toBeInTheDocument();
   });
 
-  it('renders suggestion chips', () => {
+  it('renders all 3 suggestion chips', () => {
     render(<WelcomeChatMessage {...defaultProps} />);
     expect(screen.getByText('Zeig mir meine Aufgaben')).toBeInTheDocument();
     expect(screen.getByText('Schreib eine Email')).toBeInTheDocument();
+    expect(screen.getByText('Was kannst du alles?')).toBeInTheDocument();
   });
 
   it('sends message when chip clicked', () => {
