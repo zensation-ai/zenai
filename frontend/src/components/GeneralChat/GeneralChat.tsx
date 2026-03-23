@@ -29,7 +29,7 @@ const ArtifactPanel = lazy(() => import('../ArtifactPanel').then(m => ({ default
 // Lazy-load VoiceChat overlay
 const VoiceChatOverlay = lazy(() => import('../VoiceChat').then(m => ({ default: m.VoiceChat })));
 
-export function GeneralChat({ context, isCompact = false, assistantMode = false, fullPage = false, initialSessionId, onSessionChange }: GeneralChatProps) {
+export function GeneralChat({ context, isCompact = false, assistantMode = false, fullPage = false, initialSessionId, onSessionChange, onPanelAction }: GeneralChatProps) {
   // Chat lifecycle state machine (Fix 26)
   const [chatState, dispatchChat] = useReducer(chatReducer, INITIAL_CHAT_STATE);
 
@@ -551,6 +551,13 @@ export function GeneralChat({ context, isCompact = false, assistantMode = false,
                             }
                           } catch { /* not JSON or no navigation */ }
                         }
+                        currentEventType = '';
+                        continue;
+                      }
+
+                      // Handle panel_action events (from open_panel tool)
+                      if (currentEventType === 'panel_action' && data.panel && onPanelAction) {
+                        onPanelAction(data.panel, data.filter);
                         currentEventType = '';
                         continue;
                       }

@@ -45,4 +45,6 @@ export interface GeneralChatProps {
   initialSessionId?: string | null;
   /** Callback when session changes (new session created or loaded) */
   onSessionChange?: (sessionId: string | null) => void;
+  /** Callback when a panel_action SSE event is received (from open_panel tool) */
+  onPanelAction?: (panel: string, filter?: string) => void;
 }

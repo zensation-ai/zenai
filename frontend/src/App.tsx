@@ -782,7 +782,12 @@ function CockpitShell({ context, onContextChange, currentPage, navigateToPage, p
           />
         )}
         <ErrorBoundary fallback={<div className="chat-error-fallback">Chat nicht verfuegbar.</div>}>
-          <GeneralChat context={context} isCompact={false} onSessionChange={handleSessionChange} />
+          <GeneralChat
+            context={context}
+            isCompact={false}
+            onSessionChange={handleSessionChange}
+            onPanelAction={(panel, filter) => panelDispatch({ type: 'OPEN_PANEL', panel: panel as PanelType, filter })}
+          />
         </ErrorBoundary>
       </CockpitLayout>
 
