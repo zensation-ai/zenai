@@ -6,7 +6,7 @@
   background: var(--surface-1);
   border: 1px solid var(--border);
   border-radius: 8px;
-  box-shadow: 0 -4px 12px rgba(0,0,0,0.3);
+  box-shadow: 0 -8px 16px rgba(0, 0, 0, 0.15);
   max-height: 240px;
   overflow-y: auto;
   z-index: 50;
@@ -32,6 +32,11 @@
 .slash-menu__item:hover,
 .slash-menu__item--active {
   background: var(--surface-3);
+}
+
+.slash-menu__item:focus-visible {
+  outline: 2px solid var(--accent-ai);
+  outline-offset: -2px;
 }
 
 .slash-menu__label {

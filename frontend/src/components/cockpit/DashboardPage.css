@@ -36,6 +36,16 @@
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
 
+.dashboard-widget:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.dashboard-widget:active {
+  transform: translateY(0);
+  box-shadow: none;
+}
+
 .dashboard-widget__header {
   display: flex;
   align-items: center;

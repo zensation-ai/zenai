@@ -20,23 +20,25 @@ export function ChatSessionTabs({
   return (
     <div className="session-tabs" role="tablist">
       {tabs.map(tab => (
-        <button
+        <div
           key={tab.sessionId}
           role="tab"
+          tabIndex={0}
           aria-selected={tab.sessionId === activeSessionId}
           className={`session-tabs__tab ${tab.sessionId === activeSessionId ? 'session-tabs__tab--active' : ''}`}
           onClick={() => onSelectTab(tab.sessionId)}
+          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onSelectTab(tab.sessionId); } }}
         >
           <span className="session-tabs__title">{tab.title}</span>
-          <span
+          <button
+            type="button"
             className="session-tabs__close"
-            role="button"
             aria-label="Tab schliessen"
             onClick={(e) => { e.stopPropagation(); onCloseTab(tab.sessionId); }}
           >
             <X size={12} />
-          </span>
-        </button>
+          </button>
+        </div>
       ))}
       <button
         className="session-tabs__new"

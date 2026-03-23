@@ -27,7 +27,7 @@ describe('ChatSessionTabs', () => {
 
   it('marks active tab', () => {
     render(<ChatSessionTabs {...defaultProps} />);
-    const tab = screen.getByText('API Design').closest('button');
+    const tab = screen.getByText('API Design').closest('[role="tab"]');
     expect(tab).toHaveClass('session-tabs__tab--active');
   });
 

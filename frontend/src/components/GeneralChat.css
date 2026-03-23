@@ -127,11 +127,11 @@
 @keyframes avatarPulse {
   0%, 100% {
     transform: scale(1);
-    box-shadow: 0 4px 16px rgba(255, 107, 53, 0.25);
+    box-shadow: 0 4px 16px rgba(255, 107, 53, 0.2);
   }
   50% {
-    transform: scale(1.05);
-    box-shadow: 0 6px 24px rgba(255, 107, 53, 0.35);
+    transform: scale(1.02);
+    box-shadow: 0 4px 16px rgba(255, 107, 53, 0.3);
   }
 }
 

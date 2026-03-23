@@ -23,3 +23,19 @@
   background: var(--surface-3);
   color: var(--text-primary);
 }
+
+.quick-actions-bar__btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.quick-actions-bar__btn:active {
+  transform: scale(0.95);
+}
+
+@media (pointer: coarse) {
+  .quick-actions-bar__btn {
+    width: 44px;
+    height: 44px;
+  }
+}

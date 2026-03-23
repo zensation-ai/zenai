@@ -93,8 +93,8 @@ textarea::placeholder {
 
   /* Text (never pure black/white) */
   --text-primary: hsl(220, 15%, 15%);
-  --text-secondary: hsl(220, 10%, 45%);
-  --text-tertiary: hsl(220, 8%, 62%);
+  --text-secondary: hsl(220, 10%, 38%);
+  --text-tertiary: hsl(220, 8%, 55%);
 
   /* Glass */
   --glass-bg: rgba(255, 255, 255, 0.72);
