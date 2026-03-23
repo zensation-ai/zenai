@@ -2,25 +2,22 @@
   "name": "zenai-electron",
   "version": "3.0.0",
   "private": true,
-  "description": "ZenAI Desktop App - Electron Shell",
+  "description": "ZenAI Desktop App - Cloud Shell",
   "main": "dist/main.js",
   "scripts": {
-    "build": "tsc",
-    "dev": "tsc && electron .",
+    "build": "tsc && cp src/offline.html dist/",
+    "dev": "tsc && cp src/offline.html dist/ && electron .",
     "clean": "rm -rf dist out",
     "typecheck": "tsc --noEmit",
     "test": "jest",
     "test:watch": "jest --watch",
-    "package:mac": "tsc && electron-builder --mac",
-    "package:win": "tsc && electron-builder --win",
-    "package:linux": "tsc && electron-builder --linux",
-    "package:all": "tsc && electron-builder --mac --win --linux"
+    "package:mac": "tsc && cp src/offline.html dist/ && electron-builder --mac",
+    "package:win": "tsc && cp src/offline.html dist/ && electron-builder --win",
+    "package:linux": "tsc && cp src/offline.html dist/ && electron-builder --linux",
+    "package:all": "tsc && cp src/offline.html dist/ && electron-builder --mac --win --linux"
   },
   "dependencies": {
-    "@zenai/shared": "workspace:*",
-    "electron-store": "^10.0.0",
-    "electron-updater": "^6.3.0",
-    "eventsource": "^3.0.0"
+    "electron-updater": "^6.3.0"
   },
   "devDependencies": {
     "@types/jest": "^29.5.0",

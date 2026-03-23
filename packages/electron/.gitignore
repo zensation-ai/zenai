@@ -1,0 +1,5 @@
+# Build outputs
+dist/
+out/
+node_modules/
+*.js.map

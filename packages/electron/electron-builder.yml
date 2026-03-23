@@ -10,17 +10,6 @@ files:
   - dist/**/*
   - "!**/*.map"
 
-# Include built frontend as renderer
-extraResources:
-  - from: "../../frontend/dist"
-    to: "renderer"
-    filter:
-      - "**/*"
-  - from: "../../backend/dist"
-    to: "backend/dist"
-    filter:
-      - "**/*"
-
 mac:
   target:
     - dmg
@@ -51,5 +40,5 @@ nsis:
 
 publish:
   provider: github
-  owner: alexanderbering
+  owner: Alexander-Bering
   repo: zenai-desktop
