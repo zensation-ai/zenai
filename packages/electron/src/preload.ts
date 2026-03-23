@@ -1,78 +1,136 @@
 /**
- * ZenAI Electron Preload Script
+ * Preload Script (v2)
  *
- * Exposes a safe API to the renderer process via contextBridge.
- * The renderer (React frontend) can access these via window.electronAPI.
+ * Exposes a typed `window.electronAPI` surface to the renderer via
+ * contextBridge.  All ipcRenderer.on() subscriptions return a cleanup
+ * function so React components can remove listeners in useEffect teardown.
  */
 
-import { contextBridge, ipcRenderer } from 'electron';
+import { contextBridge, ipcRenderer, IpcRendererEvent } from 'electron';
 
-/**
- * Exposed API available in the renderer as window.electronAPI
- */
+// ─── API definition ───────────────────────────────────────────────────────────
+
 const electronAPI = {
-  // Platform info
+  /** Runtime platform string ('darwin' | 'win32' | 'linux') */
   platform: process.platform,
+
+  /** Always true — lets the renderer detect it's running inside Electron */
   isElectron: true as const,
 
-  // Navigation (from main process menu/tray/shortcuts)
-  onNavigate: (callback: (page: string) => void) => {
-    ipcRenderer.on('navigate', (_event, page: string) => callback(page));
+  // ─── Navigation ─────────────────────────────────────────────────────────
+
+  /**
+   * Subscribe to navigation events sent from the main process.
+   * Returns a cleanup function — call it in `useEffect` teardown.
+   */
+  onNavigate: (callback: (page: string) => void): (() => void) => {
+    const handler = (_event: IpcRendererEvent, page: string) => callback(page);
+    ipcRenderer.on('navigate', handler);
+    return () => ipcRenderer.removeListener('navigate', handler);
   },
 
-  // Native notifications
-  showNotification: (title: string, body: string) => {
-    ipcRenderer.send('show-notification', { title, body });
-  },
+  // ─── Notifications ───────────────────────────────────────────────────────
 
-  // File system dialogs
-  openFile: () => ipcRenderer.invoke('dialog:openFile') as Promise<string | null>,
-  saveFile: (data: string, filename: string) =>
+  showNotification: (title: string, body: string): void =>
+    ipcRenderer.send('show-notification', { title, body }),
+
+  // ─── Dialogs ────────────────────────────────────────────────────────────
+
+  openFile: (): Promise<string | null> =>
+    ipcRenderer.invoke('dialog:openFile') as Promise<string | null>,
+
+  saveFile: (data: string, filename: string): Promise<string | null> =>
     ipcRenderer.invoke('dialog:saveFile', data, filename) as Promise<string | null>,
 
-  // Window management
-  minimize: () => ipcRenderer.send('window:minimize'),
-  maximize: () => ipcRenderer.send('window:maximize'),
-  close: () => ipcRenderer.send('window:close'),
+  // ─── Window controls ────────────────────────────────────────────────────
 
-  // External links
-  openExternal: (url: string) => ipcRenderer.invoke('shell:openExternal', url) as Promise<boolean>,
+  minimize: (): void => ipcRenderer.send('window:minimize'),
+  maximize: (): void => ipcRenderer.send('window:maximize'),
+  close: (): void => ipcRenderer.send('window:close'),
 
-  // App info
-  getVersion: () => ipcRenderer.invoke('app:getVersion') as Promise<string>,
+  // ─── Shell ──────────────────────────────────────────────────────────────
 
-  // Auto-update events (from main process)
-  onUpdateAvailable: (callback: (info: { version: string; releaseDate: string }) => void) => {
-    ipcRenderer.on('update-available', (_event, info) => callback(info));
-  },
-  onUpdateProgress: (callback: (info: { percent: number }) => void) => {
-    ipcRenderer.on('update-progress', (_event, info) => callback(info));
-  },
-  onUpdateDownloaded: (callback: (info: { version: string }) => void) => {
-    ipcRenderer.on('update-downloaded', (_event, info) => callback(info));
-  },
+  openExternal: (url: string): Promise<boolean> =>
+    ipcRenderer.invoke('shell:openExternal', url) as Promise<boolean>,
 
-  // Command palette (from main process menu)
-  onOpenCommandPalette: (callback: () => void) => {
-    ipcRenderer.on('open-command-palette', () => callback());
-  },
+  // ─── App info ───────────────────────────────────────────────────────────
 
-  // Screen Memory (Phase 5 - placeholder)
-  screenMemory: {
-    isEnabled: () => ipcRenderer.invoke('screen-memory:isEnabled') as Promise<boolean>,
-    toggle: (enabled: boolean) => ipcRenderer.invoke('screen-memory:toggle', enabled) as Promise<void>,
-    search: (query: string) => ipcRenderer.invoke('screen-memory:search', query) as Promise<unknown[]>,
+  getVersion: (): Promise<string> =>
+    ipcRenderer.invoke('app:getVersion') as Promise<string>,
+
+  // ─── Auto-updater events ─────────────────────────────────────────────────
+
+  onUpdateAvailable: (
+    callback: (info: { version: string; releaseDate: string }) => void,
+  ): (() => void) => {
+    const handler = (_event: IpcRendererEvent, info: { version: string; releaseDate: string }) =>
+      callback(info);
+    ipcRenderer.on('update-available', handler);
+    return () => ipcRenderer.removeListener('update-available', handler);
   },
 
-  // Browser (Phase 2 - placeholder)
-  browser: {
-    openTab: (url: string) => ipcRenderer.invoke('browser:openTab', url) as Promise<string>,
-    closeTab: (tabId: string) => ipcRenderer.invoke('browser:closeTab', tabId) as Promise<void>,
-    getActiveTab: () => ipcRenderer.invoke('browser:getActiveTab') as Promise<{ id: string; url: string; title: string } | null>,
+  onUpdateProgress: (callback: (info: { percent: number }) => void): (() => void) => {
+    const handler = (_event: IpcRendererEvent, info: { percent: number }) => callback(info);
+    ipcRenderer.on('update-progress', handler);
+    return () => ipcRenderer.removeListener('update-progress', handler);
+  },
+
+  onUpdateDownloaded: (callback: (info: { version: string }) => void): (() => void) => {
+    const handler = (_event: IpcRendererEvent, info: { version: string }) => callback(info);
+    ipcRenderer.on('update-downloaded', handler);
+    return () => ipcRenderer.removeListener('update-downloaded', handler);
+  },
+
+  // ─── Command palette ────────────────────────────────────────────────────
+
+  onOpenCommandPalette: (callback: () => void): (() => void) => {
+    const handler = () => callback();
+    ipcRenderer.on('open-command-palette', handler);
+    return () => ipcRenderer.removeListener('open-command-palette', handler);
+  },
+
+  // ─── Config ─────────────────────────────────────────────────────────────
+
+  config: {
+    get: (key: string): Promise<unknown> => ipcRenderer.invoke('config:get', key),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    set: (key: string, value: any): Promise<void> =>
+      ipcRenderer.invoke('config:set', key, value),
+  },
+
+  // ─── Backend status ──────────────────────────────────────────────────────
+
+  backend: {
+    getStatus: (): Promise<string> =>
+      ipcRenderer.invoke('backend:getStatus') as Promise<string>,
+    getUrl: (): Promise<string> =>
+      ipcRenderer.invoke('backend:getUrl') as Promise<string>,
+  },
+
+  // ─── Spotlight overlay ───────────────────────────────────────────────────
+
+  spotlight: {
+    onShow: (callback: () => void): (() => void) => {
+      const handler = () => callback();
+      ipcRenderer.on('spotlight:show', handler);
+      return () => ipcRenderer.removeListener('spotlight:show', handler);
+    },
+
+    onHide: (callback: () => void): (() => void) => {
+      const handler = () => callback();
+      ipcRenderer.on('spotlight:hide', handler);
+      return () => ipcRenderer.removeListener('spotlight:hide', handler);
+    },
+
+    close: (): void => ipcRenderer.send('spotlight:close'),
+    resize: (height: number): void => ipcRenderer.send('spotlight:resize', height),
   },
 };
 
+// ─── Expose to renderer ───────────────────────────────────────────────────────
+
 contextBridge.exposeInMainWorld('electronAPI', electronAPI);
 
-// Type declaration for renderer access
+// ─── Type export (used by the renderer's TypeScript project) ─────────────────
+
 export type ElectronAPI = typeof electronAPI;

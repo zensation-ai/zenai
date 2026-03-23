@@ -1,6 +1,6 @@
 {
   "name": "zenai-electron",
-  "version": "2.0.0",
+  "version": "3.0.0",
   "private": true,
   "description": "ZenAI Desktop App - Electron Shell",
   "main": "dist/main.js",
@@ -9,6 +9,8 @@
     "dev": "tsc && electron .",
     "clean": "rm -rf dist out",
     "typecheck": "tsc --noEmit",
+    "test": "jest",
+    "test:watch": "jest --watch",
     "package:mac": "tsc && electron-builder --mac",
     "package:win": "tsc && electron-builder --win",
     "package:linux": "tsc && electron-builder --linux",
@@ -16,11 +18,16 @@
   },
   "dependencies": {
     "@zenai/shared": "workspace:*",
-    "electron-updater": "^6.3.0"
+    "electron-store": "^10.0.0",
+    "electron-updater": "^6.3.0",
+    "eventsource": "^3.0.0"
   },
   "devDependencies": {
+    "@types/jest": "^29.5.0",
     "electron": "^41.0.0",
     "electron-builder": "^25.0.0",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.2.0",
     "typescript": "^5.3.3"
   }
 }

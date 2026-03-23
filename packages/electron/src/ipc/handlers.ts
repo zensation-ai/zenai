@@ -1,17 +1,49 @@
 /**
- * IPC Event Handlers
+ * IPC Event Handlers (v2 — dependency-injected)
  *
  * Handles communication between the renderer (React) and main process.
- * Registered in main.ts during app initialization.
+ * All external dependencies are passed in via IpcDependencies so this module
+ * is fully unit-testable without a running Electron runtime.
  */
 
-import { ipcMain, dialog, Notification, BrowserWindow, shell } from 'electron';
+import { ipcMain, dialog, Notification, BrowserWindow, shell, app } from 'electron';
+
+// ─── Types ────────────────────────────────────────────────────────────────────
+
+export interface IpcDependencies {
+  /** Returns the current main BrowserWindow, or null if not yet created */
+  getMainWindow: () => BrowserWindow | null;
+  /** Read a config value by key */
+  getConfig: (key: string) => unknown;
+  /** Write a config value by key */
+  setConfig: (key: string, value: unknown) => void;
+  /** Returns the current backend health status string */
+  getBackendStatus: () => string;
+  /** Returns the active backend URL */
+  getBackendUrl: () => string;
+  /** Hide the spotlight overlay window */
+  hideSpotlight: () => void;
+  /** Resize the spotlight overlay to a given height */
+  resizeSpotlight: (height: number) => void;
+}
+
+// ─── Handler registration ─────────────────────────────────────────────────────
 
 /**
- * Register all IPC handlers
+ * Register all IPC channels.  Call once after `app` is ready.
  */
-export function registerIpcHandlers(getMainWindow: () => BrowserWindow | null): void {
-  // ─── Notifications ───
+export function registerIpcHandlers(deps: IpcDependencies): void {
+  const {
+    getMainWindow,
+    getConfig,
+    setConfig,
+    getBackendStatus,
+    getBackendUrl,
+    hideSpotlight,
+    resizeSpotlight,
+  } = deps;
+
+  // ─── Notifications ───────────────────────────────────────────────────────
 
   ipcMain.on('show-notification', (_event, { title, body }: { title: string; body: string }) => {
     if (Notification.isSupported()) {
@@ -27,7 +59,7 @@ export function registerIpcHandlers(getMainWindow: () => BrowserWindow | null): 
     }
   });
 
-  // ─── File Dialogs ───
+  // ─── File Dialogs ────────────────────────────────────────────────────────
 
   ipcMain.handle('dialog:openFile', async () => {
     const win = getMainWindow();
@@ -63,7 +95,7 @@ export function registerIpcHandlers(getMainWindow: () => BrowserWindow | null): 
     return result.filePath;
   });
 
-  // ─── Window Management ───
+  // ─── Window Management ───────────────────────────────────────────────────
 
   ipcMain.on('window:minimize', () => {
     getMainWindow()?.minimize();
@@ -72,7 +104,9 @@ export function registerIpcHandlers(getMainWindow: () => BrowserWindow | null): 
   ipcMain.on('window:maximize', () => {
     const win = getMainWindow();
     if (win) {
-      win.isMaximized() ? win.unmaximize() : win.maximize();
+      // BrowserWindow.isMaximized is present at runtime; cast for TS
+      const bw = win as BrowserWindow & { isMaximized?: () => boolean; unmaximize?: () => void };
+      bw.isMaximized?.() ? bw.unmaximize?.() : win.maximize();
     }
   });
 
@@ -80,10 +114,19 @@ export function registerIpcHandlers(getMainWindow: () => BrowserWindow | null): 
     getMainWindow()?.close();
   });
 
-  // ─── External Links ───
+  // ─── Spotlight ───────────────────────────────────────────────────────────
+
+  ipcMain.on('spotlight:close', () => {
+    hideSpotlight();
+  });
+
+  ipcMain.on('spotlight:resize', (_event, height: number) => {
+    resizeSpotlight(height);
+  });
+
+  // ─── External Links ──────────────────────────────────────────────────────
 
   ipcMain.handle('shell:openExternal', async (_event, url: string) => {
-    // Only allow http/https URLs
     if (url.startsWith('http://') || url.startsWith('https://')) {
       await shell.openExternal(url);
       return true;
@@ -91,15 +134,33 @@ export function registerIpcHandlers(getMainWindow: () => BrowserWindow | null): 
     return false;
   });
 
-  // ─── App Info ───
+  // ─── App Info ────────────────────────────────────────────────────────────
 
   ipcMain.handle('app:getVersion', () => {
-    const { app } = require('electron');
     return app.getVersion();
   });
 
   ipcMain.handle('app:getPath', (_event, name: string) => {
-    const { app } = require('electron');
     return app.getPath(name as Parameters<typeof app.getPath>[0]);
+  });
+
+  // ─── Config ──────────────────────────────────────────────────────────────
+
+  ipcMain.handle('config:get', (_event, key: string) => {
+    return getConfig(key);
+  });
+
+  ipcMain.handle('config:set', (_event, key: string, value: unknown) => {
+    setConfig(key, value);
+  });
+
+  // ─── Backend ─────────────────────────────────────────────────────────────
+
+  ipcMain.handle('backend:getStatus', () => {
+    return getBackendStatus();
+  });
+
+  ipcMain.handle('backend:getUrl', () => {
+    return getBackendUrl();
   });
 }
