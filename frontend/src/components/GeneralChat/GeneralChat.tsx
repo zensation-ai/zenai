@@ -795,6 +795,7 @@ export function GeneralChat({ context, isCompact = false, assistantMode = false,
         inputRef={inputRef}
         context={context}
         assistantMode={assistantMode}
+        onPanelAction={onPanelAction}
       />
 
       {/* Artifact Panel - lazy-loaded to reduce initial bundle (~200KB saved) */}

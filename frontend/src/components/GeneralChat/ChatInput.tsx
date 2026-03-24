@@ -5,11 +5,12 @@
  * textarea, send button, thinking mode bar, and inline error display.
  */
 
-import { useCallback, useEffect, useMemo, type RefObject, type Dispatch, type SetStateAction } from 'react';
+import { useState, useCallback, useEffect, useMemo, type RefObject, type Dispatch, type SetStateAction } from 'react';
 import type { AIContext } from '../ContextSwitcher';
 import { ImageUpload } from '../ImageUpload';
 import { VoiceInput } from '../VoiceInput';
 import { AnimatedButton } from '../ui';
+import { SlashCommandMenu } from '../cockpit/SlashCommandMenu';
 
 // Module-level constant — stable reference for useMemo
 const ALL_THINKING_MODES = [
@@ -38,6 +39,7 @@ interface ChatInputProps {
   inputRef: RefObject<HTMLTextAreaElement>;
   context: AIContext;
   assistantMode: boolean;
+  onPanelAction?: (panel: string, filter?: string) => void;
 }
 
 export function ChatInput({
@@ -59,7 +61,26 @@ export function ChatInput({
   inputRef,
   context,
   assistantMode,
+  onPanelAction,
 }: ChatInputProps) {
+  // Slash-command detection
+  const [slashMenuVisible, setSlashMenuVisible] = useState(false);
+  const slashQuery = useMemo(() => {
+    if (!inputValue.startsWith('/')) return '';
+    const firstSpace = inputValue.indexOf(' ');
+    return firstSpace === -1 ? inputValue.slice(1) : '';
+  }, [inputValue]);
+
+  useEffect(() => {
+    setSlashMenuVisible(inputValue.startsWith('/') && !inputValue.includes(' '));
+  }, [inputValue]);
+
+  const handleSlashSelect = useCallback((cmd: { panel: string; command: string }) => {
+    setSlashMenuVisible(false);
+    setInputValue('');
+    onPanelAction?.(cmd.panel);
+  }, [onPanelAction, setInputValue]);
+
   // Auto-resize textarea to fit content (up to max-height set in CSS)
   const autoResize = useCallback(() => {
     const el = inputRef.current;
@@ -114,6 +135,14 @@ export function ChatInput({
           </button>
         </div>
       )}
+
+      {/* Slash Command Menu */}
+      <SlashCommandMenu
+        query={slashQuery}
+        onSelect={handleSlashSelect}
+        onClose={() => setSlashMenuVisible(false)}
+        visible={slashMenuVisible}
+      />
 
       {/* Input Area */}
       <div className="chat-input-area">

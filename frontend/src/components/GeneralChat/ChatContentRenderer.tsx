@@ -273,7 +273,8 @@ export function useChatContentRenderer({ artifacts, setArtifacts, setActiveArtif
       // Inline formatting: bold, italic, inline code, links
       const renderInline = (text: string): React.ReactNode[] => {
         const result: React.ReactNode[] = [];
-        const inlineRegex = /(\*\*.*?\*\*|\*.*?\*|`[^`]+`|\[([^\]]+)\]\(([^)]+)\))/g;
+        // Extended regex: also matches [[panel:TYPE:LABEL]] and [[panel:TYPE:LABEL:FILTER]]
+        const inlineRegex = /(\[\[panel:([a-z]+):([^\]:]+)(?::([^\]]+))?\]\]|\*\*.*?\*\*|\*.*?\*|`[^`]+`|\[([^\]]+)\]\(([^)]+)\))/g;
         let lastIndex = 0;
         let match;
         let ki = 0;
@@ -284,14 +285,31 @@ export function useChatContentRenderer({ artifacts, setArtifacts, setActiveArtif
           }
 
           const matched = match[0];
+
+          // Panel trigger: [[panel:tasks:3 Tasks anzeigen]] or [[panel:tasks:3 Tasks:today]]
           if (match[2] && match[3]) {
-            // Link: [text](url) - validate protocol to prevent javascript: XSS
-            const url = match[3];
+            const panelType = match[2];
+            const label = match[3];
+            const filter = match[4];
+            result.push(
+              <button
+                key={`pt-${ki++}`}
+                className="chat-panel-trigger"
+                onClick={() => {
+                  window.dispatchEvent(new CustomEvent('zenai:open-panel', { detail: { panel: panelType, filter } }));
+                }}
+              >
+                {label} <span className="chat-panel-trigger__arrow">{'\u2192'}</span>
+              </button>
+            );
+          } else if (match[5] && match[6]) {
+            // Link: [text](url)
+            const url = match[6];
             const isSafeUrl = /^https?:\/\//.test(url) || url.startsWith('mailto:');
             if (isSafeUrl) {
-              result.push(<a key={`a-${ki++}`} href={url} target="_blank" rel="noopener noreferrer" className="chat-link">{match[2]}</a>);
+              result.push(<a key={`a-${ki++}`} href={url} target="_blank" rel="noopener noreferrer" className="chat-link">{match[5]}</a>);
             } else {
-              result.push(<span key={`a-${ki++}`} className="chat-link-text">{match[2]}</span>);
+              result.push(<span key={`a-${ki++}`} className="chat-link-text">{match[5]}</span>);
             }
           } else if (matched.startsWith('**') && matched.endsWith('**')) {
             result.push(<strong key={`b-${ki++}`}>{matched.slice(2, -2)}</strong>);

@@ -2427,3 +2427,37 @@
   font-weight: 500;
   margin-left: 4px;
 }
+
+/* ===== Phase 2B: Inline Panel-Trigger Links ===== */
+.chat-panel-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border: 1px solid var(--accent-ai);
+  background: var(--accent-ai-muted);
+  color: var(--accent-ai);
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 150ms, border-color 150ms;
+  vertical-align: baseline;
+}
+
+.chat-panel-trigger:hover {
+  background: var(--accent-ai);
+  color: var(--text-primary);
+  border-color: var(--accent-ai);
+}
+
+.chat-panel-trigger:focus-visible {
+  outline: 2px solid var(--accent-ai);
+  outline-offset: 2px;
+}
+
+.chat-panel-trigger__arrow {
+  font-size: 11px;
+  opacity: 0.7;
+}
