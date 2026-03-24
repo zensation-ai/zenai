@@ -103,10 +103,18 @@ export async function createCalendarAccount(
 }
 
 export async function getCalendarAccounts(context: AIContext): Promise<CalendarAccount[]> {
-  const result = await queryContext(context, `
-    SELECT * FROM calendar_accounts WHERE context = $1 ORDER BY created_at ASC
-  `, [context]);
-  return result.rows.map(mapAccountRow);
+  try {
+    const result = await queryContext(context, `
+      SELECT * FROM calendar_accounts WHERE context = $1 ORDER BY created_at ASC
+    `, [context]);
+    return result.rows.map(mapAccountRow);
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : String(error);
+    if (msg.includes('does not exist')) {
+      return []; // Graceful: table not yet created
+    }
+    throw error;
+  }
 }
 
 export async function getCalendarAccount(

@@ -118,7 +118,13 @@ export async function getFocusStatus(
 
     return { active: true, session, remainingMinutes };
   } catch (error) {
-    logger.error('Focus mode: Focus-Status konnte nicht abgerufen werden', error instanceof Error ? error : new Error(String(error)), { context, userId });
+    const msg = error instanceof Error ? error.message : String(error);
+    // Graceful degradation if table doesn't exist yet
+    if (msg.includes('does not exist')) {
+      logger.warn('Focus mode: focus_sessions table missing, returning inactive', { context });
+      return { active: false, session: null, remainingMinutes: 0 };
+    }
+    logger.error('Focus mode: Focus-Status konnte nicht abgerufen werden', error instanceof Error ? error : new Error(msg), { context, userId });
     throw error;
   }
 }

@@ -831,6 +831,7 @@ export async function moveToTrash(context: AIContext, id: string, userId?: strin
 // ============================================================
 
 export async function getEmailStats(context: AIContext, userId?: string): Promise<EmailStats> {
+  try {
   const userFilter = userId ? ` AND user_id = $1` : '';
   const params: string[] = userId ? [userId] : [];
 
@@ -859,6 +860,13 @@ export async function getEmailStats(context: AIContext, userId?: string): Promis
     by_category: typeof row.by_category === 'string' ? JSON.parse(row.by_category) : (row.by_category || {}),
     by_account: typeof row.by_account === 'string' ? JSON.parse(row.by_account) : (row.by_account || []),
   };
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : String(error);
+    if (msg.includes('does not exist')) {
+      return { total: 0, unread: 0, starred: 0, by_category: {}, by_account: [] };
+    }
+    throw error;
+  }
 }
 
 // ============================================================
@@ -866,10 +874,16 @@ export async function getEmailStats(context: AIContext, userId?: string): Promis
 // ============================================================
 
 export async function getAccounts(context: AIContext, userId?: string): Promise<EmailAccount[]> {
-  const userFilter = userId ? ` WHERE user_id = $1` : '';
-  const params: string[] = userId ? [userId] : [];
-  const result = await queryContext(context, `SELECT * FROM email_accounts${userFilter} ORDER BY is_default DESC, created_at ASC LIMIT 100`, params);
-  return result.rows as EmailAccount[];
+  try {
+    const userFilter = userId ? ` WHERE user_id = $1` : '';
+    const params: string[] = userId ? [userId] : [];
+    const result = await queryContext(context, `SELECT * FROM email_accounts${userFilter} ORDER BY is_default DESC, created_at ASC LIMIT 100`, params);
+    return result.rows as EmailAccount[];
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : String(error);
+    if (msg.includes('does not exist')) return [];
+    throw error;
+  }
 }
 
 export async function getAccount(context: AIContext, id: string, userId?: string): Promise<EmailAccount | null> {
