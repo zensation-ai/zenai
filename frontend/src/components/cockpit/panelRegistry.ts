@@ -2,6 +2,7 @@ import { lazy, type LazyExoticComponent, type ComponentType } from 'react';
 import {
   CheckSquare, Mail, Lightbulb, Calendar, Users,
   FileText, Brain, DollarSign, Bot, Search,
+  Settings, LayoutDashboard,
 } from 'lucide-react';
 import type { PanelType } from '../../contexts/PanelContext';
 import type { AIContext } from '../ContextSwitcher';
@@ -30,6 +31,8 @@ const MemoryPanel = lazy(() => import('./panels/MemoryPanel'));
 const FinancePanel = lazy(() => import('./panels/FinancePanel'));
 const AgentsPanel = lazy(() => import('./panels/AgentsPanel'));
 const SearchPanel = lazy(() => import('./panels/SearchPanel'));
+const SettingsPanel = lazy(() => import('./panels/SettingsPanel'));
+const DashboardPanel = lazy(() => import('./panels/DashboardPanel'));
 
 export const panelRegistry: PanelDefinition[] = [
   { id: 'tasks', icon: CheckSquare, label: 'Aufgaben', shortcut: '⌘1', component: TasksPanel },
@@ -42,6 +45,8 @@ export const panelRegistry: PanelDefinition[] = [
   { id: 'finance', icon: DollarSign, label: 'Finanzen', shortcut: '⌘8', component: FinancePanel },
   { id: 'agents', icon: Bot, label: 'Agenten', shortcut: '⌘9', component: AgentsPanel },
   { id: 'search', icon: Search, label: 'Suche', shortcut: '⌘/', component: SearchPanel },
+  { id: 'settings', icon: Settings, label: 'Einstellungen', shortcut: '⌘0', component: SettingsPanel },
+  { id: 'dashboard', icon: LayoutDashboard, label: 'Dashboard', shortcut: '', component: DashboardPanel },
 ];
 
 export function getPanelDefinition(id: PanelType): PanelDefinition | undefined {

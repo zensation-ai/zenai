@@ -2,7 +2,8 @@ import { createContext, useContext, useReducer, useEffect, useRef, type ReactNod
 import { useSearchParams } from 'react-router-dom';
 
 export type PanelType = 'tasks' | 'email' | 'ideas' | 'calendar' | 'contacts'
-  | 'documents' | 'memory' | 'finance' | 'agents' | 'search';
+  | 'documents' | 'memory' | 'finance' | 'agents' | 'search'
+  | 'settings' | 'dashboard';
 
 export type PanelState = {
   activePanel: PanelType | null;
@@ -47,6 +48,7 @@ export const initialPanelState: PanelState = {
 const VALID_PANELS: PanelType[] = [
   'tasks', 'email', 'ideas', 'calendar', 'contacts',
   'documents', 'memory', 'finance', 'agents', 'search',
+  'settings', 'dashboard',
 ];
 
 export function panelReducer(state: PanelState, action: PanelAction): PanelState {
