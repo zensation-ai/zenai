@@ -8,9 +8,10 @@ type AIContext = 'personal' | 'work' | 'learning' | 'creative';
 
 interface PanelAreaProps {
   context: AIContext;
+  isMobile?: boolean;
 }
 
-export function PanelArea({ context }: PanelAreaProps) {
+export function PanelArea({ context, isMobile }: PanelAreaProps) {
   const { state, dispatch } = usePanelContext();
   const reduceMotion = useReducedMotion();
 
@@ -25,11 +26,11 @@ export function PanelArea({ context }: PanelAreaProps) {
       {state.activePanel && (
         <motion.div
           key={state.activePanel}
-          initial={reduceMotion ? { opacity: 0 } : { width: 0, opacity: 0 }}
-          animate={reduceMotion ? { opacity: 1 } : { width: state.width, opacity: 1 }}
-          exit={reduceMotion ? { opacity: 0 } : { width: 0, opacity: 0 }}
+          initial={reduceMotion ? { opacity: 0 } : isMobile ? { y: '100%', opacity: 0 } : { width: 0, opacity: 0 }}
+          animate={reduceMotion ? { opacity: 1 } : isMobile ? { y: 0, opacity: 1 } : { width: state.width, opacity: 1 }}
+          exit={reduceMotion ? { opacity: 0 } : isMobile ? { y: '100%', opacity: 0 } : { width: 0, opacity: 0 }}
           transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-          style={{ overflow: 'hidden', flexShrink: 0 }}
+          style={{ overflow: 'hidden', flexShrink: isMobile ? undefined : 0 }}
         >
           <PanelShell
             title={panel.label}
