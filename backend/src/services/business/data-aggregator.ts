@@ -147,7 +147,7 @@ class DataAggregatorService {
     // Lighthouse audits (separate - stores per-URL)
     if (lighthouseConnector.isAvailable()) {
       try {
-        const urls = ['https://zensation.ai', 'https://frontend-mu-six-93.vercel.app'];
+        const urls = ['https://zensation.ai', ...(process.env.FRONTEND_URL ? [process.env.FRONTEND_URL] : [])];
         for (const url of urls) {
           await lighthouseConnector.runAuditAndStore(url);
         }

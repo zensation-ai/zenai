@@ -91,7 +91,7 @@ export function getSecurityHeadersConfig(options: {
     // Connections: self + API endpoints + specific trusted origins
     connectSrc: isDevelopment
       ? ["'self'", 'https:', 'wss:', 'ws:'] // Dev: allow all for HMR
-      : ["'self'", 'https://ki-ab-production.up.railway.app', 'https://zensation.ai', 'https://zensation.app', 'https://*.supabase.co', 'wss:'],
+      : ["'self'", ...(process.env.API_URL ? [process.env.API_URL] : []), ...(process.env.FRONTEND_URL ? [process.env.FRONTEND_URL] : []), 'https://zensation.ai', 'https://zensation.app', 'https://*.supabase.co', 'wss:'],
 
     // Object/embed/applet: none (prevent Flash, Java, etc.)
     objectSrc: ["'none'"],
