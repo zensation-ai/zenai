@@ -786,7 +786,6 @@ function CockpitShell({ context, onContextChange, currentPage, navigateToPage, p
   return (
     <>
       <CockpitLayout
-        currentPage={currentPage === 'settings' ? 'settings' : currentPage === 'hub' || currentPage === 'chat' ? 'chat' : 'dashboard'}
         context={context}
         onContextChange={onContextChange}
         hasActivity={false}

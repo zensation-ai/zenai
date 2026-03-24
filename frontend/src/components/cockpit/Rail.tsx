@@ -1,6 +1,10 @@
 import { useState, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { MessageSquare, LayoutDashboard, Settings } from 'lucide-react';
+import {
+  MessageSquare, Lightbulb, Calendar, Mail,
+  FileText, BarChart3, Brain, Settings,
+} from 'lucide-react';
+import { usePanelContext } from '../../contexts/PanelContext';
+import type { PanelType } from '../../contexts/PanelContext';
 import './Rail.css';
 
 const CONTEXT_COLORS: Record<string, string> = {
@@ -13,7 +17,6 @@ const CONTEXT_COLORS: Record<string, string> = {
 type AIContext = 'personal' | 'work' | 'learning' | 'creative';
 
 interface RailProps {
-  currentPage: 'chat' | 'dashboard' | 'settings';
   context: AIContext;
   onContextChange: (ctx: AIContext) => void;
   hasActivity?: boolean;
@@ -21,10 +24,22 @@ interface RailProps {
   onSwitchSession?: (id: string) => void;
 }
 
-const NAV_ITEMS = [
-  { id: 'chat' as const, icon: MessageSquare, label: 'Chat', path: '/chat' },
-  { id: 'dashboard' as const, icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
-] as const;
+interface NavItem {
+  id: 'chat' | PanelType;
+  icon: typeof MessageSquare;
+  label: string;
+  panel: PanelType | null; // null = chat (close panel)
+}
+
+const NAV_ITEMS: NavItem[] = [
+  { id: 'chat', icon: MessageSquare, label: 'Chat', panel: null },
+  { id: 'ideas', icon: Lightbulb, label: 'Ideen', panel: 'ideas' },
+  { id: 'calendar', icon: Calendar, label: 'Kalender', panel: 'calendar' },
+  { id: 'email', icon: Mail, label: 'Email', panel: 'email' },
+  { id: 'documents', icon: FileText, label: 'Dokumente', panel: 'documents' },
+  { id: 'finance', icon: BarChart3, label: 'Finanzen', panel: 'finance' },
+  { id: 'memory', icon: Brain, label: 'Gedaechtnis', panel: 'memory' },
+];
 
 const CONTEXTS: AIContext[] = ['personal', 'work', 'learning', 'creative'];
 
@@ -39,8 +54,8 @@ function relativeTime(dateStr?: string): string {
   return `vor ${days}d`;
 }
 
-export function Rail({ currentPage, context, onContextChange, hasActivity, sessions, onSwitchSession }: RailProps) {
-  const navigate = useNavigate();
+export function Rail({ context, onContextChange, hasActivity, sessions, onSwitchSession }: RailProps) {
+  const { state, dispatch } = usePanelContext();
   const [showSessionList, setShowSessionList] = useState(false);
 
   const cycleContext = () => {
@@ -54,7 +69,27 @@ export function Rail({ currentPage, context, onContextChange, hasActivity, sessi
     setShowSessionList(false);
   }, [onSwitchSession]);
 
-  const showDot = hasActivity && currentPage !== 'chat';
+  const handleNavClick = useCallback((item: NavItem) => {
+    if (item.panel === null) {
+      dispatch({ type: 'CLOSE_PANEL' });
+    } else {
+      // If same panel is already open, close it (toggle behavior)
+      if (state.activePanel === item.panel) {
+        dispatch({ type: 'CLOSE_PANEL' });
+      } else {
+        dispatch({ type: 'OPEN_PANEL', panel: item.panel });
+      }
+    }
+  }, [dispatch, state.activePanel]);
+
+  const isActive = (item: NavItem) => {
+    if (item.panel === null) {
+      return state.activePanel === null;
+    }
+    return state.activePanel === item.panel;
+  };
+
+  const showDot = hasActivity && state.activePanel !== null;
   const displaySessions = sessions?.slice(0, 5) ?? [];
 
   return (
@@ -68,9 +103,10 @@ export function Rail({ currentPage, context, onContextChange, hasActivity, sessi
             onMouseLeave={item.id === 'chat' ? () => setShowSessionList(false) : undefined}
           >
             <button
-              className={`rail__item ${currentPage === item.id ? 'rail__item--active' : ''}`}
-              onClick={() => navigate(item.path)}
+              className={`rail__item ${isActive(item) ? 'rail__item--active' : ''}`}
+              onClick={() => handleNavClick(item)}
               aria-label={item.label}
+              data-tooltip={item.label}
             >
               <item.icon size={20} />
               {item.id === 'chat' && showDot && (
@@ -107,9 +143,16 @@ export function Rail({ currentPage, context, onContextChange, hasActivity, sessi
           <div className="rail__context-ring" />
         </button>
         <button
-          className={`rail__item ${currentPage === 'settings' ? 'rail__item--active' : ''}`}
-          onClick={() => navigate('/settings')}
+          className={`rail__item ${state.activePanel === 'settings' ? 'rail__item--active' : ''}`}
+          onClick={() => {
+            if (state.activePanel === 'settings') {
+              dispatch({ type: 'CLOSE_PANEL' });
+            } else {
+              dispatch({ type: 'OPEN_PANEL', panel: 'settings' });
+            }
+          }}
           aria-label="Einstellungen"
+          data-tooltip="Einstellungen"
         >
           <Settings size={20} />
         </button>

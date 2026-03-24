@@ -15,7 +15,7 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
+  gap: 4px;
 }
 
 .rail__item-wrapper {
@@ -38,7 +38,7 @@
 }
 
 .rail__item:hover {
-  background: var(--surface-3);
+  background: var(--hover-overlay, rgba(255, 255, 255, 0.06));
   color: var(--text-primary);
 }
 
@@ -52,8 +52,7 @@
 }
 
 .rail__item--active {
-  color: var(--accent);
-  position: relative;
+  color: var(--color-accent-orange, var(--accent));
   background: transparent;
 }
 
@@ -65,7 +64,7 @@
   transform: translateY(-50%);
   width: 3px;
   height: 20px;
-  background: var(--accent);
+  background: var(--color-accent-orange, var(--accent));
   border-radius: 0 3px 3px 0;
   transition: height 200ms ease-out;
 }
@@ -92,6 +91,33 @@
 @keyframes rail-dot-pulse {
   0%, 100% { opacity: 1; transform: scale(1); }
   50% { opacity: 0.6; transform: scale(0.85); }
+}
+
+/* CSS-only tooltips */
+.rail__item[data-tooltip] {
+  position: relative;
+}
+
+.rail__item[data-tooltip]::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  left: calc(100% + 10px);
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(15, 23, 42, 0.92);
+  color: rgba(255, 255, 255, 0.9);
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 150ms 300ms;
+  z-index: 200;
+}
+
+.rail__item[data-tooltip]:hover::after {
+  opacity: 1;
 }
 
 /* Session hover popup */
@@ -148,9 +174,12 @@
   flex-shrink: 0;
 }
 
-/* Hide session popup on touch devices */
+/* Hide session popup and tooltips on touch devices */
 @media (pointer: coarse) {
   .rail__session-popup {
+    display: none;
+  }
+  .rail__item[data-tooltip]::after {
     display: none;
   }
 }
