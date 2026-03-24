@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+  <!-- Center node -->
+  <circle cx="60" cy="60" r="10" fill="currentColor" fill-opacity="0.08"/>
+  <!-- Top-left node -->
+  <circle cx="28" cy="36" r="8" fill="currentColor" fill-opacity="0.05"/>
+  <!-- Top-right node -->
+  <circle cx="92" cy="36" r="8" fill="currentColor" fill-opacity="0.05"/>
+  <!-- Bottom node -->
+  <circle cx="60" cy="92" r="8" fill="currentColor" fill-opacity="0.05"/>
+  <!-- Connection: center to top-left -->
+  <line x1="51" y1="53" x2="35" y2="42"/>
+  <!-- Connection: center to top-right -->
+  <line x1="69" y1="53" x2="85" y2="42"/>
+  <!-- Connection: center to bottom -->
+  <line x1="60" y1="70" x2="60" y2="84"/>
+  <!-- Connection: top-left to top-right -->
+  <line x1="36" y1="36" x2="84" y2="36"/>
+  <!-- Small pulse dots on connections -->
+  <circle cx="43" cy="47" r="2" fill="currentColor" stroke="none"/>
+  <circle cx="77" cy="47" r="2" fill="currentColor" stroke="none"/>
+  <circle cx="60" cy="77" r="2" fill="currentColor" stroke="none"/>
+</svg>

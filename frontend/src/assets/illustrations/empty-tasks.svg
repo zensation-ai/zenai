@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+  <!-- Clipboard body -->
+  <rect x="30" y="32" width="60" height="72" rx="4" fill="currentColor" fill-opacity="0.05"/>
+  <!-- Clipboard clip -->
+  <rect x="46" y="26" width="28" height="14" rx="3"/>
+  <!-- Clip hole -->
+  <rect x="53" y="29" width="14" height="6" rx="2"/>
+  <!-- Row 1 checkbox -->
+  <rect x="40" y="54" width="10" height="10" rx="2"/>
+  <line x1="58" y1="59" x2="76" y2="59"/>
+  <!-- Row 2 checkbox -->
+  <rect x="40" y="72" width="10" height="10" rx="2"/>
+  <line x1="58" y1="77" x2="76" y2="77"/>
+  <!-- Row 3 checkbox -->
+  <rect x="40" y="90" width="10" height="10" rx="2"/>
+  <line x1="58" y1="95" x2="70" y2="95"/>
+</svg>

@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+  <!-- Lightbulb body -->
+  <path d="M60 30 C46 30 36 40 36 52 C36 61 41 68 48 72 L48 80 C48 82 50 84 52 84 L68 84 C70 84 72 82 72 80 L72 72 C79 68 84 61 84 52 C84 40 74 30 60 30 Z" fill="currentColor" fill-opacity="0.05"/>
+  <!-- Filament lines -->
+  <line x1="52" y1="80" x2="68" y2="80"/>
+  <line x1="52" y1="76" x2="68" y2="76"/>
+  <!-- Sparkle top -->
+  <line x1="60" y1="20" x2="60" y2="14"/>
+  <!-- Sparkle top-right -->
+  <line x1="72" y1="25" x2="76" y2="21"/>
+  <!-- Sparkle top-left -->
+  <line x1="48" y1="25" x2="44" y2="21"/>
+  <!-- Sparkle right -->
+  <line x1="78" y1="36" x2="84" y2="34"/>
+  <!-- Sparkle left -->
+  <line x1="42" y1="36" x2="36" y2="34"/>
+</svg>

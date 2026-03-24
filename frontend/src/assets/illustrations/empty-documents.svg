@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+  <!-- Folder tab -->
+  <path d="M24 46 L24 44 C24 42 26 40 28 40 L50 40 L56 34 L92 34 C94 34 96 36 96 38 L96 46" fill="currentColor" fill-opacity="0.03"/>
+  <!-- Folder body (slightly open) -->
+  <path d="M20 46 C18 46 16 48 16 50 L16 86 C16 88 18 90 20 90 L100 90 C102 90 104 88 104 86 L104 50 C104 48 102 46 100 46 Z" fill="currentColor" fill-opacity="0.05"/>
+  <!-- Folder top edge (open gap) -->
+  <path d="M20 46 L38 46"/>
+  <path d="M70 46 L100 46"/>
+  <!-- Open flap -->
+  <path d="M38 46 C40 38 68 38 70 46" fill="none"/>
+  <!-- Empty interior lines -->
+  <line x1="38" y1="65" x2="82" y2="65" opacity="0.35"/>
+  <line x1="38" y1="74" x2="70" y2="74" opacity="0.35"/>
+</svg>

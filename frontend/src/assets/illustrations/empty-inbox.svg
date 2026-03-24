@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+  <!-- Envelope body -->
+  <rect x="22" y="38" width="76" height="54" rx="3" fill="currentColor" fill-opacity="0.05"/>
+  <!-- Open flap (left panel) -->
+  <path d="M22 38 L60 62"/>
+  <!-- Open flap (right panel) -->
+  <path d="M98 38 L60 62"/>
+  <!-- Left flap open -->
+  <path d="M22 38 L22 32 C22 30 24 28 26 28 L56 28" fill="none"/>
+  <!-- Right flap open -->
+  <path d="M98 38 L98 32 C98 30 96 28 94 28 L64 28" fill="none"/>
+  <!-- Flap top arc (open) -->
+  <path d="M56 28 C57 22 63 22 64 28" fill="none"/>
+  <!-- Empty interior hint lines -->
+  <line x1="40" y1="72" x2="60" y2="72" opacity="0.4"/>
+  <line x1="40" y1="80" x2="54" y2="80" opacity="0.4"/>
+</svg>

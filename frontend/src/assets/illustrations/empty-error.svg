@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+  <!-- Cloud body -->
+  <path d="M34 60 C26 60 20 54 20 46 C20 38 26 32 34 32 C34 32 36 24 44 22 C52 20 60 26 62 32 C64 30 68 28 72 28 C80 28 86 34 86 42 C90 42 96 46 96 52 C96 58 90 62 84 62 Z" fill="currentColor" fill-opacity="0.05"/>
+  <!-- Cloud base line (flat bottom suggestion) -->
+  <path d="M34 60 C34 60 34 62 36 62 L82 62 C84 62 84 60 84 60"/>
+  <!-- Lightning bolt below -->
+  <polyline points="58,72 52,84 62,84 54,98"/>
+</svg>
