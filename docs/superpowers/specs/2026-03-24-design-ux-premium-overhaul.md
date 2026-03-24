@@ -53,11 +53,24 @@ ZenAI has mature functionality (141 phases, 55 AI tools, 9228 tests) but looks l
 | `localStorage 'zenai-cockpit-mode'` toggle | Always cockpit, no toggle |
 | Page-hero sections ("← Zurueck" + icon + title) | Redundant — panel header is sufficient |
 
-**Migration path for pages → panels:** Every current "page" component (IdeasPage, InboxPage, PlannerPage, etc.) becomes a panel. The component stays mostly intact but:
-- Loses its `PageHeader` wrapper
-- Loses the "← Zurueck" hero section
-- Gets wrapped in `PanelShell` instead
-- Tab navigation stays but gets restyled (see Section 4)
+**Migration path — existing panels are kept, not replaced:**
+The cockpit already has 10 purpose-built panel components in `components/cockpit/panels/` (IdeasPanel, EmailPanel, TasksPanel, etc.). These are already optimized for 360-600px panel width. They stay as-is and get the visual polish described in this spec. The full-page components (IdeasPage, EmailPage, etc.) become dead code once classic mode is removed — they are NOT squeezed into panels.
+
+**Panel components to polish (existing, in `cockpit/panels/`):**
+- `IdeasPanel.tsx` — ideas list with search + filters
+- `EmailPanel.tsx` — email list with tabs (Eingang/Gesendet/etc.)
+- `TasksPanel.tsx` — task list with status filter
+- `CalendarPanel.tsx` — compact calendar view
+- `ContactsPanel.tsx` — contact list
+- `DocumentsPanel.tsx` — document browser
+- `MemoryPanel.tsx` — AI memory/knowledge view
+- `FinancePanel.tsx` — financial overview
+- `AgentsPanel.tsx` — agent management
+- `SearchPanel.tsx` — global search
+
+**New panels to add:**
+- `SettingsPanel.tsx` — settings moved from full page to panel format
+- `DashboardPanel.tsx` — optional dashboard widget view (existing `DashboardPage.tsx` adapted)
 
 ### 3.2 Desktop Layout (1024px+)
 
@@ -82,16 +95,18 @@ ZenAI has mature functionality (141 phases, 55 AI tools, 9228 tests) but looks l
 
 **Rail items (top to bottom):**
 
-| Position | Icon (Lucide) | Action | Tooltip |
-|----------|--------------|--------|---------|
-| Top | `MessageSquare` | New Chat / toggle session list | "Chat" |
-| — | `Lightbulb` | Open Ideas panel | "Ideen" |
-| — | `Calendar` | Open Planner panel | "Planer" |
-| — | `Mail` | Open Inbox panel | "Inbox" |
-| — | `BookOpen` | Open Knowledge panel | "Wissen" |
-| — | `BarChart3` | Open Cockpit/Business panel | "Cockpit" |
-| — | `Brain` | Open MyAI panel | "Meine KI" |
-| Bottom | `Settings` | Open Settings panel | "Einstellungen" |
+| Position | Icon (Lucide) | Panel ID | Tooltip | PanelContext Action |
+|----------|--------------|----------|---------|---------------------|
+| Top | `MessageSquare` | — (closes panel) | "Chat" | `dispatch({ type: 'CLOSE_PANEL' })` |
+| — | `Lightbulb` | `ideas` | "Ideen" | `dispatch({ type: 'OPEN_PANEL', panel: 'ideas' })` |
+| — | `Calendar` | `calendar` | "Planer" | `dispatch({ type: 'OPEN_PANEL', panel: 'calendar' })` |
+| — | `Mail` | `email` | "Inbox" | `dispatch({ type: 'OPEN_PANEL', panel: 'email' })` |
+| — | `FileText` | `documents` | "Wissen" | `dispatch({ type: 'OPEN_PANEL', panel: 'documents' })` |
+| — | `BarChart3` | `finance` | "Cockpit" | `dispatch({ type: 'OPEN_PANEL', panel: 'finance' })` |
+| — | `Brain` | `memory` | "Meine KI" | `dispatch({ type: 'OPEN_PANEL', panel: 'memory' })` |
+| Bottom | `Settings` | `settings` | "Einstellungen" | `dispatch({ type: 'OPEN_PANEL', panel: 'settings' })` |
+
+**Rail-PanelContext integration:** Rail imports `usePanelContext()` and dispatches `OPEN_PANEL` / `CLOSE_PANEL` actions. The URL is synchronized by `CockpitLayout` which watches PanelContext state and calls `setSearchParams()` accordingly. Rail highlights the active icon by comparing `state.activePanel` with each item's panel ID.
 
 **Rail visual spec:**
 - Width: 48px
@@ -148,25 +163,66 @@ ZenAI has mature functionality (141 phases, 55 AI tools, 9228 tests) but looks l
 - BottomBar: 5 items (Chat, Ideas, Planner, Inbox, More)
 - "More" opens a bottom sheet with remaining nav items
 - Panel = full-screen view, replaces chat
-- Swipe-right to go back to chat (native feel)
+- Swipe-right to go back to chat (stretch goal — requires touch event handling with 50px threshold. Implement via custom hook or `react-swipeable` if added. Core functionality works without swipe — close button in panel header is sufficient.)
 - BottomBar highlights active item
 
 ### 3.5 URL Strategy
 
-All navigation via query parameters on `/`:
+**Hybrid routing:** Public routes stay path-based. Authenticated app uses query params on `/`.
+
+**Router structure (react-router-dom):**
+```tsx
+<Routes>
+  {/* Public routes — path-based, no auth */}
+  <Route path="/auth" element={<AuthPage />} />
+  <Route path="/demo" element={<DemoPage />} />
+
+  {/* Authenticated — single route, panel state from query params */}
+  <Route path="/" element={<CockpitLayout />} />
+
+  {/* Back-compat redirects for legacy URLs */}
+  <Route path="/ideas" element={<Navigate to="/?panel=ideas" replace />} />
+  <Route path="/ideen" element={<Navigate to="/?panel=ideas" replace />} />
+  <Route path="/calendar" element={<Navigate to="/?panel=calendar" replace />} />
+  <Route path="/planer" element={<Navigate to="/?panel=calendar" replace />} />
+  <Route path="/inbox" element={<Navigate to="/?panel=email" replace />} />
+  <Route path="/documents" element={<Navigate to="/?panel=documents" replace />} />
+  <Route path="/wissen" element={<Navigate to="/?panel=documents" replace />} />
+  <Route path="/settings" element={<Navigate to="/?panel=settings" replace />} />
+  <Route path="/system" element={<Navigate to="/?panel=settings" replace />} />
+  <Route path="/my-ai" element={<Navigate to="/?panel=memory" replace />} />
+  <Route path="/meine-ki" element={<Navigate to="/?panel=memory" replace />} />
+
+  {/* Catch-all */}
+  <Route path="*" element={<Navigate to="/" replace />} />
+</Routes>
+```
+
+**Panel state from `useSearchParams()`:**
+```tsx
+const [searchParams, setSearchParams] = useSearchParams();
+const activePanel = searchParams.get('panel') as PanelType | null;
+const activeTab = searchParams.get('tab');
+```
+
+**Navigation via query params:**
 
 | URL | State |
 |-----|-------|
 | `/` | Chat only, no panel |
 | `/?panel=ideas` | Chat + Ideas panel |
 | `/?panel=ideas&tab=incubator` | Chat + Ideas panel, Incubator tab |
-| `/?panel=inbox` | Chat + Inbox panel |
+| `/?panel=email` | Chat + Email panel |
 | `/?panel=settings&tab=ai` | Chat + Settings panel, AI tab |
-| `/?panel=planner&tab=tasks` | Chat + Planner panel, Tasks tab |
+| `/?panel=calendar&tab=tasks` | Chat + Calendar panel, Tasks tab |
 
-**Panel IDs:** `ideas`, `planner`, `inbox`, `knowledge`, `cockpit`, `my-ai`, `settings`, `dashboard`
+**Panel IDs (matching existing `panelRegistry.ts`):**
+`tasks`, `email`, `ideas`, `calendar`, `contacts`, `documents`, `memory`, `finance`, `agents`, `search`
 
-**Back-compat redirects:** `/ideas` → `/?panel=ideas`, `/calendar` → `/?panel=planner`, etc.
+**New panel IDs to register:**
+`settings`, `dashboard`
+
+**Browser history:** `setSearchParams()` uses `history.pushState` — back button navigates between panel states correctly.
 
 ---
 
@@ -182,6 +238,12 @@ All navigation via query parameters on `/`:
 | **Neutral Interactive** | `color: var(--text-secondary); background: transparent` | Inactive tabs, secondary actions | Inactive tabs, filter chips, secondary buttons |
 
 ### 4.2 New CSS Custom Properties
+
+**Token integration:** New tokens must be added to BOTH:
+1. `design-system/colors.ts` (TypeScript source of truth) — as new exports
+2. `styles/index.css` `:root` block — as CSS custom properties
+
+The existing `--color-accent` (hsl(250, 65%, 58%)) becomes an alias for `--color-accent-indigo`. The existing `--primary` (#ff6b35) becomes an alias for `--color-accent-orange`. Both aliases kept for backward compatibility.
 
 ```css
 :root {
@@ -204,6 +266,14 @@ All navigation via query parameters on `/`:
   --color-warning-ghost: hsla(38, 95%, 55%, 0.12);
   --color-danger: hsl(0, 72%, 55%);
   --color-danger-ghost: hsla(0, 72%, 55%, 0.12);
+
+  /* Interactive overlays (theme-aware) */
+  --hover-overlay: rgba(255, 255, 255, 0.06);    /* dark mode */
+  --pressed-overlay: rgba(255, 255, 255, 0.10);   /* dark mode */
+
+  /* Alias existing tokens for backward compat */
+  --color-accent: var(--color-accent-indigo);      /* existing alias */
+  --primary: var(--color-accent-orange);            /* existing alias */
 }
 ```
 
@@ -239,7 +309,7 @@ All navigation via query parameters on `/`:
 
 .panel-tab:hover {
   color: var(--text-primary);
-  background: rgba(255, 255, 255, 0.06);
+  background: var(--hover-overlay);  /* defined as rgba(255,255,255,0.06) dark / rgba(0,0,0,0.04) light */
 }
 
 .panel-tab[aria-selected="true"] {
@@ -326,6 +396,8 @@ Only these values are allowed:
 | `--space-8` | 32px | generous | Page-level spacing (rarely used in panels) |
 
 **Forbidden values:** 10px, 14px, 20px, 60px, 80px. If found in code, replace with nearest token.
+
+**Note:** There is intentionally no `--space-5` (20px) or `--space-7` (28px). The scale is non-linear — jump from 16→24 and 24→32 is deliberate for visual rhythm.
 
 ### 5.3 Density Zones
 
@@ -415,7 +487,7 @@ Style: **Monochromatische Line-Art.** Single stroke color: `currentColor` (inher
 | `empty-search` | Search (any panel) | Magnifying glass, no result | Magnifier with small "×" or empty circle |
 | `empty-error` | Error state | Cloud with small lightning bolt | Cloud outline, single zigzag line below |
 
-Each SVG: `viewBox="0 0 120 120"`, `stroke="currentColor"`, `stroke-width="1.5"`, `fill="none"`, `stroke-linecap="round"`, `stroke-linejoin="round"`.
+Each SVG: `viewBox="0 0 120 120"`, `stroke="currentColor"`, `stroke-width="1.5"`, `fill="none"`, `stroke-linecap="round"`, `stroke-linejoin="round"`. Subtle body fills allowed with `fill="currentColor" fill-opacity="0.05"` where needed to prevent overly sparse appearance at small sizes.
 
 ### 6.3 Empty State Copy (German)
 
@@ -457,41 +529,45 @@ Each SVG: `viewBox="0 0 120 120"`, `stroke="currentColor"`, `stroke-width="1.5"`
 | **Mobile panel enter** | Bottom sheet panel opens | `translateY(100%) → translateY(0)` | 300ms | `var(--ease-spring)` |
 | **Mobile panel exit** | Swipe down or close | `translateY(0) → translateY(100%)` | 250ms | `ease-out` |
 
-### 7.2 CSS Implementation
+### 7.2 Implementation Strategy
+
+**Panel animations: Keep Framer Motion (existing).** `PanelArea.tsx` already uses `framer-motion` with `AnimatePresence`, `motion.div`, and `useReducedMotion()`. Do NOT replace with CSS keyframes — enhance the existing implementation.
+
+**Current Framer Motion config (PanelArea.tsx):**
+```tsx
+// Desktop: width expansion from 0
+initial={isMobile ? { y: '100%', opacity: 0 } : { width: 0, opacity: 0 }}
+animate={isMobile ? { y: 0, opacity: 1 } : { width: state.width, opacity: 1 }}
+exit={isMobile ? { y: '100%', opacity: 0 } : { width: 0, opacity: 0 }}
+transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+```
+
+**Enhancement — add content stagger:**
+```tsx
+// Inside panel content wrapper, add:
+<motion.div
+  initial={{ opacity: 0, y: 8 }}
+  animate={{ opacity: 1, y: 0 }}
+  transition={{ delay: 0.05, duration: 0.15 }}
+>
+  {children}
+</motion.div>
+```
+
+**Non-panel animations: CSS (simple, no library needed):**
 
 ```css
-/* Panel slide-in */
-.panel-area[data-state="entering"] {
-  animation: panel-slide-in var(--duration-base) var(--ease-spring) forwards;
-}
-
-@keyframes panel-slide-in {
-  from { transform: translateX(100%); opacity: 0; }
-  to   { transform: translateX(0);    opacity: 1; }
-}
-
-/* Panel content stagger */
-.panel-area[data-state="entered"] .panel-content {
-  animation: panel-content-fade var(--duration-fast) ease-out 50ms forwards;
-  opacity: 0;
-}
-
-@keyframes panel-content-fade {
-  from { opacity: 0; transform: translateY(8px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-
 /* List item hover */
 .list-item {
   transition: background var(--duration-fast) ease-out,
               transform var(--duration-fast) ease-out;
 }
 .list-item:hover {
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--hover-overlay);
   transform: translateX(2px);
 }
 
-/* Button press */
+/* Button press — global */
 button, [role="button"] {
   transition: transform 80ms ease-out;
 }
@@ -499,17 +575,22 @@ button:active, [role="button"]:active {
   transform: scale(0.97);
 }
 
-/* Reduced motion */
+/* Tab switch — ghost background morph */
+.panel-tab {
+  transition: all var(--duration-fast) var(--ease-spring);
+}
+
+/* Reduced motion — CSS-based interactions */
 @media (prefers-reduced-motion: reduce) {
-  .panel-area[data-state="entering"],
-  .panel-area[data-state="entered"] .panel-content,
   .list-item,
+  .panel-tab,
   button, [role="button"] {
-    animation: none !important;
     transition: none !important;
   }
 }
 ```
+
+**Note:** Framer Motion's `useReducedMotion()` already handles the panel animations. The CSS `@media` block handles the non-Framer interactions.
 
 ---
 
@@ -538,18 +619,21 @@ button:active, [role="button"]:active {
 
 ### 8.3 Components to MODIFY
 
-| Component | Changes |
+| Component (correct path) | Changes |
 |-----------|---------|
-| `CockpitLayout.tsx` | Becomes the only layout. Remove cockpit-mode conditionals. |
-| `Rail.tsx` + `.css` | Polish: consistent icon sizing, active indicator bar, hover states, tooltips |
-| `PanelShell.tsx` + `.css` | Standardize header (icon + title + close), animation states |
-| `PanelArea.tsx` | Add slide-in/out animations, mobile bottom-sheet behavior |
-| `MobileBottomBar.tsx` + `.css` | Update to match new nav items, add "More" overflow sheet |
-| `App.tsx` | Remove classic-mode routing, all navigation via `?panel=` params |
-| `FloatingAssistant.tsx` | Redesign: smaller, no emoji, Lucide icon, indigo hover |
-| `GeneralChat/GeneralChat.tsx` | Remove cockpit-specific conditionals (it's always cockpit now) |
-| `navigation.ts` | Simplify to panel-based navigation config |
-| All hub pages (Ideas, Inbox, Planner, etc.) | Remove PageHeader/hero, wrap in PanelShell pattern |
+| `cockpit/CockpitLayout.tsx` | Becomes the only layout. Widen `currentPage` type. Sync panel ↔ URL via `useSearchParams`. |
+| `cockpit/Rail.tsx` + `.css` | Expand from 3 to 8 nav items. Add `usePanelContext()` dispatch. Active indicator bar, hover states, tooltips. |
+| `cockpit/PanelShell.tsx` + `.css` | Standardize header (icon + title + close). Enforce max 2 control rows. |
+| `cockpit/PanelArea.tsx` | Enhance existing framer-motion: add content stagger `motion.div`. Keep `useReducedMotion()`. |
+| `cockpit/panelRegistry.ts` | Add `settings` and `dashboard` panel definitions to registry array. |
+| `contexts/PanelContext.tsx` | Two-way sync: `OPEN_PANEL` → `setSearchParams`, URL change → dispatch. |
+| `cockpit/CockpitBottomBar.tsx` + `.css` | Update to 5 items (Chat, Ideas, Calendar, Email, More). "More" opens bottom sheet. |
+| `App.tsx` | Remove `cockpitMode` conditional branch. Single `<Route path="/" element={<CockpitLayout />} />`. Add redirect routes. |
+| `FloatingAssistant/FloatingAssistant.tsx` + `.css` | 40px circle, Lucide `Sparkles` icon, no emoji, indigo hover. |
+| `GeneralChat/GeneralChat.tsx` | Audit for `cockpitMode`, `isCockpit`, or layout-mode branches and remove non-cockpit paths. |
+| `navigation.ts` | Simplify: panel-based config, remove classic page/section definitions. |
+| `routes/index.tsx` | Replace classic PAGE_PATHS with redirect routes to `/?panel=X`. |
+| All 10 existing panels in `cockpit/panels/` | Integrate `PanelTabs` (ghost style) + `PanelEmptyState` (illustrations). |
 
 ### 8.4 CSS Files — Token Migration Priority
 
@@ -597,7 +681,7 @@ These are explicitly NOT part of this spec:
 | Control rows above content | Max 2 per panel (tabs + toolbar) |
 | Orange accent instances | Only on primary CTAs (est. ~8-10 per session vs current ~30+) |
 | Empty states with illustrations | 8 panel types covered |
-| Micro-interaction patterns | 6 patterns applied consistently |
+| Micro-interaction patterns | All 10 patterns from Section 7.1 applied consistently |
 | Hardcoded px values in Tier 1-2 CSS | 0 (all using spacing tokens) |
 | Typography violations | 0 in panels (only 4 type levels used) |
 | Build passes | TypeScript 0 errors, all existing tests pass |
@@ -621,14 +705,16 @@ These are explicitly NOT part of this spec:
 
 **New files to create:**
 ```
-frontend/src/components/panels/PanelEmptyState.tsx
-frontend/src/components/panels/PanelEmptyState.css
-frontend/src/components/panels/PanelTabs.tsx
-frontend/src/components/panels/PanelTabs.css
-frontend/src/components/panels/PanelToolbar.tsx
-frontend/src/components/panels/PanelToolbar.css
-frontend/src/components/panels/SuccessPulse.tsx
-frontend/src/components/panels/SuccessPulse.css
+frontend/src/components/cockpit/panels/PanelEmptyState.tsx
+frontend/src/components/cockpit/panels/PanelEmptyState.css
+frontend/src/components/cockpit/PanelTabs.tsx
+frontend/src/components/cockpit/PanelTabs.css
+frontend/src/components/cockpit/PanelToolbar.tsx
+frontend/src/components/cockpit/PanelToolbar.css
+frontend/src/components/cockpit/SuccessPulse.tsx
+frontend/src/components/cockpit/SuccessPulse.css
+frontend/src/components/cockpit/panels/SettingsPanel.tsx
+frontend/src/components/cockpit/panels/DashboardPanel.tsx
 frontend/src/assets/illustrations/empty-ideas.svg
 frontend/src/assets/illustrations/empty-inbox.svg
 frontend/src/assets/illustrations/empty-tasks.svg
@@ -649,34 +735,54 @@ frontend/src/components/layout/TopBar.tsx
 frontend/src/components/layout/TopBar.css
 frontend/src/components/layout/MobileSidebarDrawer.tsx
 frontend/src/components/layout/MobileSidebarDrawer.css
-frontend/src/components/layout/Breadcrumbs.tsx
-frontend/src/components/layout/Breadcrumbs.css
+frontend/src/components/Breadcrumbs.tsx
+frontend/src/components/Breadcrumbs.css
 ```
 
 **Files to modify (major):**
 ```
-frontend/src/App.tsx
-frontend/src/navigation.ts
-frontend/src/components/CockpitLayout/CockpitLayout.tsx
-frontend/src/components/CockpitLayout/Rail.tsx
-frontend/src/components/CockpitLayout/Rail.css
-frontend/src/components/CockpitLayout/PanelArea.tsx
-frontend/src/components/CockpitLayout/PanelShell.tsx
-frontend/src/components/CockpitLayout/PanelShell.css
-frontend/src/components/layout/MobileBottomBar.tsx
-frontend/src/components/layout/MobileBottomBar.css
-frontend/src/components/FloatingAssistant.tsx (or equivalent)
-frontend/src/components/GeneralChat/GeneralChat.tsx
-frontend/src/styles/index.css (new accent tokens)
+frontend/src/App.tsx                                         — Remove classic-mode routing, single CockpitLayout route
+frontend/src/navigation.ts                                    — Simplify to panel-based config
+frontend/src/routes/index.tsx                                 — Replace PAGE_PATHS/PATH_PAGES with redirect routes
+frontend/src/components/cockpit/CockpitLayout.tsx             — Becomes only layout, sync panel state with URL
+frontend/src/components/cockpit/Rail.tsx                       — Add all nav items, PanelContext dispatch, visual polish
+frontend/src/components/cockpit/Rail.css                       — Active indicator, hover states, tooltip styles
+frontend/src/components/cockpit/PanelArea.tsx                  — Enhanced framer-motion animations, content stagger
+frontend/src/components/cockpit/PanelShell.tsx                 — Standardize header, icon+title+close
+frontend/src/components/cockpit/PanelShell.css                 — Token-based spacing, typography scale
+frontend/src/components/cockpit/panelRegistry.ts               — Add 'settings' and 'dashboard' panel IDs
+frontend/src/contexts/PanelContext.tsx                          — Sync with URL searchParams
+frontend/src/components/cockpit/CockpitBottomBar.tsx           — Update nav items, "More" overflow sheet
+frontend/src/components/cockpit/CockpitBottomBar.css           — Match new design tokens
+frontend/src/components/FloatingAssistant/FloatingAssistant.tsx — Redesign: 40px, Lucide icon, indigo hover
+frontend/src/components/FloatingAssistant/FloatingAssistant.css — New styles
+frontend/src/components/GeneralChat/GeneralChat.tsx            — Remove layout-mode conditionals
+frontend/src/styles/index.css                                   — New accent tokens, --hover-overlay
+frontend/src/design-system/colors.ts                            — Add accent-orange, accent-indigo token exports
 ```
 
-**Files to modify (panel migration — remove PageHeader/hero):**
+**Files to modify (existing panels — visual polish):**
 ```
-frontend/src/components/IdeasPage/*.tsx
-frontend/src/components/EmailPage/*.tsx
-frontend/src/components/PlannerPage/*.tsx
-frontend/src/components/DocumentVaultPage/*.tsx
-frontend/src/components/MyAIPage/*.tsx
-frontend/src/components/SettingsDashboard.tsx
-frontend/src/components/BusinessDashboard.tsx
+frontend/src/components/cockpit/panels/IdeasPanel.tsx          — PanelTabs + PanelEmptyState integration
+frontend/src/components/cockpit/panels/EmailPanel.tsx          — Ghost tabs, empty state
+frontend/src/components/cockpit/panels/TasksPanel.tsx          — Ghost tabs, empty state
+frontend/src/components/cockpit/panels/CalendarPanel.tsx       — Ghost tabs, empty state
+frontend/src/components/cockpit/panels/ContactsPanel.tsx       — Empty state
+frontend/src/components/cockpit/panels/DocumentsPanel.tsx      — Empty state
+frontend/src/components/cockpit/panels/MemoryPanel.tsx         — Empty state
+frontend/src/components/cockpit/panels/FinancePanel.tsx        — Empty state
+frontend/src/components/cockpit/panels/AgentsPanel.tsx         — Empty state
+frontend/src/components/cockpit/panels/SearchPanel.tsx         — Already exists, polish
+```
+
+**Files that become dead code (delete in cleanup phase):**
+```
+frontend/src/components/IdeasPage/               — Full-page version, replaced by IdeasPanel
+frontend/src/components/EmailPage/               — Full-page version, replaced by EmailPanel
+frontend/src/components/PlannerPage/             — Full-page version, replaced by CalendarPanel
+frontend/src/components/DocumentVaultPage/       — Full-page version, replaced by DocumentsPanel
+frontend/src/components/MyAIPage/                — Full-page version, replaced by MemoryPanel
+frontend/src/components/SettingsDashboard.tsx     — Full-page version, replaced by SettingsPanel
+frontend/src/components/BusinessDashboard.tsx     — Full-page version, replaced by FinancePanel
+frontend/src/routes/LazyPages.tsx                — No longer needed (panels loaded by registry)
 ```
