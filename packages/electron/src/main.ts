@@ -17,10 +17,10 @@ import { initAutoUpdater } from './updater';
 // ===========================
 
 const APP_NAME = 'ZenAI';
-const PRODUCTION_URL = 'https://frontend-mu-six-93.vercel.app';
+const PRODUCTION_URL = process.env.FRONTEND_URL || 'https://frontend-mu-six-93.vercel.app';
 const DEV_URL = 'http://localhost:5173';
-const VERCEL_ORIGIN = 'https://frontend-mu-six-93.vercel.app';
-const RAILWAY_ORIGIN = 'https://ki-ab-production.up.railway.app';
+const VERCEL_ORIGIN = process.env.FRONTEND_URL || 'https://frontend-mu-six-93.vercel.app';
+const RAILWAY_ORIGIN = process.env.API_URL || 'https://ki-ab-production.up.railway.app';
 
 // ===========================
 // State

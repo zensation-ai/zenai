@@ -7,7 +7,7 @@ const config: CapacitorConfig = {
   server: {
     // Live URL mode: loads directly from Vercel production
     // Every Vercel deploy = instant update on iPhone (no rebuild needed)
-    url: 'https://frontend-mu-six-93.vercel.app',
+    url: process.env.VITE_APP_URL || 'https://frontend-mu-six-93.vercel.app',
     cleartext: false,
     androidScheme: 'https',
   },
