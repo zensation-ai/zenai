@@ -14,6 +14,13 @@ const CONTEXT_COLORS: Record<string, string> = {
   creative: '#8B5CF6',
 };
 
+const CONTEXT_LABELS: Record<string, string> = {
+  personal: 'Privat',
+  work: 'Arbeit',
+  learning: 'Lernen',
+  creative: 'Kreativ',
+};
+
 type AIContext = 'personal' | 'work' | 'learning' | 'creative';
 
 interface RailProps {
@@ -135,12 +142,14 @@ export function Rail({ context, onContextChange, hasActivity, sessions, onSwitch
       </div>
       <div className="rail__bottom">
         <button
-          className="rail__item rail__context"
+          className="rail__context-btn"
           onClick={cycleContext}
           aria-label="Kontext wechseln"
           style={{ '--context-color': CONTEXT_COLORS[context] } as React.CSSProperties}
+          data-tooltip={CONTEXT_LABELS[context]}
         >
-          <div className="rail__context-ring" />
+          <span className="rail__context-dot" />
+          <span className="rail__context-label">{CONTEXT_LABELS[context]}</span>
         </button>
         <button
           className={`rail__item ${state.activePanel === 'settings' ? 'rail__item--active' : ''}`}
