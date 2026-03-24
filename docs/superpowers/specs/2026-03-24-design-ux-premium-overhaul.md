@@ -106,7 +106,17 @@ The cockpit already has 10 purpose-built panel components in `components/cockpit
 | — | `Brain` | `memory` | "Meine KI" | `dispatch({ type: 'OPEN_PANEL', panel: 'memory' })` |
 | Bottom | `Settings` | `settings` | "Einstellungen" | `dispatch({ type: 'OPEN_PANEL', panel: 'settings' })` |
 
-**Rail-PanelContext integration:** Rail imports `usePanelContext()` and dispatches `OPEN_PANEL` / `CLOSE_PANEL` actions. The URL is synchronized by `CockpitLayout` which watches PanelContext state and calls `setSearchParams()` accordingly. Rail highlights the active icon by comparing `state.activePanel` with each item's panel ID.
+**Rail-PanelContext integration:** Rail imports `usePanelContext()` and dispatches `OPEN_PANEL` / `CLOSE_PANEL` actions (replacing current `useNavigate()` path-based nav). The URL is synchronized by `CockpitLayout` which watches PanelContext state and calls `setSearchParams()` accordingly. Rail highlights the active icon by comparing `state.activePanel` with each item's panel ID.
+
+**Panels NOT in Rail (intentional):** `tasks`, `contacts`, `agents`, `search`, `finance` are accessible via:
+- Chat slash commands (`/tasks`, `/contacts`, etc.)
+- Keyboard shortcuts (existing `Cmd+1` through `Cmd+9`)
+- The mobile "More" bottom sheet
+- Direct URL (`/?panel=tasks`)
+
+Rail shows only the 7 most-used panels + Chat to avoid icon overload. The dashboard grid (accessible via Rail's grid icon) provides access to all panels.
+
+**PanelType expansion:** The `PanelType` union in `PanelContext.tsx` and the `VALID_PANELS` array must be updated to include `'settings' | 'dashboard'` when those panels are added to `panelRegistry.ts`.
 
 **Rail visual spec:**
 - Width: 48px
@@ -120,10 +130,10 @@ The cockpit already has 10 purpose-built panel components in `components/cockpit
 - Hover: `var(--text-primary)` + background `rgba(255,255,255, 0.06)`
 - Tooltip: appears on hover after 500ms delay, right-aligned
 
-**Panel Area spec:**
-- Default width: 360px
+**Panel Area spec (update existing PanelContext constants):**
+- Default width: 420px (existing `DEFAULT_WIDTH`, keep as-is)
 - Resizable via drag handle (existing PanelShell mechanism)
-- Min: 320px, Max: 640px
+- Min: 360px (existing `MIN_WIDTH`, keep as-is), Max: 640px (update `MAX_WIDTH` from 600 to 640 for Settings panel)
 - When no panel open: Chat area takes full width (no empty right column)
 - Panel open/close: slide animation (see Section 7)
 - Background: `var(--surface-bg)`
@@ -533,14 +543,17 @@ Each SVG: `viewBox="0 0 120 120"`, `stroke="currentColor"`, `stroke-width="1.5"`
 
 **Panel animations: Keep Framer Motion (existing).** `PanelArea.tsx` already uses `framer-motion` with `AnimatePresence`, `motion.div`, and `useReducedMotion()`. Do NOT replace with CSS keyframes — enhance the existing implementation.
 
-**Current Framer Motion config (PanelArea.tsx):**
+**Current Framer Motion config (PanelArea.tsx) — includes reduceMotion path:**
 ```tsx
-// Desktop: width expansion from 0
-initial={isMobile ? { y: '100%', opacity: 0 } : { width: 0, opacity: 0 }}
-animate={isMobile ? { y: 0, opacity: 1 } : { width: state.width, opacity: 1 }}
-exit={isMobile ? { y: '100%', opacity: 0 } : { width: 0, opacity: 0 }}
+const reduceMotion = useReducedMotion();
+
+// Full animation config with accessibility:
+initial={reduceMotion ? { opacity: 0 } : isMobile ? { y: '100%', opacity: 0 } : { width: 0, opacity: 0 }}
+animate={reduceMotion ? { opacity: 1 } : isMobile ? { y: 0, opacity: 1 } : { width: state.width, opacity: 1 }}
+exit={reduceMotion ? { opacity: 0 } : isMobile ? { y: '100%', opacity: 0 } : { width: 0, opacity: 0 }}
 transition={{ type: 'spring', stiffness: 300, damping: 30 }}
 ```
+**Keep the `reduceMotion` ternary intact** — do not regress accessibility when enhancing animations.
 
 **Enhancement — add content stagger:**
 ```tsx
@@ -755,7 +768,7 @@ frontend/src/contexts/PanelContext.tsx                          — Sync with UR
 frontend/src/components/cockpit/CockpitBottomBar.tsx           — Update nav items, "More" overflow sheet
 frontend/src/components/cockpit/CockpitBottomBar.css           — Match new design tokens
 frontend/src/components/FloatingAssistant/FloatingAssistant.tsx — Redesign: 40px, Lucide icon, indigo hover
-frontend/src/components/FloatingAssistant/FloatingAssistant.css — New styles
+frontend/src/components/FloatingAssistant/FloatingAssistant.css — CREATE (no CSS file exists yet, styles may be inline)
 frontend/src/components/GeneralChat/GeneralChat.tsx            — Remove layout-mode conditionals
 frontend/src/styles/index.css                                   — New accent tokens, --hover-overlay
 frontend/src/design-system/colors.ts                            — Add accent-orange, accent-indigo token exports
@@ -775,7 +788,8 @@ frontend/src/components/cockpit/panels/AgentsPanel.tsx         — Empty state
 frontend/src/components/cockpit/panels/SearchPanel.tsx         — Already exists, polish
 ```
 
-**Files that become dead code (delete in cleanup phase):**
+**Files that become dead code (delete in a SEPARATE follow-up PR after cockpit-only is stable):**
+These files may still be imported transitionally. Do NOT delete in the same PR as the cockpit migration — verify zero imports first.
 ```
 frontend/src/components/IdeasPage/               — Full-page version, replaced by IdeasPanel
 frontend/src/components/EmailPage/               — Full-page version, replaced by EmailPanel
