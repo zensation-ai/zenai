@@ -31,7 +31,8 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 10px 12px;
+  height: 44px;
+  padding: 0 16px;
   border-bottom: 1px solid var(--border);
   flex-shrink: 0;
   background: var(--surface-1);
@@ -41,9 +42,13 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 13px;
+  font-size: 1.125rem;
   font-weight: 600;
   color: var(--text-primary);
+}
+
+.panel-shell__title svg {
+  color: var(--text-tertiary);
 }
 
 .panel-shell__actions {
@@ -61,7 +66,7 @@
   background: transparent;
   border-radius: 6px;
   cursor: pointer;
-  color: var(--text-secondary);
+  color: var(--text-tertiary);
   transition: background 150ms, color 150ms;
 }
 

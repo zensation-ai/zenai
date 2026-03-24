@@ -98,6 +98,7 @@ export function PanelProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(panelReducer, initialPanelState);
   const [searchParams, setSearchParams] = useSearchParams();
   const isInitialMount = useRef(true);
+  const isProgrammaticUpdate = useRef(false);
 
   // On mount: read URL → open panel if specified
   useEffect(() => {
@@ -117,6 +118,7 @@ export function PanelProvider({ children }: { children: ReactNode }) {
       return;
     }
 
+    isProgrammaticUpdate.current = true;
     if (state.activePanel) {
       const params: Record<string, string> = { panel: state.activePanel };
       if (state.filter) {
@@ -128,6 +130,25 @@ export function PanelProvider({ children }: { children: ReactNode }) {
       setSearchParams({}, { replace: true });
     }
   }, [state.activePanel, state.filter, setSearchParams]);
+
+  // On URL change (browser back/forward): sync state
+  useEffect(() => {
+    if (isInitialMount.current) return;
+    if (isProgrammaticUpdate.current) {
+      isProgrammaticUpdate.current = false;
+      return;
+    }
+    const urlPanel = searchParams.get('panel') as PanelType | null;
+    const urlFilter = searchParams.get('filter') ?? undefined;
+    if (urlPanel && VALID_PANELS.includes(urlPanel)) {
+      if (urlPanel !== state.activePanel) {
+        dispatch({ type: 'OPEN_PANEL', panel: urlPanel, filter: urlFilter });
+      }
+    } else if (state.activePanel !== null) {
+      dispatch({ type: 'CLOSE_PANEL' });
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
 
   return (
     <PanelContext.Provider value={{ state, dispatch }}>
