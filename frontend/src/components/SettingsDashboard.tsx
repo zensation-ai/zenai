@@ -32,7 +32,7 @@ import { useTabNavigation } from '../hooks/useTabNavigation';
 import { useAuth } from '../contexts/AuthContext';
 import { FEATURE_HINTS, STORAGE_KEY_PREFIX } from '../constants/featureHints';
 import type { Page } from '../types';
-import { safeLocalStorage } from '../utils/storage';
+
 import '../neurodesign.css';
 import './SettingsDashboard.css';
 
@@ -724,21 +724,7 @@ export const SettingsDashboard = memo(({
                 </div>
                 <span className="settings-item-value">{context}</span>
               </div>
-              <div className="settings-item">
-                <div className="settings-item-info">
-                  <span className="settings-item-label">AI Cockpit</span>
-                  <span className="settings-item-desc">Neues Chat-zentriertes Layout mit Seitenpanels und Dashboard</span>
-                </div>
-                <ToggleSwitch
-                  checked={settings.cockpitMode}
-                  onChange={(val) => {
-                    updateSetting('cockpitMode', val);
-                    safeLocalStorage('set', 'zenai-cockpit-mode', val ? 'true' : 'false');
-                    window.location.reload();
-                  }}
-                  label="AI Cockpit aktivieren"
-                />
-              </div>
+              {/* AI Cockpit toggle removed — cockpit is now the only layout */}
             </div>
 
             <div className="settings-group">
