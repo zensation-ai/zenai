@@ -93,3 +93,18 @@ export const colors = {
 } as const;
 
 export type Colors = typeof colors;
+
+// ── Phase 3: Accent Hierarchy (Design Overhaul) ───────────────
+export const accentOrange = {
+  base: 'hsl(18, 100%, 60%)',
+  hover: 'hsl(18, 100%, 55%)',
+  ghost: 'hsla(18, 100%, 60%, 0.12)',
+  ghostHover: 'hsla(18, 100%, 60%, 0.18)',
+} as const;
+
+export const accentIndigo = {
+  base: 'hsl(250, 65%, 58%)',
+  hover: 'hsl(250, 65%, 52%)',
+  ghost: 'hsla(250, 65%, 58%, 0.12)',
+  ghostHover: 'hsla(250, 65%, 58%, 0.18)',
+} as const;

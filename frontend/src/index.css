@@ -72,6 +72,21 @@ textarea::placeholder {
   --color-accent-glow: hsla(250, 65%, 58%, 0.25);
   --color-accent-2: hsl(190, 60%, 45%);
   --color-accent-2-hover: hsl(190, 60%, 40%);
+
+  /* Phase 3: Accent Hierarchy (Design Overhaul) */
+  --color-accent-orange: hsl(18, 100%, 60%);
+  --color-accent-orange-hover: hsl(18, 100%, 55%);
+  --color-accent-orange-ghost: hsla(18, 100%, 60%, 0.12);
+  --color-accent-orange-ghost-hover: hsla(18, 100%, 60%, 0.18);
+
+  --color-accent-indigo: hsl(250, 65%, 58%);
+  --color-accent-indigo-hover: hsl(250, 65%, 52%);
+  --color-accent-indigo-ghost: hsla(250, 65%, 58%, 0.12);
+  --color-accent-indigo-ghost-hover: hsla(250, 65%, 58%, 0.18);
+
+  --hover-overlay: rgba(255, 255, 255, 0.06);
+  --pressed-overlay: rgba(255, 255, 255, 0.10);
+
   --color-success: hsl(160, 70%, 42%);
   --color-success-light: hsla(160, 70%, 42%, 0.12);
   --color-warning: hsl(38, 95%, 55%);
