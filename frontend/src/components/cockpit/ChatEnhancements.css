@@ -36,7 +36,7 @@
 
 .action-buttons__btn--primary {
   background: var(--accent);
-  color: #fff;
+  color: var(--text-primary);
   border-color: var(--accent);
 }
 
@@ -62,7 +62,7 @@
 }
 
 .action-buttons__btn--danger:hover {
-  background: rgba(239,68,68,0.1);
+  background: var(--danger-muted, rgba(239,68,68,0.1));
 }
 
 /* Inline Widget */

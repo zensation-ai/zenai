@@ -7,7 +7,7 @@ const PlannerPage = lazy(() =>
 
 export default function TasksPanel({ onClose, context }: PanelProps) {
   return (
-    <Suspense fallback={<div style={{ padding: 16, color: 'rgba(255,255,255,0.4)', fontSize: 13 }}>Laden...</div>}>
+    <Suspense fallback={<div className="panel-loading">Laden...</div>}>
       <PlannerPage context={context} initialTab="tasks" onBack={onClose} />
     </Suspense>
   );

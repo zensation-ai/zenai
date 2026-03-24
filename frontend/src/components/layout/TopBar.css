@@ -15,7 +15,7 @@
   );
   -webkit-backdrop-filter: blur(20px) saturate(180%);
   backdrop-filter: blur(20px) saturate(180%);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  border-bottom: 1px solid var(--border);
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
   flex-shrink: 0;
   overflow-x: hidden;
@@ -51,7 +51,7 @@
   height: 36px;
   align-items: center;
   justify-content: center;
-  background: rgba(255, 255, 255, 0.06);
+  background: var(--border);
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: var(--radius-sm, 8px);
   color: var(--dark-text-secondary);
@@ -61,14 +61,14 @@
 }
 
 .topbar-mobile-toggle:hover {
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--border-hover);
   color: var(--dark-text);
 }
 
 .topbar-title {
   font-size: 0.95rem;
   font-weight: 600;
-  color: rgba(255, 255, 255, 0.9);
+  color: var(--text-primary);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -95,7 +95,7 @@
   align-items: center;
   gap: 8px;
   padding: 6px 12px;
-  background: rgba(255, 255, 255, 0.06);
+  background: var(--border);
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: var(--radius-sm, 8px);
   color: var(--dark-text-muted);
@@ -105,8 +105,8 @@
 }
 
 .topbar-search:hover {
-  background: rgba(255, 255, 255, 0.1);
-  border-color: rgba(255, 255, 255, 0.15);
+  background: var(--border-hover);
+  border-color: var(--border-hover);
   color: var(--dark-text-secondary);
 }
 
@@ -124,8 +124,8 @@
   font-size: 0.7rem;
   font-family: inherit;
   padding: 2px 6px;
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: var(--border);
+  border: 1px solid var(--border);
   border-radius: var(--radius-xs, 4px);
   color: var(--dark-text-muted);
   flex-shrink: 0;
@@ -182,7 +182,7 @@
 }
 
 .topbar-favorite:hover {
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--border);
   color: var(--primary, #ff6b35);
 }
 
@@ -196,7 +196,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(255, 255, 255, 0.06);
+  background: var(--border);
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: var(--radius-sm, 8px);
   color: var(--dark-text-muted);
@@ -205,8 +205,8 @@
 }
 
 .topbar-refresh:hover {
-  background: rgba(255, 255, 255, 0.1);
-  border-color: rgba(255, 255, 255, 0.12);
+  background: var(--border-hover);
+  border-color: var(--border-hover);
   color: var(--dark-text);
 }
 

@@ -255,7 +255,7 @@ export function AppLayout({
             isFavorited={isFavorited?.(currentPage)}
             onToggleFavorite={toggleFavorite ? () => toggleFavorite(currentPage) : undefined}
           />
-          <div className="flex items-center gap-2 pr-3 shrink-0 border-b border-white/[0.06]">
+          <div className="flex items-center gap-2 pr-3 shrink-0 border-b border-[var(--border)]">
             <ErrorBoundary fallback={null}><CognitiveLoadIndicator context={context} /></ErrorBoundary>
             <FocusMode context={context} />
             <ErrorBoundary fallback={null}><ContextIndicator context={context} /></ErrorBoundary>

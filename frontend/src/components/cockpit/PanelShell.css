@@ -80,3 +80,48 @@
   overflow-y: auto;
   overflow-x: hidden;
 }
+
+/* Panel loading fallback */
+.panel-loading {
+  padding: 16px;
+  color: var(--text-tertiary);
+  font-size: 13px;
+}
+
+/* Mobile: Panel becomes full-screen sheet from bottom */
+@media (max-width: 767px) {
+  .panel-shell {
+    position: fixed;
+    inset: 0;
+    z-index: 200;
+    border-left: none;
+    border-radius: 16px 16px 0 0;
+    box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.3);
+    padding-bottom: 56px; /* space for bottom bar */
+  }
+
+  .panel-shell__resize {
+    display: none;
+  }
+
+  .panel-shell__header {
+    padding: 12px 16px;
+  }
+
+  /* Pull-down indicator for sheet */
+  .panel-shell__header::before {
+    content: '';
+    display: block;
+    width: 36px;
+    height: 4px;
+    border-radius: 2px;
+    background: var(--text-tertiary);
+    margin: 0 auto 8px;
+  }
+
+  @supports (padding-bottom: env(safe-area-inset-bottom)) {
+    .panel-shell {
+      padding-bottom: calc(56px + env(safe-area-inset-bottom));
+    }
+  }
+}

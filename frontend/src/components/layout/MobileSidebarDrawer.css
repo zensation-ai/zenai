@@ -58,7 +58,7 @@
   align-items: center;
   justify-content: space-between;
   padding: 16px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  border-bottom: 1px solid var(--border);
   flex-shrink: 0;
 }
 
@@ -107,7 +107,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(255, 255, 255, 0.06);
+  background: var(--border);
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: var(--radius-sm);
   color: var(--dark-text-secondary);
@@ -116,7 +116,7 @@
 }
 
 .msd-close:hover {
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--border-hover);
   color: white;
 }
 
@@ -129,7 +129,7 @@
   align-items: center;
   gap: 8px;
   padding: 12px 16px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  border-bottom: 1px solid var(--border);
   flex-shrink: 0;
 }
 
@@ -176,7 +176,7 @@
   overflow-y: auto;
   padding: 4px 12px 12px;
   scrollbar-width: thin;
-  scrollbar-color: rgba(255, 255, 255, 0.1) transparent;
+  scrollbar-color: var(--border-hover) transparent;
 }
 
 .msd-content::-webkit-scrollbar {
@@ -184,7 +184,7 @@
 }
 
 .msd-content::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--border-hover);
   border-radius: 4px;
 }
 
@@ -214,7 +214,7 @@
 
 .msd-section-header:hover {
   background: rgba(255, 255, 255, 0.04);
-  color: rgba(255, 255, 255, 0.85);
+  color: var(--text-primary);
 }
 
 .msd-section-icon {
@@ -229,7 +229,7 @@
 .msd-section-count {
   font-size: 0.7rem;
   color: var(--dark-text-muted);
-  background: rgba(255, 255, 255, 0.06);
+  background: var(--border);
   padding: 1px 6px;
   border-radius: var(--radius-sm);
 }
@@ -341,8 +341,8 @@
 }
 
 .msd-item:hover {
-  background: rgba(255, 255, 255, 0.06);
-  color: rgba(255, 255, 255, 0.95);
+  background: var(--border);
+  color: var(--text-primary);
 }
 
 .msd-item.active {
@@ -408,7 +408,7 @@
    ============================================ */
 
 .msd-footer {
-  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  border-top: 1px solid var(--border);
   padding: 8px 12px 16px;
   flex-shrink: 0;
   padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px));

@@ -1,0 +1,123 @@
+.search-panel {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.search-panel__input-wrap {
+  position: relative;
+}
+
+.search-panel__input-icon {
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-tertiary);
+  pointer-events: none;
+}
+
+.search-panel__input {
+  width: 100%;
+  padding: 8px 12px 8px 32px;
+  background: var(--surface-s1);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text-primary);
+  font-size: 14px;
+  font-family: inherit;
+  outline: none;
+  box-sizing: border-box;
+  transition: border-color var(--duration-fast, 150ms) ease;
+}
+
+.search-panel__input:focus {
+  border-color: var(--accent);
+}
+
+.search-panel__input::placeholder {
+  color: var(--text-tertiary);
+}
+
+.search-panel__status {
+  color: var(--text-tertiary);
+  font-size: 12px;
+  margin: 0;
+}
+
+.search-panel__results {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.search-panel__result {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--text-primary);
+  background: transparent;
+  transition: background var(--duration-instant, 80ms) ease;
+}
+
+.search-panel__result:hover {
+  background: var(--surface-s3);
+}
+
+.search-panel__result-icon {
+  color: var(--text-tertiary);
+  flex-shrink: 0;
+}
+
+.search-panel__result-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.search-panel__result-title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.search-panel__result-preview {
+  font-size: 11px;
+  color: var(--text-tertiary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.search-panel__result-type {
+  font-size: 10px;
+  color: var(--text-tertiary);
+  flex-shrink: 0;
+}
+
+.search-panel__empty {
+  color: var(--text-tertiary);
+  font-size: 12px;
+  text-align: center;
+  margin-top: 24px;
+}
+
+.search-panel__empty svg {
+  margin-bottom: 8px;
+  opacity: 0.3;
+}
+
+.search-panel__empty p {
+  margin: 4px 0;
+}
+
+.search-panel__empty-hint {
+  font-size: 11px;
+}

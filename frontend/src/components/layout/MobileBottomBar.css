@@ -21,7 +21,7 @@
     background: var(--bottombar-bg, rgba(12, 28, 36, 0.95));
     -webkit-backdrop-filter: blur(20px) saturate(180%);
     backdrop-filter: blur(20px) saturate(180%);
-    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    border-top: 1px solid var(--border);
     box-shadow: 0 -2px 16px rgba(0, 0, 0, 0.2);
     align-items: center;
     justify-content: space-around;
@@ -57,7 +57,7 @@
     padding: 8px 6px;
     background: none;
     border: none;
-    color: rgba(255, 255, 255, 0.5);
+    color: var(--text-secondary);
     cursor: pointer;
     position: relative;
     transition: color 0.2s ease;
@@ -68,7 +68,7 @@
   }
 
   .bottom-tab:hover {
-    color: rgba(255, 255, 255, 0.75);
+    color: var(--text-secondary);
   }
 
   .bottom-tab.active {
@@ -172,7 +172,7 @@
   }
 
   .bottom-tab.chat-tab .bottom-tab-label {
-    color: rgba(255, 255, 255, 0.6);
+    color: var(--text-secondary);
     margin-top: 2px;
   }
 

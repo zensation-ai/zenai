@@ -227,7 +227,7 @@
   padding-right: 0.75rem;
   flex-shrink: 0;
   background: var(--bg-secondary, transparent);
-  border-bottom: 1px solid var(--border-color, rgba(255,255,255,0.06));
+  border-bottom: 1px solid var(--border-color, var(--border));
 }
 
 /* G+key Navigation Hint Overlay */
@@ -276,8 +276,8 @@
 
 :root.dark-mode .g-key-hint-pill {
   background: var(--card-bg, #142a34);
-  border-color: rgba(255, 255, 255, 0.1);
-  color: #fff;
+  border-color: var(--border);
+  color: var(--text-primary);
 }
 
 @media print {

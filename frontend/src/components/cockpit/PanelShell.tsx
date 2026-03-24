@@ -13,9 +13,6 @@ interface PanelShellProps {
   children: ReactNode;
 }
 
-const MIN_WIDTH = 360;
-const MAX_WIDTH = 600;
-
 export function PanelShell({
   title, icon: Icon, pinned, onClose, onTogglePin, width, onResize, children,
 }: PanelShellProps) {
@@ -28,8 +25,7 @@ export function PanelShell({
 
     const handleMouseMove = (moveEvent: MouseEvent) => {
       const delta = startX - moveEvent.clientX;
-      const clampedWidth = Math.min(MAX_WIDTH, Math.max(MIN_WIDTH, startWidth + delta));
-      onResize(clampedWidth);
+      onResize(startWidth + delta);
     };
 
     const handleMouseUp = () => {
@@ -41,29 +37,19 @@ export function PanelShell({
     document.addEventListener('mouseup', handleMouseUp);
   }, [width, onResize]);
 
-  const handleTouchStart = useCallback((e: React.TouchEvent) => {
-    e.preventDefault();
-    const startX = e.touches[0].clientX;
-    const startWidth = width;
-
-    const handleTouchMove = (moveEvent: TouchEvent) => {
-      const delta = startX - moveEvent.touches[0].clientX;
-      const clampedWidth = Math.min(MAX_WIDTH, Math.max(MIN_WIDTH, startWidth + delta));
-      onResize(clampedWidth);
-    };
-
-    const handleTouchEnd = () => {
-      document.removeEventListener('touchmove', handleTouchMove);
-      document.removeEventListener('touchend', handleTouchEnd);
-    };
-
-    document.addEventListener('touchmove', handleTouchMove, { passive: false });
-    document.addEventListener('touchend', handleTouchEnd);
-  }, [width, onResize]);
-
   return (
     <div className="panel-shell" style={{ width }}>
-      <div className="panel-shell__resize" ref={resizeRef} onMouseDown={handleMouseDown} onTouchStart={handleTouchStart} />
+      <div
+        className="panel-shell__resize"
+        ref={resizeRef}
+        onMouseDown={handleMouseDown}
+        role="separator"
+        aria-orientation="vertical"
+        aria-label="Panel-Breite aendern"
+        aria-valuenow={width}
+        aria-valuemin={360}
+        aria-valuemax={600}
+      />
       <div className="panel-shell__header">
         <div className="panel-shell__title">
           <Icon size={16} />
