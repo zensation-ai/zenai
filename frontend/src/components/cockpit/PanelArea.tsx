@@ -26,10 +26,32 @@ export function PanelArea({ context, isMobile }: PanelAreaProps) {
       {state.activePanel && (
         <motion.div
           key={state.activePanel}
-          initial={reduceMotion ? { opacity: 0 } : isMobile ? { y: '100%', opacity: 0 } : { width: 0, opacity: 0 }}
-          animate={reduceMotion ? { opacity: 1 } : isMobile ? { y: 0, opacity: 1 } : { width: state.width, opacity: 1 }}
-          exit={reduceMotion ? { opacity: 0 } : isMobile ? { y: '100%', opacity: 0 } : { width: 0, opacity: 0 }}
-          transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+          initial={
+            reduceMotion
+              ? { opacity: 0 }
+              : isMobile
+                ? { y: '100%', opacity: 0 }
+                : { x: 20, opacity: 0, width: state.width }
+          }
+          animate={
+            reduceMotion
+              ? { opacity: 1 }
+              : isMobile
+                ? { y: 0, opacity: 1 }
+                : { x: 0, opacity: 1, width: state.width }
+          }
+          exit={
+            reduceMotion
+              ? { opacity: 0 }
+              : isMobile
+                ? { y: '100%', opacity: 0 }
+                : { x: 20, opacity: 0, width: state.width }
+          }
+          transition={
+            isMobile
+              ? { type: 'spring', stiffness: 300, damping: 30 }
+              : { type: 'spring', stiffness: 400, damping: 30, mass: 0.8 }
+          }
           style={{ overflow: 'hidden', flexShrink: isMobile ? undefined : 0 }}
         >
           <PanelShell
