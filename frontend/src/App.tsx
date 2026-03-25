@@ -212,17 +212,15 @@ function CockpitShell({ context, onContextChange, currentPage, navigateToPage, p
   const imageInputRef = useRef<HTMLInputElement>(null);
 
   const handleAttachFile = useCallback(() => {
-    console.log('attach file');
     fileInputRef.current?.click();
   }, []);
 
   const handleUploadImage = useCallback(() => {
-    console.log('upload image');
     imageInputRef.current?.click();
   }, []);
 
   const handleVoiceInput = useCallback(() => {
-    console.log('voice input');
+    // TODO: implement voice input
   }, []);
 
   const handleQuickCreate = useCallback(() => {
