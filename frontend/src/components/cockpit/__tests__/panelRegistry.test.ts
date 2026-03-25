@@ -5,10 +5,11 @@ describe('panelRegistry', () => {
   const allPanelTypes: PanelType[] = [
     'tasks', 'email', 'ideas', 'calendar', 'contacts',
     'documents', 'memory', 'finance', 'agents', 'search',
+    'settings', 'dashboard',
   ];
 
-  it('has definitions for all 10 panel types', () => {
-    expect(panelRegistry).toHaveLength(10);
+  it('has definitions for all 12 panel types', () => {
+    expect(panelRegistry).toHaveLength(12);
     for (const type of allPanelTypes) {
       expect(panelRegistry.find(p => p.id === type)).toBeDefined();
     }
@@ -18,8 +19,8 @@ describe('panelRegistry', () => {
     for (const panel of panelRegistry) {
       expect(panel.id).toBeTruthy();
       expect(panel.label).toBeTruthy();
-      expect(panel.shortcut).toBeTruthy();
       expect(panel.component).toBeDefined();
+      // shortcut is optional (e.g. dashboard has no shortcut)
     }
   });
 
