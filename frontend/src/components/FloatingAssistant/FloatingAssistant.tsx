@@ -10,6 +10,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { createPortal } from 'react-dom';
+import { Sparkles, X } from 'lucide-react';
 import type { Page } from '../../types';
 import type { AIContext } from '../ContextSwitcher';
 import { GeneralChat } from '../GeneralChat';
@@ -19,7 +20,6 @@ import { useFocusTrap } from '../../hooks/useFocusTrap';
 import { safeLocalStorage } from '../../utils/storage';
 import { AI_PERSONALITY } from '../../utils/aiPersonality';
 import { QuickActions } from './QuickActions';
-import { CloseIcon } from '../icons/CloseIcon';
 import '../GeneralChat/ChatContextBar.css';
 import './FloatingAssistant.css';
 
@@ -141,7 +141,7 @@ export function FloatingAssistant({ context, currentPage, onNavigate, onContextC
         aria-haspopup="dialog"
       >
         <span className="assistant-bubble-icon" aria-hidden="true">
-          {isOpen ? <CloseIcon size={20} /> : '\u{1F9E0}'}
+          {isOpen ? <X size={16} /> : <Sparkles size={16} />}
         </span>
       </button>
 
@@ -154,7 +154,7 @@ export function FloatingAssistant({ context, currentPage, onNavigate, onContextC
             onClick={dismissTooltip}
             aria-label="Hinweis schließen"
           >
-            <CloseIcon size={12} />
+            <X size={12} />
           </button>
           <p className="assistant-tooltip-text">
             Ich bin {AI_PERSONALITY.name}, dein KI-Assistent. Frag mich alles zur App!
@@ -176,7 +176,7 @@ export function FloatingAssistant({ context, currentPage, onNavigate, onContextC
           {/* Header */}
           <div className="assistant-header">
             <div className="assistant-header-left">
-              <span className="assistant-header-avatar" aria-hidden="true">{'\u{1F9E0}'}</span>
+              <span className="assistant-header-avatar" aria-hidden="true"><Sparkles size={18} /></span>
               <div className="assistant-header-info">
                 <span className="assistant-header-name">{AI_PERSONALITY.name}</span>
                 <span className="assistant-header-status">Dein KI-Assistent</span>
