@@ -109,3 +109,6 @@ README.public.md
 CLAUDE.public.md
 backend/DEPLOY.md
 backend/DEPLOY_TRIGGER.md
+SECURITY.md
+supabase-add-recommendations-function.sql
+test-audio.txt
