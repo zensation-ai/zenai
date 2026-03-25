@@ -5,6 +5,7 @@ import axios from 'axios';
 import App from './App';
 import './styles/tailwind.css';
 import './styles/animations.css';
+import './styles/micro-interactions.css';
 import './index.css';
 import { safeLocalStorage } from './utils/storage';
 import { ConfirmProvider } from './components/ConfirmDialog';

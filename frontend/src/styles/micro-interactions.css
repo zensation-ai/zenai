@@ -1,0 +1,100 @@
+/* === Micro-Interactions === */
+
+/* 1. Button Press Effect — all buttons get a subtle scale on press */
+button:active:not(:disabled),
+[role="button"]:active:not(:disabled) {
+  transform: scale(0.97);
+  transition: transform 80ms ease-out;
+}
+
+/* 2. List Item Hover — subtle highlight + shift */
+.panel-body li:hover,
+.panel-body [role="listitem"]:hover,
+.panel-body .list-item:hover {
+  background: rgba(255, 255, 255, 0.04);
+  transform: translateX(2px);
+  transition: all 150ms ease-out;
+}
+
+/* Dark mode adjustment */
+@media (prefers-color-scheme: light) {
+  .panel-body li:hover,
+  .panel-body [role="listitem"]:hover,
+  .panel-body .list-item:hover {
+    background: rgba(0, 0, 0, 0.03);
+  }
+}
+
+/* 3. Focus Ring — consistent focus-visible across the app */
+:focus-visible {
+  outline: 2px solid var(--color-accent, #ff6b35);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* 4. Link/Interactive Hover — subtle color transition */
+a, [role="tab"], .clickable {
+  transition: color 150ms ease-out, background-color 150ms ease-out;
+}
+
+/* 5. Card Hover — subtle lift */
+.ds-card:hover,
+.suggestion-card:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  transition: all 200ms ease-out;
+}
+
+/* 6. Icon Button Hover — background circle appears */
+.icon-button:hover,
+button[class*="icon"]:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 6px;
+  transition: background 150ms ease-out;
+}
+
+/* 7. Skeleton Loading Enhancement */
+@keyframes skeleton-pulse {
+  0%, 100% { opacity: 0.06; }
+  50% { opacity: 0.12; }
+}
+
+.skeleton, [class*="skeleton"] {
+  animation: skeleton-pulse 1.5s ease-in-out infinite;
+}
+
+/* 8. Smooth Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* Reduced Motion */
+@media (prefers-reduced-motion: reduce) {
+  button:active:not(:disabled),
+  [role="button"]:active:not(:disabled) {
+    transform: none;
+  }
+  .panel-body li:hover,
+  .panel-body [role="listitem"]:hover,
+  .panel-body .list-item:hover {
+    transform: none;
+  }
+  .ds-card:hover,
+  .suggestion-card:hover {
+    transform: none;
+  }
+  .skeleton, [class*="skeleton"] {
+    animation: none;
+  }
+}
