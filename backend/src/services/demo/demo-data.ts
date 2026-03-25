@@ -583,7 +583,7 @@ export const DEMO_CONTACTS: DemoContact[] = [
     display_name: 'Sarah Müller',
     first_name: 'Sarah',
     last_name: 'Müller',
-    email: ['sarah@zensation.ai'],
+    email: ['sarah@example.com'],
     role: 'Co-Founderin & CPO',
     relationship_type: 'colleague',
     notes:
@@ -596,7 +596,7 @@ export const DEMO_CONTACTS: DemoContact[] = [
     display_name: 'Jonas Weber',
     first_name: 'Jonas',
     last_name: 'Weber',
-    email: ['jonas@zensation.ai'],
+    email: ['jonas@example.com'],
     role: 'Lead Engineer',
     relationship_type: 'colleague',
     notes:

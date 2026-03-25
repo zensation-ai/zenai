@@ -4,7 +4,7 @@
   "outputDirectory": "dist",
   "framework": "vite",
   "rewrites": [
-    { "source": "/api/:path*", "destination": "https://ki-ab-production.up.railway.app/api/:path*" },
+    { "source": "/api/:path*", "destination": "https://your-backend.example.com/api/:path*" },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }

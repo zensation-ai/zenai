@@ -15,7 +15,7 @@ import { logger } from '../utils/logger';
 
 const RESEND_API_KEY = process.env.RESEND_API_KEY;
 const RESEND_WEBHOOK_SECRET = process.env.RESEND_WEBHOOK_SECRET;
-const DEFAULT_FROM = process.env.RESEND_DEFAULT_FROM || 'noreply@zensation.ai';
+const DEFAULT_FROM = process.env.RESEND_DEFAULT_FROM || 'noreply@example.com';
 
 let resendClient: Resend | null = null;
 

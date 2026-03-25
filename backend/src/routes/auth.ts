@@ -837,7 +837,7 @@ authRouter.post('/demo', asyncHandler(async (_req: Request, res: Response) => {
   const accessToken = jwt.sign(
     {
       sub: DEMO_USER_ID,
-      email: 'demo@zensation.ai',
+      email: 'demo@example.com',
       role: 'viewer',
       plan: 'pro',
       isDemo: true,
@@ -850,7 +850,7 @@ authRouter.post('/demo', asyncHandler(async (_req: Request, res: Response) => {
     success: true,
     data: {
       accessToken,
-      user: { id: DEMO_USER_ID, email: 'demo@zensation.ai', name: 'Demo User', plan: 'pro', isDemo: true },
+      user: { id: DEMO_USER_ID, email: 'demo@example.com', name: 'Demo User', plan: 'pro', isDemo: true },
     },
   });
 }));

@@ -502,7 +502,7 @@ export class GmailProvider implements EmailProvider {
     }
 
     const { gmail, account } = await this.getGmailClient(accountId, ctx);
-    const fromAddress = (account.email_address as string) || 'noreply@zensation.ai';
+    const fromAddress = (account.email_address as string) || process.env.RESEND_DEFAULT_FROM || 'noreply@example.com';
 
     // Build MIME message
     const rawMessage = await buildMimeMessage({

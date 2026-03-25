@@ -379,7 +379,7 @@ export async function createDraft(context: AIContext, input: CreateEmailInput, u
   const now = new Date().toISOString();
 
   // Get default account for from_address
-  let fromAddress = 'noreply@zensation.ai';
+  let fromAddress = process.env.RESEND_DEFAULT_FROM || 'noreply@example.com';
   let fromName: string | null = null;
 
   if (input.account_id) {
