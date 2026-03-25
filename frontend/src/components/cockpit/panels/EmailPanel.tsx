@@ -1,14 +1,24 @@
-import { Suspense, lazy } from 'react';
+import { useState } from 'react';
 import type { PanelProps } from '../panelRegistry';
+import { PanelTabs } from '../PanelTabs';
 
-const InboxSmartPage = lazy(() =>
-  import('../../EmailPage').then(m => ({ default: m.InboxSmartPage }))
-);
+const TABS = [
+  { id: 'inbox', label: 'Posteingang' },
+  { id: 'sent', label: 'Gesendet' },
+  { id: 'drafts', label: 'Entwuerfe' },
+];
 
-export default function EmailPanel({ context }: PanelProps) {
+export default function EmailPanel(_props: PanelProps) {
+  const [activeTab, setActiveTab] = useState('inbox');
+
   return (
-    <Suspense fallback={<div className="panel-loading">Laden...</div>}>
-      <InboxSmartPage context={context} />
-    </Suspense>
+    <div className="panel-content">
+      <PanelTabs tabs={TABS} activeTab={activeTab} onTabChange={setActiveTab} />
+      <div className="panel-body">
+        {activeTab === 'inbox' && <div className="panel-placeholder">Posteingang</div>}
+        {activeTab === 'sent' && <div className="panel-placeholder">Gesendet</div>}
+        {activeTab === 'drafts' && <div className="panel-placeholder">Entwuerfe</div>}
+      </div>
+    </div>
   );
 }
