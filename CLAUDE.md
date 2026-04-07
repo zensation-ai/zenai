@@ -30,7 +30,7 @@ Copy `.env.example` to `.env` and configure your credentials. See the [Getting S
   - Short-Term Memory (session context)
   - Long-Term Memory (persistent knowledge)
 
-## Current Phase: 141
+## Current Phase: 145
 
 ### Phase 31 Features (AI State-of-the-Art)
 
@@ -120,7 +120,7 @@ Copy `.env.example` to `.env` and configure your credentials. See the [Getting S
 - Copy/Download functionality
 - Large code blocks (>15 lines) as Artifacts
 
-### AI Tools (55 registered)
+### AI Tools (60 registered)
 
 | Category | Tools |
 |----------|-------|
@@ -393,7 +393,7 @@ Copy `.env.example` to `.env` and configure your credentials. See the [Getting S
 - Frontend: `frontend/src/__tests__/` and `frontend/src/components/__tests__/`
 - CLI: `cli/src/__tests__/`
 
-## API Endpoints (Phase 141)
+## API Endpoints (Phase 145)
 
 ### Tasks API
 
@@ -1006,14 +1006,14 @@ cd backend && npm test -- --coverage
 cd frontend && npx vitest run
 ```
 
-### Test Status (2026-03-22)
+### Test Status (2026-04-06)
 
 | Category | Passed | Skipped | Failed |
 |----------|--------|---------|--------|
-| **Backend** | 7720 | 24 | 0 |
-| **Frontend** | 1400 | 0 | 0 |
+| **Backend** | 10141 | 24 | 0 |
+| **Frontend** | 1340 | 0 | 0 |
 | **CLI** | 108 | 0 | 0 |
-| **Total** | 9228 | 24 | 0 |
+| **Total** | 11589 | 24 | 0 |
 
 **Intentionally skipped tests (24):**
 - 21x Code-Execution Sandbox (Docker not available)

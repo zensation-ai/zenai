@@ -16,7 +16,7 @@ Thank you for your interest in contributing to ZenAI!
 ### Backend
 ```bash
 cd backend && npm run dev    # Start dev server (port 3000)
-cd backend && npm test       # Run tests (9,228 tests)
+cd backend && npm test       # Run tests (10,141 tests)
 cd backend && npm run build  # TypeScript build
 ```
 

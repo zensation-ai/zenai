@@ -1,7 +1,7 @@
 <p align="center">
   <h1 align="center">ZenAI</h1>
   <p align="center"><strong>The AI OS that remembers. Self-hosted. Open source.</strong></p>
-  <p align="center">55 AI tools. 9,228 tests. 7-layer neuroscience-inspired memory. Built on <a href="https://github.com/zensation-ai/zenbrain">ZenBrain</a>.</p>
+  <p align="center">60 AI tools. 11,589 tests. 322K+ LOC. 7-layer neuroscience-inspired memory. Built on <a href="https://github.com/zensation-ai/zenbrain">ZenBrain</a>.</p>
 </p>
 
 <p align="center">
@@ -19,7 +19,7 @@ ZenAI is a self-hosted AI platform with neuroscience-inspired memory. Unlike Cha
 
 ### Key Features
 
-- **55 AI Tools** across 14 categories (memory, web search, code execution, GitHub, maps, email, documents, and more)
+- **60 AI Tools** across 14 categories (memory, web search, code execution, GitHub, maps, email, documents, and more)
 - **7-Layer Memory** (Working, Short-Term, Episodic, Semantic, Procedural, Core, Cross-Context) powered by [ZenBrain](https://github.com/zensation-ai/zenbrain)
 - **FSRS Spaced Repetition** — your AI never forgets what matters
 - **4 Context Isolation** — separate memory for personal, work, learning, and creative
@@ -98,10 +98,10 @@ Full API documentation: `/api-docs` (Swagger UI when running)
 ## Testing
 
 ```bash
-# Backend (9,228 tests)
+# Backend (10,141 tests)
 cd backend && npm test
 
-# Frontend (1,400 tests)
+# Frontend (1,340 tests)
 cd frontend && npx vitest run
 
 # CLI (108 tests)
