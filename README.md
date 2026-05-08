@@ -1,7 +1,7 @@
 <p align="center">
   <h1 align="center">ZenAI</h1>
   <p align="center"><strong>The AI OS that remembers. Self-hosted. Open source.</strong></p>
-  <p align="center">60 AI tools. 11,589 tests. 322K+ LOC. 7-layer neuroscience-inspired memory. Built on <a href="https://github.com/zensation-ai/zenbrain">ZenBrain</a>.</p>
+  <p align="center">60 AI tools. 12,000+ tests. 440K+ LOC. 7-layer neuroscience-inspired memory. Built on <a href="https://github.com/zensation-ai/zenbrain">ZenBrain</a>.</p>
 </p>
 
 <p align="center">
