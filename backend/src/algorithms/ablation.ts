@@ -39,23 +39,6 @@ export function createAblationRegistry(serialized?: string): AblationRegistry {
   };
 }
 
-export const ZENBRAIN_FEATURES = {
-  TWO_FACTOR_HEBBIAN: 'two_factor_hebbian',
-  SIMULATION_SELECTION_SLEEP: 'simulation_selection_sleep',
-  VMPC_FSRS_COUPLING: 'vmPFC_fsrs_coupling',
-  IMAD_DEBATE: 'imad_debate',
-  SPECTRAL_KG_HEALTH: 'spectral_kg_health',
-  COMPOSITIONAL_CONTEXT: 'compositional_context',
-  IB_BUDGET: 'ib_budget',
-  DUAL_PROCESS_COT: 'dual_process_cot',
-  METACOGNITIVE_HYPERAGENT: 'metacognitive_hyperagent',
-  GWT_IGNITION: 'gwt_ignition',
-  LEARNING_PROGRESS: 'learning_progress',
-  // Ablation-only: disable Ebbinghaus decay to isolate its P@5 contribution.
-  // Not a production feature — used exclusively in NoDecay benchmark variant.
-  DECAY_DISABLED: 'decay_disabled',
-} as const;
-
 export const PMA_FEATURES = {
   NEUROMODULATOR_ENGINE: 'pma_neuromodulator_engine',
   RECONSOLIDATION: 'pma_reconsolidation',
