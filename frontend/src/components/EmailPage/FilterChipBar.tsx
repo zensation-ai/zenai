@@ -4,8 +4,6 @@
  */
 import React from 'react';
 import type { InboxFilterChipDef, InboxFilters, EmailTab, EmailCategory } from './types';
-import './FilterChipBar.css';
-
 interface FilterChipBarProps {
   chips: InboxFilterChipDef[];
   filters: InboxFilters;
@@ -33,6 +31,7 @@ export const FilterChipBar: React.FC<FilterChipBarProps> = ({
   const grouped = groups.map(g => chips.filter(c => c.group === g)).filter(g => g.length > 0);
 
   return (
+    <div className="inbox-chip-bar-wrapper">
     <div className="inbox-chip-bar" role="toolbar" aria-label="E-Mail Filter">
       {grouped.map((groupChips, gi) => (
         <React.Fragment key={gi}>
@@ -60,6 +59,7 @@ export const FilterChipBar: React.FC<FilterChipBarProps> = ({
           ✕ Filter ({activeCount})
         </button>
       )}
+    </div>
     </div>
   );
 };

@@ -52,16 +52,16 @@ describe('SlackWorkflows', () => {
 
   describe('installWorkflowTemplates', () => {
     it('creates ProactiveEngine rules for each template', async () => {
-      await installWorkflowTemplates('work');
+      await installWorkflowTemplates('finance');
 
       expect(createProactiveRule).toHaveBeenCalledTimes(6);
     });
 
     it('passes correct context to createProactiveRule', async () => {
-      await installWorkflowTemplates('personal');
+      await installWorkflowTemplates('operations');
 
       expect(createProactiveRule).toHaveBeenCalledWith(
-        'personal',
+        'operations',
         expect.objectContaining({ name: expect.any(String) }),
       );
     });
@@ -74,7 +74,7 @@ describe('SlackWorkflows', () => {
         { id: 'rule-2', name: 'Task Extraction', description: '[Slack]' },
       ]);
 
-      await removeWorkflowTemplates('work');
+      await removeWorkflowTemplates('finance');
 
       expect(deleteProactiveRule).toHaveBeenCalledTimes(2);
     });
@@ -82,7 +82,7 @@ describe('SlackWorkflows', () => {
     it('handles no existing rules gracefully', async () => {
       listProactiveRules.mockResolvedValueOnce([]);
 
-      await expect(removeWorkflowTemplates('work')).resolves.not.toThrow();
+      await expect(removeWorkflowTemplates('finance')).resolves.not.toThrow();
       expect(deleteProactiveRule).not.toHaveBeenCalled();
     });
   });

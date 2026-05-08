@@ -1,4 +1,5 @@
 import { useRef } from 'react';
+import type { CSSProperties } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { IdeaCard2 } from './IdeaCard2';
 import type { StructuredIdea } from '../../types';
@@ -37,24 +38,20 @@ export function IdeaGridView({ ideas, onIdeaClick, selectionMode, selectedIds, o
     : Array.from({ length: rowCount }, (_, i) => ({ key: i, index: i, start: i * (ROW_HEIGHT + GAP) }));
 
   return (
-    <div ref={parentRef} className="idea-grid-view" style={{ overflow: 'auto', flex: 1 }}>
-      <div style={{ height: virtualizer.getTotalSize() || rowCount * (ROW_HEIGHT + GAP), position: 'relative' }}>
+    <div ref={parentRef} className="idea-grid-view overflow-auto flex-1">
+      <div className="relative h-[var(--total-h)]" style={{ '--total-h': `${virtualizer.getTotalSize() || rowCount * (ROW_HEIGHT + GAP)}px` } as CSSProperties}>
         {rowsToRender.map(row => {
           const startIdx = row.index * COLUMNS;
           const rowIdeas = ideas.slice(startIdx, startIdx + COLUMNS);
           return (
             <div
               key={row.key}
+              className="absolute left-0 right-0 top-[var(--top)] grid [grid-template-columns:var(--cols)] gap-[var(--gap)] px-[var(--spacing-4,_16px)]"
               style={{
-                position: 'absolute',
-                top: row.start,
-                left: 0,
-                right: 0,
-                display: 'grid',
-                gridTemplateColumns: `repeat(${COLUMNS}, 1fr)`,
-                gap: `${GAP}px`,
-                padding: '0 var(--spacing-4, 16px)',
-              }}
+                '--top': `${row.start}px`,
+                '--cols': `repeat(${COLUMNS}, 1fr)`,
+                '--gap': `${GAP}px`,
+              } as CSSProperties}
             >
               {rowIdeas.map(idea => (
                 <IdeaCard2

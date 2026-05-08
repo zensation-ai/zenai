@@ -19,7 +19,10 @@ describe('Route Mappings (Phase 105)', () => {
     expect(PAGE_PATHS['documents']).toBe('/wissen');
     expect(PAGE_PATHS['business']).toBe('/cockpit');
     expect(PAGE_PATHS['my-ai']).toBe('/meine-ki');
-    expect(PAGE_PATHS['settings']).toBe('/system');
+    expect(PAGE_PATHS['settings-user']).toBe('/system/benutzer');
+    expect(PAGE_PATHS['settings-ai']).toBe('/system/ki');
+    expect(PAGE_PATHS['settings-integrations']).toBe('/system/integrationen');
+    expect(PAGE_PATHS['settings-admin']).toBe('/system/admin');
   });
 
   it('PATH_PAGES reverse map for all 7+1 primary routes', () => {
@@ -29,7 +32,10 @@ describe('Route Mappings (Phase 105)', () => {
     expect(PATH_PAGES['/wissen']).toBe('documents');
     expect(PATH_PAGES['/cockpit']).toBe('business');
     expect(PATH_PAGES['/meine-ki']).toBe('my-ai');
-    expect(PATH_PAGES['/system']).toBe('settings');
+    expect(PATH_PAGES['/system/benutzer']).toBe('settings-user');
+    expect(PATH_PAGES['/system/ki']).toBe('settings-ai');
+    expect(PATH_PAGES['/system/integrationen']).toBe('settings-integrations');
+    expect(PATH_PAGES['/system/admin']).toBe('settings-admin');
   });
 
   it('legacy redirects include all old primary paths', () => {
@@ -84,6 +90,7 @@ describe('Route Mappings (Phase 105)', () => {
     expect(map['/notifications']).toBe('/inbox/benachrichtigungen');
     expect(map['/learning']).toBe('/wissen/lernen');
     expect(map['/admin']).toBe('/system/admin');
+    expect(map['/settings']).toBe('/system/benutzer');
   });
 
   it('resolvePathToPage handles new German slug paths', () => {
@@ -94,29 +101,37 @@ describe('Route Mappings (Phase 105)', () => {
     expect(resolvePathToPage('/wissen')).toBe('documents');
     expect(resolvePathToPage('/cockpit')).toBe('business');
     expect(resolvePathToPage('/meine-ki')).toBe('my-ai');
-    expect(resolvePathToPage('/system')).toBe('settings');
+    expect(resolvePathToPage('/system/benutzer')).toBe('settings-user');
+    expect(resolvePathToPage('/system/ki')).toBe('settings-ai');
+    expect(resolvePathToPage('/system/integrationen')).toBe('settings-integrations');
+    expect(resolvePathToPage('/system/admin')).toBe('settings-admin');
   });
 
   it('resolvePathToPage handles sub-paths under new slugs', () => {
-    expect(resolvePathToPage('/planer/tasks')).toBe('calendar');
-    expect(resolvePathToPage('/ideen/incubator')).toBe('ideas');
-    expect(resolvePathToPage('/system/admin')).toBe('settings');
-    expect(resolvePathToPage('/cockpit/finanzen')).toBe('business');
-    expect(resolvePathToPage('/wissen/canvas')).toBe('documents');
-    expect(resolvePathToPage('/meine-ki/voice-chat')).toBe('my-ai');
-    expect(resolvePathToPage('/inbox/benachrichtigungen')).toBe('email');
+    // Sub-tabs resolve to their specific page type (not the parent)
+    expect(resolvePathToPage('/planer/tasks')).toBe('tasks');
+    expect(resolvePathToPage('/ideen/incubator')).toBe('incubator');
+    expect(resolvePathToPage('/system/admin/system')).toBe('system-admin');
+    expect(resolvePathToPage('/meine-ki/voice-chat')).toBe('voice-chat');
+    expect(resolvePathToPage('/inbox/benachrichtigungen')).toBe('notifications');
+    // Workspace sub-pages resolve to their dedicated page
+    expect(resolvePathToPage('/cockpit/finanzen')).toBe('finance');
+    expect(resolvePathToPage('/wissen/lernen')).toBe('learning');
+    expect(resolvePathToPage('/planer/kontakte')).toBe('contacts');
+    expect(resolvePathToPage('/cockpit/trends')).toBe('insights');
+    expect(resolvePathToPage('/ideen/workshop')).toBe('workshop');
   });
 
   it('resolvePathToPage still handles old English paths as fallback', () => {
     // Before redirect kicks in, the resolver should still recognize old paths
     expect(resolvePathToPage('/ideas/archive')).toBe('ideas');
     expect(resolvePathToPage('/calendar/tasks')).toBe('calendar');
-    expect(resolvePathToPage('/settings/profile')).toBe('settings');
+    expect(resolvePathToPage('/settings/profile')).toBe('settings-user');
     expect(resolvePathToPage('/workshop/proactive')).toBe('ideas');
   });
 
-  it('resolvePathToPage defaults to hub for unknown paths', () => {
-    expect(resolvePathToPage('/nonexistent')).toBe('hub');
-    expect(resolvePathToPage('/totally/unknown/path')).toBe('hub');
+  it('resolvePathToPage returns undefined for unknown paths', () => {
+    expect(resolvePathToPage('/nonexistent')).toBeUndefined();
+    expect(resolvePathToPage('/totally/unknown/path')).toBeUndefined();
   });
 });

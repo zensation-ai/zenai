@@ -242,7 +242,7 @@ visionRouter.post(
  *
  * Body (multipart/form-data):
  * - image: File (required) - Image to extract ideas from
- * - context?: string - Context for the ideas (e.g., 'work', 'personal')
+ * - context?: string - Context for the ideas (e.g., 'finance', 'operations')
  * - language?: 'de' | 'en' - Response language
  */
 visionRouter.post(
@@ -255,7 +255,7 @@ visionRouter.post(
       throw new ValidationError('Image file is required');
     }
 
-    const context = (req.body.context as 'work' | 'personal') || 'personal';
+    const context = (req.body.context as 'finance' | 'operations') || 'operations';
     const options = parseVisionOptions(req.body);
 
     logger.info('Idea extraction requested', {

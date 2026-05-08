@@ -11,8 +11,6 @@
  */
 
 import { useState, useCallback, useEffect, useRef, type ReactNode, type CSSProperties } from 'react';
-import './AnticipatoryUI.css';
-
 // ===========================================
 // Anticipatory Tooltip
 // Zeigt vorausschauend, was passieren wird
@@ -119,12 +117,12 @@ export const PredictiveLoading = ({
       {/* Progress Bar mit Glow */}
       <div className="predictive-progress-bar">
         <div
-          className="progress-fill"
-          style={{ width: `${progress}%` }}
+          className="progress-fill w-[var(--bar)]"
+          style={{ '--bar': `${progress}%` } as CSSProperties}
         />
         <div
-          className="progress-glow"
-          style={{ left: `${progress}%` }}
+          className="progress-glow left-[var(--left)]"
+          style={{ '--left': `${progress}%` } as CSSProperties}
         />
       </div>
 
@@ -397,11 +395,8 @@ export const RippleButton = ({
         {ripples.map(ripple => (
           <span
             key={ripple.id}
-            className="ripple"
-            style={{
-              left: ripple.x,
-              top: ripple.y,
-            }}
+            className="ripple left-[var(--rx)] top-[var(--ry)]"
+            style={{ '--rx': ripple.x, '--ry': ripple.y } as CSSProperties}
           />
         ))}
       </span>

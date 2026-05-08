@@ -117,7 +117,7 @@ export const TrafficDashboard: React.FC = () => {
                   contentStyle={{ background: 'rgba(20,30,42,0.95)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8 }}
                   labelStyle={{ color: 'rgba(255,255,255,0.7)' }}
                 />
-                <Bar dataKey="users" fill="#818cf8" name="Besucher" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="users" fill="#2d8a9e" name="Besucher" radius={[4, 4, 0, 0]} />
                 <Bar dataKey="sessions" fill="#34d399" name="Sessions" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>

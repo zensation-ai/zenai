@@ -60,8 +60,7 @@ export function TriageCard({ idea, cardRef, isDragging, cardStyle, swipeClass }:
         <div className={'triage-card-steps neuro-chunk ' + (expandedDetails ? 'neuro-expand-in' : '')}>
           <h4
             onClick={toggleDetails}
-            style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem' }}
-            className="neuro-hover-lift"
+            className="neuro-hover-lift cursor-pointer flex items-center gap-2"
             role="button"
             tabIndex={0}
             onKeyDown={(e) => e.key === 'Enter' && toggleDetails()}
@@ -75,7 +74,7 @@ export function TriageCard({ idea, cardRef, isDragging, cardStyle, swipeClass }:
                 <li key={`next-step-${index}-${step.slice(0, 20)}`} className="neuro-stagger-item">{step}</li>
               ))}
               {idea.nextSteps.length > 3 && (
-                <li className="neuro-stagger-item" style={{ color: 'var(--text-muted)', fontStyle: 'italic' }}>+{idea.nextSteps.length - 3} weitere...</li>
+                <li className="neuro-stagger-item text-[var(--text-muted)] italic">+{idea.nextSteps.length - 3} weitere...</li>
               )}
             </ul>
           )}

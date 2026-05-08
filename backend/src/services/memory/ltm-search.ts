@@ -6,7 +6,7 @@
  * and context-dependent retrieval boost logic.
  */
 
-import type { PersonalizationFact, FrequentPattern, SignificantInteraction } from './long-term-memory';
+import type { PersonalizationFact, FrequentPattern, SignificantInteraction } from './ltm-types';
 import { captureEncodingContext, calculateContextSimilarity, type EncodingContext } from './context-enrichment';
 
 // ===========================================

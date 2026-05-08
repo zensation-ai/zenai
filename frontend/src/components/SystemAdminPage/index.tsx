@@ -5,7 +5,7 @@
  * and Sleep Compute (Phase 63) into a single admin hub page.
  *
  * Tab components extracted into separate files (Phase 120).
- * Tabs: Uebersicht, Job Queues, Sicherheit, Sleep Compute
+ * Tabs: Übersicht, Job Queues, Sicherheit, Sleep Compute
  */
 
 import React, { Suspense, memo } from 'react';
@@ -17,12 +17,15 @@ import { OverviewTab } from './OverviewTab';
 import { QueuesTab } from './QueuesTab';
 import { SecurityTab } from './SecurityTab';
 import { SleepComputeTab } from './SleepComputeTab';
+import { BillingTab } from './BillingTab';
+import { MarketplaceTab } from './MarketplaceTab';
+import { VoiceTab } from './VoiceTab';
 
 // ==========================================
 // Types
 // ==========================================
 
-type AdminTab = 'overview' | 'queues' | 'security' | 'sleep';
+type AdminTab = 'overview' | 'queues' | 'security' | 'sleep' | 'billing' | 'marketplace' | 'voice';
 
 interface SystemAdminPageProps {
   context: AIContext;
@@ -35,10 +38,13 @@ interface SystemAdminPageProps {
 // ==========================================
 
 const TABS: TabDef<AdminTab>[] = [
-  { id: 'overview', label: 'Uebersicht', icon: '\u2699\uFE0F', description: 'System-Health und Metriken' },
+  { id: 'overview', label: 'Übersicht', icon: '\u2699\uFE0F', description: 'System-Health und Metriken' },
   { id: 'queues', label: 'Job Queues', icon: '\uD83D\uDCE6', description: 'BullMQ Queue Monitoring' },
   { id: 'security', label: 'Sicherheit', icon: '\uD83D\uDD12', description: 'Audit Log und Security Alerts' },
   { id: 'sleep', label: 'Sleep Compute', icon: '\uD83C\uDF19', description: 'Sleep-Time Background Processing' },
+  { id: 'billing', label: 'Billing', icon: '\uD83D\uDCB3', description: 'Stripe-Webhook Events und Replay' },
+  { id: 'marketplace', label: 'Marketplace', icon: '\uD83C\uDFEA', description: 'Community-Agent Moderation' },
+  { id: 'voice', label: 'Voice', icon: '\uD83C\uDF99\uFE0F', description: 'Voice-Pipeline Latenz und Provider' },
 ];
 
 const TabLoader = () => (
@@ -58,7 +64,7 @@ const SystemAdminPageComponent: React.FC<SystemAdminPageProps> = ({
 }) => {
   const { activeTab, handleTabChange } = useTabNavigation<AdminTab>({
     initialTab,
-    validTabs: ['overview', 'queues', 'security', 'sleep'],
+    validTabs: ['overview', 'queues', 'security', 'sleep', 'billing', 'marketplace', 'voice'],
     defaultTab: 'overview',
     basePath: '/admin',
     rootTab: 'overview',
@@ -95,6 +101,30 @@ const SystemAdminPageComponent: React.FC<SystemAdminPageProps> = ({
           <Suspense fallback={<TabLoader />}>
             <div className="hub-tab-content">
               <SleepComputeTab context={context} />
+            </div>
+          </Suspense>
+        );
+      case 'billing':
+        return (
+          <Suspense fallback={<TabLoader />}>
+            <div className="hub-tab-content">
+              <BillingTab />
+            </div>
+          </Suspense>
+        );
+      case 'marketplace':
+        return (
+          <Suspense fallback={<TabLoader />}>
+            <div className="hub-tab-content">
+              <MarketplaceTab />
+            </div>
+          </Suspense>
+        );
+      case 'voice':
+        return (
+          <Suspense fallback={<TabLoader />}>
+            <div className="hub-tab-content">
+              <VoiceTab />
             </div>
           </Suspense>
         );

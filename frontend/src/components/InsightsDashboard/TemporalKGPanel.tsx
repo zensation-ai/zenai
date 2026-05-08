@@ -2,16 +2,14 @@
  * TemporalKGPanel - Temporaler Wissensgraph
  *
  * Phase 54: Temporal Knowledge Graph visualization
- * - Temporale Widersprueche (Contradictions)
+ * - Temporale Widersprüche (Contradictions)
  * - Zeitraum-Abfragen (Time Range Query)
  * - Beziehungs-Verlauf (Relation Timeline)
  */
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, type CSSProperties } from 'react';
 import axios from 'axios';
 import type { AIContext } from '../ContextSwitcher';
-import './TemporalKGPanel.css';
-
 // ─── Types ────────────────────────────────────────────────
 
 interface TemporalContradiction {
@@ -86,7 +84,7 @@ function formatDateTime(iso: string | null): string {
 
 function relationLabel(type: string): string {
   const labels: Record<string, string> = {
-    supports: 'unterstuetzt',
+    supports: 'unterstützt',
     contradicts: 'widerspricht',
     extends: 'erweitert',
     related: 'verwandt',
@@ -135,7 +133,7 @@ export function TemporalKGPanel({ context }: TemporalKGPanelProps) {
         setContradictions(res.data.data || []);
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Fehler beim Laden der Widersprueche');
+      setError(err instanceof Error ? err.message : 'Fehler beim Laden der Widersprüche');
     } finally {
       setLoading(false);
     }
@@ -196,7 +194,7 @@ export function TemporalKGPanel({ context }: TemporalKGPanelProps) {
     <div className="tkg-panel">
       <div className="tkg-header">
         <h3 className="tkg-title">Temporaler Wissensgraph</h3>
-        <p className="tkg-subtitle">Zeitliche Beziehungen und Widersprueche analysieren</p>
+        <p className="tkg-subtitle">Zeitliche Beziehungen und Widersprüche analysieren</p>
       </div>
 
       {/* View Mode Tabs */}
@@ -206,7 +204,7 @@ export function TemporalKGPanel({ context }: TemporalKGPanelProps) {
           className={`tkg-tab ${viewMode === 'contradictions' ? 'tkg-tab-active' : ''}`}
           onClick={() => setViewMode('contradictions')}
         >
-          Widersprueche
+          Widersprüche
         </button>
         <button
           type="button"
@@ -252,7 +250,7 @@ export function TemporalKGPanel({ context }: TemporalKGPanelProps) {
           {contradictions.length === 0 ? (
             <div className="tkg-empty">
               <span className="tkg-empty-icon">✓</span>
-              <span>Keine temporalen Widersprueche erkannt</span>
+              <span>Keine temporalen Widersprüche erkannt</span>
               <span className="tkg-empty-sub">
                 Das Wissensnetz ist konsistent.
               </span>
@@ -325,7 +323,7 @@ export function TemporalKGPanel({ context }: TemporalKGPanelProps) {
 
           {hasQueried && queryResults.length === 0 && (
             <div className="tkg-empty">
-              <span>Keine Beziehungen im gewaehlten Zeitraum</span>
+              <span>Keine Beziehungen im gewählten Zeitraum</span>
             </div>
           )}
 
@@ -349,8 +347,8 @@ export function TemporalKGPanel({ context }: TemporalKGPanelProps) {
                     <div className="tkg-strength">
                       <div className="tkg-strength-bar">
                         <div
-                          className="tkg-strength-fill"
-                          style={{ width: strengthBar(r.strength) }}
+                          className="tkg-strength-fill w-[var(--bar)]"
+                          style={{ '--bar': strengthBar(r.strength) } as CSSProperties}
                         />
                       </div>
                       <span className="tkg-strength-label">{strengthBar(r.strength)}</span>
@@ -402,7 +400,7 @@ export function TemporalKGPanel({ context }: TemporalKGPanelProps) {
 
           {hasLoadedTimeline && timeline.length === 0 && (
             <div className="tkg-empty">
-              <span>Kein Verlauf fuer diese Beziehung gefunden</span>
+              <span>Kein Verlauf für diese Beziehung gefunden</span>
             </div>
           )}
 
@@ -420,7 +418,7 @@ export function TemporalKGPanel({ context }: TemporalKGPanelProps) {
                       <span className={`tkg-timeline-change tkg-change-${entry.change_type}`}>
                         {entry.change_type === 'created' ? 'Erstellt' :
                          entry.change_type === 'updated' ? 'Aktualisiert' :
-                         entry.change_type === 'deleted' ? 'Geloescht' :
+                         entry.change_type === 'deleted' ? 'Gelöscht' :
                          entry.change_type}
                       </span>
                     </div>
@@ -431,8 +429,8 @@ export function TemporalKGPanel({ context }: TemporalKGPanelProps) {
                       <div className="tkg-strength tkg-strength-sm">
                         <div className="tkg-strength-bar">
                           <div
-                            className="tkg-strength-fill"
-                            style={{ width: strengthBar(entry.strength) }}
+                            className="tkg-strength-fill w-[var(--bar)]"
+                            style={{ '--bar': strengthBar(entry.strength) } as CSSProperties}
                           />
                         </div>
                         <span className="tkg-strength-label">{strengthBar(entry.strength)}</span>

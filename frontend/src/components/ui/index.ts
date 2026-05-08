@@ -1,3 +1,4 @@
+// === Existing ZenAI UI components ===
 export { Icon } from './Icon';
 export type { IconSize } from './Icon';
 export { Kbd } from './Kbd';
@@ -5,3 +6,37 @@ export { AnimatedButton } from './AnimatedButton';
 export { BottomSheet } from './BottomSheet';
 export type { SnapPoint } from './BottomSheet';
 export { PullToRefresh } from './PullToRefresh';
+
+// === shadcn/ui components (Phase 79) ===
+export { Button, buttonVariants } from './button';
+export { Input } from './input';
+export { Card, CardHeader, CardFooter, CardTitle, CardDescription, CardContent } from './card';
+export { Badge, badgeVariants } from './badge';
+export { Dialog, DialogPortal, DialogOverlay, DialogTrigger, DialogClose, DialogContent, DialogHeader, DialogFooter, DialogTitle, DialogDescription } from './dialog';
+export { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuCheckboxItem, DropdownMenuRadioItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuShortcut, DropdownMenuGroup, DropdownMenuPortal, DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger, DropdownMenuRadioGroup } from './dropdown-menu';
+export { Tabs, TabsList, TabsTrigger, TabsContent } from './tabs';
+export { Select, SelectGroup, SelectValue, SelectTrigger, SelectContent, SelectLabel, SelectItem, SelectSeparator, SelectScrollUpButton, SelectScrollDownButton } from './select';
+export { Textarea } from './textarea';
+export { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from './tooltip';
+export { Table, TableHeader, TableBody, TableFooter, TableHead, TableRow, TableCell, TableCaption } from './table';
+export { Avatar, AvatarImage, AvatarFallback } from './avatar';
+export { Skeleton } from './skeleton';
+export { Progress } from './progress';
+export { Switch } from './switch';
+export { Separator } from './separator';
+export { Popover, PopoverTrigger, PopoverContent, PopoverAnchor } from './popover';
+export { Alert, AlertTitle, AlertDescription } from './alert';
+export { Breadcrumb, BreadcrumbList, BreadcrumbItem, BreadcrumbLink, BreadcrumbPage, BreadcrumbSeparator, BreadcrumbEllipsis } from './breadcrumb';
+export { Sheet, SheetTrigger, SheetClose, SheetContent, SheetHeader, SheetFooter, SheetTitle, SheetDescription } from './sheet';
+export { Command, CommandDialog, CommandInput, CommandList, CommandEmpty, CommandGroup, CommandItem, CommandShortcut, CommandSeparator } from './command';
+export { ScrollArea, ScrollBar } from './scroll-area';
+export { Collapsible, CollapsibleTrigger, CollapsibleContent } from './collapsible';
+export { Checkbox } from './checkbox';
+export { AlertDialog, AlertDialogPortal, AlertDialogOverlay, AlertDialogTrigger, AlertDialogContent, AlertDialogHeader, AlertDialogFooter, AlertDialogTitle, AlertDialogDescription, AlertDialogAction, AlertDialogCancel } from './alert-dialog';
+export { RadioGroup, RadioGroupItem } from './radio-group';
+export { Slider } from './slider';
+export { Calendar } from './calendar';
+export type { CalendarProps } from './calendar';
+export { ColorPicker, DEFAULT_COLORS } from './color-picker';
+export type { ColorPickerProps } from './color-picker';
+export { DatePicker, DateRangePicker } from './date-picker';

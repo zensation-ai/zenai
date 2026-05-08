@@ -5,18 +5,21 @@
  * message list, streaming response, typing indicator, and stop button.
  */
 
-import { useRef, useEffect, useState, type RefObject } from 'react';
+import { useRef, useEffect, useState, useCallback, type RefObject } from 'react';
 import { motion } from 'framer-motion';
+import { useVirtualizer } from '@tanstack/react-virtual';
 import {
   AI_PERSONALITY,
   EMPTY_STATE_MESSAGES,
   getRandomMessage,
 } from '../../utils/aiPersonality';
 import type { ChatMessage } from './types';
+import type { ThinkingTierInfo } from '../../hooks/useStreamingChat';
 import { ToolResultRenderer } from './ToolResultRenderer';
 import { ThinkingBlock } from './ThinkingBlock';
 import { ToolDisclosure } from './ToolDisclosure';
 import { ConfidenceBadge } from './ConfidenceBadge';
+import AiOutputBadge from '../shared/AiOutputBadge';
 import { Brain, User, BookOpen, Link, Pencil, RotateCcw, ThumbsUp, ThumbsDown } from 'lucide-react';
 import axios from 'axios';
 import { slideUp, springs, usePrefersReducedMotion } from '../../utils/animations';
@@ -111,21 +114,21 @@ interface ToolLabelInfo {
 
 const TOOL_LABELS: Record<string, ToolLabelInfo> = {
   // Core Ideas
-  search_ideas: { label: 'Durchsuche Gedanken', description: 'Durchsucht gespeicherte Gedanken nach relevanten Eintraegen...' },
+  search_ideas: { label: 'Durchsuche Gedanken', description: 'Durchsucht gespeicherte Gedanken nach relevanten Einträgen...' },
   create_idea: { label: 'Erstelle Gedanken', description: 'Erstellt einen neuen Gedanken-Eintrag...' },
   update_idea: { label: 'Aktualisiere Gedanken', description: 'Aktualisiert einen bestehenden Gedanken...' },
   archive_idea: { label: 'Archiviere Gedanken', description: 'Verschiebt einen Gedanken ins Archiv...' },
-  delete_idea: { label: 'Loesche Gedanken', description: 'Entfernt einen Gedanken dauerhaft...' },
-  get_related_ideas: { label: 'Suche Verbindungen', description: 'Findet verwandte Gedanken und Zusammenhaenge...' },
+  delete_idea: { label: 'Lösche Gedanken', description: 'Entfernt einen Gedanken dauerhaft...' },
+  get_related_ideas: { label: 'Suche Verbindungen', description: 'Findet verwandte Gedanken und Zusammenhänge...' },
   // Memory
-  remember: { label: 'Merke mir das', description: 'Speichert neue Information im Langzeitgedaechtnis...' },
+  remember: { label: 'Merke mir das', description: 'Speichert neue Information im Langzeitgedächtnis...' },
   recall: { label: 'Erinnere mich', description: 'Durchsucht Erinnerungen nach relevantem Wissen...' },
-  memory_introspect: { label: 'Pruefe Gedaechtnis', description: 'Analysiert den aktuellen Gedaechtniszustand...' },
+  memory_introspect: { label: 'Prüfe Gedächtnis', description: 'Analysiert den aktuellen Gedächtniszustand...' },
   memory_update: { label: 'Aktualisiere Erinnerung', description: 'Aktualisiert eine bestehende Erinnerung...' },
-  memory_delete: { label: 'Loesche Erinnerung', description: 'Entfernt eine veraltete Erinnerung...' },
-  memory_update_profile: { label: 'Aktualisiere Profil', description: 'Aktualisiert das Nutzerprofil im Gedaechtnis...' },
-  memory_rethink: { label: 'Ueberdenke Erinnerung', description: 'Bewertet eine Erinnerung neu und stuft sie ein...' },
-  memory_restructure: { label: 'Reorganisiere Gedaechtnis', description: 'Ordnet Erinnerungen fuer besseren Zugriff neu...' },
+  memory_delete: { label: 'Lösche Erinnerung', description: 'Entfernt eine veraltete Erinnerung...' },
+  memory_update_profile: { label: 'Aktualisiere Profil', description: 'Aktualisiert das Nutzerprofil im Gedächtnis...' },
+  memory_rethink: { label: 'Überdenke Erinnerung', description: 'Bewertet eine Erinnerung neu und stuft sie ein...' },
+  memory_restructure: { label: 'Reorganisiere Gedächtnis', description: 'Ordnet Erinnerungen für besseren Zugriff neu...' },
   // Web
   web_search: { label: 'Durchsuche das Web', description: 'Sucht im Web nach aktuellen Informationen...' },
   fetch_url: { label: 'Lade Webseite', description: 'Ruft den Inhalt einer Webseite ab...' },
@@ -136,12 +139,12 @@ const TOOL_LABELS: Record<string, ToolLabelInfo> = {
   github_list_issues: { label: 'Liste GitHub Issues', description: 'Listet Issues eines Repositories auf...' },
   github_pr_summary: { label: 'Lade PR-Zusammenfassung', description: 'Fasst einen Pull Request zusammen...' },
   // Project Context
-  analyze_project: { label: 'Analysiere Projekt', description: 'Fuehrt eine umfassende Projektanalyse durch...' },
-  get_project_summary: { label: 'Lade Projektuebersicht', description: 'Erstellt eine schnelle Projektuebersicht...' },
+  analyze_project: { label: 'Analysiere Projekt', description: 'Führt eine umfassende Projektanalyse durch...' },
+  get_project_summary: { label: 'Lade Projektübersicht', description: 'Erstellt eine schnelle Projektübersicht...' },
   list_project_files: { label: 'Liste Projektdateien', description: 'Zeigt die Projektstruktur an...' },
   // Code
-  execute_code: { label: 'Fuehre Code aus', description: 'Fuehrt Code sicher in einer Sandbox aus...' },
-  calculate: { label: 'Berechne', description: 'Fuehrt eine Berechnung durch...' },
+  execute_code: { label: 'Führe Code aus', description: 'Führt Code sicher in einer Sandbox aus...' },
+  calculate: { label: 'Berechne', description: 'Führt eine Berechnung durch...' },
   // Documents
   analyze_document: { label: 'Analysiere Dokument', description: 'Analysiert den Inhalt eines Dokuments...' },
   search_documents: { label: 'Durchsuche Dokumente', description: 'Durchsucht die Dokumentensammlung...' },
@@ -153,34 +156,34 @@ const TOOL_LABELS: Record<string, ToolLabelInfo> = {
   // Business
   get_revenue_metrics: { label: 'Lade Umsatzdaten', description: 'Ruft aktuelle Umsatzmetriken ab...' },
   get_traffic_analytics: { label: 'Lade Traffic-Daten', description: 'Analysiert Website-Traffic-Daten...' },
-  get_seo_performance: { label: 'Pruefe SEO', description: 'Prueft die SEO-Performance...' },
-  get_system_health: { label: 'Pruefe Systemstatus', description: 'Prueft den Systemgesundheitszustand...' },
-  generate_business_report: { label: 'Erstelle Bericht', description: 'Generiert einen Geschaeftsbericht...' },
-  identify_anomalies: { label: 'Suche Anomalien', description: 'Erkennt ungewoehnliche Muster in Daten...' },
-  compare_periods: { label: 'Vergleiche Zeitraeume', description: 'Vergleicht Metriken verschiedener Zeitraeume...' },
+  get_seo_performance: { label: 'Prüfe SEO', description: 'Prüft die SEO-Performance...' },
+  get_system_health: { label: 'Prüfe Systemstatus', description: 'Prüft den Systemgesundheitszustand...' },
+  generate_business_report: { label: 'Erstelle Bericht', description: 'Generiert einen Geschäftsbericht...' },
+  identify_anomalies: { label: 'Suche Anomalien', description: 'Erkennt ungewöhnliche Muster in Daten...' },
+  compare_periods: { label: 'Vergleiche Zeiträume', description: 'Vergleicht Metriken verschiedener Zeiträume...' },
   // Calendar/Email
   create_calendar_event: { label: 'Erstelle Kalender-Eintrag', description: 'Erstellt einen neuen Kalendereintrag...' },
   list_calendar_events: { label: 'Lade Kalender', description: 'Ruft anstehende Termine ab...' },
   draft_email: { label: 'Schreibe E-Mail-Entwurf', description: 'Erstellt einen E-Mail-Entwurf...' },
-  estimate_travel: { label: 'Berechne Reisezeit', description: 'Schaetzt die Reisezeit zwischen Orten...' },
+  estimate_travel: { label: 'Berechne Reisezeit', description: 'Schätzt die Reisezeit zwischen Orten...' },
   // Maps
   get_directions: { label: 'Berechne Route', description: 'Berechnet eine Route zwischen Orten...' },
-  get_opening_hours: { label: 'Pruefe Oeffnungszeiten', description: 'Ruft Oeffnungszeiten eines Ortes ab...' },
-  find_nearby_places: { label: 'Suche in der Naehe', description: 'Findet Orte in der Umgebung...' },
-  optimize_day_route: { label: 'Optimiere Tagesroute', description: 'Optimiert die Route fuer mehrere Ziele...' },
+  get_opening_hours: { label: 'Prüfe Öffnungszeiten', description: 'Ruft Öffnungszeiten eines Ortes ab...' },
+  find_nearby_places: { label: 'Suche in der Nähe', description: 'Findet Orte in der Umgebung...' },
+  optimize_day_route: { label: 'Optimiere Tagesroute', description: 'Optimiert die Route für mehrere Ziele...' },
   // Email Intelligence
   ask_inbox: { label: 'Durchsuche Posteingang', description: 'Durchsucht den Posteingang nach Informationen...' },
-  inbox_summary: { label: 'Lade Postfach-Uebersicht', description: 'Erstellt eine Zusammenfassung des Posteingangs...' },
+  inbox_summary: { label: 'Lade Postfach-Übersicht', description: 'Erstellt eine Zusammenfassung des Posteingangs...' },
   // MCP
   mcp_call_tool: { label: 'Rufe externes Tool', description: 'Ruft ein externes MCP-Werkzeug auf...' },
-  mcp_list_tools: { label: 'Liste verfuegbare Tools', description: 'Listet verfuegbare externe Werkzeuge auf...' },
+  mcp_list_tools: { label: 'Liste verfügbare Tools', description: 'Listet verfügbare externe Werkzeuge auf...' },
 };
 
 /** Get tool label info with graceful fallback for unknown tools */
 function getToolLabelInfo(name: string): ToolLabelInfo {
   return TOOL_LABELS[name] ?? {
     label: name.replace(/_/g, ' '),
-    description: `Fuehrt ${name.replace(/_/g, ' ')} aus...`,
+    description: `Führt ${name.replace(/_/g, ' ')} aus...`,
   };
 }
 
@@ -198,7 +201,7 @@ function formatDuration(ms: number): string {
 const AI_PHASES = [
   { label: 'Kontext laden...', icon: <Brain size={14} strokeWidth={1.5} />, delay: 0 },
   { label: 'Erinnerungen durchsuchen...', icon: <BookOpen size={14} strokeWidth={1.5} />, delay: 2000 },
-  { label: 'Zusammenhaenge analysieren...', icon: <Link size={14} strokeWidth={1.5} />, delay: 5000 },
+  { label: 'Zusammenhänge analysieren...', icon: <Link size={14} strokeWidth={1.5} />, delay: 5000 },
   { label: 'Antwort formulieren...', icon: <Pencil size={14} strokeWidth={1.5} />, delay: 8000 },
 ];
 
@@ -291,6 +294,7 @@ interface ChatMessageListProps {
   isStreaming: boolean;
   streamingContent: string;
   thinkingContent: string;
+  thinkingTier?: ThinkingTierInfo | null;
   sending: boolean;
   activeToolName: string | null;
   toolResults: ToolResult[];
@@ -316,6 +320,7 @@ export function ChatMessageList({
   isStreaming,
   streamingContent,
   thinkingContent,
+  thinkingTier,
   sending,
   activeToolName,
   toolResults,
@@ -352,9 +357,61 @@ export function ChatMessageList({
     }
   }, [sending, isStreaming]);
 
+  // ── Virtualization (messages > 30) ────────────────────────────────
+  const VIRTUALIZATION_THRESHOLD = 30;
+  const shouldVirtualize = messages.length > VIRTUALIZATION_THRESHOLD;
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  const virtualizer = useVirtualizer({
+    count: shouldVirtualize ? messages.length : 0,
+    getScrollElement: () => containerRef.current,
+    estimateSize: useCallback(() => 120, []),
+    overscan: 5,
+  });
+
+  // Scroll-to-bottom button visibility
+  const [showScrollBtn, setShowScrollBtn] = useState(false);
+  const handleScroll = useCallback(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const distanceFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
+    setShowScrollBtn(distanceFromBottom > 200);
+  }, []);
+
+  const scrollToBottom = useCallback(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    if (shouldVirtualize && messages.length > 0) {
+      virtualizer.scrollToIndex(messages.length - 1, { align: 'end' });
+    } else {
+      el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
+    }
+  }, [shouldVirtualize, messages.length, virtualizer]);
+
+  // Auto-scroll to bottom when message count changes or streaming content updates
+  useEffect(() => {
+    if (shouldVirtualize && messages.length > 0) {
+      virtualizer.scrollToIndex(messages.length - 1, { align: 'end' });
+    } else if (!shouldVirtualize && containerRef.current) {
+      // Only auto-scroll if user is already near the bottom (respect manual scroll-up)
+      const el = containerRef.current;
+      const distanceFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
+      if (distanceFromBottom < 200) {
+        el.scrollTop = el.scrollHeight;
+      }
+    }
+  }, [messages.length, streamingContent, shouldVirtualize]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
-    <div className="chat-messages" role="log" aria-live="polite" aria-atomic="false" aria-label="Chat-Nachrichten">
+    <div
+      ref={containerRef}
+      className="chat-messages inline-assist-enabled"
+      role="log"
+      aria-live="polite"
+      aria-atomic="false"
+      aria-label="Chat-Nachrichten"
+      onScroll={handleScroll}
+    >
       {messages.length === 0 ? (
         <div className="chat-empty neuro-empty-state neuro-human-fade-in" role="status" aria-label="Leerer Chat - Beginne eine Unterhaltung">
           <div className="chat-empty-avatar neuro-breathing" aria-hidden="true"><Brain size={32} strokeWidth={1.5} /></div>
@@ -367,7 +424,93 @@ export function ChatMessageList({
         </div>
       ) : (
         <>
-          {messages.map((message, index) => {
+          {/* ── Virtualized path (>30 messages) ───────────────── */}
+          {shouldVirtualize && (
+            <div style={{ position: 'relative', height: `${virtualizer.getTotalSize()}px` }}>
+              {virtualizer.getVirtualItems().map((vItem) => {
+                const message = messages[vItem.index];
+                return (
+                  <div
+                    key={vItem.key}
+                    data-index={vItem.index}
+                    ref={virtualizer.measureElement}
+                    style={{
+                      position: 'absolute',
+                      top: 0,
+                      left: 0,
+                      width: '100%',
+                      transform: `translateY(${vItem.start}px)`,
+                    }}
+                  >
+                    <div
+                      className={`chat-message ${message.role} neuro-human-fade-in`}
+                      role="article"
+                      aria-label={`Nachricht von ${message.role === 'assistant' ? AI_PERSONALITY.name : 'Dir'}`}
+                    >
+                      <div className="chat-message-avatar" title={message.role === 'assistant' ? AI_PERSONALITY.name : 'Du'} aria-hidden="true">
+                        {message.role === 'assistant' ? <Brain size={18} strokeWidth={1.5} /> : <User size={18} strokeWidth={1.5} />}
+                      </div>
+                      <div className="chat-message-content">
+                        <div className="chat-message-header">
+                          <span className="chat-message-name">{message.role === 'assistant' ? AI_PERSONALITY.name : 'Du'}</span>
+                          {/* Sprint 1.1: EU AI Act Art. 50 — visible AI-output disclosure on every assistant bubble. */}
+                          {message.role === 'assistant' && (
+                            <AiOutputBadge size="sm" variant="subtle" />
+                          )}
+                          <span className="chat-message-time">{formatTime(message.createdAt)}</span>
+                          {message.role === 'assistant' && message.metadata?.rag_confidence != null && (
+                            <ConfidenceBadge confidence={message.metadata.rag_confidence} />
+                          )}
+                        </div>
+                        {message.role === 'assistant' && message.thinking_content && (
+                          <ThinkingBlock content={message.thinking_content} isStreaming={false} />
+                        )}
+                        {message.role === 'assistant' && message.tool_calls && message.tool_calls.length > 0 && (
+                          <ToolDisclosure toolCalls={message.tool_calls} />
+                        )}
+                        <div className="chat-message-text">{renderContent(message.content, message.id)}</div>
+                        {message.role === 'assistant' && (message as ChatMessage & { retrievalConfidence?: number }).retrievalConfidence != null && (
+                          <ConfidenceBadge confidence={(message as ChatMessage & { retrievalConfidence: number }).retrievalConfidence} />
+                        )}
+                        {message.role === 'assistant' && (message as ChatMessage & { sources?: SourceCitation[] }).sources && (
+                          <SourceCitations sources={(message as ChatMessage & { sources: SourceCitation[] }).sources} />
+                        )}
+                        {!isStreaming && (
+                          <div className="chat-message-actions">
+                            {message.role === 'user' && onEditMessage && (
+                              <button type="button" className="chat-action-btn" title="Nachricht bearbeiten" aria-label="Nachricht bearbeiten" onClick={() => onEditMessage(message.id, message.content)}>
+                                <Pencil size={14} />
+                              </button>
+                            )}
+                            {message.role === 'assistant' && onRegenerateMessage && (
+                              <button type="button" className="chat-action-btn" title="Antwort neu generieren" aria-label="Antwort neu generieren" onClick={() => onRegenerateMessage(message.id)}>
+                                <RotateCcw size={14} />
+                              </button>
+                            )}
+                            {message.role === 'assistant' && (
+                              <>
+                                <button type="button" className="chat-action-btn chat-feedback-btn" title="Gute Antwort" aria-label="Positive Bewertung"
+                                  onClick={() => { axios.post(`/api/personal/feedback/emit`, { type: 'response_rating', source: message.id, target: 'assistant', value: 1, details: {} }).catch(() => {}); }}>
+                                  <ThumbsUp size={13} />
+                                </button>
+                                <button type="button" className="chat-action-btn chat-feedback-btn" title="Verbesserungswuerdig" aria-label="Negative Bewertung"
+                                  onClick={() => { axios.post(`/api/personal/feedback/emit`, { type: 'response_rating', source: message.id, target: 'assistant', value: -1, details: {} }).catch(() => {}); }}>
+                                  <ThumbsDown size={13} />
+                                </button>
+                              </>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {/* ── Regular path (≤30 messages) ───────────────────── */}
+          {!shouldVirtualize && messages.map((message, index) => {
             const isNewMessage = index >= prevMessageCountRef.current;
             const shouldAnimate = isNewMessage && !reducedMotion;
             const MessageWrapper = shouldAnimate ? motion.div : 'div';
@@ -490,14 +633,21 @@ export function ChatMessageList({
               <div className="chat-message-content">
                 <div className="chat-message-header">
                   <span className="chat-message-name">{AI_PERSONALITY.name}</span>
+                  {/* Sprint 1.1: EU AI Act Art. 50 — also visible during streaming. */}
+                  <AiOutputBadge size="sm" variant="subtle" />
                   <span className="chat-message-status streaming-indicator">schreibt...</span>
                 </div>
-                {thinkingContent && (
-                  <ThinkingBlock content={thinkingContent} isStreaming={true} />
+                {thinkingContent && (!thinkingTier || thinkingTier.display !== 'omitted') && (
+                  <ThinkingBlock
+                    content={thinkingContent}
+                    isStreaming={true}
+                    displayMode={thinkingTier?.display}
+                    label={thinkingTier?.label}
+                  />
                 )}
                 {/* Tool activity: completed tools + active tool */}
                 {(toolResults.length > 0 || activeToolName) && (
-                  <ol className="chat-tool-activity" aria-label="KI-Tool-Aktivitaeten">
+                  <ol className="chat-tool-activity" aria-label="KI-Tool-Aktivitäten">
                     {toolResults.map((tr, i) => {
                       const label = getToolLabel(tr.name);
                       const category = getToolCategory(tr.name);
@@ -545,7 +695,7 @@ export function ChatMessageList({
                       const category = getToolCategory(activeToolName);
                       return (
                         <li className="chat-tool-pill-wrapper">
-                          <span className="chat-tool-pill chat-tool-pill--active" role="status" aria-label={`${label} laeuft`}>
+                          <span className="chat-tool-pill chat-tool-pill--active" role="status" aria-label={`${label} läuft`}>
                             <span className="chat-tool-icon" aria-hidden="true">{getToolIcon(category)}</span>
                             {label}
                             <span className="chat-tool-spinner" aria-hidden="true" />
@@ -600,6 +750,19 @@ export function ChatMessageList({
           )}
           <div ref={messagesEndRef} />
         </>
+      )}
+      {showScrollBtn && (
+        <button
+          type="button"
+          onClick={scrollToBottom}
+          className="chat-scroll-to-bottom"
+          aria-label="Zum Ende scrollen"
+          title="Zum Ende scrollen"
+        >
+          <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <polyline points="6 9 12 15 18 9"/>
+          </svg>
+        </button>
       )}
     </div>
   );

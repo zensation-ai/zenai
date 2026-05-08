@@ -1,13 +1,11 @@
 import { useState, useEffect, useCallback } from 'react';
-import '../neurodesign.css';
-
-export type AIContext = 'personal' | 'work' | 'learning' | 'creative';
+export type AIContext = 'operations' | 'finance' | 'people' | 'strategy';
 
 const CONTEXT_CONFIG: Record<AIContext, { icon: string; label: string; color: string }> = {
-  personal: { icon: '🏠', label: 'Privat', color: 'var(--success)' },
-  work: { icon: '💼', label: 'Arbeit', color: 'var(--info)' },
-  learning: { icon: '📚', label: 'Lernen', color: 'var(--warning)' },
-  creative: { icon: '🎨', label: 'Kreativ', color: 'var(--accent)' },
+  operations: { icon: '⚙️', label: 'Operativ', color: 'var(--success)' },
+  finance: { icon: '💰', label: 'Finanzen', color: 'var(--info)' },
+  people: { icon: '👥', label: 'Team', color: 'var(--warning)' },
+  strategy: { icon: '🎯', label: 'Strategie', color: 'var(--accent)' },
 };
 
 const STORAGE_KEY = 'zenai-context';
@@ -52,13 +50,13 @@ export function useContextState() {
   const [context, setContextInternal] = useState<AIContext>(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
-      if (saved && ['personal', 'work', 'learning', 'creative'].includes(saved)) {
+      if (saved && ['operations', 'finance', 'people', 'strategy'].includes(saved)) {
         return saved as AIContext;
       }
     } catch {
       // localStorage not available
     }
-    return 'personal';
+    return 'operations';
   });
 
   const setContext = useCallback((newContext: AIContext) => {
@@ -95,7 +93,7 @@ export function getContextConfig(context: AIContext) {
 }
 
 /**
- * Get display label with icon for a context (e.g. "🏠 Privat")
+ * Get display label with icon for a context (e.g. "⚙️ Operativ")
  */
 export function getContextLabel(context: string): string {
   const config = CONTEXT_CONFIG[context as AIContext];

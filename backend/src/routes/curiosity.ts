@@ -9,12 +9,16 @@
 
 import { Router } from 'express';
 import { asyncHandler } from '../middleware/errorHandler';
+import { apiKeyAuth } from '../middleware/auth';
 import { logger } from '../utils/logger';
 import { queryContext } from '../utils/database-context';
 import type { AIContext } from '../types/context';
 import { detectGaps } from '../services/curiosity/gap-detector';
 
 const router = Router();
+
+// Sprint 1.5 Item 4 — blanket auth for all curiosity routes.
+router.use(apiKeyAuth);
 
 // ─── Knowledge Gaps ──────────────────────────────────────────────────────────
 

@@ -26,7 +26,7 @@ const TYPE_CHIPS: FilterChipDef[] = [
 const CATEGORY_CHIPS: FilterChipDef[] = [
   { id: 'cat-business', label: 'Business', group: 'category', value: 'business' },
   { id: 'cat-technical', label: 'Technisch', group: 'category', value: 'technical' },
-  { id: 'cat-personal', label: 'Persoenlich', group: 'category', value: 'personal' },
+  { id: 'cat-personal', label: 'Persönlich', group: 'category', value: 'personal' },
   { id: 'cat-learning', label: 'Lernen', group: 'category', value: 'learning' },
 ];
 

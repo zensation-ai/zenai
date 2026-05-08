@@ -19,9 +19,6 @@ import { AIContext } from './ContextSwitcher';
 import { useAsyncData } from '../hooks/useAsyncData';
 import { SkeletonLoader } from './SkeletonLoader';
 import { logError } from '../utils/errors';
-import '../neurodesign.css';
-import './MemoryTransparency.css';
-
 // ===========================================
 // Types
 // ===========================================

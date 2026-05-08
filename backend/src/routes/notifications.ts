@@ -35,8 +35,8 @@ export const notificationsRouter = Router();
  * Get context from request
  */
 function getContext(req: Request): AIContext {
-  const context = (req.headers['x-ai-context'] as string) || (req.query.context as string) || 'personal';
-  return isValidContext(context) ? context : 'personal';
+  const context = (req.headers['x-ai-context'] as string) || (req.query.context as string) || 'operations';
+  return isValidContext(context) ? context : 'operations';
 }
 
 // ============================================
@@ -317,7 +317,7 @@ notificationsRouter.get('/:context/notifications/history', apiKeyAuth, asyncHand
   getUserId(req); // auth check
 
   if (!isValidContext(context)) {
-    throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
+    throw new ValidationError('Invalid context. Use "operations", "finance", "people", or "strategy".');
   }
 
   const ctx = context as AIContext;
@@ -541,7 +541,7 @@ notificationsRouter.post(
     const { deviceToken, deviceId, deviceName, deviceModel, osVersion, appVersion } = req.body;
 
     if (!isValidContext(context)) {
-      throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
+      throw new ValidationError('Invalid context. Use "operations", "finance", "people", or "strategy".');
     }
 
     if (!deviceToken || typeof deviceToken !== 'string') {
@@ -589,7 +589,7 @@ notificationsRouter.delete(
     const token = deviceToken || deviceId;
 
     if (!isValidContext(context)) {
-      throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
+      throw new ValidationError('Invalid context. Use "operations", "finance", "people", or "strategy".');
     }
 
     if (!token) {
@@ -617,7 +617,7 @@ notificationsRouter.get(
     const { context } = req.params;
 
     if (!isValidContext(context)) {
-      throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
+      throw new ValidationError('Invalid context. Use "operations", "finance", "people", or "strategy".');
     }
 
     const devices = await getActiveDeviceTokens(context as AIContext);
@@ -652,7 +652,7 @@ notificationsRouter.get(
     const { context, deviceId } = req.params;
 
     if (!isValidContext(context)) {
-      throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
+      throw new ValidationError('Invalid context. Use "operations", "finance", "people", or "strategy".');
     }
 
     const preferences = await getPrefs(context as AIContext, deviceId);
@@ -709,7 +709,7 @@ notificationsRouter.put(
     const body = req.body;
 
     if (!isValidContext(context)) {
-      throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
+      throw new ValidationError('Invalid context. Use "operations", "finance", "people", or "strategy".');
     }
 
     // Accept both snake_case (frontend) and camelCase (legacy) formats
@@ -763,7 +763,7 @@ notificationsRouter.post(
     const { type, title, body, subtitle, draftId, ideaId, deviceId, data } = req.body;
 
     if (!isValidContext(context)) {
-      throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
+      throw new ValidationError('Invalid context. Use "operations", "finance", "people", or "strategy".');
     }
 
     if (!type || !title || !body) {
@@ -817,7 +817,7 @@ notificationsRouter.post(
     const { context, notificationId } = req.params;
 
     if (!isValidContext(context)) {
-      throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
+      throw new ValidationError('Invalid context. Use "operations", "finance", "people", or "strategy".');
     }
 
     await recordNotificationOpened(context as AIContext, notificationId);
@@ -842,7 +842,7 @@ notificationsRouter.get(
     const { days = '30' } = req.query;
 
     if (!isValidContext(context)) {
-      throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
+      throw new ValidationError('Invalid context. Use "operations", "finance", "people", or "strategy".');
     }
 
     const stats = await getNotificationStats(context as AIContext, parseInt(days as string, 10));
@@ -875,7 +875,7 @@ notificationsRouter.get(
     const { context } = req.params;
 
     if (!isValidContext(context)) {
-      throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
+      throw new ValidationError('Invalid context. Use "operations", "finance", "people", or "strategy".');
     }
 
     const status = getPushNotificationsStatus();

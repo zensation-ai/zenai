@@ -9,94 +9,19 @@
 
 import axios from 'axios';
 import * as cheerio from 'cheerio';
-import { lookup as dnsLookup } from 'dns/promises';
-import { isIP } from 'net';
+import { checkedAxiosGet } from '../utils/checked-http';
 import { logger } from '../utils/logger';
+import { checkPublicUrl, SSRF_ERROR_CODES, type SsrfErrorCode } from './security/ssrf-guard';
 
 // Type alias for Cheerio loaded document
 type CheerioDoc = ReturnType<typeof cheerio.load>;
 
-// ===========================================
-// SSRF Protection
-// ===========================================
-
-/**
- * Private/internal IP ranges that must never be fetched.
- * Prevents Server-Side Request Forgery (SSRF) attacks that could
- * leak cloud metadata, internal services, or database credentials.
- */
-const BLOCKED_IP_PATTERNS: RegExp[] = [
-  // Loopback
-  /^127\./,
-  /^0\./,
-  /^::1$/,
-  /^0:0:0:0:0:0:0:1$/,
-  // Private RFC 1918
-  /^10\./,
-  /^172\.(1[6-9]|2\d|3[01])\./,
-  /^192\.168\./,
-  // Link-local
-  /^169\.254\./,
-  /^fe80:/i,
-  // Cloud metadata endpoints
-  /^fd00:/i,
-  // IPv6 private
-  /^fc00:/i,
-  /^fd/i,
-];
-
-/** Hostnames that resolve to dangerous internal services */
-const BLOCKED_HOSTNAMES: string[] = [
-  'metadata.google.internal',
-  'metadata.goog',
-  'instance-data',
-  'kubernetes.default',
-  'kubernetes.default.svc',
-];
-
-/**
- * Check if an IP address belongs to a private/internal range.
- */
-function isPrivateIP(ip: string): boolean {
-  return BLOCKED_IP_PATTERNS.some(pattern => pattern.test(ip));
-}
-
-/**
- * Validate that a hostname does not resolve to a private/internal IP.
- * Prevents SSRF via DNS rebinding and direct IP access.
- */
-async function validateHostSSRF(hostname: string): Promise<{ safe: boolean; reason?: string }> {
-  // Block known dangerous hostnames
-  const lowerHost = hostname.toLowerCase();
-  if (BLOCKED_HOSTNAMES.some(h => lowerHost === h || lowerHost.endsWith('.' + h))) {
-    return { safe: false, reason: `Blocked hostname: ${hostname}` };
-  }
-
-  // Block localhost variants
-  if (lowerHost === 'localhost' || lowerHost === 'localhost.localdomain') {
-    return { safe: false, reason: 'Localhost access not allowed' };
-  }
-
-  // If hostname is already an IP, check directly
-  if (isIP(hostname)) {
-    if (isPrivateIP(hostname)) {
-      return { safe: false, reason: 'Private/internal IP address not allowed' };
-    }
-    return { safe: true };
-  }
-
-  // Resolve hostname to IP and check
+/** Parse a URL defensively for logging; returns `'invalid'` on malformed input. */
+function safeHostname(url: string): string {
   try {
-    const addresses = await dnsLookup(hostname, { all: true });
-    for (const addr of addresses) {
-      if (isPrivateIP(addr.address)) {
-        return { safe: false, reason: `Hostname resolves to private IP: ${addr.address}` };
-      }
-    }
-    return { safe: true };
-  } catch (e) {
-    logger.warn('SSRF DNS check failed (allowing fetch to proceed)', { error: e instanceof Error ? e.message : String(e) });
-    return { safe: true };
+    return new URL(url).hostname || 'invalid';
+  } catch {
+    return 'invalid';
   }
 }
 
@@ -222,32 +147,33 @@ export async function fetchUrl(url: string, options: FetchOptions = {}): Promise
 
   const startTime = Date.now();
 
-  // Validate URL
-  let parsedUrl: URL;
-  try {
-    parsedUrl = new URL(url);
-    if (!['http:', 'https:'].includes(parsedUrl.protocol)) {
+  // Validate URL + SSRF Protection (shared guard — see services/security/ssrf-guard.ts)
+  const check = await checkPublicUrl(url);
+  if (!check.safe) {
+    if (check.code === SSRF_ERROR_CODES.INVALID_URL) {
+      logger.warn('URL validation failed', { url, code: check.code, reason: check.reason });
+      return createErrorResult(url, 'Ungültige URL.');
+    }
+    if (check.code === SSRF_ERROR_CODES.UNSUPPORTED_PROTOCOL) {
       return createErrorResult(url, 'Nur HTTP und HTTPS URLs werden unterstützt.');
     }
-  } catch (e) {
-    logger.warn('URL validation failed', { url, error: e instanceof Error ? e.message : String(e) });
-    return createErrorResult(url, 'Ungültige URL.');
-  }
-
-  const domain = parsedUrl.hostname;
-
-  // SSRF Protection: Block requests to internal/private networks
-  const ssrfCheck = await validateHostSSRF(domain);
-  if (!ssrfCheck.safe) {
-    logger.warn('SSRF blocked', { url, domain, reason: ssrfCheck.reason });
+    logger.warn('SSRF blocked', {
+      url,
+      domain: safeHostname(url),
+      code: check.code as SsrfErrorCode,
+      reason: check.reason,
+    });
     return createErrorResult(url, 'Diese URL kann aus Sicherheitsgründen nicht abgerufen werden.');
   }
+
+  const parsedUrl = check.url;
+  const domain = parsedUrl.hostname;
 
   logger.info('Fetching URL', { url, domain });
 
   try {
     // Fetch the page
-    const response = await axios.get(url, {
+    const response = await checkedAxiosGet<string>(url, {
       timeout,
       headers: {
         'User-Agent': userAgent,
@@ -532,8 +458,22 @@ export function isValidUrl(url: string): boolean {
   }
 }
 
-/** Exported for use by other services that need SSRF validation */
-export { validateHostSSRF };
+/**
+ * Backwards-compatible SSRF check — use `assertPublicUrl` from
+ * `services/security/ssrf-guard.ts` in new code. Returns the legacy
+ * `{ safe, reason }` shape that older call sites expect.
+ */
+export async function validateHostSSRF(
+  hostname: string
+): Promise<{ safe: boolean; reason?: string }> {
+  // Accept either a bare hostname or a full URL (callers historically passed both).
+  const url = hostname.includes('://') ? hostname : `https://${hostname}`;
+  const check = await checkPublicUrl(url);
+  if (check.safe) {
+    return { safe: true };
+  }
+  return { safe: false, reason: check.reason };
+}
 
 /**
  * Extract domain from URL

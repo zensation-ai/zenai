@@ -16,8 +16,6 @@ import type { AIContext } from './ContextSwitcher';
 import { ToolMarketplace } from './ToolMarketplace';
 import { ServerSetupWizard } from './ServerSetupWizard';
 import { useConfirm } from './ConfirmDialog';
-import './MCPConnectionsPage.css';
-
 const API_URL = import.meta.env.VITE_API_URL || '';
 const API_KEY = import.meta.env.VITE_API_KEY || '';
 
@@ -371,7 +369,7 @@ export function MCPConnectionsPage({ context }: MCPConnectionsPageProps) {
         </div>
         {activeTab === 'servers' && (
           <button className="mcp-btn mcp-btn--primary" onClick={openAddForm}>
-            + Server hinzufuegen
+            + Server hinzufügen
           </button>
         )}
       </div>
@@ -440,7 +438,7 @@ export function MCPConnectionsPage({ context }: MCPConnectionsPageProps) {
           {error && (
             <div className="mcp-error" role="alert">
               <span>{error}</span>
-              <button className="mcp-error-dismiss" onClick={() => setError(null)} aria-label="Fehler schliessen">
+              <button className="mcp-error-dismiss" onClick={() => setError(null)} aria-label="Fehler schließen">
                 x
               </button>
             </div>
@@ -449,7 +447,7 @@ export function MCPConnectionsPage({ context }: MCPConnectionsPageProps) {
           {/* Add/Edit Form */}
           {showForm && (
             <div className="mcp-form-card">
-              <h4>{editId ? 'Server bearbeiten' : 'Neuen MCP Server hinzufuegen'}</h4>
+              <h4>{editId ? 'Server bearbeiten' : 'Neuen MCP Server hinzufügen'}</h4>
 
               <div className="mcp-form-grid">
                 <div className="mcp-form-group">
@@ -568,7 +566,7 @@ export function MCPConnectionsPage({ context }: MCPConnectionsPageProps) {
                   onClick={handleSubmit}
                   disabled={submitting || !form.name.trim()}
                 >
-                  {submitting ? 'Speichern...' : editId ? 'Aktualisieren' : 'Hinzufuegen'}
+                  {submitting ? 'Speichern...' : editId ? 'Aktualisieren' : 'Hinzufügen'}
                 </button>
               </div>
             </div>
@@ -581,13 +579,12 @@ export function MCPConnectionsPage({ context }: MCPConnectionsPageProps) {
             <div className="mcp-empty">
               <div className="mcp-empty-icon">MCP</div>
               <h4>Keine MCP Server konfiguriert</h4>
-              <p>Fuege einen externen MCP Server hinzu oder besuche den Marketplace.</p>
+              <p>Füge einen externen MCP Server hinzu oder besuche den Marketplace.</p>
               <button
-                className="mcp-btn mcp-btn--primary"
-                style={{ marginTop: '0.75rem' }}
+                className="mcp-btn mcp-btn--primary mt-3"
                 onClick={() => setActiveTab('marketplace')}
               >
-                Marketplace oeffnen
+                Marketplace öffnen
               </button>
             </div>
           ) : (
@@ -637,7 +634,7 @@ export function MCPConnectionsPage({ context }: MCPConnectionsPageProps) {
                         disabled={actionLoading[server.id]}
                         title="Health Check"
                       >
-                        Pruefen
+                        Prüfen
                       </button>
                       <button
                         className="mcp-btn mcp-btn--small"
@@ -663,7 +660,7 @@ export function MCPConnectionsPage({ context }: MCPConnectionsPageProps) {
                       <div className="mcp-details-section">
                         <h5>Tools ({serverTools[server.id]?.length || 0})</h5>
                         {(serverTools[server.id] || []).length === 0 ? (
-                          <p className="mcp-details-empty">Keine Tools verfuegbar</p>
+                          <p className="mcp-details-empty">Keine Tools verfügbar</p>
                         ) : (
                           <div className="mcp-tools-grid">
                             {(serverTools[server.id] || []).map(tool => (
@@ -681,7 +678,7 @@ export function MCPConnectionsPage({ context }: MCPConnectionsPageProps) {
                       <div className="mcp-details-section">
                         <h5>Ressourcen ({serverResources[server.id]?.length || 0})</h5>
                         {(serverResources[server.id] || []).length === 0 ? (
-                          <p className="mcp-details-empty">Keine Ressourcen verfuegbar</p>
+                          <p className="mcp-details-empty">Keine Ressourcen verfügbar</p>
                         ) : (
                           <div className="mcp-resources-list">
                             {(serverResources[server.id] || []).map(resource => (

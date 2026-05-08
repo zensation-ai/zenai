@@ -159,7 +159,7 @@ describe('Strategy Agent', () => {
         expectedConfidence: 0.8,
       });
 
-      const plan = await planRetrieval('test query', 'personal', ['semantic', 'keyword', 'graph']);
+      const plan = await planRetrieval('test query', 'operations', ['semantic', 'keyword', 'graph']);
       expect(plan.steps.length).toBe(2);
       expect(plan.steps[0].interface).toBe('semantic');
       expect(plan.steps[1].interface).toBe('keyword');
@@ -170,7 +170,7 @@ describe('Strategy Agent', () => {
     it('should fall back to default plan when Claude fails', async () => {
       mockQueryClaudeJSON.mockRejectedValueOnce(new Error('API error'));
 
-      const plan = await planRetrieval('React hooks', 'personal', ['semantic', 'keyword']);
+      const plan = await planRetrieval('React hooks', 'operations', ['semantic', 'keyword']);
       expect(plan.steps.length).toBeGreaterThanOrEqual(1);
       expect(plan.reasoning).toContain('Default plan');
     });
@@ -180,7 +180,7 @@ describe('Strategy Agent', () => {
         steps: [{ interface: 'invalid_interface', params: {} }],
       });
 
-      const plan = await planRetrieval('test', 'personal', ['semantic', 'keyword']);
+      const plan = await planRetrieval('test', 'operations', ['semantic', 'keyword']);
       expect(plan.reasoning).toContain('Default plan');
     });
 
@@ -189,7 +189,7 @@ describe('Strategy Agent', () => {
         steps: [],
       });
 
-      const plan = await planRetrieval('test', 'personal', ['semantic']);
+      const plan = await planRetrieval('test', 'operations', ['semantic']);
       expect(plan.reasoning).toContain('Default plan');
     });
 
@@ -207,7 +207,7 @@ describe('Strategy Agent', () => {
         expectedConfidence: 0.9,
       });
 
-      const plan = await planRetrieval('test', 'personal', ['semantic', 'keyword', 'graph', 'community']);
+      const plan = await planRetrieval('test', 'operations', ['semantic', 'keyword', 'graph', 'community']);
       expect(plan.steps.length).toBeLessThanOrEqual(4);
     });
 
@@ -217,7 +217,7 @@ describe('Strategy Agent', () => {
         expectedConfidence: 1.5,
       });
 
-      const plan = await planRetrieval('test', 'personal', ['semantic']);
+      const plan = await planRetrieval('test', 'operations', ['semantic']);
       expect(plan.expectedConfidence).toBeLessThanOrEqual(1);
     });
 
@@ -230,7 +230,7 @@ describe('Strategy Agent', () => {
         reasoning: 'test',
       });
 
-      const plan = await planRetrieval('test', 'personal', ['semantic', 'keyword']);
+      const plan = await planRetrieval('test', 'operations', ['semantic', 'keyword']);
       expect(plan.steps.length).toBe(1);
       expect(plan.steps[0].interface).toBe('semantic');
     });
@@ -355,7 +355,7 @@ describe('Iterative Retriever', () => {
       queryType: 'simple_lookup',
     };
 
-    const { result, metadata } = await executeRetrievalPlan(plan, 'personal' as any, 'test query');
+    const { result, metadata } = await executeRetrievalPlan(plan, 'operations' as any, 'test query');
 
     expect(result.results.length).toBeGreaterThan(0);
     expect(result.confidence).toBeGreaterThan(0);
@@ -374,7 +374,7 @@ describe('Iterative Retriever', () => {
       queryType: 'simple_lookup',
     };
 
-    const { result, metadata } = await executeRetrievalPlan(plan, 'personal' as any, 'React hooks');
+    const { result, metadata } = await executeRetrievalPlan(plan, 'operations' as any, 'React hooks');
 
     expect(result.results.length).toBeGreaterThan(0);
     expect(metadata.interfacesUsed).toContain('keyword');
@@ -395,7 +395,7 @@ describe('Iterative Retriever', () => {
       queryType: 'simple_lookup',
     };
 
-    const { result, metadata } = await executeRetrievalPlan(plan, 'personal' as any, 'test query about the topic');
+    const { result, metadata } = await executeRetrievalPlan(plan, 'operations' as any, 'test query about the topic');
 
     // Should complete in 1 iteration if confidence is high enough
     expect(metadata.iterations).toBeLessThanOrEqual(2);
@@ -424,13 +424,13 @@ describe('Iterative Retriever', () => {
       queryType: 'simple_lookup',
     };
 
-    const { result, metadata } = await executeRetrievalPlan(plan, 'personal' as any, 'test query');
+    const { result, metadata } = await executeRetrievalPlan(plan, 'operations' as any, 'test query');
 
     expect(metadata.iterations).toBeGreaterThan(1);
     expect(result.results.length).toBeGreaterThan(0);
   });
 
-  it('should not exceed MAX_ITERATIONS (3)', async () => {
+  it('should not exceed MAX_ITERATIONS (5, raised in H2.4)', async () => {
     // Always return weak results to force max iterations
     mockGenerateEmbedding.mockResolvedValue([0.1, 0.2, 0.3]);
     mockQueryContext.mockResolvedValue(makeLowConfidenceResults());
@@ -446,9 +446,44 @@ describe('Iterative Retriever', () => {
       queryType: 'simple_lookup',
     };
 
-    const { metadata } = await executeRetrievalPlan(plan, 'personal' as any, 'test');
+    const { metadata } = await executeRetrievalPlan(plan, 'operations' as any, 'test');
 
-    expect(metadata.iterations).toBeLessThanOrEqual(3);
+    // Phase H2.4: cap raised from 3 to 5 per MemR3 diminishing-returns
+    // findings. The retrieval is bounded by the strict ceiling here.
+    expect(metadata.iterations).toBeLessThanOrEqual(5);
+  });
+
+  it('Phase H2.4: should early-exit when completeness threshold is met', async () => {
+    // High-confidence results with diverse, plentiful evidence will push
+    // both `confidence` and `completeness` above the 0.8 thresholds —
+    // the retriever should terminate after iteration 1 regardless of
+    // the lifted MAX_ITERATIONS=5 cap.
+    mockGenerateEmbedding.mockResolvedValue([0.1, 0.2, 0.3]);
+    mockQueryContext.mockResolvedValue({
+      rows: [
+        { id: 'a', title: 'A', content: 'Detailed unique content with substantial keyword overlap to the query about the topic and answer terms', rank: '1.0', similarity: '0.95' },
+        { id: 'b', title: 'B', content: 'Different but equally detailed coverage of the topic with new search terms in fresh content', rank: '0.95', similarity: '0.92' },
+        { id: 'c', title: 'C', content: 'Third unique angle with comprehensive evidence and additional matching keyword density throughout', rank: '0.9', similarity: '0.9' },
+        { id: 'd', title: 'D', content: 'Fourth distinctive document covering further aspects and complementary information about the query', rank: '0.85', similarity: '0.85' },
+      ],
+    });
+
+    const plan: RetrievalPlan = {
+      steps: [{ interface: 'semantic', params: { query: 'topic answer search' } }],
+      reasoning: 'Initial plan',
+      expectedConfidence: 0.7,
+      queryType: 'simple_lookup',
+    };
+
+    const { result, metadata } = await executeRetrievalPlan(plan, 'operations' as any, 'topic answer search');
+
+    // Either confidence or completeness OR both should have triggered
+    // the early exit on iteration 1. Hard guarantee: did NOT run all 5.
+    expect(metadata.iterations).toBeLessThan(5);
+    // One of the early-exit signals must have crossed the threshold.
+    expect(
+      result.confidence >= 0.8 || result.completeness >= 0.8,
+    ).toBe(true);
   });
 
   it('should execute parallel steps without dependencies', async () => {
@@ -467,7 +502,7 @@ describe('Iterative Retriever', () => {
       queryType: 'simple_lookup',
     };
 
-    const { result, metadata } = await executeRetrievalPlan(plan, 'personal' as any, 'test query about the topic');
+    const { result, metadata } = await executeRetrievalPlan(plan, 'operations' as any, 'test query about the topic');
 
     expect(metadata.interfacesUsed).toContain('semantic');
     expect(metadata.interfacesUsed).toContain('keyword');
@@ -491,7 +526,7 @@ describe('Iterative Retriever', () => {
       queryType: 'multi_hop',
     };
 
-    const { result, metadata } = await executeRetrievalPlan(plan, 'personal' as any, 'test query about connections');
+    const { result, metadata } = await executeRetrievalPlan(plan, 'operations' as any, 'test query about connections');
 
     expect(metadata.interfacesUsed).toContain('semantic');
     expect(metadata.interfacesUsed).toContain('graph');
@@ -512,7 +547,7 @@ describe('Iterative Retriever', () => {
       queryType: 'simple_lookup',
     };
 
-    const { result } = await executeRetrievalPlan(plan, 'personal' as any, 'test query about the topic');
+    const { result } = await executeRetrievalPlan(plan, 'operations' as any, 'test query about the topic');
 
     // Should still have results from keyword search
     expect(result.results.length).toBeGreaterThan(0);
@@ -532,7 +567,7 @@ describe('Iterative Retriever', () => {
       queryType: 'multi_hop',
     };
 
-    const { result, metadata } = await executeRetrievalPlan(plan, 'personal' as any, 'test entity connections');
+    const { result, metadata } = await executeRetrievalPlan(plan, 'operations' as any, 'test entity connections');
 
     expect(metadata.interfacesUsed).toContain('graph');
     expect(result.results.length).toBeGreaterThan(0);
@@ -562,7 +597,7 @@ describe('Iterative Retriever', () => {
       queryType: 'analytical',
     };
 
-    const { result, metadata } = await executeRetrievalPlan(plan, 'personal' as any, 'test broad overview');
+    const { result, metadata } = await executeRetrievalPlan(plan, 'operations' as any, 'test broad overview');
 
     expect(metadata.interfacesUsed).toContain('community');
     expect(result.results.length).toBeGreaterThan(0);
@@ -592,7 +627,7 @@ describe('Iterative Retriever', () => {
       queryType: 'simple_lookup',
     };
 
-    const { metadata } = await executeRetrievalPlan(plan, 'personal' as any, 'test query about the topic');
+    const { metadata } = await executeRetrievalPlan(plan, 'operations' as any, 'test query about the topic');
 
     expect(metadata.stepTimings.length).toBeGreaterThanOrEqual(2);
     for (const timing of metadata.stepTimings) {
@@ -623,7 +658,7 @@ describe('Iterative Retriever', () => {
       queryType: 'simple_lookup',
     };
 
-    const { result } = await executeRetrievalPlan(plan, 'personal' as any, 'test query');
+    const { result } = await executeRetrievalPlan(plan, 'operations' as any, 'test query');
 
     // Should have only 1 unique result despite appearing in 2 sources
     const uniqueIds = new Set(result.results.map(r => r.id));
@@ -647,7 +682,7 @@ describe('Iterative Retriever', () => {
       queryType: 'simple_lookup',
     };
 
-    const { result, metadata } = await executeRetrievalPlan(plan, 'personal' as any, 'test direct');
+    const { result, metadata } = await executeRetrievalPlan(plan, 'operations' as any, 'test direct');
 
     expect(metadata.interfacesUsed).toContain('chunk_read');
     expect(result.results.length).toBe(1);
@@ -693,7 +728,7 @@ describe('A-RAG Integration', () => {
     // Plan
     const plan = await planRetrieval(
       'TypeScript patterns',
-      'personal',
+      'operations',
       ['semantic', 'keyword', 'graph']
     );
 
@@ -702,7 +737,7 @@ describe('A-RAG Integration', () => {
     // Execute
     const { result, metadata } = await executeRetrievalPlan(
       plan,
-      'personal' as any,
+      'operations' as any,
       'TypeScript patterns'
     );
 

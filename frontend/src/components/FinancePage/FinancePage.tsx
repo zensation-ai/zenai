@@ -8,6 +8,7 @@
 import { useCallback } from 'react';
 import { HubPage, type TabDef } from '../HubPage';
 import { QueryErrorState } from '../QueryErrorState';
+import { ListSkeleton, DashboardSkeleton } from '../skeletons/PageSkeletons';
 import { useTabNavigation } from '../../hooks/useTabNavigation';
 import { useFinanceData } from './useFinanceData';
 import { OverviewTab } from './OverviewTab';
@@ -16,8 +17,6 @@ import { BudgetsTab } from './BudgetsTab';
 import { GoalsTab } from './GoalsTab';
 import type { TransactionType } from './types';
 import type { AIContext } from '../ContextSwitcher';
-import './FinancePage.css';
-
 type FinanceTab = 'overview' | 'transactions' | 'budgets' | 'goals';
 
 const TABS: readonly TabDef<FinanceTab>[] = [
@@ -40,12 +39,12 @@ export function FinancePage({ context, initialTab = 'overview', onBack }: Financ
     initialTab,
     validTabs: VALID_TABS,
     defaultTab: 'overview',
-    basePath: '/finance',
+    basePath: '/cockpit/finanzen',
   });
 
   const {
     overview, transactions, transactionsTotal, accounts, budgets, goals, loading, error,
-    fetchTransactions,
+    fetchTransactions, refetchAll,
     createTransaction, deleteTransaction,
     createBudget, updateBudget, deleteBudget,
     createGoal, updateGoal, deleteGoal,
@@ -72,36 +71,44 @@ export function FinancePage({ context, initialTab = 'overview', onBack }: Financ
       ariaLabel="Finanzen Navigation"
     >
       {error && !loading && (
-        <QueryErrorState error={error} refetch={() => fetchTransactions()} />
+        <QueryErrorState error={error} refetch={refetchAll} />
       )}
       {activeTab === 'overview' && (
-        <OverviewTab overview={overview} loading={loading} onCreateAccount={() => handleTabChange('transactions')} />
+        loading
+          ? <DashboardSkeleton />
+          : <OverviewTab overview={overview} loading={loading} onCreateAccount={() => handleTabChange('transactions')} />
       )}
       {activeTab === 'transactions' && (
-        <TransactionsTab
-          transactions={transactions}
-          total={transactionsTotal}
-          accounts={accounts}
-          onSearch={handleTransactionSearch}
-          onCreate={createTransaction}
-          onDelete={deleteTransaction}
-        />
+        loading
+          ? <ListSkeleton rows={6} />
+          : <TransactionsTab
+              transactions={transactions}
+              total={transactionsTotal}
+              accounts={accounts}
+              onSearch={handleTransactionSearch}
+              onCreate={createTransaction}
+              onDelete={deleteTransaction}
+            />
       )}
       {activeTab === 'budgets' && (
-        <BudgetsTab
-          budgets={budgets}
-          onCreate={createBudget}
-          onUpdate={updateBudget}
-          onDelete={deleteBudget}
-        />
+        loading
+          ? <ListSkeleton rows={4} />
+          : <BudgetsTab
+              budgets={budgets}
+              onCreate={createBudget}
+              onUpdate={updateBudget}
+              onDelete={deleteBudget}
+            />
       )}
       {activeTab === 'goals' && (
-        <GoalsTab
-          goals={goals}
-          onCreate={createGoal}
-          onUpdate={updateGoal}
-          onDelete={deleteGoal}
-        />
+        loading
+          ? <ListSkeleton rows={4} />
+          : <GoalsTab
+              goals={goals}
+              onCreate={createGoal}
+              onUpdate={updateGoal}
+              onDelete={deleteGoal}
+            />
       )}
     </HubPage>
   );

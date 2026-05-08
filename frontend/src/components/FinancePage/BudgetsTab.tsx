@@ -2,13 +2,16 @@
  * Budgets Tab - Phase 4
  */
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, type CSSProperties } from 'react';
+import { Wallet } from 'lucide-react';
 import type { Budget, BudgetPeriod } from './types';
 import { BUDGET_PERIOD_LABELS, DEFAULT_CATEGORIES } from './types';
 import { useEscapeKey } from '../../hooks/useClickOutside';
 import { useFocusTrap } from '../../hooks/useFocusTrap';
 import { useAnnounce } from '../../hooks/useAnnounce';
 import { useConfirm } from '../ConfirmDialog';
+import { Button } from '@/components/ui/button';
+import { EmptyState } from '@/components/ui/empty-state';
 
 interface BudgetsTabProps {
   budgets: Budget[];
@@ -56,8 +59,8 @@ export function BudgetsTab({ budgets, onCreate, onDelete }: BudgetsTabProps) {
   return (
     <div className="budgets-tab">
       <div className="finance-toolbar">
-        <div style={{ flex: 1 }} />
-        <button className="btn-primary" onClick={() => setShowForm(true)}>+ Budget</button>
+        <div className="flex-1" />
+        <button className="btn-primary active:scale-[0.97] transition-transform duration-100" onClick={() => setShowForm(true)}>+ Budget</button>
       </div>
 
       <div className="budget-list">
@@ -72,13 +75,13 @@ export function BudgetsTab({ budgets, onCreate, onDelete }: BudgetsTabProps) {
                   <span className="budget-name">{budget.name}</span>
                   <span className="budget-category">{budget.category} · {BUDGET_PERIOD_LABELS[budget.period]}</span>
                 </div>
-                <button className="contact-action-btn danger" onClick={() => handleDelete(budget.id)} title="Löschen">✕</button>
+                <button className="contact-action-btn danger" onClick={() => handleDelete(budget.id)} title="Löschen" aria-label="Löschen">✕</button>
               </div>
               <div className="budget-progress">
                 <div className="budget-bar-track">
                   <div
-                    className={`budget-bar-fill ${isOver ? 'over' : isWarning ? 'warning' : ''}`}
-                    style={{ width: `${Math.min(100, percent)}%` }}
+                    className={`budget-bar-fill w-[var(--bar)] ${isOver ? 'over' : isWarning ? 'warning' : ''}`}
+                    style={{ '--bar': `${Math.min(100, percent)}%` } as CSSProperties}
                   />
                 </div>
                 <div className="budget-amounts">
@@ -91,11 +94,16 @@ export function BudgetsTab({ budgets, onCreate, onDelete }: BudgetsTabProps) {
           );
         })}
         {budgets.length === 0 && (
-          <div className="finance-empty">
-            <span className="finance-empty-icon">📊</span>
-            <p>Keine Budgets</p>
-            <p className="finance-empty-sub">Setze Limits für deine Ausgaben-Kategorien</p>
-          </div>
+          <EmptyState
+            icon={<Wallet size={40} strokeWidth={1.5} />}
+            title="Keine Budgets"
+            description="Setze Limits für deine Ausgaben-Kategorien."
+            action={
+              <Button variant="default" size="sm" onClick={() => setShowForm(true)}>
+                Budget erstellen
+              </Button>
+            }
+          />
         )}
       </div>
 
@@ -104,7 +112,7 @@ export function BudgetsTab({ budgets, onCreate, onDelete }: BudgetsTabProps) {
           <div ref={focusTrapRef} className="contact-form-modal" onClick={e => e.stopPropagation()} role="dialog" aria-modal="true" aria-label="Neues Budget">
             <div className="contact-form-header">
               <h2>Neues Budget</h2>
-              <button className="contact-form-close" onClick={() => setShowForm(false)} aria-label="Schliessen">✕</button>
+              <button className="contact-form-close" onClick={() => setShowForm(false)} aria-label="Schließen">✕</button>
             </div>
             <div className="contact-form">
               <div className="form-row">
@@ -175,7 +183,7 @@ export function BudgetsTab({ budgets, onCreate, onDelete }: BudgetsTabProps) {
               <div className="contact-form-actions">
                 <button className="btn-secondary" onClick={() => setShowForm(false)}>Abbrechen</button>
                 <button
-                  className="btn-primary"
+                  className="btn-primary active:scale-[0.97] transition-transform duration-100"
                   onClick={handleSubmit}
                   disabled={!formData.name || !formData.category || !formData.amount_limit}
                 >Erstellen</button>

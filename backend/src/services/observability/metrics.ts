@@ -33,6 +33,12 @@ let memoryOpsCounter: OtelInstrument = null;
 let dbPoolActiveGauge: OtelInstrument = null;
 let dbPoolWaitingGauge: OtelInstrument = null;
 let dbPoolErrorCounter: OtelInstrument = null;
+let siemForwardCounter: OtelInstrument = null;
+let guardrailBlockCounter: OtelInstrument = null;
+let stripeWebhookReplayCounter: OtelInstrument = null;
+let voiceLatencyHistogram: OtelInstrument = null;
+let voiceFailoverCounter: OtelInstrument = null;
+let voiceBreakerCounter: OtelInstrument = null;
 
 let metricsInitialized = false;
 
@@ -103,6 +109,31 @@ export async function initMetrics(): Promise<boolean> {
 
     dbPoolErrorCounter = meter.createCounter('db.pool.errors', {
       description: 'Database pool errors',
+    });
+
+    siemForwardCounter = meter.createCounter('security.siem.forward', {
+      description: 'SIEM forward attempts labelled by provider + result',
+    });
+
+    guardrailBlockCounter = meter.createCounter('security.guardrail.blocks', {
+      description: 'Chat guardrail output-scanner blocks by finding + surface',
+    });
+
+    stripeWebhookReplayCounter = meter.createCounter('billing.webhook.replay', {
+      description: 'Stripe webhook replays by action + dry-run flag',
+    });
+
+    voiceLatencyHistogram = meter.createHistogram('voice.phase.latency', {
+      description: 'Voice pipeline phase latency (audio_ingest | stt | llm | tts | end_to_end)',
+      unit: 'ms',
+    });
+
+    voiceFailoverCounter = meter.createCounter('voice.provider.failover', {
+      description: 'STT/TTS provider failovers by from/to provider + reason',
+    });
+
+    voiceBreakerCounter = meter.createCounter('voice.circuit_breaker.events', {
+      description: 'Voice-provider circuit breaker state transitions',
     });
 
     metricsInitialized = true;
@@ -234,6 +265,118 @@ export function recordPoolMetric(event: 'acquire' | 'release' | 'error' | 'waiti
   }
 
   addSnapshot(`db.pool.${event === 'acquire' || event === 'release' ? 'active' : event === 'error' ? 'errors' : 'waiting'}`, event === 'error' ? 'counter' : 'gauge', event === 'release' ? -1 : 1, labels);
+}
+
+/**
+ * Record a SIEM forward attempt.
+ *
+ * Used by `siem-forwarder.ts` on every datadog/syslog/noop forward so the
+ * Prometheus alert `SIEMForwardFailureRate` has data. Noop forwards count
+ * as "ok=true, provider=noop" so the rule can filter them out via label.
+ */
+export function recordSIEMForward(
+  provider: string,
+  ok: boolean,
+  attrs?: { severity?: string; error?: string },
+): void {
+  const labels: Record<string, string> = {
+    provider,
+    result: ok ? 'ok' : 'fail',
+  };
+  if (attrs?.severity) labels.severity = attrs.severity;
+  if (attrs?.error) labels.error = attrs.error.slice(0, 64);
+
+  addInstrument(siemForwardCounter, 1, labels);
+  addSnapshot('security.siem.forward', 'counter', 1, labels);
+}
+
+/**
+ * Record a chat guardrail block.
+ *
+ * Emitted from `streaming.ts` whenever `scanOutput()` trips. `finding` is the
+ * first matched rule id (e.g. `openai_key`, `jailbreak_echo`) so we can chart
+ * which rules fire in practice.
+ */
+export function recordGuardrailBlock(
+  finding: string,
+  attrs?: { surface?: string; context?: string },
+): void {
+  const labels: Record<string, string> = { finding };
+  if (attrs?.surface) labels.surface = attrs.surface;
+  if (attrs?.context) labels.context = attrs.context;
+
+  addInstrument(guardrailBlockCounter, 1, labels);
+  addSnapshot('security.guardrail.blocks', 'counter', 1, labels);
+}
+
+/**
+ * Record a Stripe webhook replay attempt.
+ *
+ * Called from `billing.replayStripeEvent` for every admin-triggered replay so
+ * we can alert on unusual spikes (e.g. an operator force-replaying dozens of
+ * events in a short window).
+ */
+export function recordStripeWebhookReplay(
+  action: string,
+  attrs?: { dryRun?: boolean; processed?: boolean; eventType?: string },
+): void {
+  const labels: Record<string, string> = { action };
+  if (attrs?.dryRun !== undefined) labels.dry_run = String(attrs.dryRun);
+  if (attrs?.processed !== undefined) labels.processed = String(attrs.processed);
+  if (attrs?.eventType) labels.event_type = attrs.eventType;
+
+  addInstrument(stripeWebhookReplayCounter, 1, labels);
+  addSnapshot('billing.webhook.replay', 'counter', 1, labels);
+}
+
+/**
+ * Record a voice-pipeline phase duration.
+ *
+ * Sprint 1.13. `phase` is one of audio_ingest | stt | llm | tts | end_to_end.
+ * Labels: provider (e.g. `whisper`, `elevenlabs`), outcome (`ok`|`fallback`|`error`).
+ */
+export function recordVoiceLatency(
+  phase: string,
+  durationMs: number,
+  attrs?: { provider?: string; outcome?: string },
+): void {
+  const labels: Record<string, string> = { phase };
+  if (attrs?.provider) labels.provider = attrs.provider;
+  if (attrs?.outcome) labels.outcome = attrs.outcome;
+
+  addInstrument(voiceLatencyHistogram, durationMs, labels);
+  addSnapshot('voice.phase.latency', 'histogram', durationMs, labels);
+}
+
+/**
+ * Record a voice-provider failover (preferred → fallback).
+ *
+ * Sprint 1.13. Labels: `from`, `to`, `reason` (status-503, rate-limit-429,
+ * timeout, unavailable, etc).
+ */
+export function recordVoiceFailover(
+  fromProvider: string,
+  toProvider: string,
+  reason: string,
+): void {
+  const labels = { from: fromProvider, to: toProvider, reason };
+  addInstrument(voiceFailoverCounter, 1, labels);
+  addSnapshot('voice.provider.failover', 'counter', 1, labels);
+}
+
+/**
+ * Record a circuit-breaker state transition for a voice provider.
+ *
+ * Sprint 1.13. `state` is one of `open` (opened after N failures),
+ * `half_open` (cool-down expired), `closed` (success probe).
+ */
+export function recordVoiceCircuitBreaker(
+  provider: string,
+  state: 'open' | 'half_open' | 'closed',
+): void {
+  const labels = { provider, state };
+  addInstrument(voiceBreakerCounter, 1, labels);
+  addSnapshot('voice.circuit_breaker.events', 'counter', 1, labels);
 }
 
 /**

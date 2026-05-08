@@ -31,6 +31,31 @@ import {
   addMessage,
   updateSessionTitle,
 } from './chat-sessions';
+import { applyWaitForcingToSystemPrompt } from '../reasoning/wait-forcing';
+import { applyQuoteSourcePrompt } from '../reasoning/quote-source-prompting';
+
+/**
+ * Phase H7.1 binding — read the H7_WAIT_FORCING env flag once at module
+ * load. When truthy, chat paths through this module append the s1
+ * wait-forcing instruction to the system prompt for detected Cat 1
+ * (Multi-Hop) + Cat 2 (Temporal) queries. Default OFF in production
+ * until eval validates the lift.
+ */
+const H7_WAIT_FORCING_DEFAULT = (() => {
+  const raw = process.env.H7_WAIT_FORCING;
+  if (typeof raw !== 'string') return false;
+  return raw === 'true' || raw === '1' || raw.toLowerCase() === 'yes';
+})();
+
+/**
+ * Phase H3.5 binding — read H3_QUOTE_SOURCE env flag once at module
+ * load. Default OFF.
+ */
+const H3_QUOTE_SOURCE_DEFAULT = (() => {
+  const raw = process.env.H3_QUOTE_SOURCE;
+  if (typeof raw !== 'string') return false;
+  return raw === 'true' || raw === '1' || raw.toLowerCase() === 'yes';
+})();
 
 // ===========================================
 // System Prompt
@@ -77,10 +102,11 @@ Speichere NICHT: Triviale Gespraechsinhalte, temporaere Infos ("Ich bin gerade m
 export async function generateResponse(
   sessionId: string,
   userMessage: string,
-  contextType: 'personal' | 'work' | 'learning' | 'creative' | 'demo' = 'personal',
-  thinkingMode: ThinkingMode = 'assist'
+  contextType: 'operations' | 'finance' | 'people' | 'strategy' | 'demo' = 'operations',
+  thinkingMode: ThinkingMode = 'assist',
+  userId?: string
 ): Promise<string> {
-  const enhanced = await generateEnhancedResponse(sessionId, userMessage, contextType, thinkingMode);
+  const enhanced = await generateEnhancedResponse(sessionId, userMessage, contextType, thinkingMode, userId);
   return enhanced.content;
 }
 
@@ -91,8 +117,9 @@ export async function generateResponse(
 export async function generateEnhancedResponse(
   sessionId: string,
   userMessage: string,
-  contextType: 'personal' | 'work' | 'learning' | 'creative' | 'demo' = 'personal',
-  thinkingMode: ThinkingMode = 'assist'
+  contextType: 'operations' | 'finance' | 'people' | 'strategy' | 'demo' = 'operations',
+  thinkingMode: ThinkingMode = 'assist',
+  userId?: string
 ): Promise<EnhancedResponse> {
   const startTime = Date.now();
 
@@ -104,6 +131,7 @@ export async function generateEnhancedResponse(
   const executionContext: ToolExecutionContext = {
     aiContext: contextType,
     sessionId,
+    userId: userId || undefined,
   };
 
   // Detect optimal processing mode (with semantic fallback for ambiguous messages)
@@ -162,7 +190,7 @@ export async function generateEnhancedResponse(
   try {
     // Use HiMeS memory coordinator for enhanced context
     // Enable serendipity for agent mode or creative context (2-hop graph expansion)
-    const enableSerendipity = modeResult.mode === 'agent' || contextType === 'creative';
+    const enableSerendipity = modeResult.mode === 'agent' || contextType === 'strategy';
 
     const enhancedContext = await memoryCoordinator.prepareEnhancedContext(
       sessionId,
@@ -462,6 +490,44 @@ export async function generateEnhancedResponse(
   let response: string;
   let toolsCalled: Array<{ name: string; input: Record<string, unknown>; result: string }> = [];
 
+  // ── Phase H7.1 binding: s1 wait-forcing ────────────────────────────
+  // For detected Cat 1 (Multi-Hop) + Cat 2 (Temporal) queries, append a
+  // verbatim instruction that asks the model to do the same thing s1's
+  // appended Wait-token does at the token level: produce a first
+  // analytical pass, pause, reconsider, then commit. Default OFF — eval
+  // harness flips via env H7_WAIT_FORCING.
+  const waitForcing = applyWaitForcingToSystemPrompt(
+    systemPrompt,
+    userMessage,
+    { enable: H7_WAIT_FORCING_DEFAULT },
+  );
+  systemPrompt = waitForcing.prompt;
+  if (waitForcing.applied) {
+    logger.info('s1 wait-forcing applied to chat message', {
+      sessionId,
+      category: waitForcing.category,
+      confidence: waitForcing.confidence,
+    });
+  }
+
+  // ── Phase H3.5 binding: quote-the-source prompting ─────────────────
+  // Force verbatim quoting of supporting facts when evidence is
+  // available in the system prompt (RAG / memory enhancement / graph
+  // context already injected). hasEvidence proxy: systemPrompt grew
+  // beyond GENERAL_CHAT_SYSTEM_PROMPT — meaning some retrieval section
+  // was added. Default OFF via env H3_QUOTE_SOURCE.
+  const quoteSource = applyQuoteSourcePrompt(systemPrompt, {
+    enable: H3_QUOTE_SOURCE_DEFAULT,
+    hasEvidence: systemPrompt.length > GENERAL_CHAT_SYSTEM_PROMPT.length + 100,
+  });
+  systemPrompt = quoteSource.prompt;
+  if (quoteSource.applied) {
+    logger.info('H3.5 quote-source directive applied to chat message', {
+      sessionId,
+      reason: quoteSource.reason,
+    });
+  }
+
   // Process based on detected mode
   // Phase 100: Token budget guard — log if system prompt is getting large
   const systemPromptTokens = estimateTokensBudget(systemPrompt);
@@ -616,7 +682,7 @@ export async function generateEnhancedResponse(
 export async function sendMessage(
   sessionId: string,
   userMessage: string,
-  contextType: 'personal' | 'work' | 'learning' | 'creative' | 'demo' = 'personal',
+  contextType: 'operations' | 'finance' | 'people' | 'strategy' | 'demo' = 'operations',
   includeMetadata: boolean = false,
   thinkingMode: ThinkingMode = 'assist',
   userId?: string
@@ -639,11 +705,11 @@ export async function sendMessage(
   let metadata: ResponseMetadata | undefined;
 
   if (includeMetadata) {
-    const enhancedResult = await generateEnhancedResponse(sessionId, userMessage, contextType, thinkingMode);
+    const enhancedResult = await generateEnhancedResponse(sessionId, userMessage, contextType, thinkingMode, userId);
     aiResponse = enhancedResult.content;
     metadata = enhancedResult.metadata;
   } else {
-    aiResponse = await generateResponse(sessionId, userMessage, contextType, thinkingMode);
+    aiResponse = await generateResponse(sessionId, userMessage, contextType, thinkingMode, userId);
   }
 
   // Store AI response
@@ -664,7 +730,7 @@ export async function sendMessage(
   // Phase 127: Post-response fact check (fire-and-forget)
   if (aiResponse && aiResponse.length > 100) {
     import('../reasoning/fact-checker').then(({ runFactCheck }) => {
-      runFactCheck(contextType as 'personal' | 'work' | 'learning' | 'creative', aiResponse).then(result => {
+      runFactCheck(contextType as 'operations' | 'finance' | 'people' | 'strategy', aiResponse).then(result => {
         if (result.hasContradictions) {
           logger.warn('Fact check found contradictions', {
             sessionId,
@@ -686,7 +752,7 @@ export async function sendMessage(
         content: `Tool: ${t.name || 'unknown'} → ${typeof t.result === 'string' ? t.result.slice(0, 200) : 'result'}`,
       }));
       const gwtDomain = metadata?.gwtAnalysis?.domain || null;
-      storeChain(contextType as 'personal' | 'work' | 'learning' | 'creative', {
+      storeChain(contextType as 'operations' | 'finance' | 'people' | 'strategy', {
         userId: userId || '00000000-0000-0000-0000-000000000001',
         query: userMessage,
         steps,
@@ -747,7 +813,7 @@ async function recordEpisode(
   sessionId: string,
   trigger: string,
   response: string,
-  context: 'personal' | 'work' | 'learning' | 'creative' | 'demo'
+  context: 'operations' | 'finance' | 'people' | 'strategy' | 'demo'
 ): Promise<void> {
   try {
     await episodicMemory.store(trigger, response, sessionId, context);

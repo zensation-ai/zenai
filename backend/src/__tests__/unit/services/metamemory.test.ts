@@ -7,7 +7,7 @@ const mockQueryContext = jest.fn();
 jest.mock('../../../utils/database-context', () => ({
   queryContext: (...args: unknown[]) => mockQueryContext(...args),
   AIContext: {},
-  isValidContext: (c: string) => ['personal', 'work', 'learning', 'creative'].includes(c),
+  isValidContext: (c: string) => ['operations', 'finance', 'people', 'strategy'].includes(c),
 }));
 
 jest.mock('../../../utils/logger', () => ({
@@ -61,7 +61,7 @@ describe('getMetamemoryStats', () => {
       ],
     } as any);
 
-    const result = await getMetamemoryStats('personal', 'user-1');
+    const result = await getMetamemoryStats('operations', 'user-1');
 
     expect(result.totalFacts).toBe(50);
     expect(result.highConfidence).toBe(30);
@@ -86,7 +86,7 @@ describe('getMetamemoryStats', () => {
     mockQueryContext.mockResolvedValueOnce({ rows: [] } as any);
     mockQueryContext.mockResolvedValueOnce({ rows: [] } as any);
 
-    const result = await getMetamemoryStats('personal', 'user-1');
+    const result = await getMetamemoryStats('operations', 'user-1');
 
     expect(result.totalFacts).toBe(0);
     expect(result.highConfidence).toBe(0);
@@ -102,16 +102,16 @@ describe('getMetamemoryStats', () => {
     mockQueryContext.mockResolvedValueOnce({ rows: [] } as any);
     mockQueryContext.mockResolvedValueOnce({ rows: [] } as any);
 
-    await getMetamemoryStats('work', 'user-1');
+    await getMetamemoryStats('finance', 'user-1');
 
     expect(mockQueryContext).toHaveBeenCalledTimes(3);
-    expect(mockQueryContext).toHaveBeenNthCalledWith(1, 'work', expect.stringContaining('COUNT'), ['user-1']);
-    expect(mockQueryContext).toHaveBeenNthCalledWith(2, 'work', expect.stringContaining('GROUP BY category'), ['user-1']);
-    expect(mockQueryContext).toHaveBeenNthCalledWith(3, 'work', expect.stringContaining('HAVING COUNT'), ['user-1']);
+    expect(mockQueryContext).toHaveBeenNthCalledWith(1, 'finance', expect.stringContaining('COUNT'), ['user-1']);
+    expect(mockQueryContext).toHaveBeenNthCalledWith(2, 'finance', expect.stringContaining('GROUP BY category'), ['user-1']);
+    expect(mockQueryContext).toHaveBeenNthCalledWith(3, 'finance', expect.stringContaining('HAVING COUNT'), ['user-1']);
   });
 
   it('should work with all valid contexts', async () => {
-    for (const ctx of ['personal', 'work', 'learning', 'creative'] as const) {
+    for (const ctx of ['operations', 'finance', 'people', 'strategy'] as const) {
       mockQueryContext.mockReset();
       mockQueryContext.mockResolvedValueOnce({
         rows: [{ total: '1', high_confidence: '1', medium_confidence: '0', low_confidence: '0', avg_confidence: '1.0' }],
@@ -136,7 +136,7 @@ describe('getMetamemoryStats', () => {
     } as any);
     mockQueryContext.mockResolvedValueOnce({ rows: [] } as any);
 
-    const result = await getMetamemoryStats('personal', 'user-1');
+    const result = await getMetamemoryStats('operations', 'user-1');
     expect(result.topCategories).toHaveLength(10);
     expect(result.topCategories[0].count).toBe(100);
   });
@@ -144,7 +144,7 @@ describe('getMetamemoryStats', () => {
   it('should propagate database errors', async () => {
     mockQueryContext.mockRejectedValueOnce(new Error('DB timeout'));
 
-    await expect(getMetamemoryStats('personal', 'user-1')).rejects.toThrow('DB timeout');
+    await expect(getMetamemoryStats('operations', 'user-1')).rejects.toThrow('DB timeout');
   });
 });
 
@@ -166,7 +166,7 @@ describe('getKnowledgeGaps', () => {
       ],
     } as any);
 
-    const gaps = await getKnowledgeGaps('personal', 'user-1');
+    const gaps = await getKnowledgeGaps('operations', 'user-1');
 
     expect(gaps).toHaveLength(2);
     expect(gaps[0]).toEqual({
@@ -181,7 +181,7 @@ describe('getKnowledgeGaps', () => {
   it('should return empty array when no gaps', async () => {
     mockQueryContext.mockResolvedValueOnce({ rows: [] } as any);
 
-    const gaps = await getKnowledgeGaps('personal', 'user-1');
+    const gaps = await getKnowledgeGaps('operations', 'user-1');
     expect(gaps).toEqual([]);
   });
 
@@ -190,7 +190,7 @@ describe('getKnowledgeGaps', () => {
       rows: [{ category: 'quantum physics', count: '3' }],
     } as any);
 
-    const gaps = await getKnowledgeGaps('personal', 'user-1');
+    const gaps = await getKnowledgeGaps('operations', 'user-1');
     expect(gaps[0].suggestion).toContain('quantum physics');
     expect(gaps[0].suggestion).toContain('3 facts stored');
   });
@@ -198,10 +198,10 @@ describe('getKnowledgeGaps', () => {
   it('should query with correct SQL containing HAVING clause', async () => {
     mockQueryContext.mockResolvedValueOnce({ rows: [] } as any);
 
-    await getKnowledgeGaps('learning', 'user-1');
+    await getKnowledgeGaps('people', 'user-1');
 
     expect(mockQueryContext).toHaveBeenCalledWith(
-      'learning',
+      'people',
       expect.stringContaining('HAVING COUNT(*) < 5'),
       ['user-1'],
     );
@@ -210,7 +210,7 @@ describe('getKnowledgeGaps', () => {
   it('should propagate database errors', async () => {
     mockQueryContext.mockRejectedValueOnce(new Error('Query failed'));
 
-    await expect(getKnowledgeGaps('personal', 'user-1')).rejects.toThrow('Query failed');
+    await expect(getKnowledgeGaps('operations', 'user-1')).rejects.toThrow('Query failed');
   });
 });
 
@@ -233,7 +233,7 @@ describe('getConfidenceDistribution', () => {
       ],
     } as any);
 
-    const buckets = await getConfidenceDistribution('personal', 'user-1');
+    const buckets = await getConfidenceDistribution('operations', 'user-1');
 
     expect(buckets).toHaveLength(3);
     expect(buckets[0]).toEqual({ range: '0.9-1.0', count: 20 });
@@ -244,17 +244,17 @@ describe('getConfidenceDistribution', () => {
   it('should return empty array when no facts exist', async () => {
     mockQueryContext.mockResolvedValueOnce({ rows: [] } as any);
 
-    const buckets = await getConfidenceDistribution('personal', 'user-1');
+    const buckets = await getConfidenceDistribution('operations', 'user-1');
     expect(buckets).toEqual([]);
   });
 
   it('should query with user_id parameter', async () => {
     mockQueryContext.mockResolvedValueOnce({ rows: [] } as any);
 
-    await getConfidenceDistribution('work', 'user-42');
+    await getConfidenceDistribution('finance', 'user-42');
 
     expect(mockQueryContext).toHaveBeenCalledWith(
-      'work',
+      'finance',
       expect.stringContaining('CASE'),
       ['user-42'],
     );
@@ -265,7 +265,7 @@ describe('getConfidenceDistribution', () => {
       rows: [{ range: '0.0-0.1', count: '999' }],
     } as any);
 
-    const buckets = await getConfidenceDistribution('personal', 'user-1');
+    const buckets = await getConfidenceDistribution('operations', 'user-1');
     expect(typeof buckets[0].count).toBe('number');
     expect(buckets[0].count).toBe(999);
   });
@@ -273,7 +273,7 @@ describe('getConfidenceDistribution', () => {
   it('should propagate database errors', async () => {
     mockQueryContext.mockRejectedValueOnce(new Error('Timeout'));
 
-    await expect(getConfidenceDistribution('personal', 'user-1')).rejects.toThrow('Timeout');
+    await expect(getConfidenceDistribution('operations', 'user-1')).rejects.toThrow('Timeout');
   });
 });
 
@@ -298,7 +298,7 @@ describe('findConflicts', () => {
       }],
     } as any);
 
-    const conflicts = await findConflicts('personal', 'user-1');
+    const conflicts = await findConflicts('operations', 'user-1');
 
     expect(conflicts).toHaveLength(1);
     expect(conflicts[0].fact1Id).toBe('f1');
@@ -311,17 +311,17 @@ describe('findConflicts', () => {
   it('should return empty array when no conflicts', async () => {
     mockQueryContext.mockResolvedValueOnce({ rows: [] } as any);
 
-    const conflicts = await findConflicts('personal', 'user-1');
+    const conflicts = await findConflicts('operations', 'user-1');
     expect(conflicts).toEqual([]);
   });
 
   it('should use default similarity threshold of 0.4', async () => {
     mockQueryContext.mockResolvedValueOnce({ rows: [] } as any);
 
-    await findConflicts('personal', 'user-1');
+    await findConflicts('operations', 'user-1');
 
     expect(mockQueryContext).toHaveBeenCalledWith(
-      'personal',
+      'operations',
       expect.stringContaining('similarity'),
       ['user-1', 0.4],
     );
@@ -330,10 +330,10 @@ describe('findConflicts', () => {
   it('should use custom similarity threshold', async () => {
     mockQueryContext.mockResolvedValueOnce({ rows: [] } as any);
 
-    await findConflicts('personal', 'user-1', 0.7);
+    await findConflicts('operations', 'user-1', 0.7);
 
     expect(mockQueryContext).toHaveBeenCalledWith(
-      'personal',
+      'operations',
       expect.any(String),
       ['user-1', 0.7],
     );
@@ -342,14 +342,14 @@ describe('findConflicts', () => {
   it('should gracefully handle pg_trgm not available', async () => {
     mockQueryContext.mockRejectedValueOnce(new Error('function similarity(text, text) does not exist'));
 
-    const conflicts = await findConflicts('personal', 'user-1');
+    const conflicts = await findConflicts('operations', 'user-1');
     expect(conflicts).toEqual([]);
   });
 
   it('should gracefully handle any database error', async () => {
     mockQueryContext.mockRejectedValueOnce(new Error('Connection refused'));
 
-    const conflicts = await findConflicts('personal', 'user-1');
+    const conflicts = await findConflicts('operations', 'user-1');
     expect(conflicts).toEqual([]);
   });
 
@@ -361,7 +361,7 @@ describe('findConflicts', () => {
       ],
     } as any);
 
-    const conflicts = await findConflicts('personal', 'user-1');
+    const conflicts = await findConflicts('operations', 'user-1');
 
     expect(conflicts).toHaveLength(2);
     expect(conflicts[0].similarity).toBe(0.9);
@@ -369,7 +369,7 @@ describe('findConflicts', () => {
   });
 
   it('should work with all valid contexts', async () => {
-    for (const ctx of ['personal', 'work', 'learning', 'creative'] as const) {
+    for (const ctx of ['operations', 'finance', 'people', 'strategy'] as const) {
       mockQueryContext.mockReset();
       mockQueryContext.mockResolvedValueOnce({ rows: [] } as any);
 

@@ -7,7 +7,7 @@ export const EXTRACTION_BATCH_SIZE = 20;
 
 /**
  * Determine the target AI context for a Slack channel.
- * Priority: workspace mapping > DB record > name heuristic > 'work'
+ * Priority: workspace mapping > DB record > name heuristic > 'finance'
  */
 export async function getChannelContext(
   workspaceId: string,
@@ -42,7 +42,7 @@ export async function getChannelContext(
     return inferChannelContext(channelName);
   } catch (err) {
     logger.error('Failed to determine channel context', err instanceof Error ? err : undefined, { workspaceId, channelId });
-    return 'work';
+    return 'finance';
   }
 }
 

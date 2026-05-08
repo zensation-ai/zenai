@@ -1,0 +1,43 @@
+# docker-compose.dev.yml — Development infrastructure only
+# Usage: docker compose -f docker-compose.dev.yml up -d
+# Then run backend/frontend locally (pnpm dev)
+#
+# Provides:
+#   - PostgreSQL 16 with pgvector extension (port 5432)
+#   - Redis 7 (port 6379)
+#
+# Connect with:
+#   DATABASE_URL=postgresql://zenai:zenai_dev@localhost:5432/zenai
+#   REDIS_URL=redis://localhost:6379
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: zenai
+      POSTGRES_USER: zenai
+      POSTGRES_PASSWORD: zenai_dev
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U zenai"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  pgdata:

@@ -25,6 +25,7 @@ import {
   JUDGE0_LANGUAGE_IDS,
 } from './executor-provider';
 import { randomUUID } from 'crypto';
+import { checkedFetch } from '../../utils/checked-http';
 
 // ===========================================
 // Judge0 API Types
@@ -377,7 +378,7 @@ export class Judge0Executor implements ExecutorProvider {
     );
 
     try {
-      return await fetch(url, {
+      return await checkedFetch(url, {
         method,
         headers,
         body: body ? JSON.stringify(body) : undefined,

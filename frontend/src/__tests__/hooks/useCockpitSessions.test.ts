@@ -32,7 +32,7 @@ describe('useCockpitSessions', () => {
       data: { data: { id: 'server-1', title: 'Neuer Chat' } },
     });
 
-    const { result } = renderHook(() => useCockpitSessions('personal'));
+    const { result } = renderHook(() => useCockpitSessions('operations'));
 
     // Wait for the auto-create useEffect
     await vi.waitFor(() => {
@@ -41,7 +41,7 @@ describe('useCockpitSessions', () => {
 
     expect(result.current.sessions[0].id).toBe('server-1');
     expect(result.current.activeSessionId).toBe('server-1');
-    expect(mockedAxios.post).toHaveBeenCalledWith('/api/personal/chat/sessions', { type: 'general' });
+    expect(mockedAxios.post).toHaveBeenCalledWith('/api/chat/sessions', { context: 'operations', type: 'general' });
   });
 
   // -----------------------------------------------
@@ -57,7 +57,7 @@ describe('useCockpitSessions', () => {
     };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(stored));
 
-    const { result } = renderHook(() => useCockpitSessions('personal'));
+    const { result } = renderHook(() => useCockpitSessions('operations'));
 
     expect(result.current.sessions).toHaveLength(2);
     expect(result.current.sessions[0].id).toBe('stored-1');
@@ -79,7 +79,7 @@ describe('useCockpitSessions', () => {
       data: { data: { id: 'new-1', title: 'Neuer Chat' } },
     });
 
-    const { result } = renderHook(() => useCockpitSessions('work'));
+    const { result } = renderHook(() => useCockpitSessions('finance'));
 
     let newId: string | undefined;
     await act(async () => {
@@ -89,7 +89,7 @@ describe('useCockpitSessions', () => {
     expect(newId).toBe('new-1');
     expect(result.current.sessions).toHaveLength(2);
     expect(result.current.activeSessionId).toBe('new-1');
-    expect(mockedAxios.post).toHaveBeenCalledWith('/api/work/chat/sessions', { type: 'general' });
+    expect(mockedAxios.post).toHaveBeenCalledWith('/api/chat/sessions', { context: 'finance', type: 'general' });
   });
 
   it('creates a local-only session on API failure', async () => {
@@ -101,7 +101,7 @@ describe('useCockpitSessions', () => {
 
     mockedAxios.post.mockRejectedValueOnce(new Error('Network Error'));
 
-    const { result } = renderHook(() => useCockpitSessions('personal'));
+    const { result } = renderHook(() => useCockpitSessions('operations'));
 
     let newId: string | undefined;
     await act(async () => {
@@ -126,7 +126,7 @@ describe('useCockpitSessions', () => {
     };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(stored));
 
-    const { result } = renderHook(() => useCockpitSessions('personal'));
+    const { result } = renderHook(() => useCockpitSessions('operations'));
 
     act(() => {
       result.current.switchSession('s2');
@@ -149,7 +149,7 @@ describe('useCockpitSessions', () => {
     };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(stored));
 
-    const { result } = renderHook(() => useCockpitSessions('personal'));
+    const { result } = renderHook(() => useCockpitSessions('operations'));
 
     act(() => {
       result.current.switchToPrev();
@@ -168,7 +168,7 @@ describe('useCockpitSessions', () => {
     };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(stored));
 
-    const { result } = renderHook(() => useCockpitSessions('personal'));
+    const { result } = renderHook(() => useCockpitSessions('operations'));
 
     act(() => {
       result.current.switchToPrev();
@@ -191,7 +191,7 @@ describe('useCockpitSessions', () => {
     };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(stored));
 
-    const { result } = renderHook(() => useCockpitSessions('personal'));
+    const { result } = renderHook(() => useCockpitSessions('operations'));
 
     act(() => {
       result.current.switchToNext();
@@ -210,7 +210,7 @@ describe('useCockpitSessions', () => {
     };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(stored));
 
-    const { result } = renderHook(() => useCockpitSessions('personal'));
+    const { result } = renderHook(() => useCockpitSessions('operations'));
 
     act(() => {
       result.current.switchToNext();
@@ -233,7 +233,7 @@ describe('useCockpitSessions', () => {
     };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(stored));
 
-    const { result } = renderHook(() => useCockpitSessions('personal'));
+    const { result } = renderHook(() => useCockpitSessions('operations'));
 
     act(() => {
       result.current.closeSession('s2');
@@ -255,7 +255,7 @@ describe('useCockpitSessions', () => {
     };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(stored));
 
-    const { result } = renderHook(() => useCockpitSessions('personal'));
+    const { result } = renderHook(() => useCockpitSessions('operations'));
 
     act(() => {
       result.current.closeSession('s2');
@@ -276,7 +276,7 @@ describe('useCockpitSessions', () => {
     };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(stored));
 
-    const { result } = renderHook(() => useCockpitSessions('personal'));
+    const { result } = renderHook(() => useCockpitSessions('operations'));
 
     act(() => {
       result.current.closeSession('s3');
@@ -296,7 +296,7 @@ describe('useCockpitSessions', () => {
     };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(stored));
 
-    const { result } = renderHook(() => useCockpitSessions('personal'));
+    const { result } = renderHook(() => useCockpitSessions('operations'));
 
     act(() => {
       result.current.closeSession('only-1');
@@ -320,7 +320,7 @@ describe('useCockpitSessions', () => {
     };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(stored));
 
-    const { result } = renderHook(() => useCockpitSessions('personal'));
+    const { result } = renderHook(() => useCockpitSessions('operations'));
 
     act(() => {
       result.current.switchSession('s2');
@@ -345,7 +345,7 @@ describe('useCockpitSessions', () => {
     };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(stored));
 
-    const { result } = renderHook(() => useCockpitSessions('personal'));
+    const { result } = renderHook(() => useCockpitSessions('operations'));
 
     expect(result.current.sessions).toHaveLength(12);
     expect(result.current.visibleSessions).toHaveLength(MAX_VISIBLE);
@@ -364,7 +364,7 @@ describe('useCockpitSessions', () => {
     };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(stored));
 
-    const { result } = renderHook(() => useCockpitSessions('personal'));
+    const { result } = renderHook(() => useCockpitSessions('operations'));
 
     expect(result.current.visibleSessions).toHaveLength(2);
   });
@@ -379,7 +379,7 @@ describe('useCockpitSessions', () => {
       data: { data: { id: 'fresh-1', title: 'Neuer Chat' } },
     });
 
-    const { result } = renderHook(() => useCockpitSessions('personal'));
+    const { result } = renderHook(() => useCockpitSessions('operations'));
 
     // Should auto-create since corrupted data means no sessions
     await vi.waitFor(() => {
@@ -390,7 +390,7 @@ describe('useCockpitSessions', () => {
   it('auto-creates local session when API fails on first launch', async () => {
     mockedAxios.post.mockRejectedValueOnce(new Error('Server down'));
 
-    const { result } = renderHook(() => useCockpitSessions('personal'));
+    const { result } = renderHook(() => useCockpitSessions('operations'));
 
     await vi.waitFor(() => {
       expect(result.current.sessions.length).toBe(1);

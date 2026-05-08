@@ -43,7 +43,7 @@ function createMockDetectedRoutine(overrides: Partial<{
 }> = {}) {
   const pattern = {
     id: overrides.id || 'routine-1',
-    context: 'personal' as const,
+    context: 'operations' as const,
     patternType: (overrides.patternType || 'time_based') as 'time_based' | 'sequence_based' | 'context_based',
     triggerConfig: { dayOfWeek: [1, 2, 3, 4, 5], hourRange: [9, 10] as [number, number] },
     actionType: overrides.actionType || 'review_tasks',
@@ -105,7 +105,7 @@ describe('Proactive Suggestions Service', () => {
         rowCount: 1,
       } as any);
 
-      const suggestions = await proactiveSuggestionEngine.getSuggestions('personal');
+      const suggestions = await proactiveSuggestionEngine.getSuggestions('operations');
 
       expect(suggestions).toBeDefined();
       expect(Array.isArray(suggestions)).toBe(true);
@@ -127,7 +127,7 @@ describe('Proactive Suggestions Service', () => {
         rowCount: 1,
       } as any);
 
-      const suggestions = await proactiveSuggestionEngine.getSuggestions('personal');
+      const suggestions = await proactiveSuggestionEngine.getSuggestions('operations');
 
       const routineSuggestion = suggestions.find(s => s.type === 'routine');
       expect(routineSuggestion).toBeDefined();
@@ -151,7 +151,7 @@ describe('Proactive Suggestions Service', () => {
         rowCount: 1,
       } as any);
 
-      const suggestions = await proactiveSuggestionEngine.getSuggestions('personal', { limit: 3 });
+      const suggestions = await proactiveSuggestionEngine.getSuggestions('operations', { limit: 3 });
 
       expect(suggestions.length).toBeLessThanOrEqual(3);
     });
@@ -172,7 +172,7 @@ describe('Proactive Suggestions Service', () => {
         rowCount: 1,
       } as any);
 
-      const suggestions = await proactiveSuggestionEngine.getSuggestions('personal', { types: ['routine'] });
+      const suggestions = await proactiveSuggestionEngine.getSuggestions('operations', { types: ['routine'] });
 
       suggestions.forEach(s => {
         expect(s.type).toBe('routine');
@@ -192,7 +192,7 @@ describe('Proactive Suggestions Service', () => {
         rowCount: 1,
       } as any);
 
-      const suggestions = await proactiveSuggestionEngine.getSuggestions('personal');
+      const suggestions = await proactiveSuggestionEngine.getSuggestions('operations');
 
       // Cold-start: should return getting-started suggestions instead of empty
       expect(suggestions.length).toBeGreaterThan(0);
@@ -211,7 +211,7 @@ describe('Proactive Suggestions Service', () => {
         rowCount: 1,
       } as any);
 
-      const suggestions = await proactiveSuggestionEngine.getSuggestions('personal');
+      const suggestions = await proactiveSuggestionEngine.getSuggestions('operations');
 
       expect(suggestions).toEqual([]);
     });
@@ -219,7 +219,7 @@ describe('Proactive Suggestions Service', () => {
     it('should handle errors gracefully', async () => {
       mockQueryContext.mockRejectedValue(new Error('Database error'));
 
-      const suggestions = await proactiveSuggestionEngine.getSuggestions('personal');
+      const suggestions = await proactiveSuggestionEngine.getSuggestions('operations');
 
       // Even with DB errors, should not throw - may return getting-started suggestions
       expect(Array.isArray(suggestions)).toBe(true);
@@ -234,7 +234,7 @@ describe('Proactive Suggestions Service', () => {
     it('should record positive feedback', async () => {
       mockQueryContext.mockResolvedValue({ rows: [], rowCount: 1 } as any);
 
-      await proactiveSuggestionEngine.recordFeedback('suggestion-1', true, 'personal');
+      await proactiveSuggestionEngine.recordFeedback('suggestion-1', true, 'operations');
 
       expect(mockQueryContext).toHaveBeenCalled();
     });
@@ -242,7 +242,7 @@ describe('Proactive Suggestions Service', () => {
     it('should record negative feedback with reason', async () => {
       mockQueryContext.mockResolvedValue({ rows: [], rowCount: 1 } as any);
 
-      await proactiveSuggestionEngine.recordFeedback('suggestion-1', false, 'personal', { dismissReason: 'not_relevant' });
+      await proactiveSuggestionEngine.recordFeedback('suggestion-1', false, 'operations', { dismissReason: 'not_relevant' });
 
       expect(mockQueryContext).toHaveBeenCalled();
     });
@@ -251,7 +251,7 @@ describe('Proactive Suggestions Service', () => {
       mockQueryContext.mockRejectedValue(new Error('DB error'));
 
       await expect(
-        proactiveSuggestionEngine.recordFeedback('suggestion-1', true, 'personal')
+        proactiveSuggestionEngine.recordFeedback('suggestion-1', true, 'operations')
       ).resolves.not.toThrow();
     });
   });
@@ -273,7 +273,7 @@ describe('Proactive Suggestions Service', () => {
         rowCount: 1,
       } as any);
 
-      const settings = await proactiveSuggestionEngine.getSettings('personal');
+      const settings = await proactiveSuggestionEngine.getSettings('operations');
 
       expect(settings).toBeDefined();
       expect(settings.proactivityLevel).toBe('balanced');
@@ -282,7 +282,7 @@ describe('Proactive Suggestions Service', () => {
     it('should return default settings if none exist', async () => {
       mockQueryContext.mockResolvedValue({ rows: [], rowCount: 0 } as any);
 
-      const settings = await proactiveSuggestionEngine.getSettings('personal');
+      const settings = await proactiveSuggestionEngine.getSettings('operations');
 
       expect(settings).toBeDefined();
       expect(settings.proactivityLevel).toBeDefined();
@@ -291,7 +291,7 @@ describe('Proactive Suggestions Service', () => {
     it('should update settings', async () => {
       mockQueryContext.mockResolvedValue({ rows: [], rowCount: 1 } as any);
 
-      await proactiveSuggestionEngine.updateSettings('personal', {
+      await proactiveSuggestionEngine.updateSettings('operations', {
         proactivityLevel: 'aggressive',
         enabledTypes: ['routine', 'draft'],
       });
@@ -318,7 +318,7 @@ describe('Proactive Suggestions Service', () => {
         createMockDetectedRoutine({ confidence: 0.9 }),
       ]);
 
-      const suggestions = await proactiveSuggestionEngine.getSuggestions('personal');
+      const suggestions = await proactiveSuggestionEngine.getSuggestions('operations');
 
       // During quiet hours, should return empty array
       expect(suggestions).toEqual([]);
@@ -351,8 +351,8 @@ describe('Proactive Suggestions Service', () => {
         rowCount: 1,
       } as any);
 
-      await proactiveSuggestionEngine.getSuggestions('personal');
-      await proactiveSuggestionEngine.getSuggestions('personal');
+      await proactiveSuggestionEngine.getSuggestions('operations');
+      await proactiveSuggestionEngine.getSuggestions('operations');
 
       // Should work without errors
       expect(true).toBe(true);

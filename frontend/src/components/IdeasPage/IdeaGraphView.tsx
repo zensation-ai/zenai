@@ -1,5 +1,5 @@
 import { GitBranch } from 'lucide-react';
-import { EmptyState } from '../../design-system';
+import { EmptyState } from '@/components/ui/empty-state';
 import type { StructuredIdea } from '../../types';
 
 interface IdeaGraphViewProps {
@@ -9,7 +9,7 @@ interface IdeaGraphViewProps {
 
 export function IdeaGraphView(_props: IdeaGraphViewProps) {
   return (
-    <div className="idea-graph-view" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+    <div className="idea-graph-view flex flex-1 items-center justify-center">
       <EmptyState
         icon={<GitBranch size={48} />}
         title="Graph-Ansicht"

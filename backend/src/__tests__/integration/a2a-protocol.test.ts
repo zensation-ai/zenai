@@ -35,7 +35,7 @@ jest.mock('../../utils/logger', () => ({
 
 jest.mock('../../utils/database-context', () => ({
   queryContext: jest.fn(),
-  isValidContext: jest.fn((ctx: string) => ['personal', 'work', 'learning', 'creative'].includes(ctx)),
+  isValidContext: jest.fn((ctx: string) => ['operations', 'finance', 'people', 'strategy'].includes(ctx)),
   AIContext: {},
 }));
 
@@ -174,7 +174,7 @@ describe('A2A Protocol Integration Tests', () => {
   // ============================================================
 
   describe('GET /api/a2a/tasks/:id', () => {
-    it('should return task found in personal context', async () => {
+    it('should return task found in operations context', async () => {
       const task = { id: VALID_UUID, status: 'completed', skill_id: 'research' };
       mockGetTask.mockResolvedValueOnce(task);
 
@@ -194,7 +194,7 @@ describe('A2A Protocol Integration Tests', () => {
         .expect(404);
 
       expect(res.body.success).toBe(false);
-      // 1 personal + 3 fallbacks = 4 calls
+      // 1 operations + 3 fallbacks = 4 calls
       expect(mockGetTask).toHaveBeenCalledTimes(4);
     });
   });
@@ -209,7 +209,7 @@ describe('A2A Protocol Integration Tests', () => {
       mockListTasks.mockResolvedValueOnce(tasks);
 
       const res = await request(app)
-        .get('/api/personal/a2a/tasks')
+        .get('/api/operations/a2a/tasks')
         .expect(200);
 
       expect(res.body.success).toBe(true);
@@ -235,7 +235,7 @@ describe('A2A Protocol Integration Tests', () => {
       mockRegisterAgent.mockResolvedValueOnce(agent);
 
       const res = await request(app)
-        .post('/api/personal/a2a/external-agents')
+        .post('/api/operations/a2a/external-agents')
         .send({ name: 'External Bot', url: 'https://bot.example.com' })
         .expect(201);
 
@@ -245,7 +245,7 @@ describe('A2A Protocol Integration Tests', () => {
 
     it('should return 400 for missing name', async () => {
       const res = await request(app)
-        .post('/api/personal/a2a/external-agents')
+        .post('/api/operations/a2a/external-agents')
         .send({ url: 'https://bot.example.com' })
         .expect(400);
 
@@ -254,7 +254,7 @@ describe('A2A Protocol Integration Tests', () => {
 
     it('should return 400 for missing url', async () => {
       const res = await request(app)
-        .post('/api/personal/a2a/external-agents')
+        .post('/api/operations/a2a/external-agents')
         .send({ name: 'Bot' })
         .expect(400);
 

@@ -2,13 +2,16 @@
  * Financial Goals Tab - Phase 4
  */
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, type CSSProperties } from 'react';
+import { Wallet } from 'lucide-react';
 import type { FinancialGoal, GoalPriority } from './types';
 import { GOAL_PRIORITY_LABELS } from './types';
 import { useEscapeKey } from '../../hooks/useClickOutside';
 import { useFocusTrap } from '../../hooks/useFocusTrap';
 import { useAnnounce } from '../../hooks/useAnnounce';
 import { useConfirm } from '../ConfirmDialog';
+import { Button } from '@/components/ui/button';
+import { EmptyState } from '@/components/ui/empty-state';
 
 interface GoalsTabProps {
   goals: FinancialGoal[];
@@ -64,8 +67,8 @@ export function GoalsTab({ goals, onCreate, onUpdate, onDelete }: GoalsTabProps)
   return (
     <div className="goals-tab">
       <div className="finance-toolbar">
-        <div style={{ flex: 1 }} />
-        <button className="btn-primary" onClick={() => setShowForm(true)}>+ Sparziel</button>
+        <div className="flex-1" />
+        <button className="btn-primary active:scale-[0.97] transition-transform duration-100" onClick={() => setShowForm(true)}>+ Sparziel</button>
       </div>
 
       {/* Active Goals */}
@@ -91,13 +94,13 @@ export function GoalsTab({ goals, onCreate, onUpdate, onDelete }: GoalsTabProps)
                   </span>
                 </div>
                 <div className="goal-actions">
-                  <button className="contact-action-btn" onClick={() => handleToggleComplete(goal)} title="Abschließen" aria-label="Ziel abschliessen">✓</button>
-                  <button className="contact-action-btn danger" onClick={() => handleDelete(goal.id)} title="Löschen" aria-label="Ziel loeschen">✕</button>
+                  <button className="contact-action-btn" onClick={() => handleToggleComplete(goal)} title="Abschließen" aria-label="Ziel abschließen">✓</button>
+                  <button className="contact-action-btn danger" onClick={() => handleDelete(goal.id)} title="Löschen" aria-label="Ziel löschen">✕</button>
                 </div>
               </div>
               <div className="goal-progress">
                 <div className="budget-bar-track">
-                  <div className="budget-bar-fill goal-fill" style={{ width: `${Math.min(100, percent)}%` }} />
+                  <div className="budget-bar-fill goal-fill w-[var(--bar)]" style={{ '--bar': `${Math.min(100, percent)}%` } as CSSProperties} />
                 </div>
                 <div className="budget-amounts">
                   <span>{formatCurrency(goal.current_amount)}</span>
@@ -108,11 +111,16 @@ export function GoalsTab({ goals, onCreate, onUpdate, onDelete }: GoalsTabProps)
           );
         })}
         {activeGoals.length === 0 && (
-          <div className="finance-empty">
-            <span className="finance-empty-icon">🎯</span>
-            <p>Keine aktiven Sparziele</p>
-            <p className="finance-empty-sub">Setze dir ein finanzielles Ziel</p>
-          </div>
+          <EmptyState
+            icon={<Wallet size={40} strokeWidth={1.5} />}
+            title="Keine Ziele"
+            description="Setze dir ein finanzielles Sparziel."
+            action={
+              <Button variant="default" size="sm" onClick={() => setShowForm(true)}>
+                Ziel erstellen
+              </Button>
+            }
+          />
         )}
       </div>
 
@@ -135,7 +143,7 @@ export function GoalsTab({ goals, onCreate, onUpdate, onDelete }: GoalsTabProps)
           <div ref={focusTrapRef} className="contact-form-modal" onClick={e => e.stopPropagation()} role="dialog" aria-modal="true" aria-label="Neues Sparziel">
             <div className="contact-form-header">
               <h2>Neues Sparziel</h2>
-              <button className="contact-form-close" onClick={() => setShowForm(false)} aria-label="Schliessen">✕</button>
+              <button className="contact-form-close" onClick={() => setShowForm(false)} aria-label="Schließen">✕</button>
             </div>
             <div className="contact-form">
               <div className="form-row">
@@ -202,7 +210,7 @@ export function GoalsTab({ goals, onCreate, onUpdate, onDelete }: GoalsTabProps)
               <div className="contact-form-actions">
                 <button className="btn-secondary" onClick={() => setShowForm(false)}>Abbrechen</button>
                 <button
-                  className="btn-primary"
+                  className="btn-primary active:scale-[0.97] transition-transform duration-100"
                   onClick={handleSubmit}
                   disabled={!formData.name || !formData.target_amount}
                 >Erstellen</button>

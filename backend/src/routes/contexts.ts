@@ -16,31 +16,31 @@ router.get('/contexts', apiKeyAuth, responseCacheMiddleware, (req, res) => {
     success: true,
     contexts: [
       {
-        id: 'personal',
-        name: 'Personal',
+        id: 'operations',
+        name: 'Operations',
         icon: '🏠',
         description: 'Private ideas and thoughts'
       },
       {
-        id: 'work',
-        name: 'Work',
+        id: 'finance',
+        name: 'Finance',
         icon: '💼',
         description: 'Work projects and business ideas'
       },
       {
-        id: 'learning',
-        name: 'Learning',
+        id: 'people',
+        name: 'People',
         icon: '📚',
         description: 'Learning and education'
       },
       {
-        id: 'creative',
-        name: 'Creative',
+        id: 'strategy',
+        name: 'Strategy',
         icon: '🎨',
         description: 'Creative projects and art'
       }
     ],
-    default: 'personal'
+    default: 'operations'
   });
 });
 
@@ -55,7 +55,7 @@ router.get('/:context/ideas', apiKeyAuth, asyncHandler(async (req: Request, res:
   const userId = getUserId(req);
 
   if (!isValidContext(context)) {
-    throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
+    throw new ValidationError('Invalid context. Use "operations", "finance", "people", or "strategy".');
   }
 
   // Build query with optional filters + user_id isolation
@@ -121,7 +121,7 @@ router.get('/:context/ideas/archived', apiKeyAuth, asyncHandler(async (req: Requ
   const userId = getUserId(req);
 
   if (!isValidContext(context)) {
-    throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
+    throw new ValidationError('Invalid context. Use "operations", "finance", "people", or "strategy".');
   }
 
   const parsedLimit = parseInt(limit as string, 10) || 50;
@@ -177,7 +177,7 @@ router.put('/:context/ideas/:id/archive', apiKeyAuth, requireScope('write'), req
   const userId = getUserId(req);
 
   if (!isValidContext(context)) {
-    throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
+    throw new ValidationError('Invalid context. Use "operations", "finance", "people", or "strategy".');
   }
 
   const result = await queryContext(
@@ -205,7 +205,7 @@ router.put('/:context/ideas/:id/restore', apiKeyAuth, requireScope('write'), req
   const userId = getUserId(req);
 
   if (!isValidContext(context)) {
-    throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
+    throw new ValidationError('Invalid context. Use "operations", "finance", "people", or "strategy".');
   }
 
   const result = await queryContext(
@@ -236,7 +236,7 @@ router.post('/:context/ideas/search', apiKeyAuth, asyncHandler(async (req: Reque
   const userId = getUserId(req);
 
   if (!isValidContext(context)) {
-    throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
+    throw new ValidationError('Invalid context. Use "operations", "finance", "people", or "strategy".');
   }
 
   if (!searchQuery) {
@@ -282,7 +282,7 @@ router.get('/:context/ideas/triage', apiKeyAuth, asyncHandler(async (req: Reques
   const userId = getUserId(req);
 
   if (!isValidContext(context)) {
-    throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
+    throw new ValidationError('Invalid context. Use "operations", "finance", "people", or "strategy".');
   }
 
   // Parse excluded IDs
@@ -341,7 +341,7 @@ router.post('/:context/ideas/:id/triage', apiKeyAuth, requireScope('write'), req
   const userId = getUserId(req);
 
   if (!isValidContext(context)) {
-    throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
+    throw new ValidationError('Invalid context. Use "operations", "finance", "people", or "strategy".');
   }
 
   const validActions = ['priority', 'keep', 'later', 'archive'];
@@ -388,7 +388,7 @@ router.get('/:context/ai-activity', apiKeyAuth, asyncHandler(async (req: Request
   const { limit = '10' } = req.query;
 
   if (!isValidContext(context)) {
-    throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
+    throw new ValidationError('Invalid context. Use "operations", "finance", "people", or "strategy".');
   }
 
   const activities = await getRecentAIActivities(context as AIContext, parseInt(limit as string, 10));
@@ -411,7 +411,7 @@ router.post('/:context/ai-activity/mark-read', apiKeyAuth, requireScope('write')
   const { activityIds } = req.body;
 
   if (!isValidContext(context)) {
-    throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
+    throw new ValidationError('Invalid context. Use "operations", "finance", "people", or "strategy".');
   }
 
   const markedCount = await markActivitiesAsRead(context as AIContext, activityIds);

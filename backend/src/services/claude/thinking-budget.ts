@@ -11,11 +11,13 @@
 
 import { AIContext, queryContext } from '../../utils/database-context';
 import { logger } from '../../utils/logger';
-// Lazy import to break circular dependency: ai.ts -> claude/ -> thinking-budget -> ai.ts
-let _generateEmbedding: typeof import('../ai').generateEmbedding | null = null;
-async function getGenerateEmbedding() {
+// Lazy require to break circular dependency: ai.ts -> claude/ -> thinking-budget -> ai.ts
+// Using require() instead of import() because madge detects dynamic import() as a dependency
+let _generateEmbedding: ((text: string) => Promise<number[]>) | null = null;
+function getGenerateEmbedding(): (text: string) => Promise<number[]> {
   if (!_generateEmbedding) {
-    const ai = await import('../ai');
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const ai = require('../ai') as { generateEmbedding: (text: string) => Promise<number[]> };
     _generateEmbedding = ai.generateEmbedding;
   }
   return _generateEmbedding;
@@ -76,6 +78,17 @@ export interface BudgetRecommendation {
   complexity: ComplexityScore;
   reasoning: string;
   similarChains: ThinkingChain[];
+}
+
+// ===========================================
+// 4-Tier Thinking Budget System
+// ===========================================
+
+export interface ThinkingTier {
+  budget: number;
+  display: 'omitted' | 'collapsible' | 'visible' | 'visible_progress';
+  tier: 1 | 2 | 3 | 4;
+  label: string;
 }
 
 // ===========================================
@@ -176,9 +189,88 @@ export function isAdaptiveEnabled(): boolean {
  * Get the adaptive thinking budget.
  * Returns a generous default that allows Claude to use as much
  * or as little thinking as needed for the task.
+ *
+ * @deprecated Use getThinkingBudget() instead, which routes through the 4-tier system.
  */
 export function getAdaptiveBudget(): number {
   return ADAPTIVE_DEFAULT_BUDGET;
+}
+
+/**
+ * Get thinking budget using the 4-Tier system.
+ *
+ * Routes through classifyTaskType + analyzeComplexity to determine the
+ * optimal tier:
+ *   Tier 1 - QUICK (1024):    Simple greetings, short inputs
+ *   Tier 2 - STANDARD (16384): Regular questions, creative tasks (default)
+ *   Tier 3 - DEEP (65536):     Analysis, problem solving, synthesis
+ *   Tier 4 - MAXIMUM (131072): Strategic planning, deep synthesis
+ */
+export function getThinkingBudget(input: string, _context?: string): ThinkingTier {
+  try {
+    const taskType = classifyTaskType(input);
+    const complexity = analyzeComplexity(input);
+
+    // Tier 4 - MAXIMUM: strategic planning with high complexity, or deep synthesis
+    if (
+      (taskType === 'strategic_planning' && complexity.score > 0.7) ||
+      (taskType === 'synthesis' && complexity.score > 0.8)
+    ) {
+      return {
+        budget: 131072,
+        display: 'visible_progress',
+        tier: 4,
+        label: 'Maximum Thinking',
+      };
+    }
+
+    // Tier 3 - DEEP: analysis, problem solving, synthesis, or high complexity
+    if (
+      taskType === 'analysis' ||
+      taskType === 'problem_solving' ||
+      taskType === 'synthesis' ||
+      taskType === 'strategic_planning' ||
+      complexity.score > 0.5
+    ) {
+      return {
+        budget: 65536,
+        display: 'visible',
+        tier: 3,
+        label: 'Deep Thinking',
+      };
+    }
+
+    // Tier 1 - QUICK: simple structuring with very low complexity, or very short inputs
+    if (
+      (taskType === 'simple_structuring' && complexity.score < 0.2) ||
+      (input.length < 50 && !input.includes('?'))
+    ) {
+      return {
+        budget: 1024,
+        display: 'omitted',
+        tier: 1,
+        label: 'Quick',
+      };
+    }
+
+    // Tier 2 - STANDARD: everything else (default fallback)
+    return {
+      budget: 16384,
+      display: 'collapsible',
+      tier: 2,
+      label: 'Standard Thinking',
+    };
+  } catch (error) {
+    logger.debug('getThinkingBudget error, falling back to Tier 2', {
+      error: error instanceof Error ? error.message : 'Unknown',
+    });
+    return {
+      budget: 16384,
+      display: 'collapsible',
+      tier: 2,
+      label: 'Standard Thinking',
+    };
+  }
 }
 
 // ===========================================
@@ -460,7 +552,7 @@ export async function storeThinkingChain(
     const inputHash = crypto.createHash('sha256').update(input).digest('hex').substring(0, 64);
 
     // Generate embedding for similarity search
-    const genEmbedding = await getGenerateEmbedding();
+    const genEmbedding = getGenerateEmbedding();
     const embedding = await genEmbedding(input.substring(0, 1000));
 
     const result = await queryContext(
@@ -513,7 +605,7 @@ export async function findSimilarSuccessfulChains(
   limit: number = CONFIG.MAX_SIMILAR_CHAINS
 ): Promise<ThinkingChain[]> {
   try {
-    const genEmbedding = await getGenerateEmbedding();
+    const genEmbedding = getGenerateEmbedding();
     const embedding = await genEmbedding(input.substring(0, 1000));
 
     if (embedding.length === 0) {

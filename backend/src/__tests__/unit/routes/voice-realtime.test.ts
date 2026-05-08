@@ -14,6 +14,11 @@ jest.mock('../../../middleware/auth', () => ({
   requireScope: () => (_req: unknown, _res: unknown, next: () => void) => next(),
 }));
 
+// Mock plan-gate middleware
+jest.mock('../../../middleware/plan-gate', () => ({
+  requirePlan: () => (_req: unknown, _res: unknown, next: () => void) => next(),
+}));
+
 jest.mock('../../../utils/user-context', () => ({
   getUserId: () => '00000000-0000-0000-0000-000000000001',
 }));
@@ -52,7 +57,7 @@ jest.mock('../../../services/voice/stt-service', () => ({
 
 jest.mock('../../../utils/database-context', () => ({
   queryContext: jest.fn().mockResolvedValue({ rows: [] }),
-  isValidContext: (ctx: string) => ['personal', 'work', 'learning', 'creative'].includes(ctx),
+  isValidContext: (ctx: string) => ['operations', 'finance', 'people', 'strategy'].includes(ctx),
 }));
 
 jest.mock('../../../utils/logger', () => ({
@@ -76,7 +81,7 @@ describe('Voice Realtime Routes', () => {
   describe('POST /:context/voice/session/start', () => {
     it('should start a voice session', async () => {
       mockStartSession.mockResolvedValue({ sessionId: 'sess-1', status: 'active' });
-      const res = await request(app).post('/api/personal/voice/session/start').send({});
+      const res = await request(app).post('/api/operations/voice/session/start').send({});
       expect(res.status).toBe(200);
       expect(res.body.data.sessionId).toBe('sess-1');
     });
@@ -90,7 +95,7 @@ describe('Voice Realtime Routes', () => {
   describe('POST /:context/voice/session/:id/end', () => {
     it('should end a voice session', async () => {
       mockEndSession.mockResolvedValue(undefined);
-      const res = await request(app).post('/api/personal/voice/session/sess-1/end');
+      const res = await request(app).post('/api/operations/voice/session/sess-1/end');
       expect(res.status).toBe(200);
       expect(res.body.data.message).toBe('Session ended');
     });
@@ -99,14 +104,14 @@ describe('Voice Realtime Routes', () => {
   describe('GET /:context/voice/session/:id/status', () => {
     it('should return session status', async () => {
       mockGetSessionStatus.mockReturnValue({ status: 'active', turns: 3 });
-      const res = await request(app).get('/api/personal/voice/session/sess-1/status');
+      const res = await request(app).get('/api/operations/voice/session/sess-1/status');
       expect(res.status).toBe(200);
       expect(res.body.data.status).toBe('active');
     });
 
     it('should return 404 for non-existent session', async () => {
       mockGetSessionStatus.mockReturnValue(null);
-      const res = await request(app).get('/api/personal/voice/session/nonexistent/status');
+      const res = await request(app).get('/api/operations/voice/session/nonexistent/status');
       expect(res.status).toBe(404);
     });
   });
@@ -115,13 +120,13 @@ describe('Voice Realtime Routes', () => {
     it('should generate TTS audio', async () => {
       const audioBuffer = Buffer.from('fake-audio-data');
       mockTextToSpeech.mockResolvedValue(audioBuffer);
-      const res = await request(app).post('/api/personal/voice/tts').send({ text: 'Hello world' });
+      const res = await request(app).post('/api/operations/voice/tts').send({ text: 'Hello world' });
       expect(res.status).toBe(200);
       expect(res.headers['content-type']).toContain('audio/mpeg');
     });
 
     it('should reject empty text', async () => {
-      const res = await request(app).post('/api/personal/voice/tts').send({ text: '' });
+      const res = await request(app).post('/api/operations/voice/tts').send({ text: '' });
       expect(res.status).toBe(400);
     });
   });
@@ -129,7 +134,7 @@ describe('Voice Realtime Routes', () => {
   describe('GET /:context/voice/voices', () => {
     it('should return available voices', async () => {
       mockGetVoices.mockResolvedValue([{ id: 'de-DE-ConradNeural', name: 'Conrad' }]);
-      const res = await request(app).get('/api/personal/voice/voices');
+      const res = await request(app).get('/api/operations/voice/voices');
       expect(res.status).toBe(200);
       expect(res.body.data.voices).toHaveLength(1);
     });
@@ -137,7 +142,7 @@ describe('Voice Realtime Routes', () => {
 
   describe('GET /:context/voice/settings', () => {
     it('should return default settings when none exist', async () => {
-      const res = await request(app).get('/api/personal/voice/settings');
+      const res = await request(app).get('/api/operations/voice/settings');
       expect(res.status).toBe(200);
       expect(res.body.data.stt_provider).toBe('whisper');
     });
@@ -146,7 +151,7 @@ describe('Voice Realtime Routes', () => {
   describe('GET /:context/voice/briefing', () => {
     it('should return text briefing', async () => {
       mockGenerateMorningBriefing.mockResolvedValue({ text: 'Guten Morgen!' });
-      const res = await request(app).get('/api/personal/voice/briefing');
+      const res = await request(app).get('/api/operations/voice/briefing');
       expect(res.status).toBe(200);
       expect(res.body.data.text).toBe('Guten Morgen!');
     });
@@ -154,7 +159,7 @@ describe('Voice Realtime Routes', () => {
 
   describe('GET /:context/voice/providers', () => {
     it('should return available providers', async () => {
-      const res = await request(app).get('/api/personal/voice/providers');
+      const res = await request(app).get('/api/operations/voice/providers');
       expect(res.status).toBe(200);
       expect(res.body.data.stt.available).toContain('whisper');
       expect(res.body.data.tts.available).toContain('edge-tts');

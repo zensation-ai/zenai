@@ -32,7 +32,7 @@ const mockQueryContext = jest.fn();
 
 jest.mock('../../utils/database-context', () => ({
   queryContext: (...args: unknown[]) => mockQueryContext(...args),
-  isValidContext: jest.fn((ctx: string) => ['personal', 'work', 'learning', 'creative'].includes(ctx)),
+  isValidContext: jest.fn((ctx: string) => ['operations', 'finance', 'people', 'strategy'].includes(ctx)),
   AIContext: {},
 }));
 
@@ -88,7 +88,7 @@ describe('Notifications API Integration Tests', () => {
       mockQueryContext.mockResolvedValueOnce({ rows: notifications });
 
       const res = await request(app)
-        .get('/api/personal/notifications/history')
+        .get('/api/operations/notifications/history')
         .expect(200);
 
       expect(res.body.success).toBe(true);
@@ -100,7 +100,7 @@ describe('Notifications API Integration Tests', () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [] });
 
       await request(app)
-        .get('/api/personal/notifications/history?limit=200')
+        .get('/api/operations/notifications/history?limit=200')
         .expect(200);
 
       const params = mockQueryContext.mock.calls[0][2] as unknown[];
@@ -113,7 +113,7 @@ describe('Notifications API Integration Tests', () => {
         .mockRejectedValueOnce(new Error('still does not exist'));
 
       const res = await request(app)
-        .get('/api/personal/notifications/history')
+        .get('/api/operations/notifications/history')
         .expect(200);
 
       expect(res.body.success).toBe(true);
@@ -138,7 +138,7 @@ describe('Notifications API Integration Tests', () => {
       mockRegisterDeviceToken.mockResolvedValueOnce({ success: true, tokenId: 'tok_1' });
 
       const res = await request(app)
-        .post('/api/personal/notifications/device')
+        .post('/api/operations/notifications/device')
         .send({ deviceToken: 'abcdef123456', deviceId: 'device-1', deviceName: 'iPhone' })
         .expect(200);
 
@@ -148,7 +148,7 @@ describe('Notifications API Integration Tests', () => {
 
     it('should reject missing deviceToken', async () => {
       const res = await request(app)
-        .post('/api/personal/notifications/device')
+        .post('/api/operations/notifications/device')
         .send({ deviceId: 'device-1' })
         .expect(400);
 
@@ -157,7 +157,7 @@ describe('Notifications API Integration Tests', () => {
 
     it('should reject missing deviceId', async () => {
       const res = await request(app)
-        .post('/api/personal/notifications/device')
+        .post('/api/operations/notifications/device')
         .send({ deviceToken: 'abcdef123456' })
         .expect(400);
 
@@ -179,7 +179,7 @@ describe('Notifications API Integration Tests', () => {
       });
 
       const res = await request(app)
-        .get('/api/personal/notifications/stats')
+        .get('/api/operations/notifications/stats')
         .expect(200);
 
       expect(res.body.success).toBe(true);
@@ -192,7 +192,7 @@ describe('Notifications API Integration Tests', () => {
       mockGetNotificationStats.mockResolvedValueOnce(null);
 
       const res = await request(app)
-        .get('/api/personal/notifications/stats')
+        .get('/api/operations/notifications/stats')
         .expect(200);
 
       expect(res.body.total_sent).toBe(0);
@@ -209,7 +209,7 @@ describe('Notifications API Integration Tests', () => {
       mockRecordNotificationOpened.mockResolvedValueOnce(undefined);
 
       const res = await request(app)
-        .post(`/api/personal/notifications/${VALID_UUID}/opened`)
+        .post(`/api/operations/notifications/${VALID_UUID}/opened`)
         .expect(200);
 
       expect(res.body.success).toBe(true);
@@ -227,7 +227,7 @@ describe('Notifications API Integration Tests', () => {
       mockGetActiveDeviceTokens.mockResolvedValueOnce([{ id: '1' }, { id: '2' }]);
 
       const res = await request(app)
-        .get('/api/personal/notifications/status')
+        .get('/api/operations/notifications/status')
         .expect(200);
 
       expect(res.body.success).toBe(true);
@@ -287,7 +287,7 @@ describe('Notifications API Integration Tests', () => {
       mockSendNotification.mockResolvedValueOnce({ success: true, sent: 2, failed: 0, results: [] });
 
       const res = await request(app)
-        .post('/api/personal/notifications/push')
+        .post('/api/operations/notifications/push')
         .send({ type: 'draft_ready', title: 'Draft Ready', body: 'Your draft is ready' })
         .expect(200);
 
@@ -297,7 +297,7 @@ describe('Notifications API Integration Tests', () => {
 
     it('should reject invalid notification type', async () => {
       const res = await request(app)
-        .post('/api/personal/notifications/push')
+        .post('/api/operations/notifications/push')
         .send({ type: 'invalid_type', title: 'Test', body: 'Test' })
         .expect(400);
 
@@ -306,7 +306,7 @@ describe('Notifications API Integration Tests', () => {
 
     it('should reject missing required fields', async () => {
       const res = await request(app)
-        .post('/api/personal/notifications/push')
+        .post('/api/operations/notifications/push')
         .send({ type: 'draft_ready' })
         .expect(400);
 

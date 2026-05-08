@@ -23,7 +23,9 @@ vi.mock('framer-motion', () => {
           const {
             variants, initial, animate, exit, transition, whileHover,
             whileTap, whileFocus, whileInView, layout, layoutId,
-            onAnimationStart, onAnimationComplete, ...rest
+            onAnimationStart, onAnimationComplete,
+            drag, dragConstraints, dragElastic, dragControls, onDragEnd,
+            ...rest
           } = props;
           const { createElement } = require('react');
           return createElement(prop, { ...rest, ref });
@@ -31,8 +33,9 @@ vi.mock('framer-motion', () => {
       },
     }),
     AnimatePresence: ({ children }: { children: unknown }) => children,
-    useAnimation: () => ({ start: vi.fn(), stop: vi.fn(), set: vi.fn() }),
+    useAnimation: () => ({ start: vi.fn().mockResolvedValue(undefined), stop: vi.fn(), set: vi.fn() }),
     useMotionValue: (v: number) => ({ get: () => v, set: vi.fn(), on: vi.fn() }),
+    useDragControls: () => ({ start: vi.fn(), reset: vi.fn() }),
     useTransform: (v: unknown) => v,
   };
 });

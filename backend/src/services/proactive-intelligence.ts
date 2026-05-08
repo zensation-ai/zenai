@@ -78,7 +78,7 @@ interface DetectedResearchNeed {
 export async function detectResearchNeed(
   text: string,
   ideaType: string,
-  context: AIContext = 'personal'
+  context: AIContext = 'operations'
 ): Promise<DetectedResearchNeed> {
   // 1. Lade aktive Patterns
   const patterns = await getActivePatterns(context);
@@ -341,7 +341,7 @@ export async function executeProactiveResearch(
   triggerText: string,
   researchQuery: string,
   sources: string[],
-  context: AIContext = 'personal'
+  context: AIContext = 'operations'
 ): Promise<ProactiveResearch | null> {
   const researchId = uuidv4();
 
@@ -592,7 +592,7 @@ export async function processIdeaForResearch(
   ideaId: string,
   text: string,
   ideaType: string,
-  context: AIContext = 'personal'
+  context: AIContext = 'operations'
 ): Promise<ProactiveResearch | null> {
   // 1. Prüfe auf Recherche-Bedarf
   const researchNeed = await detectResearchNeed(text, ideaType, context);
@@ -625,7 +625,7 @@ export async function processIdeaForResearch(
  * Holt offene Recherchen für einen Nutzer
  */
 export async function getPendingResearch(
-  context: AIContext = 'personal',
+  context: AIContext = 'operations',
   limit: number = 10
 ): Promise<ProactiveResearch[]> {
   try {
@@ -656,7 +656,7 @@ export async function getPendingResearch(
  */
 export async function markResearchViewed(
   researchId: string,
-  context: AIContext = 'personal'
+  context: AIContext = 'operations'
 ): Promise<boolean> {
   try {
     const result = await queryContext(
@@ -681,7 +681,7 @@ export async function rateResearch(
   researchId: string,
   rating: number,
   wasHelpful: boolean,
-  context: AIContext = 'personal'
+  context: AIContext = 'operations'
 ): Promise<void> {
   await queryContext(
     context,
@@ -697,7 +697,7 @@ export async function rateResearch(
  */
 export async function getResearchById(
   researchId: string,
-  context: AIContext = 'personal'
+  context: AIContext = 'operations'
 ): Promise<ProactiveResearch | null> {
   try {
     const result = await queryContext(
@@ -729,7 +729,7 @@ export async function getResearchById(
  */
 export async function dismissResearch(
   researchId: string,
-  context: AIContext = 'personal'
+  context: AIContext = 'operations'
 ): Promise<boolean> {
   try {
     const result = await queryContext(
@@ -753,7 +753,7 @@ export async function dismissResearch(
 export async function triggerManualResearch(
   query: string,
   sources: string[] = ['web'],
-  context: AIContext = 'personal'
+  context: AIContext = 'operations'
 ): Promise<ProactiveResearch | null> {
   return executeProactiveResearch(
     null,

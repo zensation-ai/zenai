@@ -1,8 +1,8 @@
 import React from 'react';
+import type { CSSProperties } from 'react';
 import type { Email } from './types';
 import { stringToColor, getInitials, formatEmailDate, truncateText, CATEGORY_LABELS } from './types';
-import './EmailCard.css';
-
+import AiOutputBadge from '../shared/AiOutputBadge';
 interface EmailCardProps {
   email: Email;
   selected?: boolean;
@@ -15,6 +15,9 @@ export const EmailCard: React.FC<EmailCardProps> = ({ email, selected, onSelect,
   const senderName = email.from_name || email.from_address;
   const initials = getInitials(email.from_name, email.from_address);
   const avatarColor = stringToColor(email.from_address);
+  // Sprint 1.1 (EU AI Act Art. 50): if the snippet is the AI summary (no body_text),
+  // surface that fact via the AiOutputBadge below.
+  const snippetIsAi = !email.body_text && Boolean(email.ai_summary);
   const snippet = truncateText(email.body_text || email.ai_summary, 120);
   const categoryInfo = email.ai_category ? CATEGORY_LABELS[email.ai_category] : null;
 
@@ -32,7 +35,7 @@ export const EmailCard: React.FC<EmailCardProps> = ({ email, selected, onSelect,
         }
       }}
     >
-      <div className="email-card__avatar" style={{ backgroundColor: avatarColor }}>
+      <div className="email-card__avatar bg-[var(--bg)]" style={{ '--bg': avatarColor } as CSSProperties}>
         {initials}
       </div>
       <div className="email-card__content">
@@ -41,15 +44,20 @@ export const EmailCard: React.FC<EmailCardProps> = ({ email, selected, onSelect,
           <span className="email-card__date">{formatEmailDate(email.received_at || email.created_at)}</span>
         </div>
         <div className="email-card__subject">{email.subject || '(Kein Betreff)'}</div>
-        {snippet && <div className="email-card__snippet">{snippet}</div>}
+        {snippet && (
+          <div className="email-card__snippet">
+            {snippet}
+            {snippetIsAi && <AiOutputBadge size="sm" variant="subtle" className="ml-1.5 align-middle" />}
+          </div>
+        )}
         <div className="email-card__meta">
           {categoryInfo && (
-            <span className="email-card__category" style={{ color: categoryInfo.color }}>
+            <span className="email-card__category text-[var(--c)]" style={{ '--c': categoryInfo.color } as CSSProperties}>
               {categoryInfo.icon} {categoryInfo.label}
             </span>
           )}
           {email.has_attachments && (
-            <span className="email-card__attachment" aria-label="Hat Anhaenge">📎</span>
+            <span className="email-card__attachment" aria-label="Hat Anhänge">📎</span>
           )}
           {email.thread_count && email.thread_count > 1 && (
             <span className="email-card__thread-count">{email.thread_count}</span>

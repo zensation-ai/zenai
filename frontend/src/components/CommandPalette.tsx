@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef, memo, useMemo, useDeferredValue } from 'react';
+import { useState, useEffect, useCallback, useRef, memo, useMemo, useDeferredValue, type CSSProperties } from 'react';
 import { createPortal } from 'react-dom';
 import Fuse, { type IFuseOptions } from 'fuse.js';
 import { motion } from 'framer-motion';
@@ -11,7 +11,8 @@ import { scaleIn, springs, durations, usePrefersReducedMotion } from '../utils/a
 import { BottomSheet } from './ui';
 import { useBreakpoint } from '../hooks/useBreakpoint';
 import { useFocusTrap } from '../hooks/useFocusTrap';
-import './CommandPalette.css';
+import { cn } from '@/lib/utils';
+import { MODE_COLORS } from '../constants/chart-colors';
 
 // ============================================
 // Types
@@ -48,11 +49,11 @@ const MODE_PREFIXES: Record<string, PaletteMode> = {
 };
 
 const MODE_INFO: Record<PaletteMode, { label: string; color: string; placeholder: string }> = {
-  universal: { label: '', color: '', placeholder: 'Seite, Aktion oder Befehl suchen...' },
-  navigation: { label: '/', color: '#3b82f6', placeholder: 'Navigation...' },
-  commands: { label: '>', color: '#8b5cf6', placeholder: 'Befehl ausfuehren...' },
-  contacts: { label: '@', color: '#10b981', placeholder: 'Kontakt suchen...' },
-  tags: { label: '#', color: '#f59e0b', placeholder: 'Tag suchen...' },
+  universal: { label: '', color: '', placeholder: 'Suchen... (/ Seiten, > Befehle, @ Kontakte, # Tags)' },
+  navigation: { label: '/', color: MODE_COLORS.navigation, placeholder: 'Navigation...' },
+  commands: { label: '>', color: MODE_COLORS.commands, placeholder: 'Befehl ausführen...' },
+  contacts: { label: '@', color: MODE_COLORS.contacts, placeholder: 'Kontakt suchen...' },
+  tags: { label: '#', color: MODE_COLORS.tags, placeholder: 'Tag suchen...' },
 };
 
 interface CommandPaletteProps {
@@ -98,7 +99,7 @@ function recordRecency(commandId: string): void {
 // ============================================
 
 const CATEGORY_INFO: Record<CommandCategory, { label: string; icon: string }> = {
-  recent: { label: 'Kuerzlich', icon: '🕐' },
+  recent: { label: 'Kürzlich', icon: '🕐' },
   navigation: { label: 'Navigation', icon: '🧭' },
   'ai-features': { label: 'KI-Features', icon: '🤖' },
   content: { label: 'Inhalte', icon: '📄' },
@@ -357,18 +358,20 @@ export const CommandPalette = memo(function CommandPalette({
 
   let currentIndex = -1;
 
+  const kbdClass = 'inline-flex items-center justify-center min-w-5 px-1.5 py-0.5 bg-white/10 border border-white/15 rounded font-mono text-[10px] text-white/70';
+
   const paletteContent = (
     <>
       {/* Search Input */}
-      <div className="command-palette-header">
-        <div className="command-palette-search">
-          <span className="command-palette-search-icon" aria-hidden="true">
+      <div className="p-4 border-b border-white/8">
+        <div className="flex items-center gap-3 bg-white/5 border border-white/10 rounded-md px-4 py-3 focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20">
+          <span className="text-lg opacity-60 shrink-0" aria-hidden="true">
             🔍
           </span>
           {mode !== 'universal' && (
             <span
-              className="command-palette-mode-pill"
-              style={{ backgroundColor: modeInfo.color }}
+              className="inline-flex items-center gap-1 px-2 py-0.5 text-white rounded-xl text-[11px] font-semibold tracking-[0.02em] shrink-0 animate-scale-in bg-[var(--bg)]"
+              style={{ '--bg': modeInfo.color } as CSSProperties}
             >
               {modeInfo.label}
             </span>
@@ -376,7 +379,7 @@ export const CommandPalette = memo(function CommandPalette({
           <input
             ref={inputRef}
             type="text"
-            className="command-palette-input"
+            className="flex-1 bg-transparent border-none outline-none text-base font-sans text-text placeholder:text-white/65"
             placeholder={modeInfo.placeholder}
             value={query}
             onChange={e => setQuery(e.target.value)}
@@ -386,33 +389,33 @@ export const CommandPalette = memo(function CommandPalette({
             autoCapitalize="off"
             spellCheck={false}
           />
-          <kbd className="command-palette-shortcut-hint">ESC</kbd>
+          <kbd className="shrink-0 px-2 py-1 bg-white/10 border border-white/15 rounded-md font-mono text-[11px] text-white/70 uppercase max-sm:hidden">ESC</kbd>
         </div>
         {/* Mode hints */}
         {mode === 'universal' && !query && (
-          <div className="command-palette-mode-hints">
-            <span className="command-palette-mode-hint">
-              <kbd>/</kbd> Navigation
+          <div className="flex gap-3 px-4 pt-2 flex-wrap">
+            <span className="inline-flex items-center gap-1 text-[11px] text-white/50">
+              <kbd className={kbdClass}>/</kbd> Navigation
             </span>
-            <span className="command-palette-mode-hint">
-              <kbd>&gt;</kbd> Befehle
+            <span className="inline-flex items-center gap-1 text-[11px] text-white/50">
+              <kbd className={kbdClass}>&gt;</kbd> Befehle
             </span>
-            <span className="command-palette-mode-hint">
-              <kbd>@</kbd> Kontakte
+            <span className="inline-flex items-center gap-1 text-[11px] text-white/50">
+              <kbd className={kbdClass}>@</kbd> Kontakte
             </span>
-            <span className="command-palette-mode-hint">
-              <kbd>#</kbd> Tags
+            <span className="inline-flex items-center gap-1 text-[11px] text-white/50">
+              <kbd className={kbdClass}>#</kbd> Tags
             </span>
           </div>
         )}
       </div>
 
       {/* Results */}
-      <div className="command-palette-results" ref={listRef}>
-        {flatList.length === 0 ? (
-          <div className="command-palette-empty">
-            <span className="command-palette-empty-icon">🔍</span>
-            <p>Keine Ergebnisse fuer &quot;{cleanQuery}&quot;</p>
+      <div className="flex-1 overflow-y-auto p-2 scroll-smooth scrollbar-thin" ref={listRef}>
+        {flatList.length === 0 && query ? (
+          <div className="py-6 text-center text-text-secondary">
+            <p className="text-sm font-medium">Keine Ergebnisse</p>
+            <p className="text-[0.8125rem] mt-1">Nichts gefunden für &quot;{query}&quot;</p>
           </div>
         ) : (
           CATEGORY_ORDER.map(category => {
@@ -422,12 +425,12 @@ export const CommandPalette = memo(function CommandPalette({
             const info = CATEGORY_INFO[category];
 
             return (
-              <div key={category} className="command-palette-group">
-                <div className="command-palette-group-header">
-                  <span className="command-palette-group-icon">{info.icon}</span>
-                  <span className="command-palette-group-label">{info.label}</span>
+              <div key={category} className="mb-2 last:mb-0">
+                <div className="flex items-center gap-1.5 px-3 pt-2 pb-1 text-[11px] font-semibold text-white/60 uppercase tracking-wide">
+                  <span className="text-xs">{info.icon}</span>
+                  <span>{info.label}</span>
                 </div>
-                <ul className="command-palette-list">
+                <ul className="list-none m-0 p-0">
                   {items.map(command => {
                     currentIndex++;
                     const isSelected = currentIndex === selectedIndex;
@@ -437,22 +440,26 @@ export const CommandPalette = memo(function CommandPalette({
                       <li key={command.id}>
                         <button
                           type="button"
-                          className={`command-palette-item ${isSelected ? 'selected' : ''}`}
+                          className={cn(
+                            'flex items-center gap-3 w-full py-2.5 px-3 bg-transparent border-none rounded-[10px] cursor-pointer text-left font-sans transition-all duration-150',
+                            'hover:bg-surface-hover',
+                            isSelected && 'bg-surface-hover outline-2 outline-primary -outline-offset-2',
+                          )}
                           data-selected={isSelected}
                           onClick={() => executeCommand(command)}
                           onMouseEnter={() => setSelectedIndex(itemIndex)}
                         >
-                          <span className="command-palette-item-icon">{command.icon}</span>
-                          <div className="command-palette-item-content">
-                            <span className="command-palette-item-label">{command.label}</span>
+                          <span className="text-xl size-7 flex items-center justify-center shrink-0">{command.icon}</span>
+                          <div className="flex-1 min-w-0 flex flex-col gap-0.5">
+                            <span className="text-sm font-medium text-text whitespace-nowrap overflow-hidden text-ellipsis">{command.label}</span>
                             {command.description && (
-                              <span className="command-palette-item-description">
+                              <span className="text-xs text-white/60 whitespace-nowrap overflow-hidden text-ellipsis max-sm:hidden">
                                 {command.description}
                               </span>
                             )}
                           </div>
                           {command.shortcut && (
-                            <kbd className="command-palette-item-shortcut">
+                            <kbd className="shrink-0 inline-flex items-center gap-0.5 px-1.5 py-0.5 bg-white/10 border border-white/15 rounded-[5px] font-mono text-[11px] text-white/70">
                               {formatShortcut(command.shortcut)}
                             </kbd>
                           )}
@@ -468,16 +475,16 @@ export const CommandPalette = memo(function CommandPalette({
       </div>
 
       {/* Footer */}
-      <div className="command-palette-footer">
-        <div className="command-palette-footer-hints">
-          <span className="command-palette-hint">
-            <kbd>↑↓</kbd> navigieren
+      <div className="px-4 py-2.5 border-t border-white/8 bg-white/3">
+        <div className="flex items-center justify-center gap-4 flex-wrap">
+          <span className="flex items-center gap-1.5 text-xs text-white/65">
+            <kbd className={kbdClass}>↑↓</kbd> navigieren
           </span>
-          <span className="command-palette-hint">
-            <kbd>↵</kbd> auswaehlen
+          <span className="flex items-center gap-1.5 text-xs text-white/65">
+            <kbd className={kbdClass}>↵</kbd> auswählen
           </span>
-          <span className="command-palette-hint">
-            <kbd>esc</kbd> schliessen
+          <span className="flex items-center gap-1.5 text-xs text-white/65">
+            <kbd className={kbdClass}>esc</kbd> schließen
           </span>
         </div>
       </div>
@@ -488,7 +495,7 @@ export const CommandPalette = memo(function CommandPalette({
   if (isMobile) {
     return createPortal(
       <BottomSheet isOpen={isOpen} onClose={onClose} snapPoint="full" title="Schnellnavigation">
-        <div className="command-palette command-palette--bottom-sheet">
+        <div className="flex flex-col max-h-full overflow-hidden">
           {paletteContent}
         </div>
       </BottomSheet>,
@@ -499,7 +506,7 @@ export const CommandPalette = memo(function CommandPalette({
   // Desktop: render as centered modal with animation
   return createPortal(
     <motion.div
-      className="command-palette-overlay"
+      className="fixed inset-0 bg-glass-bg backdrop-blur-glass flex items-start justify-center pt-[15vh] z-command motion-reduce:animate-none"
       onClick={onClose}
       role="presentation"
       initial={{ opacity: 0 }}
@@ -509,7 +516,7 @@ export const CommandPalette = memo(function CommandPalette({
     >
       <motion.div
         ref={trapRef}
-        className="command-palette"
+        className="bg-surface/95 border border-white/10 rounded-lg w-full max-w-[560px] max-h-[70vh] flex flex-col shadow-lg overflow-hidden motion-reduce:animate-none max-sm:max-h-[85vh] max-sm:rounded-md"
         onClick={e => e.stopPropagation()}
         role="dialog"
         aria-modal="true"
@@ -551,7 +558,7 @@ function isRelatedToCurrentPage(cmd: Command, currentPage: Page): boolean {
 interface UseCommandPaletteOptions {
   onNavigate: (page: Page) => void;
   onAction?: (action: string) => void;
-  /** Callback to open a cockpit panel */
+  /** Callback to open a panel by ID */
   onOpenPanel?: (panelId: string) => void;
   /** External recent pages from usePageHistory (shared state) */
   externalRecentPages?: string[];
@@ -647,7 +654,7 @@ export function useCommandPalette({ onNavigate, onAction, externalRecentPages, c
       {
         id: 'screen-memory',
         label: 'Screen Memory',
-        description: 'Bildschirmaktivitaet durchsuchen',
+        description: 'Bildschirmaktivität durchsuchen',
         icon: '🧠',
         category: 'ai-features' as CommandCategory,
         keywords: ['screen', 'memory', 'bildschirm', 'recall'],

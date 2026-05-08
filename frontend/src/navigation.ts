@@ -20,6 +20,8 @@ export interface NavItem {
   badge?: 'notifications' | 'email_unread';
   /** Sub-pages that should highlight this nav item as active */
   subPages?: Page[];
+  /** Lazy-import function for hover-based prefetching */
+  preloadFn?: () => Promise<unknown>;
 }
 
 /**
@@ -46,6 +48,7 @@ export const NAV_ITEMS: NavItem[] = [
     label: 'Ideen',
     description: 'Ideen sammeln, entwickeln & priorisieren',
     subPages: ['incubator', 'archive', 'triage', 'workshop', 'proactive', 'evolution', 'agent-teams', 'ai-workshop'],
+    preloadFn: () => import('./components/IdeasPage'),
   },
   {
     page: 'calendar',
@@ -53,6 +56,7 @@ export const NAV_ITEMS: NavItem[] = [
     label: 'Planer',
     description: 'Kalender, Aufgaben, Kontakte & Projekte',
     subPages: ['tasks', 'kanban', 'gantt', 'meetings', 'contacts', 'learning-tasks'],
+    preloadFn: () => import('./components/PlannerPage/PlannerPage'),
   },
   {
     page: 'email',
@@ -61,34 +65,39 @@ export const NAV_ITEMS: NavItem[] = [
     description: 'E-Mails, Benachrichtigungen & KI-Hinweise',
     badge: 'email_unread',
     subPages: ['notifications'],
+    preloadFn: () => import('./components/EmailPage/InboxSmartPage'),
   },
   {
     page: 'documents',
     icon: 'FileText',
-    label: 'Wissen',
-    description: 'Dokumente, Canvas, Knowledge Graph & Lernen',
-    subPages: ['canvas', 'media', 'knowledge-graph', 'learning', 'stories'],
+    label: 'Wissensbasis',
+    description: 'Dokumente, Canvas & Medien',
+    subPages: ['canvas', 'media', 'knowledge-graph', 'learning'],
+    preloadFn: () => import('./components/DocumentVaultPage'),
   },
   {
     page: 'business',
     icon: 'BarChart3',
     label: 'Cockpit',
     description: 'Business, Finanzen & Trends',
-    subPages: ['finance', 'insights', 'analytics', 'digest', 'graphrag'],
+    subPages: ['finance', 'insights', 'analytics', 'digest', 'graphrag', 'social'],
+    preloadFn: () => import('./components/BusinessDashboard'),
   },
   {
     page: 'my-ai',
     icon: 'Brain',
     label: 'Meine KI',
-    description: 'Persona, Gedaechtnis & Sprach-Chat',
-    subPages: ['voice-chat', 'memory-insights', 'digital-twin', 'procedural-memory', 'personalization'],
+    description: 'Persona, Gedächtnis & Sprach-Chat',
+    subPages: ['voice-chat', 'memory-insights', 'digital-twin', 'procedural-memory'],
+    preloadFn: () => import('./components/MyAIPage'),
   },
   {
-    page: 'settings',
+    page: 'settings-user',
     icon: 'Settings',
     label: 'System',
     description: 'Einstellungen, Admin & Integrationen',
-    subPages: ['profile', 'automations', 'integrations', 'mcp-servers', 'export', 'sync', 'system-admin'],
+    subPages: ['settings-ai', 'settings-integrations', 'settings-admin', 'profile', 'automations', 'integrations', 'mcp-servers', 'export', 'sync', 'system-admin', 'billing'] as Page[],
+    preloadFn: () => import('./components/settings/UserSettingsPage'),
   },
 ];
 
@@ -109,10 +118,10 @@ export function isNavItemActive(item: NavItem, currentPage: Page): boolean {
 
 /**
  * Find the nav item that contains a given page (as primary or subPage).
- * For hub/home/chat/dashboard/browser/screen-memory/agent-teams → returns NAV_HUB_ITEM.
+ * For hub/home/chat/browser/screen-memory/agent-teams → returns NAV_HUB_ITEM.
  */
 export function findNavItemForPage(page: Page): NavItem | undefined {
-  const hubPages: Page[] = ['hub', 'home', 'chat', 'dashboard', 'browser', 'screen-memory', 'agent-teams'];
+  const hubPages: Page[] = ['hub', 'home', 'chat', 'browser', 'screen-memory', 'agent-teams'];
   if (hubPages.includes(page)) return NAV_HUB_ITEM;
   return NAV_ITEMS.find(item => item.page === page || item.subPages?.includes(page));
 }
@@ -139,3 +148,87 @@ export function getPageDescription(page: Page): string | undefined {
   const item = findNavItemForPage(page);
   return item?.description;
 }
+
+// ===========================================
+// Workspace Sidebar Groups (Dual-Mode Layout)
+// ===========================================
+
+export interface NavGroup {
+  id: string;
+  label: string;
+  items: NavItem[];
+}
+
+/**
+ * Additional nav items for Workspace mode that aren't in the 7+1 Smart Page list.
+ * These pages exist as sub-pages in the Smart Page model but get promoted
+ * to top-level items in the grouped Workspace sidebar.
+ */
+const NAV_WORKSPACE_ITEMS: Record<string, NavItem> = {
+  contacts: { page: 'contacts' as Page, icon: 'Users', label: 'Kontakte' },
+  finance: { page: 'finance' as Page, icon: 'Wallet', label: 'Finanzen' },
+  insights: { page: 'insights' as Page, icon: 'TrendingUp', label: 'Einblicke' },
+  learning: { page: 'learning' as Page, icon: 'GraduationCap', label: 'Lernen' },
+  workshop: {
+    page: 'workshop' as Page,
+    icon: 'Wrench',
+    label: 'Werkstatt',
+    subPages: ['proactive', 'evolution', 'agent-teams'] as Page[],
+  },
+  settingsAi: { page: 'settings-ai' as Page, icon: 'Cpu', label: 'KI-Einstellungen' },
+  settingsIntegrations: { page: 'settings-integrations' as Page, icon: 'Plug', label: 'Integrationen' },
+  settingsAdmin: { page: 'settings-admin' as Page, icon: 'Shield', label: 'Administration' },
+};
+
+/**
+ * Grouped sidebar items for Workspace mode.
+ * Each group has a label and a list of NavItems.
+ * References existing NAV_ITEMS where possible, adds workspace-specific items.
+ */
+export const SIDEBAR_GROUPS: NavGroup[] = [
+  {
+    id: 'work',
+    label: 'Arbeiten',
+    items: [
+      NAV_ITEMS.find(i => i.page === 'ideas')!,
+      NAV_ITEMS.find(i => i.page === 'calendar')!,
+      NAV_ITEMS.find(i => i.page === 'email')!,
+      NAV_WORKSPACE_ITEMS.contacts,
+    ],
+  },
+  {
+    id: 'knowledge',
+    label: 'Wissen',
+    items: [
+      NAV_ITEMS.find(i => i.page === 'documents')!,
+      NAV_WORKSPACE_ITEMS.learning,
+    ],
+  },
+  {
+    id: 'control',
+    label: 'Steuern',
+    items: [
+      NAV_ITEMS.find(i => i.page === 'business')!,
+      NAV_WORKSPACE_ITEMS.finance,
+      NAV_WORKSPACE_ITEMS.insights,
+    ],
+  },
+  {
+    id: 'ai',
+    label: 'KI',
+    items: [
+      NAV_ITEMS.find(i => i.page === 'my-ai')!,
+      NAV_WORKSPACE_ITEMS.workshop,
+    ],
+  },
+  {
+    id: 'system',
+    label: 'System',
+    items: [
+      NAV_ITEMS.find(i => i.page === 'settings-user')!,
+      NAV_WORKSPACE_ITEMS.settingsAi,
+      NAV_WORKSPACE_ITEMS.settingsIntegrations,
+      NAV_WORKSPACE_ITEMS.settingsAdmin,
+    ],
+  },
+];

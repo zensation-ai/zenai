@@ -47,7 +47,7 @@ jest.mock('../../utils/user-context', () => ({
 
 jest.mock('../../utils/database-context', () => ({
   queryContext: jest.fn().mockResolvedValue({ rows: [] }),
-  isValidContext: jest.fn((ctx: string) => ['personal', 'work', 'learning', 'creative'].includes(ctx)),
+  isValidContext: jest.fn((ctx: string) => ['operations', 'finance', 'people', 'strategy'].includes(ctx)),
   isValidUUID: jest.fn((id: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id)),
   AIContext: {},
 }));
@@ -156,7 +156,7 @@ jest.mock('multer', () => {
 const TEST_SESSION = {
   id: '11111111-2222-3333-aaaa-555555555555',
   title: 'Test Chat',
-  context: 'personal' as const,
+  context: 'operations' as const,
   session_type: 'general',
   user_id: 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee',
   created_at: new Date().toISOString(),
@@ -188,7 +188,7 @@ describe('Chat Session Integration Tests', () => {
 
       const res = await request(app)
         .post('/api/chat/sessions')
-        .send({ context: 'personal' });
+        .send({ context: 'operations' });
 
       expect([200, 201]).toContain(res.status);
       if (res.body.success) {
@@ -197,7 +197,7 @@ describe('Chat Session Integration Tests', () => {
     });
 
     it('should create sessions in different contexts', async () => {
-      for (const ctx of ['personal', 'work', 'learning', 'creative']) {
+      for (const ctx of ['operations', 'finance', 'people', 'strategy']) {
         mockCreateSession.mockResolvedValue({ ...TEST_SESSION, context: ctx });
 
         const res = await request(app)
@@ -215,7 +215,7 @@ describe('Chat Session Integration Tests', () => {
 
       const res = await request(app)
         .get('/api/chat/sessions')
-        .query({ context: 'personal' });
+        .query({ context: 'operations' });
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
@@ -226,7 +226,7 @@ describe('Chat Session Integration Tests', () => {
 
       const res = await request(app)
         .get('/api/chat/sessions')
-        .query({ context: 'personal' });
+        .query({ context: 'operations' });
 
       expect(res.status).toBe(200);
     });
@@ -244,7 +244,7 @@ describe('Chat Session Integration Tests', () => {
 
       const res = await request(app)
         .get(`/api/chat/sessions/${TEST_SESSION.id}`)
-        .query({ context: 'personal' });
+        .query({ context: 'operations' });
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
@@ -255,7 +255,7 @@ describe('Chat Session Integration Tests', () => {
 
       const res = await request(app)
         .get(`/api/chat/sessions/${TEST_SESSION.id}`)
-        .query({ context: 'personal' });
+        .query({ context: 'operations' });
 
       expect(res.status).toBe(404);
     });
@@ -267,7 +267,7 @@ describe('Chat Session Integration Tests', () => {
 
       const res = await request(app)
         .delete(`/api/chat/sessions/${TEST_SESSION.id}`)
-        .query({ context: 'personal' });
+        .query({ context: 'operations' });
 
       expect([200, 204]).toContain(res.status);
     });
@@ -305,7 +305,7 @@ describe('Chat Session Integration Tests', () => {
   describe('Response format compliance', () => {
     it('should always include success field', async () => {
       mockGetSessions.mockResolvedValue([]);
-      const res = await request(app).get('/api/chat/sessions').query({ context: 'personal' });
+      const res = await request(app).get('/api/chat/sessions').query({ context: 'operations' });
 
       expect(res.body).toHaveProperty('success');
     });

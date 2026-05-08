@@ -6,8 +6,6 @@
  */
 
 import type { FeatureHint } from '../constants/featureHints';
-import './FeatureHintCard.css';
-
 interface FeatureHintCardProps {
   hint: FeatureHint;
   onDismiss: (id: string) => void;

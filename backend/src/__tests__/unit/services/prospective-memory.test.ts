@@ -32,7 +32,7 @@ import {
 jest.mock('../../../utils/database-context', () => ({
   queryContext: jest.fn(),
   isValidContext: (ctx: string) =>
-    ['personal', 'work', 'learning', 'creative'].includes(ctx),
+    ['operations', 'finance', 'people', 'strategy'].includes(ctx),
 }));
 
 jest.mock('../../../utils/logger', () => ({
@@ -87,7 +87,7 @@ const mockContextRow = {
   ...mockProspectiveRow,
   id: 'pm-003',
   trigger_type: 'context' as const,
-  trigger_condition: { context: 'work' },
+  trigger_condition: { context: 'finance' },
   memory_content: 'Follow up with client during work context',
 };
 
@@ -105,7 +105,7 @@ describe('ProspectiveMemory Service', () => {
     it('should create a time-based prospective memory', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [mockProspectiveRow], rowCount: 1 } as any);
 
-      const result = await createProspectiveMemory('personal', SYSTEM_USER_ID, {
+      const result = await createProspectiveMemory('operations', SYSTEM_USER_ID, {
         triggerType: 'time',
         triggerCondition: { time: '2026-03-17T09:00:00Z' },
         memoryContent: 'Remember to send weekly report',
@@ -119,7 +119,7 @@ describe('ProspectiveMemory Service', () => {
       expect(result.priority).toBe('high');
       expect(result.status).toBe('pending');
       expect(mockQueryContext).toHaveBeenCalledWith(
-        'personal',
+        'operations',
         expect.stringContaining('INSERT INTO prospective_memories'),
         expect.arrayContaining([SYSTEM_USER_ID, 'time'])
       );
@@ -131,7 +131,7 @@ describe('ProspectiveMemory Service', () => {
         rowCount: 1,
       } as any);
 
-      const result = await createProspectiveMemory('work', SYSTEM_USER_ID, {
+      const result = await createProspectiveMemory('finance', SYSTEM_USER_ID, {
         triggerType: 'activity',
         triggerCondition: { page: 'dashboard' },
         memoryContent: 'Check notifications',
@@ -143,7 +143,7 @@ describe('ProspectiveMemory Service', () => {
     it('should create an activity-based prospective memory', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [mockActivityRow], rowCount: 1 } as any);
 
-      const result = await createProspectiveMemory('personal', SYSTEM_USER_ID, {
+      const result = await createProspectiveMemory('operations', SYSTEM_USER_ID, {
         triggerType: 'activity',
         triggerCondition: { page: 'finance' },
         memoryContent: 'Check Q1 budget when on finance page',
@@ -156,9 +156,9 @@ describe('ProspectiveMemory Service', () => {
     it('should create a context-based prospective memory', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [mockContextRow], rowCount: 1 } as any);
 
-      const result = await createProspectiveMemory('work', SYSTEM_USER_ID, {
+      const result = await createProspectiveMemory('finance', SYSTEM_USER_ID, {
         triggerType: 'context',
-        triggerCondition: { context: 'work' },
+        triggerCondition: { context: 'finance' },
         memoryContent: 'Follow up with client during work context',
       });
 
@@ -171,7 +171,7 @@ describe('ProspectiveMemory Service', () => {
         rowCount: 1,
       } as any);
 
-      await createProspectiveMemory('personal', SYSTEM_USER_ID, {
+      await createProspectiveMemory('operations', SYSTEM_USER_ID, {
         triggerType: 'time',
         triggerCondition: { time: '2026-03-17T09:00:00Z' },
         memoryContent: 'Test',
@@ -186,12 +186,12 @@ describe('ProspectiveMemory Service', () => {
     it('should return time-based memories whose trigger time has passed', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [mockProspectiveRow], rowCount: 1 } as any);
 
-      const results = await checkTimeBasedTriggers('personal');
+      const results = await checkTimeBasedTriggers('operations');
 
       expect(results).toHaveLength(1);
       expect(results[0].triggerType).toBe('time');
       expect(mockQueryContext).toHaveBeenCalledWith(
-        'personal',
+        'operations',
         expect.stringContaining("trigger_type = 'time'"),
         []
       );
@@ -200,7 +200,7 @@ describe('ProspectiveMemory Service', () => {
     it('should return empty array when no triggers are due', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any);
 
-      const results = await checkTimeBasedTriggers('work');
+      const results = await checkTimeBasedTriggers('finance');
 
       expect(results).toHaveLength(0);
     });
@@ -210,12 +210,12 @@ describe('ProspectiveMemory Service', () => {
     it('should return memories matching the current page', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [mockActivityRow], rowCount: 1 } as any);
 
-      const results = await checkActivityTriggers('personal', SYSTEM_USER_ID, 'finance');
+      const results = await checkActivityTriggers('operations', SYSTEM_USER_ID, 'finance');
 
       expect(results).toHaveLength(1);
       expect(results[0].memoryContent).toBe('Check Q1 budget when on finance page');
       expect(mockQueryContext).toHaveBeenCalledWith(
-        'personal',
+        'operations',
         expect.stringContaining("trigger_type = 'activity'"),
         [SYSTEM_USER_ID, 'finance']
       );
@@ -224,7 +224,7 @@ describe('ProspectiveMemory Service', () => {
     it('should return empty when no activity matches', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any);
 
-      const results = await checkActivityTriggers('personal', SYSTEM_USER_ID, 'settings');
+      const results = await checkActivityTriggers('operations', SYSTEM_USER_ID, 'settings');
 
       expect(results).toHaveLength(0);
     });
@@ -234,16 +234,16 @@ describe('ProspectiveMemory Service', () => {
     it('should return memories matching the current context', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [mockContextRow], rowCount: 1 } as any);
 
-      const results = await checkContextTriggers('work', SYSTEM_USER_ID);
+      const results = await checkContextTriggers('finance', SYSTEM_USER_ID);
 
       expect(results).toHaveLength(1);
-      expect(results[0].triggerCondition).toEqual({ context: 'work' });
+      expect(results[0].triggerCondition).toEqual({ context: 'finance' });
     });
 
     it('should return empty when no context matches', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any);
 
-      const results = await checkContextTriggers('learning', SYSTEM_USER_ID);
+      const results = await checkContextTriggers('people', SYSTEM_USER_ID);
 
       expect(results).toHaveLength(0);
     });
@@ -258,13 +258,13 @@ describe('ProspectiveMemory Service', () => {
       };
       mockQueryContext.mockResolvedValueOnce({ rows: [firedRow], rowCount: 1 } as any);
 
-      const result = await fireMemory('personal', 'pm-001');
+      const result = await fireMemory('operations', 'pm-001');
 
       expect(result).not.toBeNull();
       expect(result!.status).toBe('fired');
       expect(result!.firedAt).toBeTruthy();
       expect(mockQueryContext).toHaveBeenCalledWith(
-        'personal',
+        'operations',
         expect.stringContaining("status = 'fired'"),
         ['pm-001']
       );
@@ -273,7 +273,7 @@ describe('ProspectiveMemory Service', () => {
     it('should return null when memory not found', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any);
 
-      const result = await fireMemory('personal', 'nonexistent');
+      const result = await fireMemory('operations', 'nonexistent');
 
       expect(result).toBeNull();
     });
@@ -281,7 +281,7 @@ describe('ProspectiveMemory Service', () => {
     it('should return null when memory is not pending', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any);
 
-      const result = await fireMemory('personal', 'pm-already-fired');
+      const result = await fireMemory('operations', 'pm-already-fired');
 
       expect(result).toBeNull();
     });
@@ -292,12 +292,12 @@ describe('ProspectiveMemory Service', () => {
       const dismissedRow = { ...mockProspectiveRow, status: 'dismissed' };
       mockQueryContext.mockResolvedValueOnce({ rows: [dismissedRow], rowCount: 1 } as any);
 
-      const result = await dismissMemory('personal', 'pm-001');
+      const result = await dismissMemory('operations', 'pm-001');
 
       expect(result).not.toBeNull();
       expect(result!.status).toBe('dismissed');
       expect(mockQueryContext).toHaveBeenCalledWith(
-        'personal',
+        'operations',
         expect.stringContaining("status = 'dismissed'"),
         ['pm-001']
       );
@@ -306,7 +306,7 @@ describe('ProspectiveMemory Service', () => {
     it('should return null when memory not found or not pending', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any);
 
-      const result = await dismissMemory('personal', 'nonexistent');
+      const result = await dismissMemory('operations', 'nonexistent');
 
       expect(result).toBeNull();
     });
@@ -321,7 +321,7 @@ describe('ProspectiveMemory Service', () => {
         rowCount: 2,
       } as any);
 
-      const results = await listPending('personal', SYSTEM_USER_ID);
+      const results = await listPending('operations', SYSTEM_USER_ID);
 
       expect(results).toHaveLength(2);
       expect(results[0].priority).toBe('high');
@@ -331,7 +331,7 @@ describe('ProspectiveMemory Service', () => {
     it('should return empty array when no pending memories', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any);
 
-      const results = await listPending('work', SYSTEM_USER_ID);
+      const results = await listPending('finance', SYSTEM_USER_ID);
 
       expect(results).toHaveLength(0);
     });
@@ -341,11 +341,11 @@ describe('ProspectiveMemory Service', () => {
     it('should expire and count old memories', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [], rowCount: 3 } as any);
 
-      const count = await getExpiredAndCleanup('personal');
+      const count = await getExpiredAndCleanup('operations');
 
       expect(count).toBe(3);
       expect(mockQueryContext).toHaveBeenCalledWith(
-        'personal',
+        'operations',
         expect.stringContaining("status = 'expired'"),
         []
       );
@@ -354,7 +354,7 @@ describe('ProspectiveMemory Service', () => {
     it('should return 0 when nothing to expire', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any);
 
-      const count = await getExpiredAndCleanup('work');
+      const count = await getExpiredAndCleanup('finance');
 
       expect(count).toBe(0);
     });
@@ -403,7 +403,7 @@ describe('Metamemory Service', () => {
         rowCount: 2,
       } as any);
 
-      const stats = await getMetamemoryStats('personal', SYSTEM_USER_ID);
+      const stats = await getMetamemoryStats('operations', SYSTEM_USER_ID);
 
       expect(stats.totalFacts).toBe(42);
       expect(stats.highConfidence).toBe(25);
@@ -430,7 +430,7 @@ describe('Metamemory Service', () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any);
       mockQueryContext.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any);
 
-      const stats = await getMetamemoryStats('personal', SYSTEM_USER_ID);
+      const stats = await getMetamemoryStats('operations', SYSTEM_USER_ID);
 
       expect(stats.totalFacts).toBe(0);
       expect(stats.topCategories).toHaveLength(0);
@@ -448,7 +448,7 @@ describe('Metamemory Service', () => {
         rowCount: 2,
       } as any);
 
-      const gaps = await getKnowledgeGaps('personal', SYSTEM_USER_ID);
+      const gaps = await getKnowledgeGaps('operations', SYSTEM_USER_ID);
 
       expect(gaps).toHaveLength(2);
       expect(gaps[0].category).toBe('philosophy');
@@ -459,7 +459,7 @@ describe('Metamemory Service', () => {
     it('should return empty when no gaps', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any);
 
-      const gaps = await getKnowledgeGaps('work', SYSTEM_USER_ID);
+      const gaps = await getKnowledgeGaps('finance', SYSTEM_USER_ID);
 
       expect(gaps).toHaveLength(0);
     });
@@ -476,7 +476,7 @@ describe('Metamemory Service', () => {
         rowCount: 3,
       } as any);
 
-      const dist = await getConfidenceDistribution('personal', SYSTEM_USER_ID);
+      const dist = await getConfidenceDistribution('operations', SYSTEM_USER_ID);
 
       expect(dist).toHaveLength(3);
       expect(dist[0].range).toBe('0.9-1.0');
@@ -497,7 +497,7 @@ describe('Metamemory Service', () => {
         rowCount: 1,
       } as any);
 
-      const conflicts = await findConflicts('personal', SYSTEM_USER_ID, 0.4);
+      const conflicts = await findConflicts('operations', SYSTEM_USER_ID, 0.4);
 
       expect(conflicts).toHaveLength(1);
       expect(conflicts[0].fact1Id).toBe('f-001');
@@ -508,7 +508,7 @@ describe('Metamemory Service', () => {
     it('should return empty when no conflicts found', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any);
 
-      const conflicts = await findConflicts('personal', SYSTEM_USER_ID);
+      const conflicts = await findConflicts('operations', SYSTEM_USER_ID);
 
       expect(conflicts).toHaveLength(0);
     });
@@ -516,7 +516,7 @@ describe('Metamemory Service', () => {
     it('should gracefully handle pg_trgm not being available', async () => {
       mockQueryContext.mockRejectedValueOnce(new Error('function similarity(text, text) does not exist'));
 
-      const conflicts = await findConflicts('personal', SYSTEM_USER_ID);
+      const conflicts = await findConflicts('operations', SYSTEM_USER_ID);
 
       expect(conflicts).toHaveLength(0);
     });
@@ -551,7 +551,7 @@ describe('Prospective Memory Routes', () => {
         rowCount: 1,
       } as any);
 
-      const res = await request(app).get('/api/personal/memory/prospective');
+      const res = await request(app).get('/api/operations/memory/prospective');
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
@@ -573,7 +573,7 @@ describe('Prospective Memory Routes', () => {
       } as any);
 
       const res = await request(app)
-        .post('/api/personal/memory/prospective')
+        .post('/api/operations/memory/prospective')
         .send({
           triggerType: 'time',
           triggerCondition: { time: '2026-03-17T09:00:00Z' },
@@ -588,7 +588,7 @@ describe('Prospective Memory Routes', () => {
 
     it('should reject invalid triggerType', async () => {
       const res = await request(app)
-        .post('/api/personal/memory/prospective')
+        .post('/api/operations/memory/prospective')
         .send({
           triggerType: 'invalid',
           triggerCondition: {},
@@ -600,7 +600,7 @@ describe('Prospective Memory Routes', () => {
 
     it('should reject missing memoryContent', async () => {
       const res = await request(app)
-        .post('/api/personal/memory/prospective')
+        .post('/api/operations/memory/prospective')
         .send({
           triggerType: 'time',
           triggerCondition: { time: '2026-03-17' },
@@ -611,7 +611,7 @@ describe('Prospective Memory Routes', () => {
 
     it('should reject invalid priority', async () => {
       const res = await request(app)
-        .post('/api/personal/memory/prospective')
+        .post('/api/operations/memory/prospective')
         .send({
           triggerType: 'time',
           triggerCondition: { time: '2026-03-17' },
@@ -628,7 +628,7 @@ describe('Prospective Memory Routes', () => {
       const firedRow = { ...mockProspectiveRow, status: 'fired', fired_at: '2026-03-17T09:05:00Z' };
       mockQueryContext.mockResolvedValueOnce({ rows: [firedRow], rowCount: 1 } as any);
 
-      const res = await request(app).post('/api/personal/memory/prospective/pm-001/fire');
+      const res = await request(app).post('/api/operations/memory/prospective/pm-001/fire');
 
       expect(res.status).toBe(200);
       expect(res.body.data.status).toBe('fired');
@@ -637,7 +637,7 @@ describe('Prospective Memory Routes', () => {
     it('should return 404 for nonexistent memory', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any);
 
-      const res = await request(app).post('/api/personal/memory/prospective/nonexistent/fire');
+      const res = await request(app).post('/api/operations/memory/prospective/nonexistent/fire');
 
       expect(res.status).toBe(404);
     });
@@ -648,7 +648,7 @@ describe('Prospective Memory Routes', () => {
       const dismissedRow = { ...mockProspectiveRow, status: 'dismissed' };
       mockQueryContext.mockResolvedValueOnce({ rows: [dismissedRow], rowCount: 1 } as any);
 
-      const res = await request(app).post('/api/personal/memory/prospective/pm-001/dismiss');
+      const res = await request(app).post('/api/operations/memory/prospective/pm-001/dismiss');
 
       expect(res.status).toBe(200);
       expect(res.body.data.status).toBe('dismissed');
@@ -657,7 +657,7 @@ describe('Prospective Memory Routes', () => {
     it('should return 404 for nonexistent memory', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any);
 
-      const res = await request(app).post('/api/personal/memory/prospective/nonexistent/dismiss');
+      const res = await request(app).post('/api/operations/memory/prospective/nonexistent/dismiss');
 
       expect(res.status).toBe(404);
     });
@@ -672,7 +672,7 @@ describe('Prospective Memory Routes', () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [{ category: 'tech', count: '5' }], rowCount: 1 } as any);
       mockQueryContext.mockResolvedValueOnce({ rows: [{ category: 'art', count: '2' }], rowCount: 1 } as any);
 
-      const res = await request(app).get('/api/personal/memory/metamemory/stats');
+      const res = await request(app).get('/api/operations/memory/metamemory/stats');
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
@@ -687,7 +687,7 @@ describe('Prospective Memory Routes', () => {
         rowCount: 1,
       } as any);
 
-      const res = await request(app).get('/api/personal/memory/metamemory/gaps');
+      const res = await request(app).get('/api/operations/memory/metamemory/gaps');
 
       expect(res.status).toBe(200);
       expect(res.body.data).toHaveLength(1);
@@ -708,7 +708,7 @@ describe('Prospective Memory Routes', () => {
         rowCount: 1,
       } as any);
 
-      const res = await request(app).get('/api/personal/memory/metamemory/conflicts');
+      const res = await request(app).get('/api/operations/memory/metamemory/conflicts');
 
       expect(res.status).toBe(200);
       expect(res.body.data).toHaveLength(1);
@@ -718,7 +718,7 @@ describe('Prospective Memory Routes', () => {
     it('should accept custom threshold', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any);
 
-      const res = await request(app).get('/api/personal/memory/metamemory/conflicts?threshold=0.8');
+      const res = await request(app).get('/api/operations/memory/metamemory/conflicts?threshold=0.8');
 
       expect(res.status).toBe(200);
       expect(res.body.data).toHaveLength(0);

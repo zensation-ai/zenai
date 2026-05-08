@@ -235,19 +235,19 @@ describe('AI Service', () => {
   // ===========================================
 
   describe('Context Handling', () => {
-    it('should accept personal context', () => {
-      const context = 'personal';
-      expect(['personal', 'work', 'learning', 'creative'].includes(context)).toBe(true);
+    it('should accept operations context', () => {
+      const context = 'operations';
+      expect(['operations', 'finance', 'people', 'strategy'].includes(context)).toBe(true);
     });
 
-    it('should accept work context', () => {
-      const context = 'work';
-      expect(['personal', 'work', 'learning', 'creative'].includes(context)).toBe(true);
+    it('should accept finance context', () => {
+      const context = 'finance';
+      expect(['operations', 'finance', 'people', 'strategy'].includes(context)).toBe(true);
     });
 
     it('should reject invalid context', () => {
       const context = 'invalid';
-      expect(['personal', 'work', 'learning', 'creative'].includes(context)).toBe(false);
+      expect(['operations', 'finance', 'people', 'strategy'].includes(context)).toBe(false);
     });
   });
 

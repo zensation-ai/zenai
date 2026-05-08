@@ -51,7 +51,7 @@ describe('Productivity Analytics Service', () => {
         .mockResolvedValueOnce({ rows: [{ weekly_auto: '10', monthly_auto: '40' }] })       // auto-categories
         .mockResolvedValueOnce({ rows: [{ weekly_voice: '3', monthly_voice: '10' }] });     // voice memos
 
-      const result = await getTimeSavedMetrics('personal');
+      const result = await getTimeSavedMetrics('operations');
 
       expect(result.weeklyHoursSaved).toBeGreaterThan(0);
       expect(result.monthlyHoursSaved).toBeGreaterThan(result.weeklyHoursSaved);
@@ -72,7 +72,7 @@ describe('Productivity Analytics Service', () => {
         .mockResolvedValueOnce({ rows: [{ weekly_auto: '0', monthly_auto: '0' }] })
         .mockResolvedValueOnce({ rows: [{ weekly_voice: '0', monthly_voice: '0' }] });
 
-      const result = await getTimeSavedMetrics('personal');
+      const result = await getTimeSavedMetrics('operations');
 
       expect(result.weeklyHoursSaved).toBe(1);
       expect(result.breakdown.draftsAccepted.hoursSaved).toBe(0.5);
@@ -86,7 +86,7 @@ describe('Productivity Analytics Service', () => {
         .mockResolvedValueOnce({ rows: [{ weekly_auto: '0', monthly_auto: '0' }] })
         .mockResolvedValueOnce({ rows: [{ weekly_voice: '0', monthly_voice: '0' }] });
 
-      const result = await getTimeSavedMetrics('personal');
+      const result = await getTimeSavedMetrics('operations');
 
       expect(result.weeklyHoursSaved).toBe(0);
       expect(result.monthlyHoursSaved).toBe(0);
@@ -95,7 +95,7 @@ describe('Productivity Analytics Service', () => {
     it('should return defaults on database error', async () => {
       mockQueryContext.mockRejectedValue(new Error('DB error'));
 
-      const result = await getTimeSavedMetrics('personal');
+      const result = await getTimeSavedMetrics('operations');
 
       expect(result.weeklyHoursSaved).toBe(0);
       expect(result.monthlyHoursSaved).toBe(0);
@@ -116,7 +116,7 @@ describe('Productivity Analytics Service', () => {
         ],
       });
 
-      const result = await getActivityHeatmap('personal');
+      const result = await getActivityHeatmap('operations');
 
       expect(result.grid).toHaveLength(7);
       expect(result.grid[0]).toHaveLength(24);
@@ -134,7 +134,7 @@ describe('Productivity Analytics Service', () => {
         ],
       });
 
-      const result = await getActivityHeatmap('personal');
+      const result = await getActivityHeatmap('operations');
 
       expect(result.peak.day).toBe(2);
       expect(result.peak.hour).toBe(10);
@@ -144,7 +144,7 @@ describe('Productivity Analytics Service', () => {
     it('should return empty grid on error', async () => {
       mockQueryContext.mockRejectedValue(new Error('DB error'));
 
-      const result = await getActivityHeatmap('work');
+      const result = await getActivityHeatmap('finance');
 
       expect(result.grid).toHaveLength(7);
       expect(result.totalDataPoints).toBe(0);
@@ -154,7 +154,7 @@ describe('Productivity Analytics Service', () => {
     it('should include German day labels', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [] });
 
-      const result = await getActivityHeatmap('personal');
+      const result = await getActivityHeatmap('operations');
 
       expect(result.dayLabels).toEqual(['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa']);
     });
@@ -172,7 +172,7 @@ describe('Productivity Analytics Service', () => {
         .mockResolvedValueOnce({ rows: [{ ideas_30d: '30', ideas_7d: '8' }] }) // recent
         .mockResolvedValueOnce({ rows: [{ total: '15' }] });       // recent connections
 
-      const result = await getKnowledgeGrowth('personal');
+      const result = await getKnowledgeGrowth('operations');
 
       expect(result.totalIdeas).toBe(150);
       expect(result.totalConnections).toBe(45);
@@ -190,7 +190,7 @@ describe('Productivity Analytics Service', () => {
         .mockResolvedValueOnce({ rows: [{ ideas_30d: '10', ideas_7d: '3' }] })
         .mockRejectedValueOnce(new Error('column not found')); // connections query fails
 
-      const result = await getKnowledgeGrowth('personal');
+      const result = await getKnowledgeGrowth('operations');
 
       expect(result.totalIdeas).toBe(50);
       expect(result.connectionsLast30Days).toBe(0); // Graceful fallback
@@ -199,7 +199,7 @@ describe('Productivity Analytics Service', () => {
     it('should return zeros on complete failure', async () => {
       mockQueryContext.mockRejectedValue(new Error('DB error'));
 
-      const result = await getKnowledgeGrowth('work');
+      const result = await getKnowledgeGrowth('finance');
 
       expect(result.totalIdeas).toBe(0);
       expect(result.totalConnections).toBe(0);
@@ -224,7 +224,7 @@ describe('Productivity Analytics Service', () => {
 
       mockQueryContext.mockResolvedValueOnce({ rows: dates });
 
-      const result = await getStreakInfo('personal');
+      const result = await getStreakInfo('operations');
 
       expect(result.currentStreak).toBe(5);
       expect(result.activeToday).toBe(true);
@@ -238,7 +238,7 @@ describe('Productivity Analytics Service', () => {
         rows: [{ active_date: localDateStr(today) }],
       });
 
-      const result = await getStreakInfo('personal');
+      const result = await getStreakInfo('operations');
 
       expect(result.activeToday).toBe(true);
       expect(result.currentStreak).toBe(1);
@@ -247,7 +247,7 @@ describe('Productivity Analytics Service', () => {
     it('should handle no activity', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [] });
 
-      const result = await getStreakInfo('personal');
+      const result = await getStreakInfo('operations');
 
       expect(result.currentStreak).toBe(0);
       expect(result.longestStreak).toBe(0);
@@ -273,7 +273,7 @@ describe('Productivity Analytics Service', () => {
 
       mockQueryContext.mockResolvedValueOnce({ rows });
 
-      const result = await getStreakInfo('personal');
+      const result = await getStreakInfo('operations');
 
       expect(result.currentStreak).toBe(2);
       expect(result.longestStreak).toBe(4);
@@ -282,7 +282,7 @@ describe('Productivity Analytics Service', () => {
     it('should return defaults on error', async () => {
       mockQueryContext.mockRejectedValue(new Error('DB error'));
 
-      const result = await getStreakInfo('personal');
+      const result = await getStreakInfo('operations');
 
       expect(result.currentStreak).toBe(0);
       expect(result.activeToday).toBe(false);
@@ -299,7 +299,7 @@ describe('Productivity Analytics Service', () => {
         .mockResolvedValueOnce({ rows: [{ count: '25' }] })                       // chat
         .mockResolvedValueOnce({ rows: [{ name: 'KI' }, { name: 'Marketing' }] }); // topics
 
-      const result = await getWeeklyReport('personal');
+      const result = await getWeeklyReport('operations');
 
       expect(result.ideasCreated).toBe(10);
       expect(result.chatMessages).toBe(25);
@@ -315,7 +315,7 @@ describe('Productivity Analytics Service', () => {
         .mockResolvedValueOnce({ rows: [{ count: '5' }] })
         .mockResolvedValueOnce({ rows: [] });
 
-      const result = await getWeeklyReport('personal');
+      const result = await getWeeklyReport('operations');
 
       expect(result.trend).toBe('declining');
       expect(result.trendPercentage).toBe(-70);
@@ -327,7 +327,7 @@ describe('Productivity Analytics Service', () => {
         .mockResolvedValueOnce({ rows: [{ count: '20' }] })
         .mockResolvedValueOnce({ rows: [] });
 
-      const result = await getWeeklyReport('personal');
+      const result = await getWeeklyReport('operations');
 
       expect(result.trend).toBe('stable');
       expect(result.trendPercentage).toBe(0);
@@ -339,7 +339,7 @@ describe('Productivity Analytics Service', () => {
         .mockResolvedValueOnce({ rows: [{ count: '10' }] })
         .mockResolvedValueOnce({ rows: [] });
 
-      const result = await getWeeklyReport('personal');
+      const result = await getWeeklyReport('operations');
 
       expect(result.trend).toBe('improving');
       expect(result.trendPercentage).toBe(100);
@@ -351,7 +351,7 @@ describe('Productivity Analytics Service', () => {
         .mockResolvedValueOnce({ rows: [{ count: '0' }] })
         .mockResolvedValueOnce({ rows: [] });
 
-      const result = await getWeeklyReport('personal');
+      const result = await getWeeklyReport('operations');
 
       expect(result.period.start).toMatch(/^\d{4}-\d{2}-\d{2}$/);
       expect(result.period.end).toMatch(/^\d{4}-\d{2}-\d{2}$/);
@@ -360,7 +360,7 @@ describe('Productivity Analytics Service', () => {
     it('should return defaults on error', async () => {
       mockQueryContext.mockRejectedValue(new Error('DB error'));
 
-      const result = await getWeeklyReport('work');
+      const result = await getWeeklyReport('finance');
 
       expect(result.ideasCreated).toBe(0);
       expect(result.trend).toBe('stable');
@@ -386,7 +386,7 @@ describe('Productivity Analytics Service', () => {
         name: 'test',
       }] });
 
-      const result = await getProductivityDashboard('personal');
+      const result = await getProductivityDashboard('operations');
 
       expect(result).toHaveProperty('timeSaved');
       expect(result).toHaveProperty('heatmap');

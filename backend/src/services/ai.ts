@@ -17,6 +17,8 @@ import { logger } from '../utils/logger';
 import { isClaudeAvailable, structureWithClaude, structureWithClaudePersonalized, generateClaudeResponse } from './claude';
 import { structureWithOllama, generateEmbedding as generateOllamaEmbedding, StructuredIdea } from '../utils/ollama';
 import { isMistralAvailable, structureWithMistral, generateMistralEmbedding } from './mistral';
+import { isGeminiAvailable, geminiGenerate, geminiEmbed } from './gemini';
+import { isDeepSeekAvailable, deepseekGenerate } from './deepseek';
 import { AIContext } from '../utils/database-context';
 import OpenAI from 'openai';
 
@@ -173,7 +175,35 @@ export async function structureIdea(transcript: string): Promise<StructuredIdea>
       logger.info('Structuring with Claude', { operation: 'structureIdea' });
       return await structureWithClaude(transcript);
     } catch (error: unknown) {
-      logger.warn('Claude structuring failed, falling back to Mistral', {
+      logger.warn('Claude structuring failed, falling back to Gemini', {
+        error: getErrorMessage(error),
+        operation: 'structureIdea'
+      });
+    }
+  }
+
+  // Try Gemini as cloud fallback
+  if (isGeminiAvailable()) {
+    try {
+      logger.info('Structuring with Gemini', { operation: 'structureIdea' });
+      const result = await geminiGenerate(
+        `Strukturiere dieses Memo als JSON mit den Feldern: title, type (idea|task|insight|problem|question), category (business|technical|personal|learning), priority (low|medium|high), summary, next_steps (array), context_needed (array), keywords (array).\n\nMemo:\n${transcript}\n\nAntworte NUR mit validem JSON.`,
+        { temperature: 0.3 }
+      );
+      const cleaned = result.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+      const parsed = JSON.parse(cleaned);
+      return {
+        title: parsed.title || 'Unstrukturierte Notiz',
+        type: parsed.type || 'idea',
+        category: parsed.category || 'operations',
+        priority: parsed.priority || 'medium',
+        summary: parsed.summary || '',
+        next_steps: Array.isArray(parsed.next_steps) ? parsed.next_steps : [],
+        context_needed: Array.isArray(parsed.context_needed) ? parsed.context_needed : [],
+        keywords: Array.isArray(parsed.keywords) ? parsed.keywords : [],
+      };
+    } catch (error: unknown) {
+      logger.warn('Gemini structuring failed, falling back to Mistral', {
         error: getErrorMessage(error),
         operation: 'structureIdea'
       });
@@ -186,7 +216,35 @@ export async function structureIdea(transcript: string): Promise<StructuredIdea>
       logger.info('Structuring with Mistral', { operation: 'structureIdea' });
       return await structureWithMistral(transcript);
     } catch (error: unknown) {
-      logger.warn('Mistral structuring failed, falling back to Ollama', {
+      logger.warn('Mistral structuring failed, falling back to DeepSeek', {
+        error: getErrorMessage(error),
+        operation: 'structureIdea'
+      });
+    }
+  }
+
+  // Try DeepSeek as cloud fallback
+  if (isDeepSeekAvailable()) {
+    try {
+      logger.info('Structuring with DeepSeek', { operation: 'structureIdea' });
+      const result = await deepseekGenerate(
+        `Strukturiere dieses Memo als JSON mit den Feldern: title, type (idea|task|insight|problem|question), category (business|technical|personal|learning), priority (low|medium|high), summary, next_steps (array), context_needed (array), keywords (array).\n\nMemo:\n${transcript}\n\nAntworte NUR mit validem JSON.`,
+        { temperature: 0.3 }
+      );
+      const cleaned = result.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+      const parsed = JSON.parse(cleaned);
+      return {
+        title: parsed.title || 'Unstrukturierte Notiz',
+        type: parsed.type || 'idea',
+        category: parsed.category || 'operations',
+        priority: parsed.priority || 'medium',
+        summary: parsed.summary || '',
+        next_steps: Array.isArray(parsed.next_steps) ? parsed.next_steps : [],
+        context_needed: Array.isArray(parsed.context_needed) ? parsed.context_needed : [],
+        keywords: Array.isArray(parsed.keywords) ? parsed.keywords : [],
+      };
+    } catch (error: unknown) {
+      logger.warn('DeepSeek structuring failed, falling back to Ollama', {
         error: getErrorMessage(error),
         operation: 'structureIdea'
       });
@@ -250,13 +308,69 @@ export async function structureIdeaPersonalized(
     }
   }
 
+  // Try Gemini as cloud fallback
+  if (isGeminiAvailable()) {
+    try {
+      logger.info('Structuring with Gemini', { operation: 'structureIdeaPersonalized' });
+      const result = await geminiGenerate(
+        `Strukturiere dieses Memo als JSON mit den Feldern: title, type, category, priority, summary, next_steps, context_needed, keywords.\n\nMemo:\n${transcript}\n\nAntworte NUR mit validem JSON.`,
+        { temperature: 0.3 }
+      );
+      const cleaned = result.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+      const parsed = JSON.parse(cleaned);
+      return {
+        title: parsed.title || 'Unstrukturierte Notiz',
+        type: parsed.type || 'idea',
+        category: parsed.category || 'operations',
+        priority: parsed.priority || 'medium',
+        summary: parsed.summary || '',
+        next_steps: Array.isArray(parsed.next_steps) ? parsed.next_steps : [],
+        context_needed: Array.isArray(parsed.context_needed) ? parsed.context_needed : [],
+        keywords: Array.isArray(parsed.keywords) ? parsed.keywords : [],
+      };
+    } catch (error: unknown) {
+      logger.warn('Gemini structuring failed, falling back to Mistral', {
+        error: getErrorMessage(error),
+        operation: 'structureIdeaPersonalized'
+      });
+    }
+  }
+
   // Try Mistral as cloud fallback
   if (isMistralAvailable()) {
     try {
       logger.info('Structuring with Mistral', { operation: 'structureIdeaPersonalized' });
       return await structureWithMistral(transcript);
     } catch (error: unknown) {
-      logger.warn('Mistral structuring failed, falling back to Ollama', {
+      logger.warn('Mistral structuring failed, falling back to DeepSeek', {
+        error: getErrorMessage(error),
+        operation: 'structureIdeaPersonalized'
+      });
+    }
+  }
+
+  // Try DeepSeek as cloud fallback
+  if (isDeepSeekAvailable()) {
+    try {
+      logger.info('Structuring with DeepSeek', { operation: 'structureIdeaPersonalized' });
+      const result = await deepseekGenerate(
+        `Strukturiere dieses Memo als JSON mit den Feldern: title, type, category, priority, summary, next_steps, context_needed, keywords.\n\nMemo:\n${transcript}\n\nAntworte NUR mit validem JSON.`,
+        { temperature: 0.3 }
+      );
+      const cleaned = result.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+      const parsed = JSON.parse(cleaned);
+      return {
+        title: parsed.title || 'Unstrukturierte Notiz',
+        type: parsed.type || 'idea',
+        category: parsed.category || 'operations',
+        priority: parsed.priority || 'medium',
+        summary: parsed.summary || '',
+        next_steps: Array.isArray(parsed.next_steps) ? parsed.next_steps : [],
+        context_needed: Array.isArray(parsed.context_needed) ? parsed.context_needed : [],
+        keywords: Array.isArray(parsed.keywords) ? parsed.keywords : [],
+      };
+    } catch (error: unknown) {
+      logger.warn('DeepSeek structuring failed, falling back to Ollama', {
         error: getErrorMessage(error),
         operation: 'structureIdeaPersonalized'
       });
@@ -319,6 +433,25 @@ export async function generateEmbedding(text: string): Promise<number[]> {
       logger.warn('OpenAI embedding failed', {
         error: getErrorMessage(error),
         operation: 'generateEmbedding'
+      });
+    }
+  }
+
+  // Try Gemini as fallback (cloud)
+  if (isGeminiAvailable()) {
+    try {
+      logger.debug('Generating embedding with Gemini', { operation: 'generateEmbedding' });
+      const embedding = await geminiEmbed(text);
+      const validated = validateEmbedding(embedding, 'gemini');
+      logger.info('Gemini embedding generated successfully', {
+        operation: 'generateEmbedding',
+        dimensions: validated.length,
+      });
+      return validated;
+    } catch (error: unknown) {
+      logger.warn('Gemini embedding failed', {
+        error: getErrorMessage(error),
+        operation: 'generateEmbedding',
       });
     }
   }

@@ -61,7 +61,7 @@ async function initDatabase() {
         updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
 
         -- Optional: For future multi-company support
-        company_id VARCHAR(100) DEFAULT 'personal',
+        company_id VARCHAR(100) DEFAULT 'operations',
 
         -- Optional: User interaction tracking
         viewed_count INTEGER DEFAULT 0,
@@ -104,7 +104,7 @@ async function initDatabase() {
     // Insert default personal company
     await client.query(`
       INSERT INTO companies (id, name, description)
-      VALUES ('personal', 'Persönlich', 'Persönliche Gedanken und Ideen')
+      VALUES ('operations', 'Persönlich', 'Persönliche Gedanken und Ideen')
       ON CONFLICT (id) DO NOTHING;
     `);
     console.log('   ✅ companies table created\n');
@@ -114,7 +114,7 @@ async function initDatabase() {
     await client.query(`
       CREATE TABLE IF NOT EXISTS meetings (
         id UUID PRIMARY KEY,
-        company_id VARCHAR(100) NOT NULL DEFAULT 'personal' REFERENCES companies(id),
+        company_id VARCHAR(100) NOT NULL DEFAULT 'operations' REFERENCES companies(id),
         title VARCHAR(255) NOT NULL,
         date TIMESTAMP WITH TIME ZONE NOT NULL,
         duration_minutes INTEGER,
@@ -550,7 +550,7 @@ async function initDatabase() {
           SELECT 1 FROM information_schema.columns
           WHERE table_name = 'ideas' AND column_name = 'context'
         ) THEN
-          ALTER TABLE ideas ADD COLUMN context VARCHAR(20) DEFAULT 'personal';
+          ALTER TABLE ideas ADD COLUMN context VARCHAR(20) DEFAULT 'operations';
         END IF;
       END $$;
     `);
@@ -563,7 +563,7 @@ async function initDatabase() {
       CREATE TABLE IF NOT EXISTS voice_memos (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
         raw_text TEXT NOT NULL,
-        context VARCHAR(50) DEFAULT 'personal',
+        context VARCHAR(50) DEFAULT 'operations',
         embedding vector(768),
         created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
         updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
@@ -590,7 +590,7 @@ async function initDatabase() {
         mime_type VARCHAR(100) NOT NULL,
         file_size BIGINT NOT NULL,
         caption TEXT,
-        context VARCHAR(50) DEFAULT 'personal',
+        context VARCHAR(50) DEFAULT 'operations',
         embedding vector(768),
         thumbnail_path TEXT,
         duration_seconds FLOAT,
@@ -619,7 +619,7 @@ async function initDatabase() {
       CREATE TABLE IF NOT EXISTS user_training (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
         idea_id UUID REFERENCES ideas(id) ON DELETE SET NULL,
-        context VARCHAR(20) NOT NULL CHECK (context IN ('personal', 'work', 'creative', 'strategic')),
+        context VARCHAR(20) NOT NULL CHECK (context IN ('operations', 'finance', 'strategy', 'strategic')),
         training_type VARCHAR(20) NOT NULL CHECK (training_type IN ('category', 'priority', 'type', 'tone', 'general')),
         original_value VARCHAR(100),
         corrected_value VARCHAR(100),
@@ -740,30 +740,30 @@ async function initDatabase() {
     console.log('2z. Inserting default draft trigger patterns...');
     await client.query(`
       INSERT INTO draft_trigger_patterns (context, draft_type, pattern_text, pattern_type) VALUES
-        ('personal', 'email', 'e-mail schreiben', 'phrase'),
-        ('personal', 'email', 'mail an', 'phrase'),
-        ('personal', 'email', 'antworten auf', 'phrase'),
-        ('personal', 'email', 'nachricht an', 'phrase'),
-        ('personal', 'email', 'kontaktieren', 'keyword'),
-        ('work', 'email', 'e-mail schreiben', 'phrase'),
-        ('work', 'email', 'mail an', 'phrase'),
-        ('work', 'email', 'antwort schreiben', 'phrase'),
-        ('work', 'email', 'kunde kontaktieren', 'phrase'),
-        ('personal', 'article', 'artikel schreiben', 'phrase'),
-        ('personal', 'article', 'blogpost', 'keyword'),
-        ('personal', 'article', 'beitrag über', 'phrase'),
-        ('personal', 'article', 'text verfassen', 'phrase'),
-        ('work', 'article', 'artikel schreiben', 'phrase'),
-        ('work', 'article', 'linkedin post', 'phrase'),
-        ('work', 'article', 'pressemitteilung', 'keyword'),
-        ('work', 'proposal', 'angebot erstellen', 'phrase'),
-        ('work', 'proposal', 'vorschlag schreiben', 'phrase'),
-        ('work', 'proposal', 'pitch vorbereiten', 'phrase'),
-        ('work', 'proposal', 'präsentation erstellen', 'phrase'),
-        ('work', 'document', 'dokumentation', 'keyword'),
-        ('work', 'document', 'anleitung schreiben', 'phrase'),
-        ('work', 'document', 'prozess dokumentieren', 'phrase'),
-        ('personal', 'document', 'notizen aufschreiben', 'phrase')
+        ('operations', 'email', 'e-mail schreiben', 'phrase'),
+        ('operations', 'email', 'mail an', 'phrase'),
+        ('operations', 'email', 'antworten auf', 'phrase'),
+        ('operations', 'email', 'nachricht an', 'phrase'),
+        ('operations', 'email', 'kontaktieren', 'keyword'),
+        ('finance', 'email', 'e-mail schreiben', 'phrase'),
+        ('finance', 'email', 'mail an', 'phrase'),
+        ('finance', 'email', 'antwort schreiben', 'phrase'),
+        ('finance', 'email', 'kunde kontaktieren', 'phrase'),
+        ('operations', 'article', 'artikel schreiben', 'phrase'),
+        ('operations', 'article', 'blogpost', 'keyword'),
+        ('operations', 'article', 'beitrag über', 'phrase'),
+        ('operations', 'article', 'text verfassen', 'phrase'),
+        ('finance', 'article', 'artikel schreiben', 'phrase'),
+        ('finance', 'article', 'linkedin post', 'phrase'),
+        ('finance', 'article', 'pressemitteilung', 'keyword'),
+        ('finance', 'proposal', 'angebot erstellen', 'phrase'),
+        ('finance', 'proposal', 'vorschlag schreiben', 'phrase'),
+        ('finance', 'proposal', 'pitch vorbereiten', 'phrase'),
+        ('finance', 'proposal', 'präsentation erstellen', 'phrase'),
+        ('finance', 'document', 'dokumentation', 'keyword'),
+        ('finance', 'document', 'anleitung schreiben', 'phrase'),
+        ('finance', 'document', 'prozess dokumentieren', 'phrase'),
+        ('operations', 'document', 'notizen aufschreiben', 'phrase')
       ON CONFLICT (context, draft_type, pattern_text) DO NOTHING;
     `);
     console.log('   ✅ Default trigger patterns inserted\n');

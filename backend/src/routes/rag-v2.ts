@@ -42,7 +42,7 @@ router.post(
   asyncHandler(async (req: Request, res: Response) => {
     const context = validateContextParam(req.params.context);
     if (!isValidContext(context)) {
-      throw new ValidationError('Invalid context. Use: personal, work, learning, or creative.');
+      throw new ValidationError('Invalid context. Use: operations, finance, people, or strategy.');
     }
 
     const { query, strategy, maxResults } = req.body;
@@ -85,7 +85,7 @@ router.get(
   asyncHandler(async (req: Request, res: Response) => {
     const context = validateContextParam(req.params.context);
     if (!isValidContext(context)) {
-      throw new ValidationError('Invalid context. Use: personal, work, learning, or creative.');
+      throw new ValidationError('Invalid context. Use: operations, finance, people, or strategy.');
     }
 
     const { messageId } = req.params;
@@ -113,7 +113,7 @@ router.post(
   asyncHandler(async (req: Request, res: Response) => {
     const context = validateContextParam(req.params.context);
     if (!isValidContext(context)) {
-      throw new ValidationError('Invalid context. Use: personal, work, learning, or creative.');
+      throw new ValidationError('Invalid context. Use: operations, finance, people, or strategy.');
     }
 
     const { sourceId, helpful, queryType } = req.body;
@@ -147,7 +147,7 @@ router.get(
   asyncHandler(async (req: Request, res: Response) => {
     const context = validateContextParam(req.params.context);
     if (!isValidContext(context)) {
-      throw new ValidationError('Invalid context. Use: personal, work, learning, or creative.');
+      throw new ValidationError('Invalid context. Use: operations, finance, people, or strategy.');
     }
 
     const days = parseInt(req.query.days as string, 10) || 30;

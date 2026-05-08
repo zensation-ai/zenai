@@ -157,9 +157,21 @@ export function useFinanceData(context: string) {
     };
   }, [fetchOverview, fetchTransactions, fetchAccounts, fetchBudgets, fetchGoals]);
 
+  const refetchAll = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      await Promise.all([fetchOverview(), fetchTransactions(), fetchAccounts(), fetchBudgets(), fetchGoals()]);
+    } catch (err) {
+      setError(err instanceof Error ? err : new Error(String(err)));
+    } finally {
+      setLoading(false);
+    }
+  }, [fetchOverview, fetchTransactions, fetchAccounts, fetchBudgets, fetchGoals]);
+
   return {
     overview, transactions, transactionsTotal, accounts, budgets, goals, loading, error,
-    fetchTransactions, fetchOverview,
+    fetchTransactions, fetchOverview, refetchAll,
     createTransaction, deleteTransaction,
     createAccount, deleteAccount,
     createBudget, updateBudget, deleteBudget,

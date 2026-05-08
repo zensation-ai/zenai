@@ -23,7 +23,7 @@ jest.mock('../../../utils/logger', () => ({
 
 jest.mock('../../../utils/database-context', () => ({
   queryContext: jest.fn(),
-  isValidContext: jest.fn((ctx: string) => ['personal', 'work', 'learning', 'creative'].includes(ctx)),
+  isValidContext: jest.fn((ctx: string) => ['operations', 'finance', 'people', 'strategy'].includes(ctx)),
   AIContext: {},
 }));
 
@@ -71,7 +71,7 @@ describe('Prospective Memory Routes', () => {
       const memories = [{ id: 'm1', triggerType: 'time', memoryContent: 'Call dentist' }];
       mockListPending.mockResolvedValue(memories);
 
-      const res = await request(app).get('/api/personal/memory/prospective');
+      const res = await request(app).get('/api/operations/memory/prospective');
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
@@ -86,7 +86,7 @@ describe('Prospective Memory Routes', () => {
     it('should handle service error gracefully', async () => {
       mockListPending.mockRejectedValue(new Error('DB error'));
 
-      const res = await request(app).get('/api/personal/memory/prospective');
+      const res = await request(app).get('/api/operations/memory/prospective');
 
       expect(res.status).toBe(500);
       expect(res.body.success).toBe(false);
@@ -99,7 +99,7 @@ describe('Prospective Memory Routes', () => {
       mockCreateProspectiveMemory.mockResolvedValue(memory);
 
       const res = await request(app)
-        .post('/api/personal/memory/prospective')
+        .post('/api/operations/memory/prospective')
         .send({
           triggerType: 'time',
           triggerCondition: { at: '2026-03-22T09:00:00Z' },
@@ -113,7 +113,7 @@ describe('Prospective Memory Routes', () => {
 
     it('should reject invalid triggerType', async () => {
       const res = await request(app)
-        .post('/api/personal/memory/prospective')
+        .post('/api/operations/memory/prospective')
         .send({
           triggerType: 'invalid',
           triggerCondition: {},
@@ -125,7 +125,7 @@ describe('Prospective Memory Routes', () => {
 
     it('should reject missing triggerCondition', async () => {
       const res = await request(app)
-        .post('/api/personal/memory/prospective')
+        .post('/api/operations/memory/prospective')
         .send({
           triggerType: 'time',
           memoryContent: 'Test',
@@ -136,7 +136,7 @@ describe('Prospective Memory Routes', () => {
 
     it('should reject missing memoryContent', async () => {
       const res = await request(app)
-        .post('/api/personal/memory/prospective')
+        .post('/api/operations/memory/prospective')
         .send({
           triggerType: 'event',
           triggerCondition: { event: 'login' },
@@ -147,7 +147,7 @@ describe('Prospective Memory Routes', () => {
 
     it('should reject invalid priority', async () => {
       const res = await request(app)
-        .post('/api/personal/memory/prospective')
+        .post('/api/operations/memory/prospective')
         .send({
           triggerType: 'time',
           triggerCondition: { at: '2026-03-22T09:00:00Z' },
@@ -163,7 +163,7 @@ describe('Prospective Memory Routes', () => {
 
       for (const priority of ['low', 'medium', 'high']) {
         const res = await request(app)
-          .post('/api/personal/memory/prospective')
+          .post('/api/operations/memory/prospective')
           .send({
             triggerType: 'time',
             triggerCondition: { at: '2026-03-22T09:00:00Z' },
@@ -182,7 +182,7 @@ describe('Prospective Memory Routes', () => {
       mockFireMemory.mockResolvedValue(memory);
 
       const res = await request(app)
-        .post('/api/personal/memory/prospective/m1/fire');
+        .post('/api/operations/memory/prospective/m1/fire');
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
@@ -192,7 +192,7 @@ describe('Prospective Memory Routes', () => {
       mockFireMemory.mockResolvedValue(null);
 
       const res = await request(app)
-        .post('/api/personal/memory/prospective/nonexistent/fire');
+        .post('/api/operations/memory/prospective/nonexistent/fire');
 
       expect(res.status).toBe(404);
     });
@@ -204,7 +204,7 @@ describe('Prospective Memory Routes', () => {
       mockDismissMemory.mockResolvedValue(memory);
 
       const res = await request(app)
-        .post('/api/personal/memory/prospective/m1/dismiss');
+        .post('/api/operations/memory/prospective/m1/dismiss');
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
@@ -214,7 +214,7 @@ describe('Prospective Memory Routes', () => {
       mockDismissMemory.mockResolvedValue(null);
 
       const res = await request(app)
-        .post('/api/personal/memory/prospective/nonexistent/dismiss');
+        .post('/api/operations/memory/prospective/nonexistent/dismiss');
 
       expect(res.status).toBe(404);
     });
@@ -225,7 +225,7 @@ describe('Prospective Memory Routes', () => {
       const stats = { totalFacts: 200, avgConfidence: 0.82 };
       mockGetMetamemoryStats.mockResolvedValue(stats);
 
-      const res = await request(app).get('/api/personal/memory/metamemory/stats');
+      const res = await request(app).get('/api/operations/memory/metamemory/stats');
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
@@ -238,7 +238,7 @@ describe('Prospective Memory Routes', () => {
       const gaps = [{ topic: 'React hooks', confidence: 0.3 }];
       mockGetKnowledgeGaps.mockResolvedValue(gaps);
 
-      const res = await request(app).get('/api/work/memory/metamemory/gaps');
+      const res = await request(app).get('/api/finance/memory/metamemory/gaps');
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
@@ -251,7 +251,7 @@ describe('Prospective Memory Routes', () => {
       const conflicts = [{ fact1: 'A is true', fact2: 'A is false', similarity: 0.9 }];
       mockFindConflicts.mockResolvedValue(conflicts);
 
-      const res = await request(app).get('/api/personal/memory/metamemory/conflicts');
+      const res = await request(app).get('/api/operations/memory/metamemory/conflicts');
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
@@ -261,9 +261,9 @@ describe('Prospective Memory Routes', () => {
     it('should accept custom threshold', async () => {
       mockFindConflicts.mockResolvedValue([]);
 
-      await request(app).get('/api/personal/memory/metamemory/conflicts?threshold=0.6');
+      await request(app).get('/api/operations/memory/metamemory/conflicts?threshold=0.6');
 
-      expect(mockFindConflicts).toHaveBeenCalledWith('personal', '00000000-0000-0000-0000-000000000001', 0.6);
+      expect(mockFindConflicts).toHaveBeenCalledWith('operations', '00000000-0000-0000-0000-000000000001', 0.6);
     });
   });
 });

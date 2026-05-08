@@ -9,7 +9,7 @@ const mockQueryContext = jest.fn();
 jest.mock('../../../utils/database-context', () => {
   return {
     queryContext: (...args: any[]) => mockQueryContext(...args),
-    AIContext: 'personal',
+    AIContext: 'operations',
     isValidContext: jest.fn().mockReturnValue(true),
   };
 });
@@ -66,7 +66,7 @@ describe('MCP Server Registry', () => {
         url: 'https://example.com/mcp',
       };
 
-      const result = await mcpServerRegistry.create('personal' as any, data);
+      const result = await mcpServerRegistry.create('operations' as any, data);
       expect(result.id).toBe('server-1');
       expect(result.name).toBe('Test Server');
       expect(result.transport).toBe('streamable-http');
@@ -76,7 +76,7 @@ describe('MCP Server Registry', () => {
     it('should default enabled to true', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [mockServerRow] } as any);
 
-      await mcpServerRegistry.create('personal' as any, {
+      await mcpServerRegistry.create('operations' as any, {
         name: 'Test',
         transport: 'streamable-http',
         url: 'https://example.com',
@@ -89,7 +89,7 @@ describe('MCP Server Registry', () => {
     it('should serialize args and envVars as JSON', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [mockServerRow] } as any);
 
-      await mcpServerRegistry.create('personal' as any, {
+      await mcpServerRegistry.create('operations' as any, {
         name: 'Stdio Server',
         transport: 'stdio',
         command: 'npx',
@@ -111,7 +111,7 @@ describe('MCP Server Registry', () => {
     it('should return a server by ID', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [mockServerRow] } as any);
 
-      const result = await mcpServerRegistry.getById('personal' as any, 'server-1');
+      const result = await mcpServerRegistry.getById('operations' as any, 'server-1');
       expect(result).not.toBeNull();
       expect(result?.id).toBe('server-1');
     });
@@ -119,7 +119,7 @@ describe('MCP Server Registry', () => {
     it('should return null if not found', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [] } as any);
 
-      const result = await mcpServerRegistry.getById('personal' as any, 'non-existent');
+      const result = await mcpServerRegistry.getById('operations' as any, 'non-existent');
       expect(result).toBeNull();
     });
   });
@@ -132,14 +132,14 @@ describe('MCP Server Registry', () => {
     it('should list all servers', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [mockServerRow, { ...mockServerRow, id: 'server-2' }] } as any);
 
-      const result = await mcpServerRegistry.list('personal' as any);
+      const result = await mcpServerRegistry.list('operations' as any);
       expect(result).toHaveLength(2);
     });
 
     it('should filter enabled only', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [mockServerRow] } as any);
 
-      await mcpServerRegistry.list('personal' as any, true);
+      await mcpServerRegistry.list('operations' as any, true);
       const sql = mockQueryContext.mock.calls[0][1] as string;
       expect(sql).toContain('enabled = true');
     });
@@ -153,7 +153,7 @@ describe('MCP Server Registry', () => {
     it('should update specified fields', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [{ ...mockServerRow, name: 'Updated Name' }] } as any);
 
-      const result = await mcpServerRegistry.update('personal' as any, 'server-1', { name: 'Updated Name' });
+      const result = await mcpServerRegistry.update('operations' as any, 'server-1', { name: 'Updated Name' });
       expect(result).not.toBeNull();
       expect(result?.name).toBe('Updated Name');
     });
@@ -161,14 +161,14 @@ describe('MCP Server Registry', () => {
     it('should return existing record if no fields to update', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [mockServerRow] } as any);
 
-      const result = await mcpServerRegistry.update('personal' as any, 'server-1', {});
+      const result = await mcpServerRegistry.update('operations' as any, 'server-1', {});
       expect(result).not.toBeNull();
     });
 
     it('should return null if server not found', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [] } as any);
 
-      const result = await mcpServerRegistry.update('personal' as any, 'non-existent', { name: 'New' });
+      const result = await mcpServerRegistry.update('operations' as any, 'non-existent', { name: 'New' });
       expect(result).toBeNull();
     });
   });
@@ -181,14 +181,14 @@ describe('MCP Server Registry', () => {
     it('should delete a server and return true', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [{ id: 'server-1' }] } as any);
 
-      const result = await mcpServerRegistry.delete('personal' as any, 'server-1');
+      const result = await mcpServerRegistry.delete('operations' as any, 'server-1');
       expect(result).toBe(true);
     });
 
     it('should return false if server not found', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [] } as any);
 
-      const result = await mcpServerRegistry.delete('personal' as any, 'non-existent');
+      const result = await mcpServerRegistry.delete('operations' as any, 'non-existent');
       expect(result).toBe(false);
     });
   });
@@ -202,7 +202,7 @@ describe('MCP Server Registry', () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [] } as any);
 
       await mcpServerRegistry.updateHealthStatus(
-        'personal' as any,
+        'operations' as any,
         'server-1',
         'healthy',
         5,
@@ -232,7 +232,7 @@ describe('MCP Server Registry', () => {
         .mockResolvedValueOnce({ rows: [] } as any)
         .mockResolvedValueOnce({ rows: [] } as any);
 
-      await mcpServerRegistry.syncTools('personal' as any, 'server-1', [
+      await mcpServerRegistry.syncTools('operations' as any, 'server-1', [
         { name: 'tool1', description: 'First tool' },
         { name: 'tool2', description: 'Second tool' },
       ]);
@@ -261,7 +261,7 @@ describe('MCP Server Registry', () => {
         }],
       } as any);
 
-      const tools = await mcpServerRegistry.getTools('personal' as any, 'server-1');
+      const tools = await mcpServerRegistry.getTools('operations' as any, 'server-1');
       expect(tools).toHaveLength(1);
       expect(tools[0].toolName).toBe('search');
       expect(tools[0].usageCount).toBe(5);
@@ -276,7 +276,7 @@ describe('MCP Server Registry', () => {
     it('should update usage count and latency', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [] } as any);
 
-      await mcpServerRegistry.recordToolUsage('personal' as any, 'server-1', 'search', 150);
+      await mcpServerRegistry.recordToolUsage('operations' as any, 'server-1', 'search', 150);
       expect(mockQueryContext).toHaveBeenCalledTimes(1);
       const params = mockQueryContext.mock.calls[0][2];
       expect(params[0]).toBe(150); // latency

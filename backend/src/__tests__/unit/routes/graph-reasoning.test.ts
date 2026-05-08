@@ -84,22 +84,22 @@ describe('Graph Reasoning Routes', () => {
   describe('POST /api/:context/knowledge-graph/infer', () => {
     it('should run transitive inference', async () => {
       const res = await request(app)
-        .post('/api/personal/knowledge-graph/infer')
+        .post('/api/operations/knowledge-graph/infer')
         .send({ minStrength: 0.6, maxResults: 10 });
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
       expect(res.body.data).toHaveLength(1);
-      expect(mockInfer).toHaveBeenCalledWith('personal', { minStrength: 0.6, maxResults: 10 });
+      expect(mockInfer).toHaveBeenCalledWith('operations', { minStrength: 0.6, maxResults: 10 });
     });
 
     it('should use defaults when no params provided', async () => {
       const res = await request(app)
-        .post('/api/personal/knowledge-graph/infer')
+        .post('/api/operations/knowledge-graph/infer')
         .send({});
 
       expect(res.status).toBe(200);
-      expect(mockInfer).toHaveBeenCalledWith('personal', { minStrength: 0.5, maxResults: 20 });
+      expect(mockInfer).toHaveBeenCalledWith('operations', { minStrength: 0.5, maxResults: 20 });
     });
 
     it('should reject invalid context', async () => {
@@ -118,7 +118,7 @@ describe('Graph Reasoning Routes', () => {
   // ===========================================
   describe('GET /api/:context/knowledge-graph/contradictions', () => {
     it('should detect contradictions', async () => {
-      const res = await request(app).get('/api/personal/knowledge-graph/contradictions');
+      const res = await request(app).get('/api/operations/knowledge-graph/contradictions');
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
       expect(res.body.data).toEqual([]);
@@ -131,7 +131,7 @@ describe('Graph Reasoning Routes', () => {
   describe('POST /api/:context/knowledge-graph/communities', () => {
     it('should detect communities', async () => {
       const res = await request(app)
-        .post('/api/personal/knowledge-graph/communities')
+        .post('/api/operations/knowledge-graph/communities')
         .send({ minSize: 3, minStrength: 0.4 });
 
       expect(res.status).toBe(200);
@@ -149,7 +149,7 @@ describe('Graph Reasoning Routes', () => {
         }],
       });
 
-      const res = await request(app).get('/api/personal/knowledge-graph/communities');
+      const res = await request(app).get('/api/operations/knowledge-graph/communities');
       expect(res.status).toBe(200);
       expect(res.body.data).toHaveLength(1);
       expect(res.body.data[0].name).toBe('Cached');
@@ -161,16 +161,16 @@ describe('Graph Reasoning Routes', () => {
   // ===========================================
   describe('GET /api/:context/knowledge-graph/centrality', () => {
     it('should return centrality metrics', async () => {
-      const res = await request(app).get('/api/personal/knowledge-graph/centrality');
+      const res = await request(app).get('/api/operations/knowledge-graph/centrality');
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
-      expect(mockCentrality).toHaveBeenCalledWith('personal', { limit: 20 });
+      expect(mockCentrality).toHaveBeenCalledWith('operations', { limit: 20 });
     });
 
     it('should accept limit parameter', async () => {
-      const res = await request(app).get('/api/personal/knowledge-graph/centrality?limit=5');
+      const res = await request(app).get('/api/operations/knowledge-graph/centrality?limit=5');
       expect(res.status).toBe(200);
-      expect(mockCentrality).toHaveBeenCalledWith('personal', { limit: 5 });
+      expect(mockCentrality).toHaveBeenCalledWith('operations', { limit: 5 });
     });
   });
 
@@ -179,16 +179,16 @@ describe('Graph Reasoning Routes', () => {
   // ===========================================
   describe('GET /api/:context/knowledge-graph/learning-path/:ideaId', () => {
     it('should generate a learning path', async () => {
-      const res = await request(app).get('/api/personal/knowledge-graph/learning-path/a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11');
+      const res = await request(app).get('/api/operations/knowledge-graph/learning-path/a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11');
       expect(res.status).toBe(200);
       expect(res.body.data.totalSteps).toBe(1);
-      expect(mockLearningPath).toHaveBeenCalledWith('personal', 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11', { maxSteps: 8 });
+      expect(mockLearningPath).toHaveBeenCalledWith('operations', 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11', { maxSteps: 8 });
     });
 
     it('should accept maxSteps parameter', async () => {
-      const res = await request(app).get('/api/personal/knowledge-graph/learning-path/a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11?maxSteps=4');
+      const res = await request(app).get('/api/operations/knowledge-graph/learning-path/a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11?maxSteps=4');
       expect(res.status).toBe(200);
-      expect(mockLearningPath).toHaveBeenCalledWith('personal', 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11', { maxSteps: 4 });
+      expect(mockLearningPath).toHaveBeenCalledWith('operations', 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11', { maxSteps: 4 });
     });
   });
 
@@ -198,7 +198,7 @@ describe('Graph Reasoning Routes', () => {
   describe('POST /api/:context/knowledge-graph/relations', () => {
     it('should create a relation', async () => {
       const res = await request(app)
-        .post('/api/personal/knowledge-graph/relations')
+        .post('/api/operations/knowledge-graph/relations')
         .send({ sourceId: 'a', targetId: 'b', relationType: 'supports' });
 
       expect(res.status).toBe(200);
@@ -207,14 +207,14 @@ describe('Graph Reasoning Routes', () => {
 
     it('should return 400 without required fields', async () => {
       const res = await request(app)
-        .post('/api/personal/knowledge-graph/relations')
+        .post('/api/operations/knowledge-graph/relations')
         .send({ sourceId: 'a' });
       expect(res.status).toBe(400);
     });
 
     it('should return 400 without relationType', async () => {
       const res = await request(app)
-        .post('/api/personal/knowledge-graph/relations')
+        .post('/api/operations/knowledge-graph/relations')
         .send({ sourceId: 'a', targetId: 'b' });
       expect(res.status).toBe(400);
     });
@@ -223,7 +223,7 @@ describe('Graph Reasoning Routes', () => {
   describe('PUT /api/:context/knowledge-graph/relations', () => {
     it('should update relation strength', async () => {
       const res = await request(app)
-        .put('/api/personal/knowledge-graph/relations')
+        .put('/api/operations/knowledge-graph/relations')
         .send({ sourceId: 'a', targetId: 'b', strength: 0.8 });
 
       expect(res.status).toBe(200);
@@ -232,7 +232,7 @@ describe('Graph Reasoning Routes', () => {
 
     it('should return 400 without strength', async () => {
       const res = await request(app)
-        .put('/api/personal/knowledge-graph/relations')
+        .put('/api/operations/knowledge-graph/relations')
         .send({ sourceId: 'a', targetId: 'b' });
       expect(res.status).toBe(400);
     });
@@ -241,7 +241,7 @@ describe('Graph Reasoning Routes', () => {
   describe('DELETE /api/:context/knowledge-graph/relations', () => {
     it('should delete a relation', async () => {
       const res = await request(app)
-        .delete('/api/personal/knowledge-graph/relations')
+        .delete('/api/operations/knowledge-graph/relations')
         .send({ sourceId: 'a', targetId: 'b' });
 
       expect(res.status).toBe(200);
@@ -250,7 +250,7 @@ describe('Graph Reasoning Routes', () => {
 
     it('should return 400 without sourceId or targetId', async () => {
       const res = await request(app)
-        .delete('/api/personal/knowledge-graph/relations')
+        .delete('/api/operations/knowledge-graph/relations')
         .send({ sourceId: 'a' });
       expect(res.status).toBe(400);
     });

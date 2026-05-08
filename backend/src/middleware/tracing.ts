@@ -7,7 +7,7 @@
  */
 
 import { Request, Response, NextFunction } from 'express';
-import { getTracer, getCurrentTraceId, isTracingEnabled } from '../services/observability/tracing';
+import { getTracer, getCurrentTraceId, isTracingEnabled, isLoadTestMode } from '../services/observability/tracing';
 
 /**
  * Tracing middleware that wraps each request in an OpenTelemetry span.
@@ -20,6 +20,14 @@ export function tracingMiddleware(req: Request, res: Response, next: NextFunctio
   }
 
   const startTime = Date.now();
+
+  // LOAD_TEST_MODE tags every response so Grafana / Sentry can exclude synthetic
+  // traffic from SaaS-health dashboards. Enabled purely via env var — see
+  // scripts/load-test/README.md.
+  const loadTest = isLoadTestMode();
+  if (loadTest) {
+    res.setHeader('X-Load-Test', 'true');
+  }
 
   // Try to get trace ID from active OTel context
   const traceId = getCurrentTraceId();
@@ -35,6 +43,9 @@ export function tracingMiddleware(req: Request, res: Response, next: NextFunctio
     span.setAttribute('http.method', req.method);
     span.setAttribute('http.url', req.originalUrl);
     span.setAttribute('http.target', req.path);
+    if (loadTest) {
+      span.setAttribute('load_test', true);
+    }
 
     // Add request ID from requestId middleware
     const requestId = res.locals.requestId;

@@ -33,7 +33,7 @@ vi.mock('../MCPConnectionsPage.css', () => ({}));
 import { MCPConnectionsPage } from '../MCPConnectionsPage';
 
 const defaultProps = {
-  context: 'personal' as const,
+  context: 'operations' as const,
 };
 
 const mockServer = {
@@ -149,7 +149,7 @@ describe('MCPConnectionsPage', () => {
       expect(screen.queryByText('Lade Server...')).not.toBeInTheDocument();
     });
 
-    expect(screen.getByText('+ Server hinzufuegen')).toBeInTheDocument();
+    expect(screen.getByText('+ Server hinzufügen')).toBeInTheDocument();
   });
 
   it('should show ecosystem summary when servers exist', async () => {

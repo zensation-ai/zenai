@@ -16,7 +16,7 @@ jest.mock('../../../utils/logger', () => ({
 
 jest.mock('../../../utils/database-context', () => ({
   queryContext: jest.fn(),
-  isValidContext: jest.fn((ctx: string) => ['personal', 'work', 'learning', 'creative'].includes(ctx)),
+  isValidContext: jest.fn((ctx: string) => ['operations', 'finance', 'people', 'strategy'].includes(ctx)),
   AIContext: {},
 }));
 
@@ -71,7 +71,7 @@ describe('Topic Enhancement Routes', () => {
         { id: 't1', name: 'Tech', keywords: ['ai', 'ml'], idea_count: 5 },
       ]);
 
-      const res = await request(app).get('/api/topics/enhanced?context=personal');
+      const res = await request(app).get('/api/topics/enhanced?context=operations');
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
@@ -88,7 +88,7 @@ describe('Topic Enhancement Routes', () => {
     it('should return empty array when no topics exist', async () => {
       mockGetTopicsWithKeywords.mockResolvedValueOnce([]);
 
-      const res = await request(app).get('/api/topics/enhanced?context=work');
+      const res = await request(app).get('/api/topics/enhanced?context=finance');
 
       expect(res.status).toBe(200);
       expect(res.body.data.topics).toHaveLength(0);
@@ -105,7 +105,7 @@ describe('Topic Enhancement Routes', () => {
         { topicId: 't2', overallQuality: 0.3, coherence: 0.2, separation: 0.4, density: 0.3, stability: 0.3 },
       ]);
 
-      const res = await request(app).get('/api/topics/quality?context=personal');
+      const res = await request(app).get('/api/topics/quality?context=operations');
 
       expect(res.status).toBe(200);
       expect(res.body.data.summary.topicCount).toBe(2);
@@ -133,7 +133,7 @@ describe('Topic Enhancement Routes', () => {
       });
 
       const res = await request(app)
-        .get('/api/topics/550e8400-e29b-41d4-a716-446655440000/quality?context=personal');
+        .get('/api/topics/550e8400-e29b-41d4-a716-446655440000/quality?context=operations');
 
       expect(res.status).toBe(200);
       expect(res.body.data.qualityLevel).toBe('excellent');
@@ -144,13 +144,13 @@ describe('Topic Enhancement Routes', () => {
       mockCalculateTopicQuality.mockResolvedValueOnce(null);
 
       const res = await request(app)
-        .get('/api/topics/550e8400-e29b-41d4-a716-446655440000/quality?context=personal');
+        .get('/api/topics/550e8400-e29b-41d4-a716-446655440000/quality?context=operations');
 
       expect(res.status).toBe(404);
     });
 
     it('should return 400 for invalid topic ID', async () => {
-      const res = await request(app).get('/api/topics/not-uuid/quality?context=personal');
+      const res = await request(app).get('/api/topics/not-uuid/quality?context=operations');
 
       expect(res.status).toBe(400);
     });
@@ -164,7 +164,7 @@ describe('Topic Enhancement Routes', () => {
         { topic1: 't1', topic2: 't2', similarity: 0.85, suggestMerge: true },
       ]);
 
-      const res = await request(app).get('/api/topics/similar?context=personal');
+      const res = await request(app).get('/api/topics/similar?context=operations');
 
       expect(res.status).toBe(200);
       expect(res.body.data.mergeSuggestionCount).toBe(1);
@@ -183,7 +183,7 @@ describe('Topic Enhancement Routes', () => {
 
       const res = await request(app)
         .post('/api/topics/assign/550e8400-e29b-41d4-a716-446655440000')
-        .send({ context: 'personal' });
+        .send({ context: 'operations' });
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
@@ -196,7 +196,7 @@ describe('Topic Enhancement Routes', () => {
 
       const res = await request(app)
         .post('/api/topics/assign/550e8400-e29b-41d4-a716-446655440000')
-        .send({ context: 'personal' });
+        .send({ context: 'operations' });
 
       expect(res.status).toBe(200);
       expect(res.body.data.assigned).toBe(false);
@@ -205,7 +205,7 @@ describe('Topic Enhancement Routes', () => {
     it('should return 400 for invalid idea ID', async () => {
       const res = await request(app)
         .post('/api/topics/assign/not-uuid')
-        .send({ context: 'personal' });
+        .send({ context: 'operations' });
 
       expect(res.status).toBe(400);
     });

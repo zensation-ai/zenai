@@ -89,7 +89,7 @@ export interface DraftRow {
 export async function detectDraftNeed(
   text: string,
   ideaType: string,
-  context: AIContext = 'personal'
+  context: AIContext = 'operations'
 ): Promise<DetectedDraftNeed> {
   // Nur Tasks analysieren
   if (ideaType !== 'task') {

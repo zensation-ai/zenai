@@ -95,11 +95,11 @@ describe('Business Metrics', () => {
     });
 
     it('should record RAG latency with strategy and context', () => {
-      recordRagLatency(200, { strategy: 'hyde', context: 'personal' });
+      recordRagLatency(200, { strategy: 'hyde', context: 'operations' });
       const snapshots = getMetricSnapshots(10);
       const lastSnap = snapshots[snapshots.length - 1];
       expect(lastSnap.labels.strategy).toBe('hyde');
-      expect(lastSnap.labels.context).toBe('personal');
+      expect(lastSnap.labels.context).toBe('operations');
     });
   });
 

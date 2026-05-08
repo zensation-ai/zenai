@@ -27,7 +27,7 @@ const mockQueryContext = queryContext as jest.Mock;
 const mockProcessEmailWithAI = processEmailWithAI as jest.Mock;
 const mockCreateSuggestion = createSuggestion as jest.Mock;
 
-const CONTEXT = 'personal' as const;
+const CONTEXT = 'operations' as const;
 
 describe('email-workflow-handler', () => {
   beforeEach(() => {
@@ -92,7 +92,7 @@ describe('email-workflow-handler', () => {
             from_address: 'boss@example.com',
             ai_priority: 'urgent',
             ai_action_items: null,
-            ai_category: 'work',
+            ai_category: 'finance',
           }],
         })
         // Second call: dedup check
@@ -118,7 +118,7 @@ describe('email-workflow-handler', () => {
             from_address: 'team@example.com',
             ai_priority: 'normal',
             ai_action_items: JSON.stringify([{ text: 'Review PR' }, { text: 'Deploy fix' }]),
-            ai_category: 'work',
+            ai_category: 'finance',
           }],
         })
         .mockResolvedValueOnce({ rows: [] });
@@ -168,7 +168,7 @@ describe('email-workflow-handler', () => {
             from_address: 'sender@example.com',
             ai_priority: 'urgent',
             ai_action_items: null,
-            ai_category: 'work',
+            ai_category: 'finance',
           }],
         })
         // Dedup check returns existing active suggestion

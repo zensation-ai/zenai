@@ -112,7 +112,7 @@ describe('MCP HTTP Gateway', () => {
       const res = await request(app).get('/api/mcp/status');
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
-      expect(res.body.data.name).toBe('zenai-brain');
+      expect(res.body.data.name).toBe('zenai-spark');
       expect(res.body.data.protocol).toBe('MCP 2026');
     });
   });
@@ -178,7 +178,7 @@ describe('MCP HTTP Gateway', () => {
 
   describe('GET /api/:context/mcp/connections', () => {
     it('should list connections', async () => {
-      const res = await request(app).get('/api/personal/mcp/connections');
+      const res = await request(app).get('/api/operations/mcp/connections');
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
       expect(res.body.data).toHaveLength(1);
@@ -188,7 +188,7 @@ describe('MCP HTTP Gateway', () => {
   describe('POST /api/:context/mcp/connections', () => {
     it('should create a connection', async () => {
       const res = await request(app)
-        .post('/api/work/mcp/connections')
+        .post('/api/finance/mcp/connections')
         .send({ name: 'New Server', url: 'https://new.com' });
       expect(res.status).toBe(201);
       expect(res.body.success).toBe(true);
@@ -197,7 +197,7 @@ describe('MCP HTTP Gateway', () => {
 
     it('should return 400 when name or URL missing', async () => {
       const res = await request(app)
-        .post('/api/work/mcp/connections')
+        .post('/api/finance/mcp/connections')
         .send({ name: 'No URL' });
       expect(res.status).toBe(400);
     });
@@ -206,7 +206,7 @@ describe('MCP HTTP Gateway', () => {
   describe('PUT /api/:context/mcp/connections/:id', () => {
     it('should update a connection', async () => {
       const res = await request(app)
-        .put('/api/personal/mcp/connections/a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11')
+        .put('/api/operations/mcp/connections/a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11')
         .send({ name: 'Updated Server' });
       expect(res.status).toBe(200);
       expect(res.body.data.name).toBe('Updated Server');
@@ -216,7 +216,7 @@ describe('MCP HTTP Gateway', () => {
   describe('DELETE /api/:context/mcp/connections/:id', () => {
     it('should delete a connection', async () => {
       const res = await request(app)
-        .delete('/api/personal/mcp/connections/a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11');
+        .delete('/api/operations/mcp/connections/a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11');
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
     });
@@ -225,7 +225,7 @@ describe('MCP HTTP Gateway', () => {
   describe('POST /api/:context/mcp/connections/:id/check', () => {
     it('should health check a connection', async () => {
       const res = await request(app)
-        .post('/api/personal/mcp/connections/a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11/check');
+        .post('/api/operations/mcp/connections/a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11/check');
       expect(res.status).toBe(200);
       expect(res.body.data.status).toBe('connected');
     });
@@ -234,7 +234,7 @@ describe('MCP HTTP Gateway', () => {
   describe('POST /api/:context/mcp/connections/:id/tools/call', () => {
     it('should call tool on external connection', async () => {
       const res = await request(app)
-        .post('/api/personal/mcp/connections/a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11/tools/call')
+        .post('/api/operations/mcp/connections/a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11/tools/call')
         .send({ name: 'tool1', arguments: {} });
       expect(res.status).toBe(200);
       expect(res.body.data.content[0].text).toBe('External result');
@@ -243,7 +243,7 @@ describe('MCP HTTP Gateway', () => {
 
   describe('GET /api/:context/mcp/tools', () => {
     it('should list unified tools across all connections', async () => {
-      const res = await request(app).get('/api/personal/mcp/tools');
+      const res = await request(app).get('/api/operations/mcp/tools');
       expect(res.status).toBe(200);
       expect(res.body.data.tools).toHaveLength(1);
       expect(res.body.data.total).toBe(1);

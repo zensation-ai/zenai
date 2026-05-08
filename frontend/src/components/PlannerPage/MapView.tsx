@@ -6,9 +6,11 @@
  * Falls back to a list view when Google Maps API key is not configured.
  */
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, type CSSProperties } from 'react';
 import axios from 'axios';
-import './MapView.css';
+import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
+import { EmptyState } from '@/components/ui/empty-state';
 
 interface CalendarEvent {
   id: string;
@@ -23,7 +25,7 @@ interface CalendarEvent {
 }
 
 interface MapViewProps {
-  context: 'personal' | 'work' | 'learning' | 'creative';
+  context: 'operations' | 'finance' | 'people' | 'strategy';
 }
 
 interface GeocodedEvent extends CalendarEvent {
@@ -134,68 +136,68 @@ export function MapView({ context }: MapViewProps) {
 
   if (loading) {
     return (
-      <div className="mapview-loading">
-        <div className="mapview-loading__spinner" />
-        <p>Lade Karten-Daten...</p>
+      <div className="flex flex-col items-center justify-center h-[300px] gap-3">
+        <div className="w-8 h-8 border-[3px] border-glass-border border-t-primary rounded-full animate-spin" />
+        <p className="m-0 text-text-secondary text-sm">Lade Karten-Daten...</p>
       </div>
     );
   }
 
   if (events.length === 0) {
     return (
-      <div className="mapview-empty">
-        <span className="mapview-empty__icon">{'🗺️'}</span>
-        <h3>Keine Termine mit Ort</h3>
-        <p>Erstelle Kalendereintraege mit einem Ort, um sie auf der Karte zu sehen.</p>
-      </div>
+      <EmptyState
+        icon="🗺️"
+        title="Keine Termine mit Ort"
+        description="Erstelle Kalendereinträge mit einem Ort, um sie auf der Karte zu sehen."
+      />
     );
   }
 
   return (
-    <div className="mapview">
-      <div className="mapview__header">
-        <h3>
+    <div className="flex flex-col h-full min-h-[400px]">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-glass-border">
+        <h3 className="m-0 text-base font-semibold">
           {'🗺️'} Karte ({geocodedEvents.length} Orte)
         </h3>
         {!mapsAvailable && (
-          <span className="mapview__badge mapview__badge--warning">
+          <Badge variant="outline" className="bg-yellow-50 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400">
             Kein Google Maps API Key
-          </span>
+          </Badge>
         )}
       </div>
 
-      <div className="mapview__content">
+      <div className="grid grid-cols-[1fr_320px] flex-1 overflow-hidden max-md:grid-cols-1 max-md:grid-rows-[250px_1fr]">
         {/* Map placeholder - requires @vis.gl/react-google-maps + API key */}
-        <div className="mapview__map-container">
+        <div className="relative bg-bg-secondary overflow-hidden">
           {mapsAvailable && geocodedEvents.length > 0 ? (
-            <div className="mapview__map-placeholder">
-              <span>{'🗺️'}</span>
-              <p>Google Maps Kartenansicht</p>
-              <p className="mapview__map-hint">
-                Installiere <code>@vis.gl/react-google-maps</code> und setze <code>VITE_GOOGLE_MAPS_API_KEY</code> fuer die interaktive Karte.
+            <div className="flex flex-col items-center justify-center h-full min-h-[300px] gap-2 text-text-secondary">
+              <span className="text-5xl">{'🗺️'}</span>
+              <p className="m-0 text-sm">Google Maps Kartenansicht</p>
+              <p className="text-xs opacity-70">
+                Installiere <code className="bg-bg-secondary px-1 py-0.5 rounded-sm text-[0.7rem]">@vis.gl/react-google-maps</code> und setze <code className="bg-bg-secondary px-1 py-0.5 rounded-sm text-[0.7rem]">VITE_GOOGLE_MAPS_API_KEY</code> für die interaktive Karte.
               </p>
               {/* Mini coordinate list as map preview */}
-              <div className="mapview__coords">
+              <div className="flex flex-col gap-1 mt-2 text-xs max-w-[400px]">
                 {geocodedEvents.map(e => (
-                  <div key={e.id} className="mapview__coord-pin">
-                    <span className="mapview__coord-dot" style={{ background: e.color || '#4A90D9' }} />
+                  <div key={e.id} className="flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full shrink-0 bg-[var(--c)]" style={{ '--c': e.color || '#4A90D9' } as CSSProperties} />
                     <span>{e.title}: {e.lat.toFixed(4)}, {e.lng.toFixed(4)}</span>
                   </div>
                 ))}
               </div>
             </div>
           ) : (
-            <div className="mapview__map-placeholder">
-              <span>{'🗺️'}</span>
-              <p>Setze <code>GOOGLE_MAPS_API_KEY</code> im Backend fuer Kartenfunktionen</p>
+            <div className="flex flex-col items-center justify-center h-full min-h-[300px] gap-2 text-text-secondary">
+              <span className="text-5xl">{'🗺️'}</span>
+              <p className="m-0 text-sm">Setze <code className="bg-bg-secondary px-1 py-0.5 rounded-sm text-[0.7rem]">GOOGLE_MAPS_API_KEY</code> im Backend für Kartenfunktionen</p>
             </div>
           )}
         </div>
 
         {/* Event list sidebar */}
-        <div className="mapview__sidebar">
-          <h4>Termine mit Ort</h4>
-          <div className="mapview__event-list">
+        <div className="border-l border-glass-border overflow-y-auto p-3 max-md:border-l-0 max-md:border-t max-md:border-glass-border">
+          <h4 className="m-0 mb-3 text-sm font-semibold text-text-secondary">Termine mit Ort</h4>
+          <div className="flex flex-col gap-2">
             {events.map(event => {
               const geocoded = geocodedEvents.find(e => e.id === event.id);
               const isSelected = selectedEvent?.id === event.id;
@@ -203,22 +205,25 @@ export function MapView({ context }: MapViewProps) {
               return (
                 <button
                   key={event.id}
-                  className={`mapview__event ${isSelected ? 'mapview__event--selected' : ''}`}
+                  className={cn(
+                    'flex flex-col gap-1 p-2.5 border border-glass-border rounded-md bg-surface cursor-pointer text-left transition-colors w-full font-[inherit] text-inherit hover:border-primary',
+                    isSelected && 'border-primary shadow-[0_0_0_2px_rgba(74,144,217,0.2)]'
+                  )}
                   onClick={() => setSelectedEvent(geocoded || null)}
                 >
-                  <div className="mapview__event-header">
-                    <span className="mapview__event-icon">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-sm">
                       {eventTypeIcons[event.event_type] || '📅'}
                     </span>
-                    <span className="mapview__event-title">{event.title}</span>
+                    <span className="font-medium text-sm overflow-hidden text-ellipsis whitespace-nowrap">{event.title}</span>
                   </div>
-                  <div className="mapview__event-meta">
+                  <div className="text-xs text-text-secondary">
                     <span>{formatDate(event.start_time)} {formatTime(event.start_time)}</span>
                   </div>
-                  <div className="mapview__event-location">
+                  <div className="text-xs text-text-secondary">
                     {'📍'} {event.location}
                     {geocoded && (
-                      <span className="mapview__event-coords">
+                      <span className="text-[0.65rem] opacity-60 ml-1">
                         ({geocoded.lat.toFixed(2)}, {geocoded.lng.toFixed(2)})
                       </span>
                     )}
@@ -232,20 +237,20 @@ export function MapView({ context }: MapViewProps) {
 
       {/* Selected event detail */}
       {selectedEvent && (
-        <div className="mapview__detail">
-          <div className="mapview__detail-header">
-            <h4>{selectedEvent.title}</h4>
+        <div className="absolute bottom-4 left-4 right-[340px] bg-surface rounded-lg p-4 shadow-lg z-10 max-md:right-4 max-md:bottom-auto max-md:top-4">
+          <div className="flex justify-between items-center">
+            <h4 className="m-0 text-[0.95rem]">{selectedEvent.title}</h4>
             <button
-              className="mapview__detail-close"
+              className="bg-transparent border-none text-xl cursor-pointer text-text-secondary p-0.5"
               onClick={() => setSelectedEvent(null)}
-              aria-label="Schliessen"
+              aria-label="Schließen"
             >
               &times;
             </button>
           </div>
-          <p>{'📍'} {selectedEvent.location}</p>
-          <p>{'🕒'} {formatDate(selectedEvent.start_time)} {formatTime(selectedEvent.start_time)}</p>
-          <p>{'🌐'} {selectedEvent.lat.toFixed(6)}, {selectedEvent.lng.toFixed(6)}</p>
+          <p className="mt-1 mb-0 text-[0.8rem] text-text-secondary">{'📍'} {selectedEvent.location}</p>
+          <p className="mt-1 mb-0 text-[0.8rem] text-text-secondary">{'🕒'} {formatDate(selectedEvent.start_time)} {formatTime(selectedEvent.start_time)}</p>
+          <p className="mt-1 mb-0 text-[0.8rem] text-text-secondary">{'🌐'} {selectedEvent.lat.toFixed(6)}, {selectedEvent.lng.toFixed(6)}</p>
         </div>
       )}
     </div>

@@ -13,6 +13,7 @@
 
 import { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react';
 import type { ReactNode } from 'react';
+import type { Organization, Workspace, WorkspaceContext } from '../types/multi-tenancy';
 
 // ===========================================
 // Types
@@ -30,6 +31,10 @@ export interface AuthUser {
   preferences: Record<string, unknown>;
   last_login: string | null;
   login_count: number;
+  /** Sprint 1.6: when the welcome-wizard was finished (null = still pending) */
+  onboarding_completed_at?: string | null;
+  /** Sprint 1.10: when the DSGVO consent banner was acknowledged (null = show once) */
+  consent_banner_shown_at?: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -57,6 +62,22 @@ interface AuthContextType {
   resetPassword: (email: string, token?: string, newPassword?: string) => Promise<{ error: Error | null }>;
   /** Get the current access token (for API calls) */
   getAccessToken: () => string | null;
+
+  // Multi-tenancy
+  /** Current organization (null = personal / legacy mode) */
+  currentOrg: Organization | null;
+  /** Current workspace (null = legacy mode) */
+  currentWorkspace: Workspace | null;
+  /** Custom contexts for current workspace (fallback to 4 defaults) */
+  workspaceContexts: WorkspaceContext[];
+  /** All orgs the user belongs to */
+  userOrgs: Organization[];
+  /** Switch to a different workspace (issues new workspace-scoped token) */
+  switchWorkspace: (workspaceId: string) => Promise<void>;
+  /** Reload user's organization list */
+  refreshOrgs: () => Promise<void>;
+  /** Sprint 1.6: re-fetch /api/auth/me so onboarding_completed_at etc. refresh */
+  refreshUser: () => Promise<AuthUser | null>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -69,6 +90,7 @@ const STORAGE_KEYS = {
   ACCESS_TOKEN: 'zenai_access_token',
   REFRESH_TOKEN: 'zenai_refresh_token',
   USER: 'zenai_user',
+  WORKSPACE_ID: 'zenai_workspace_id',
 } as const;
 
 // ===========================================
@@ -109,6 +131,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [accessToken, setAccessToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const refreshTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Multi-tenancy state
+  const [currentOrg, setCurrentOrg] = useState<Organization | null>(null);
+  const [currentWorkspace, setCurrentWorkspace] = useState<Workspace | null>(null);
+  const [workspaceContexts, setWorkspaceContexts] = useState<WorkspaceContext[]>([]);
+  const [userOrgs, setUserOrgs] = useState<Organization[]>([]);
 
   // Load stored auth state on mount (or handle OAuth callback)
   useEffect(() => {
@@ -171,8 +199,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.removeItem(STORAGE_KEYS.ACCESS_TOKEN);
     localStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
     localStorage.removeItem(STORAGE_KEYS.USER);
+    localStorage.removeItem(STORAGE_KEYS.WORKSPACE_ID);
     setUser(null);
     setAccessToken(null);
+    setCurrentOrg(null);
+    setCurrentWorkspace(null);
+    setWorkspaceContexts([]);
+    setUserOrgs([]);
     if (refreshTimerRef.current) clearTimeout(refreshTimerRef.current);
   }, []);
 
@@ -200,6 +233,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const userData = data.data as AuthUser;
         setUser(userData);
         localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(userData));
+
+        // Load multi-tenancy state on initial verify
+        loadCurrentWorkspace(token).catch(() => {});
+        refreshOrgs().catch(() => {});
 
         // Schedule refresh
         if (refreshTimerRef.current) clearTimeout(refreshTimerRef.current);
@@ -263,6 +300,77 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   // ===========================================
+  // Multi-tenancy: Org & Workspace
+  // ===========================================
+
+  const refreshOrgs = useCallback(async () => {
+    const token = localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN);
+    if (!token) return;
+    try {
+      const res = await authFetchWithToken('/api/organizations', token);
+      if (res.ok) {
+        const data = await res.json();
+        setUserOrgs(Array.isArray(data) ? data : data.data ?? []);
+      }
+    } catch {
+      // Non-critical — orgs list just won't update
+    }
+  }, []);
+
+  const loadCurrentWorkspace = useCallback(async (token: string) => {
+    try {
+      const res = await authFetchWithToken('/api/auth/current-workspace', token);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.workspace) {
+          setCurrentWorkspace(data.workspace);
+          setWorkspaceContexts(data.contexts ?? []);
+          localStorage.setItem(STORAGE_KEYS.WORKSPACE_ID, data.workspace.id);
+          // Fetch parent org
+          const orgRes = await authFetchWithToken(`/api/organizations/${data.workspace.org_id}`, token);
+          if (orgRes.ok) {
+            const orgData = await orgRes.json();
+            setCurrentOrg(orgData.data ?? orgData);
+          }
+        }
+      }
+    } catch {
+      // Non-critical — falls back to legacy single-user mode
+    }
+  }, []);
+
+  const switchWorkspace = useCallback(async (workspaceId: string) => {
+    const token = localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN);
+    if (!token) return;
+    try {
+      const res = await authFetchWithToken('/api/auth/switch-workspace', token, {
+        method: 'POST',
+        body: JSON.stringify({ workspaceId }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        // Store new workspace-scoped token
+        localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, data.accessToken);
+        localStorage.setItem(STORAGE_KEYS.WORKSPACE_ID, workspaceId);
+        setAccessToken(data.accessToken);
+        setCurrentWorkspace(data.workspace);
+        setWorkspaceContexts(data.contexts ?? []);
+        // Fetch parent org
+        if (data.workspace?.org_id) {
+          const orgRes = await authFetchWithToken(`/api/organizations/${data.workspace.org_id}`, data.accessToken);
+          if (orgRes.ok) {
+            const orgData = await orgRes.json();
+            setCurrentOrg(orgData.data ?? orgData);
+          }
+        }
+      }
+    } catch (err) {
+      console.error('Workspace switch failed:', err);
+      throw err; // Propagate so callers can handle
+    }
+  }, []);
+
+  // ===========================================
   // Public API
   // ===========================================
 
@@ -287,11 +395,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       storeAuthState(token, refresh, userData, expiresIn);
       setLoading(false);
 
+      // Load multi-tenancy state after login
+      loadCurrentWorkspace(token).catch(() => {});
+      refreshOrgs().catch(() => {});
+
       return { error: null };
     } catch (err) {
       return { error: new Error('Network error. Please check your connection.') };
     }
-  }, [storeAuthState]);
+  }, [storeAuthState, loadCurrentWorkspace, refreshOrgs]);
 
   const signOut = useCallback(async () => {
     const token = localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN);
@@ -328,11 +440,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       storeAuthState(token, refresh, userData, expiresIn);
       setLoading(false);
 
+      // Load multi-tenancy state after registration
+      loadCurrentWorkspace(token).catch(() => {});
+      refreshOrgs().catch(() => {});
+
       return { error: null };
     } catch {
       return { error: new Error('Network error. Please check your connection.') };
     }
-  }, [storeAuthState]);
+  }, [storeAuthState, loadCurrentWorkspace, refreshOrgs]);
 
   const resetPassword = useCallback(async (email: string, token?: string, newPassword?: string): Promise<{ error: Error | null }> => {
     try {
@@ -360,12 +476,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return { error: null };
       }
     } catch {
-      return { error: new Error('Verbindungsfehler. Pruefe deine Internetverbindung.') };
+      return { error: new Error('Verbindungsfehler. Prüfe deine Internetverbindung.') };
     }
   }, []);
 
   const getAccessToken = useCallback((): string | null => {
     return accessToken || localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN);
+  }, [accessToken]);
+
+  const refreshUser = useCallback(async (): Promise<AuthUser | null> => {
+    const token = accessToken || localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN);
+    if (!token) return null;
+    try {
+      const response = await authFetchWithToken('/api/auth/me', token);
+      if (!response.ok) return null;
+      const data = await response.json();
+      const userData = data.data as AuthUser;
+      setUser(userData);
+      localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(userData));
+      return userData;
+    } catch {
+      return null;
+    }
   }, [accessToken]);
 
   // Build backward-compatible session object
@@ -384,6 +516,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         register,
         resetPassword,
         getAccessToken,
+        currentOrg,
+        currentWorkspace,
+        workspaceContexts,
+        userOrgs,
+        switchWorkspace,
+        refreshOrgs,
+        refreshUser,
       }}
     >
       {children}

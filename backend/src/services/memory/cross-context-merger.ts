@@ -2,7 +2,7 @@
  * Phase 126: Cross-Context Entity Merger
  *
  * Detects when the same real-world entity exists in multiple context schemas
- * (personal, work, learning, creative) and creates cross-context links.
+ * (operations, finance, people, strategy) and creates cross-context links.
  *
  * Strategy:
  * - Name similarity (Jaccard on word sets): weight 0.5
@@ -69,12 +69,12 @@ const ALIAS_MATCH_BONUS = 0.1;
 
 /** All valid context pairs for cross-context detection (6 pairs) */
 const ALL_CONTEXT_PAIRS: Array<[AIContext, AIContext]> = [
-  ['personal', 'work'],
-  ['personal', 'learning'],
-  ['personal', 'creative'],
-  ['work', 'learning'],
-  ['work', 'creative'],
-  ['learning', 'creative'],
+  ['operations', 'finance'],
+  ['operations', 'people'],
+  ['operations', 'strategy'],
+  ['finance', 'people'],
+  ['finance', 'strategy'],
+  ['people', 'strategy'],
 ];
 
 // ===========================================

@@ -35,7 +35,7 @@ export interface SignalingMessage {
   data?: unknown;
 }
 
-type AIContext = 'personal' | 'work' | 'learning' | 'creative' | 'demo';
+type AIContext = 'operations' | 'finance' | 'people' | 'strategy' | 'demo';
 
 // ============================================================
 // Voice Signaling Server
@@ -68,7 +68,7 @@ export class VoiceSignalingServer {
    */
   private handleConnection(ws: WebSocket, req: http.IncomingMessage): void {
     const url = new URL(req.url || '/', `http://${req.headers.host || 'localhost'}`);
-    const context = (url.searchParams.get('context') || 'personal') as AIContext;
+    const context = (url.searchParams.get('context') || 'operations') as AIContext;
 
     let sessionId: string | null = null;
 

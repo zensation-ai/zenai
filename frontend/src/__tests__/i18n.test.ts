@@ -42,7 +42,7 @@ describe('i18n translations', () => {
     expect(de.common.save).toBe('Speichern');
     expect(de.chat.placeholder).toBe('Nachricht eingeben...');
     expect(de.ideas.title).toBe('Gedanken');
-    expect(de.context.personal).toBe('Persönlich');
+    expect(de.context.operations).toBe('Operativ');
   });
 
   test('English translations differ from German where expected', () => {

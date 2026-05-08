@@ -23,7 +23,7 @@ import {
 const mockQueryContext = jest.fn();
 jest.mock('../../../utils/database-context', () => ({
   queryContext: (...args: unknown[]) => mockQueryContext(...args),
-  isValidContext: (c: string) => ['personal', 'work', 'learning', 'creative'].includes(c),
+  isValidContext: (c: string) => ['operations', 'finance', 'people', 'strategy'].includes(c),
 }));
 
 // Mock logger
@@ -106,10 +106,10 @@ describe('WorkspaceAutomation Service', () => {
       ];
       mockQueryContext.mockResolvedValueOnce({ rows: mockRows });
 
-      const result = await listAutomations('personal' as const, TEST_USER);
+      const result = await listAutomations('operations' as const, TEST_USER);
       expect(result).toEqual(mockRows);
       expect(mockQueryContext).toHaveBeenCalledWith(
-        'personal',
+        'operations',
         expect.stringContaining('SELECT * FROM workspace_automations'),
         [TEST_USER],
       );
@@ -117,7 +117,7 @@ describe('WorkspaceAutomation Service', () => {
 
     it('should return empty array when no automations exist', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [] });
-      const result = await listAutomations('work' as const, TEST_USER);
+      const result = await listAutomations('finance' as const, TEST_USER);
       expect(result).toEqual([]);
     });
   });
@@ -127,13 +127,13 @@ describe('WorkspaceAutomation Service', () => {
       const mockAutomation = { id: TEST_AUTOMATION_ID, name: 'Test' };
       mockQueryContext.mockResolvedValueOnce({ rows: [mockAutomation] });
 
-      const result = await getAutomation('personal' as const, TEST_AUTOMATION_ID, TEST_USER);
+      const result = await getAutomation('operations' as const, TEST_AUTOMATION_ID, TEST_USER);
       expect(result).toEqual(mockAutomation);
     });
 
     it('should return null when not found', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [] });
-      const result = await getAutomation('personal' as const, 'nonexistent', TEST_USER);
+      const result = await getAutomation('operations' as const, 'nonexistent', TEST_USER);
       expect(result).toBeNull();
     });
   });
@@ -148,7 +148,7 @@ describe('WorkspaceAutomation Service', () => {
       };
       mockQueryContext.mockResolvedValueOnce({ rows: [mockCreated] });
 
-      const result = await createAutomation('personal' as const, TEST_USER, {
+      const result = await createAutomation('operations' as const, TEST_USER, {
         name: 'New Automation',
         trigger_type: 'manual',
         trigger_config: {},
@@ -157,7 +157,7 @@ describe('WorkspaceAutomation Service', () => {
 
       expect(result).toEqual(mockCreated);
       expect(mockQueryContext).toHaveBeenCalledWith(
-        'personal',
+        'operations',
         expect.stringContaining('INSERT INTO workspace_automations'),
         expect.arrayContaining([TEST_USER, 'New Automation']),
       );
@@ -167,7 +167,7 @@ describe('WorkspaceAutomation Service', () => {
       const mockCreated = { id: TEST_AUTOMATION_ID, name: 'With Desc' };
       mockQueryContext.mockResolvedValueOnce({ rows: [mockCreated] });
 
-      await createAutomation('work' as const, TEST_USER, {
+      await createAutomation('finance' as const, TEST_USER, {
         name: 'With Desc',
         description: 'A description',
         trigger_type: 'event',
@@ -177,7 +177,7 @@ describe('WorkspaceAutomation Service', () => {
       });
 
       expect(mockQueryContext).toHaveBeenCalledWith(
-        'work',
+        'finance',
         expect.stringContaining('INSERT'),
         expect.arrayContaining(['With Desc', 'A description']),
       );
@@ -193,13 +193,13 @@ describe('WorkspaceAutomation Service', () => {
       };
       mockQueryContext.mockResolvedValueOnce({ rows: [mockCreated] });
 
-      const result = await createFromTemplate('personal' as const, TEST_USER, 'email-to-task');
+      const result = await createFromTemplate('operations' as const, TEST_USER, 'email-to-task');
       expect(result).toEqual(mockCreated);
     });
 
     it('should throw for non-existent template', async () => {
       await expect(
-        createFromTemplate('personal' as const, TEST_USER, 'non-existent'),
+        createFromTemplate('operations' as const, TEST_USER, 'non-existent'),
       ).rejects.toThrow('Template not found: non-existent');
     });
 
@@ -207,12 +207,12 @@ describe('WorkspaceAutomation Service', () => {
       const mockCreated = { id: TEST_AUTOMATION_ID, name: 'Custom Name' };
       mockQueryContext.mockResolvedValueOnce({ rows: [mockCreated] });
 
-      await createFromTemplate('personal' as const, TEST_USER, 'daily-digest', {
+      await createFromTemplate('operations' as const, TEST_USER, 'daily-digest', {
         name: 'Custom Name',
       });
 
       expect(mockQueryContext).toHaveBeenCalledWith(
-        'personal',
+        'operations',
         expect.stringContaining('INSERT'),
         expect.arrayContaining(['Custom Name']),
       );
@@ -224,14 +224,14 @@ describe('WorkspaceAutomation Service', () => {
       const mockUpdated = { id: TEST_AUTOMATION_ID, name: 'Updated', enabled: false };
       mockQueryContext.mockResolvedValueOnce({ rows: [mockUpdated] });
 
-      const result = await updateAutomation('personal' as const, TEST_AUTOMATION_ID, TEST_USER, {
+      const result = await updateAutomation('operations' as const, TEST_AUTOMATION_ID, TEST_USER, {
         name: 'Updated',
         enabled: false,
       });
 
       expect(result).toEqual(mockUpdated);
       expect(mockQueryContext).toHaveBeenCalledWith(
-        'personal',
+        'operations',
         expect.stringContaining('UPDATE workspace_automations'),
         expect.arrayContaining(['Updated', false]),
       );
@@ -239,7 +239,7 @@ describe('WorkspaceAutomation Service', () => {
 
     it('should return null when automation not found', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [] });
-      const result = await updateAutomation('personal' as const, 'nonexistent', TEST_USER, {
+      const result = await updateAutomation('operations' as const, 'nonexistent', TEST_USER, {
         name: 'New Name',
       });
       expect(result).toBeNull();
@@ -249,7 +249,7 @@ describe('WorkspaceAutomation Service', () => {
       const mockExisting = { id: TEST_AUTOMATION_ID, name: 'Existing' };
       mockQueryContext.mockResolvedValueOnce({ rows: [mockExisting] });
 
-      const result = await updateAutomation('personal' as const, TEST_AUTOMATION_ID, TEST_USER, {});
+      const result = await updateAutomation('operations' as const, TEST_AUTOMATION_ID, TEST_USER, {});
       expect(result).toEqual(mockExisting);
     });
   });
@@ -257,13 +257,13 @@ describe('WorkspaceAutomation Service', () => {
   describe('deleteAutomation', () => {
     it('should delete automation and return true', async () => {
       mockQueryContext.mockResolvedValueOnce({ rowCount: 1 });
-      const result = await deleteAutomation('personal' as const, TEST_AUTOMATION_ID, TEST_USER);
+      const result = await deleteAutomation('operations' as const, TEST_AUTOMATION_ID, TEST_USER);
       expect(result).toBe(true);
     });
 
     it('should return false when automation not found', async () => {
       mockQueryContext.mockResolvedValueOnce({ rowCount: 0 });
-      const result = await deleteAutomation('personal' as const, 'nonexistent', TEST_USER);
+      const result = await deleteAutomation('operations' as const, 'nonexistent', TEST_USER);
       expect(result).toBe(false);
     });
   });
@@ -300,14 +300,14 @@ describe('WorkspaceAutomation Service', () => {
       // update automation metadata
       mockQueryContext.mockResolvedValueOnce({ rows: [] });
 
-      const result = await executeAutomation('personal' as const, TEST_AUTOMATION_ID, TEST_USER);
+      const result = await executeAutomation('operations' as const, TEST_AUTOMATION_ID, TEST_USER);
       expect(result.status).toBe('completed');
     });
 
     it('should throw when automation not found', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [] });
       await expect(
-        executeAutomation('personal' as const, 'nonexistent', TEST_USER),
+        executeAutomation('operations' as const, 'nonexistent', TEST_USER),
       ).rejects.toThrow('Automation not found');
     });
 
@@ -327,7 +327,7 @@ describe('WorkspaceAutomation Service', () => {
       // update automation metadata
       mockQueryContext.mockResolvedValueOnce({ rows: [] });
 
-      const result = await executeAutomation('personal' as const, TEST_AUTOMATION_ID, TEST_USER, {
+      const result = await executeAutomation('operations' as const, TEST_AUTOMATION_ID, TEST_USER, {
         status: 'normal',
       });
       expect(result.status).toBe('completed');
@@ -367,13 +367,13 @@ describe('WorkspaceAutomation Service', () => {
       // history query
       mockQueryContext.mockResolvedValueOnce({ rows: mockHistory });
 
-      const result = await getExecutionHistory('personal' as const, TEST_AUTOMATION_ID, TEST_USER);
+      const result = await getExecutionHistory('operations' as const, TEST_AUTOMATION_ID, TEST_USER);
       expect(result).toEqual(mockHistory);
     });
 
     it('should return empty array when automation not found', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [] });
-      const result = await getExecutionHistory('personal' as const, 'nonexistent', TEST_USER);
+      const result = await getExecutionHistory('operations' as const, 'nonexistent', TEST_USER);
       expect(result).toEqual([]);
     });
   });

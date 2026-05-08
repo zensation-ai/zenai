@@ -41,7 +41,7 @@ const mockEmail: Email = {
   ai_processed_at: null,
   labels: [],
   is_starred: false,
-  context: 'personal',
+  context: 'operations',
   received_at: '2026-03-20T10:00:00Z',
   sent_at: null,
   created_at: '2026-03-20T10:00:00Z',

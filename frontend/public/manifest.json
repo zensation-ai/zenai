@@ -14,7 +14,7 @@
   "categories": ["productivity", "business", "utilities"],
   "icons": [
     {
-      "src": "/zenai-brain.svg",
+      "src": "/zenai-spark.svg",
       "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "any maskable"

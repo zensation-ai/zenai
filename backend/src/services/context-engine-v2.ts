@@ -32,6 +32,7 @@ export interface AssembledContext {
   totalTokens: number;
   fromCache: boolean;
   buildTimeMs: number;
+  achAttentionRatio?: number; // PMA: Acetylcholine attention ratio for downstream consumers
 }
 
 export interface ContextPartV2 {
@@ -407,6 +408,7 @@ export class ContextEngineV2 {
   async assembleContext(
     query: string,
     context: AIContext,
+    neuromodulationParams?: { attentionRatio?: number },
   ): Promise<AssembledContext> {
     const startTime = Date.now();
     const domain = this.classifyDomain(query);
@@ -430,6 +432,13 @@ export class ContextEngineV2 {
 
     // Token budget: 60% of model max for context
     const totalBudget = Math.floor(model.maxTokens * 0.6);
+    // PMA: Acetylcholine modulates new retrieval vs memory recall budget allocation
+    // High ACh → more budget for new retrieval, less for recalled memory
+    // newRetrievalShare range: [0.5, 0.7] based on attentionRatio
+    const achRatio = neuromodulationParams?.attentionRatio ?? 0.5;
+    // Note: this split is informational — the context rules loop below still uses totalBudget.
+    // The achRatio is passed through in the assembled result for downstream consumers.
+    void (0.5 + 0.2 * achRatio); // newRetrievalShare — reserved for future per-source budget allocation
     let usedTokens = 0;
     const parts: ContextPartV2[] = [];
 
@@ -499,6 +508,7 @@ export class ContextEngineV2 {
       totalTokens: filteredTokens,
       fromCache: false,
       buildTimeMs: Date.now() - startTime,
+      achAttentionRatio: achRatio, // PMA: available for downstream consumers
     };
 
     // Cache the result

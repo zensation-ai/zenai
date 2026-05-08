@@ -47,7 +47,7 @@ describe('EpisodicMemoryService - Extended', () => {
 
   const makeRow = (overrides: Record<string, unknown> = {}) => ({
     id: 'ep-001',
-    context: 'personal',
+    context: 'operations',
     session_id: 'sess-001',
     trigger: 'Test trigger',
     response: 'Test response',
@@ -90,7 +90,7 @@ describe('EpisodicMemoryService - Extended', () => {
         rows: [makeRow({ linked_episodes: ['ep-linked-1'] })],
       } as any);
 
-      const result = await service.store('question', 'answer', 'sess-1', 'personal');
+      const result = await service.store('question', 'answer', 'sess-1', 'operations');
 
       // INSERT call should include only ep-linked-1 (>= 0.65)
       const insertCall = mockQueryContext.mock.calls[1];
@@ -109,7 +109,7 @@ describe('EpisodicMemoryService - Extended', () => {
         'Ich habe ein Problem, es ist frustriert und schwierig',
         'Sorry, hier ist die Hilfe',
         'sess-1',
-        'personal'
+        'operations'
       );
 
       const insertCall = mockQueryContext.mock.calls[1];
@@ -126,7 +126,7 @@ describe('EpisodicMemoryService - Extended', () => {
         'DRINGEND! Wichtig! Sofort erledigen!',
         'OK',
         'sess-1',
-        'personal'
+        'operations'
       );
 
       const insertCall = mockQueryContext.mock.calls[1];
@@ -143,7 +143,7 @@ describe('EpisodicMemoryService - Extended', () => {
         'Danke, das ist super toll!',
         'Gerne! Das ist perfekt.',
         'sess-1',
-        'personal'
+        'operations'
       );
 
       const insertCall = mockQueryContext.mock.calls[1];
@@ -155,7 +155,7 @@ describe('EpisodicMemoryService - Extended', () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [] } as any);
       mockQueryContext.mockResolvedValueOnce({ rows: [makeRow()] } as any);
 
-      await service.store('Was ist die Hauptstadt?', 'Berlin.', 'sess-1', 'personal');
+      await service.store('Was ist die Hauptstadt?', 'Berlin.', 'sess-1', 'operations');
 
       const insertCall = mockQueryContext.mock.calls[1];
       const valence = insertCall[2][4];
@@ -166,7 +166,7 @@ describe('EpisodicMemoryService - Extended', () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [] } as any);
       mockQueryContext.mockRejectedValueOnce(new Error('INSERT failed'));
 
-      await expect(service.store('q', 'a', 's', 'personal')).rejects.toThrow('INSERT failed');
+      await expect(service.store('q', 'a', 's', 'operations')).rejects.toThrow('INSERT failed');
     });
 
     it('should skip findSimilarEpisodes when embedding is empty', async () => {
@@ -176,7 +176,7 @@ describe('EpisodicMemoryService - Extended', () => {
         rows: [makeRow()],
       } as any);
 
-      const result = await service.store('q', 'a', 'sess-1', 'personal');
+      const result = await service.store('q', 'a', 'sess-1', 'operations');
 
       expect(result).toBeDefined();
       expect(mockQueryContext).toHaveBeenCalledTimes(1); // only INSERT
@@ -191,7 +191,7 @@ describe('EpisodicMemoryService - Extended', () => {
     it('should apply emotional filter with minValence', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [] } as any);
 
-      await service.retrieve('query', 'personal', {
+      await service.retrieve('query', 'operations', {
         emotionalFilter: { minValence: 0.5 },
       });
 
@@ -202,7 +202,7 @@ describe('EpisodicMemoryService - Extended', () => {
     it('should apply emotional filter with maxValence', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [] } as any);
 
-      await service.retrieve('query', 'personal', {
+      await service.retrieve('query', 'operations', {
         emotionalFilter: { maxValence: -0.3 },
       });
 
@@ -213,7 +213,7 @@ describe('EpisodicMemoryService - Extended', () => {
     it('should apply temporal filter for timeOfDay', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [] } as any);
 
-      await service.retrieve('query', 'personal', {
+      await service.retrieve('query', 'operations', {
         temporalFilter: { timeOfDay: 'morning' },
       });
 
@@ -224,7 +224,7 @@ describe('EpisodicMemoryService - Extended', () => {
     it('should apply includeDecayed option', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [] } as any);
 
-      await service.retrieve('query', 'personal', { includeDecayed: true });
+      await service.retrieve('query', 'operations', { includeDecayed: true });
 
       const sql = mockQueryContext.mock.calls[0][1] as string;
       // When includeDecayed=true, the strength filter should NOT be added
@@ -234,7 +234,7 @@ describe('EpisodicMemoryService - Extended', () => {
     it('should not update retrieval stats when no episodes found', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [] } as any);
 
-      await service.retrieve('query', 'personal');
+      await service.retrieve('query', 'operations');
 
       // Only 1 call (retrieval), no stats update
       expect(mockQueryContext).toHaveBeenCalledTimes(1);
@@ -251,7 +251,7 @@ describe('EpisodicMemoryService - Extended', () => {
         rows: [makeRow({ id: 'ep-1' }), makeRow({ id: 'ep-2' })],
       } as any);
 
-      const result = await service.getBySession('sess-001', 'personal');
+      const result = await service.getBySession('sess-001', 'operations');
 
       expect(result).toHaveLength(2);
       expect(result[0].id).toBe('ep-1');
@@ -260,7 +260,7 @@ describe('EpisodicMemoryService - Extended', () => {
     it('should return empty array when no episodes found', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [] } as any);
 
-      const result = await service.getBySession('sess-none', 'personal');
+      const result = await service.getBySession('sess-none', 'operations');
 
       expect(result).toEqual([]);
     });
@@ -268,7 +268,7 @@ describe('EpisodicMemoryService - Extended', () => {
     it('should respect limit parameter', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [makeRow()] } as any);
 
-      await service.getBySession('sess-1', 'personal', 3);
+      await service.getBySession('sess-1', 'operations', 3);
 
       const params = mockQueryContext.mock.calls[0][2];
       expect(params[2]).toBe(3);
@@ -286,7 +286,7 @@ describe('EpisodicMemoryService - Extended', () => {
       // strong episodes query
       mockQueryContext.mockResolvedValueOnce({ rows: [] } as any);
 
-      const result = await service.consolidate('personal');
+      const result = await service.consolidate('operations');
 
       expect(result.strongEpisodes).toBe(0);
       expect(result.factsExtracted).toBe(0);
@@ -311,7 +311,7 @@ describe('EpisodicMemoryService - Extended', () => {
       // INSERT fact
       mockQueryContext.mockResolvedValueOnce({ rows: [] } as any);
 
-      const result = await service.consolidate('personal');
+      const result = await service.consolidate('operations');
 
       expect(result.episodesProcessed).toBe(2);
       expect(result.strongEpisodes).toBe(2);
@@ -340,7 +340,7 @@ describe('EpisodicMemoryService - Extended', () => {
       // Second fact insert succeeds
       mockQueryContext.mockResolvedValueOnce({ rows: [] } as any);
 
-      const result = await service.consolidate('personal');
+      const result = await service.consolidate('operations');
 
       expect(result.factsExtracted).toBe(1); // only second succeeded
     });
@@ -351,7 +351,7 @@ describe('EpisodicMemoryService - Extended', () => {
       // strong episodes
       mockQueryContext.mockResolvedValueOnce({ rows: [] } as any);
 
-      await service.consolidate('personal');
+      await service.consolidate('operations');
 
       const episodeQuery = mockQueryContext.mock.calls[1][1] as string;
       expect(episodeQuery).not.toContain('metadata');
@@ -360,7 +360,7 @@ describe('EpisodicMemoryService - Extended', () => {
     it('should return partial result on DB error during consolidation', async () => {
       mockQueryContext.mockRejectedValueOnce(new Error('Connection lost'));
 
-      const result = await service.consolidate('personal');
+      const result = await service.consolidate('operations');
 
       expect(result.episodesProcessed).toBe(0);
       expect(result.factsExtracted).toBe(0);
@@ -388,7 +388,7 @@ describe('EpisodicMemoryService - Extended', () => {
       // monthly eligible
       mockQueryContext.mockResolvedValueOnce({ rows: [] } as any);
 
-      const result = await service.temporalMerge('personal');
+      const result = await service.temporalMerge('operations');
 
       expect(result.weeklyMerged).toBe(1);
       expect(result.episodesRemoved).toBe(3);
@@ -403,7 +403,7 @@ describe('EpisodicMemoryService - Extended', () => {
       mockQueryContext.mockResolvedValueOnce({ rows: twoEpisodes } as any);
       mockQueryContext.mockResolvedValueOnce({ rows: [] } as any); // monthly
 
-      const result = await service.temporalMerge('personal');
+      const result = await service.temporalMerge('operations');
 
       expect(result.weeklyMerged).toBe(0);
       expect(result.episodesRemoved).toBe(0);
@@ -425,7 +425,7 @@ describe('EpisodicMemoryService - Extended', () => {
       // DELETE merged
       mockQueryContext.mockResolvedValueOnce({ rows: [] } as any);
 
-      const result = await service.temporalMerge('personal');
+      const result = await service.temporalMerge('operations');
 
       expect(result.monthlyMerged).toBe(1);
       expect(result.episodesRemoved).toBe(3);
@@ -434,7 +434,7 @@ describe('EpisodicMemoryService - Extended', () => {
     it('should return zero results on error', async () => {
       mockQueryContext.mockRejectedValueOnce(new Error('DB error'));
 
-      const result = await service.temporalMerge('personal');
+      const result = await service.temporalMerge('operations');
 
       expect(result.weeklyMerged).toBe(0);
       expect(result.monthlyMerged).toBe(0);
@@ -449,7 +449,7 @@ describe('EpisodicMemoryService - Extended', () => {
   describe('calculateEmotionalTone — mood detection', () => {
     const makeEpisode = (valence: number, arousal: number): Episode => ({
       id: 'e1',
-      context: 'personal' as const,
+      context: 'operations' as const,
       sessionId: 's1',
       timestamp: new Date(),
       trigger: 'Q',
@@ -490,7 +490,7 @@ describe('EpisodicMemoryService - Extended', () => {
         rows: [{ total: '0', avg_strength: null, strong: '0', recent: '0' }],
       } as any);
 
-      const stats = await service.getStats('personal');
+      const stats = await service.getStats('operations');
 
       expect(stats.totalEpisodes).toBe(0);
       expect(stats.avgRetrievalStrength).toBe(0);
@@ -506,7 +506,7 @@ describe('EpisodicMemoryService - Extended', () => {
       mockQueryContext.mockRejectedValueOnce(new Error('function not found'));
       mockQueryContext.mockResolvedValueOnce({ rowCount: 25 } as any);
 
-      const count = await service.applyDecay('personal');
+      const count = await service.applyDecay('operations');
 
       expect(count).toBe(25);
       const fallbackSql = mockQueryContext.mock.calls[1][1] as string;

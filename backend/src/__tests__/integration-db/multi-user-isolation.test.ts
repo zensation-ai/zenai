@@ -19,7 +19,7 @@ const mockGetUserId = jest.fn();
 
 jest.mock('../../utils/database-context', () => ({
   queryContext: (...args: any[]) => mockQueryContext(...args),
-  isValidContext: jest.fn((ctx: string) => ['personal', 'work', 'learning', 'creative'].includes(ctx)),
+  isValidContext: jest.fn((ctx: string) => ['operations', 'finance', 'people', 'strategy'].includes(ctx)),
   isValidUUID: jest.fn((id: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id)),
   AIContext: {},
 }));

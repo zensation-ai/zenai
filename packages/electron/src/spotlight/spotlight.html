@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ZenAI Spotlight</title>
+  <link rel="stylesheet" href="spotlight.css" />
+</head>
+<body>
+  <div id="spotlight" class="spotlight">
+    <div class="spotlight-input-row">
+      <svg class="spotlight-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" />
+      </svg>
+      <input
+        id="spotlight-input"
+        type="text"
+        placeholder="Frag ZenAI..."
+        autocomplete="off"
+        spellcheck="false"
+      />
+      <div id="spotlight-spinner" class="spotlight-spinner hidden"></div>
+      <kbd class="spotlight-kbd">ESC</kbd>
+    </div>
+    <div id="spotlight-results" class="spotlight-results hidden">
+      <div id="spotlight-response" class="spotlight-response"></div>
+      <div class="spotlight-actions">
+        <button id="btn-open" class="spotlight-action" title="Im Hauptfenster oeffnen">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+            <polyline points="15 3 21 3 21 9" /><line x1="10" y1="14" x2="21" y2="3" />
+          </svg>
+          Oeffnen
+        </button>
+        <button id="btn-dismiss" class="spotlight-action" title="Schliessen">Fertig</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const { electronAPI } = window;
+    const input = document.getElementById('spotlight-input');
+    const results = document.getElementById('spotlight-results');
+    const response = document.getElementById('spotlight-response');
+    const spinner = document.getElementById('spotlight-spinner');
+    const btnOpen = document.getElementById('btn-open');
+    const btnDismiss = document.getElementById('btn-dismiss');
+
+    let debounceTimer = null;
+    let lastQuery = '';
+
+    // ─── Focus management ───────────────────────────────────────────────
+    electronAPI.spotlight.onShow(() => {
+      input.value = '';
+      input.focus();
+      results.classList.add('hidden');
+      response.textContent = '';
+      electronAPI.spotlight.resize(56);
+    });
+
+    // ─── Query on input (debounced 300ms) ───────────────────────────────
+    input.addEventListener('input', () => {
+      clearTimeout(debounceTimer);
+      const text = input.value.trim();
+      if (!text) {
+        results.classList.add('hidden');
+        electronAPI.spotlight.resize(56);
+        return;
+      }
+      debounceTimer = setTimeout(() => {
+        if (text !== lastQuery) {
+          lastQuery = text;
+          sendQuery(text);
+        }
+      }, 300);
+    });
+
+    // ─── Submit on Enter ────────────────────────────────────────────────
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && input.value.trim()) {
+        clearTimeout(debounceTimer);
+        lastQuery = input.value.trim();
+        sendQuery(lastQuery);
+      }
+      if (e.key === 'Escape') {
+        electronAPI.spotlight.close();
+      }
+    });
+
+    // ─── Send query via IPC ─────────────────────────────────────────────
+    async function sendQuery(text) {
+      spinner.classList.remove('hidden');
+      results.classList.add('hidden');
+
+      try {
+        const result = await electronAPI.spotlight.query(text);
+        response.textContent = result.response || 'Keine Antwort erhalten.';
+        results.classList.remove('hidden');
+        // Expand window to fit content (min 160px, max 400px)
+        const contentHeight = Math.min(400, Math.max(160, 56 + results.scrollHeight + 16));
+        electronAPI.spotlight.resize(contentHeight);
+      } catch {
+        response.textContent = 'Verbindung zum Backend fehlgeschlagen. Ist der Server erreichbar?';
+        results.classList.remove('hidden');
+        electronAPI.spotlight.resize(160);
+      } finally {
+        spinner.classList.add('hidden');
+      }
+    }
+
+    // ─── Action buttons ─────────────────────────────────────────────────
+    btnOpen.addEventListener('click', () => {
+      electronAPI.spotlight.openInMain(lastQuery);
+      electronAPI.spotlight.close();
+    });
+
+    btnDismiss.addEventListener('click', () => {
+      electronAPI.spotlight.close();
+    });
+  </script>
+</body>
+</html>

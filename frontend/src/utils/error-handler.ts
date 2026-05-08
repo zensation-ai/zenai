@@ -32,10 +32,10 @@ export interface HandledError {
 // ============================================
 
 const USER_MESSAGES: Record<ErrorType, string> = {
-  network: 'Verbindung fehlgeschlagen. Bitte pruefe deine Internetverbindung.',
+  network: 'Verbindung fehlgeschlagen. Bitte prüfe deine Internetverbindung.',
   auth: 'Sitzung abgelaufen. Bitte melde dich erneut an.',
-  validation: 'Ungueltige Eingabe. Bitte pruefe deine Daten.',
-  server: 'Serverfehler. Bitte versuche es spaeter erneut.',
+  validation: 'Ungültige Eingabe. Bitte prüfe deine Daten.',
+  server: 'Serverfehler. Bitte versuche es später erneut.',
   unknown: 'Ein unerwarteter Fehler ist aufgetreten.',
 };
 

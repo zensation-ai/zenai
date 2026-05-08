@@ -37,7 +37,7 @@ export function IdeaDetailRelations({
         {loadingRelations ? (
           <div className="loading-indicator">Lade Verknüpfungen...</div>
         ) : relations.length > 0 ? (
-          <div className="relations-list" role="list" aria-label="Verknuepfte Gedanken">
+          <div className="relations-list" role="list" aria-label="Verknüpfte Gedanken">
             {relations.map((rel, i) => (
               <div
                 key={i}
@@ -75,7 +75,7 @@ export function IdeaDetailRelations({
                 role="listitem"
                 tabIndex={0}
                 onKeyDown={(e) => e.key === 'Enter' && onNavigate?.(sug.id)}
-                aria-label={`${sug.title} - ${Math.round(sug.similarity * 100)}% aehnlich`}
+                aria-label={`${sug.title} - ${Math.round(sug.similarity * 100)}% ähnlich`}
               >
                 <span className="suggestion-title">{sug.title}</span>
                 <span className="suggestion-similarity">

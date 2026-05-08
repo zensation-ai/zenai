@@ -28,6 +28,8 @@ import { executeRetrievalPlan } from './arag/iterative-retriever';
 import type { RetrievalInterface, ARAGExecutionMetadata } from './arag/retrieval-interfaces';
 // Phase 100: CRAG Quality Gate
 import { evaluateRetrieval, QualityTier } from './rag-quality-gate';
+// V4: 3-Layer GraphRAG event scoring
+import { queryAcrossLayers } from './knowledge-graph/graph-layers';
 
 // ===========================================
 // Types & Interfaces
@@ -59,57 +61,9 @@ export interface EnhancedRAGConfig {
   enableARAG: boolean;
 }
 
-/**
- * Enhanced retrieval result
- */
-export interface EnhancedResult {
-  id: string;
-  title: string;
-  summary: string;
-  content?: string;
-  /** Final combined score */
-  score: number;
-  /** Score breakdown */
-  scores: {
-    semantic?: number;
-    hyde?: number;
-    crossEncoder?: number;
-    agentic?: number;
-  };
-  /** Which methods contributed */
-  sources: ('semantic' | 'hyde' | 'cross_encoder' | 'agentic' | 'graphrag' | 'arag')[];
-  /** Relevance explanation (from cross-encoder) */
-  relevanceReason?: string;
-}
-
-/**
- * Full enhanced RAG result
- */
-export interface EnhancedRAGResult {
-  results: EnhancedResult[];
-  /** Overall confidence */
-  confidence: number;
-  /** Methods used */
-  methodsUsed: string[];
-  /** Timing breakdown */
-  timing: {
-    total: number;
-    hyde?: number;
-    agentic?: number;
-    crossEncoder?: number;
-    /** Phase 67.1: Whether this result came from cache */
-    cacheHit?: boolean;
-    /** Phase 70: A-RAG execution metadata */
-    arag?: ARAGExecutionMetadata;
-  };
-  /** Debug information */
-  debug?: {
-    hydeUsed: boolean;
-    hydeReason?: string;
-    queryReformulations?: string[];
-    queryDecomposition?: { original: string; subQueries: Array<{ query: string; purpose: string }>; decompositionType: string };
-  };
-}
+// Types extracted to rag-types.ts to break circular dependency with rag-cache.ts
+export type { EnhancedResult, EnhancedRAGResult } from './rag-types';
+import type { EnhancedResult, EnhancedRAGResult } from './rag-types';
 
 // ===========================================
 // Configuration
@@ -260,6 +214,41 @@ export function classifyQueryComplexity(query: string): 'simple' | 'complex' {
   return 'simple';
 }
 
+// ===========================================
+// V4: Event Activity Boost (3-Layer GraphRAG)
+// ===========================================
+
+/**
+ * Apply event-subgraph activity boost to RAG results.
+ *
+ * Queries the 3-layer graph (event subgraph) for recent activity scores
+ * and boosts results that correspond to recently active entities.
+ * Max boost is 15% of the event score. Degrades gracefully on failure.
+ */
+export async function applyEventActivityBoost<T extends { id: string; score: number }>(
+  context: AIContext,
+  results: T[],
+): Promise<T[]> {
+  if (results.length === 0) return results;
+  try {
+    const entityIds = results.map(r => r.id).slice(0, 20);
+    const layeredScores = await queryAcrossLayers(context as any, entityIds, { eventWindowDays: 7 });
+    const scoreMap = new Map(layeredScores.map(l => [l.entityId, l.eventScore]));
+    const boosted = results.map(r => {
+      const eventScore = scoreMap.get(r.id) ?? 0;
+      const boost = eventScore * 0.15; // max 15% boost
+      return { ...r, score: Math.min(r.score + boost, 1.0) };
+    });
+    boosted.sort((a, b) => b.score - a.score);
+    return boosted;
+  } catch (error) {
+    logger.warn('Event activity boost failed, using unmodified results', {
+      error: error instanceof Error ? error.message : 'Unknown',
+    });
+    return results;
+  }
+}
+
 class EnhancedRAGService {
   private config: EnhancedRAGConfig;
 
@@ -403,7 +392,10 @@ class EnhancedRAGService {
     await Promise.all(retrievalPromises);
 
     // Step 2: Merge results from all sources
-    const merged = this.mergeAllResults(hydeResults, agenticResults, graphRAGResults);
+    let merged = this.mergeAllResults(hydeResults, agenticResults, graphRAGResults);
+
+    // V4: Apply event-subgraph activity boost from 3-layer graph
+    merged = await applyEventActivityBoost(context, merged);
 
     // Step 3: Cross-encoder re-ranking (if enabled and have results)
     let finalResults: EnhancedResult[];

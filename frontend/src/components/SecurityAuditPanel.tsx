@@ -6,10 +6,9 @@
  * - Rate Limits: Aktuelle Konfiguration und Statistiken
  */
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, type CSSProperties } from 'react';
 import { getApiBaseUrl, getApiFetchHeaders } from '../utils/apiConfig';
-import './SecurityAuditPanel.css';
-
+import { cn } from '../lib/utils';
 // ─── Types ────────────────────────────────────────────────
 
 interface AuditLogEntry {
@@ -48,7 +47,7 @@ const EVENT_TYPES = [
   { value: 'config_change', label: 'Konfiguration' },
   { value: 'api_key_created', label: 'API-Key erstellt' },
   { value: 'mfa_enabled', label: 'MFA aktiviert' },
-  { value: 'suspicious_activity', label: 'Verdaechtige Aktivitaet' },
+  { value: 'suspicious_activity', label: 'Verdächtige Aktivität' },
   { value: 'rate_limit_exceeded', label: 'Rate Limit' },
   { value: 'data_export', label: 'Datenexport' },
 ];
@@ -68,7 +67,7 @@ const EVENT_LABELS: Record<string, string> = {
   config_change: 'Konfig.',
   api_key_created: 'API-Key',
   mfa_enabled: 'MFA',
-  suspicious_activity: 'Verdaechtig',
+  suspicious_activity: 'Verdächtig',
   rate_limit_exceeded: 'Rate Limit',
   data_export: 'Export',
 };
@@ -275,7 +274,7 @@ export function SecurityAuditPanel() {
       {renderAlerts()}
 
       {/* Filters */}
-      <div className="security-filters" style={{ marginTop: alerts.length > 0 ? '0.75rem' : 0 }}>
+      <div className={cn('security-filters', alerts.length > 0 && 'mt-3')}>
         <select
           className="security-filter-select"
           value={filterEventType}
@@ -330,7 +329,7 @@ export function SecurityAuditPanel() {
             className="security-filter-reset"
             onClick={resetFilters}
           >
-            Zuruecksetzen
+            Zurücksetzen
           </button>
         )}
       </div>
@@ -351,12 +350,12 @@ export function SecurityAuditPanel() {
             {hasFilters ? '🔍' : '✓'}
           </div>
           {hasFilters
-            ? 'Keine Eintraege fuer diese Filter gefunden.'
+            ? 'Keine Einträge für diese Filter gefunden.'
             : 'Keine Sicherheitsereignisse vorhanden.'
           }
         </div>
       ) : (
-        <div className="security-log-list" style={{ marginTop: '0.75rem' }}>
+        <div className="security-log-list mt-3">
           {entries.map((entry) => {
             const isExpanded = expandedId === entry.id;
             return (
@@ -464,7 +463,7 @@ export function SecurityAuditPanel() {
           {rateTiers.length === 0 ? (
             <div className="security-empty">
               <div className="security-empty-icon">&#9881;</div>
-              Keine Rate-Limit-Konfiguration verfuegbar.
+              Keine Rate-Limit-Konfiguration verfügbar.
             </div>
           ) : (
             <div className="security-rate-grid">
@@ -491,7 +490,7 @@ export function SecurityAuditPanel() {
           {rateStats.length === 0 ? (
             <div className="security-empty">
               <div className="security-empty-icon">&#128202;</div>
-              Keine Statistiken verfuegbar.
+              Keine Statistiken verfügbar.
             </div>
           ) : (
             <div className="security-stats-list">
@@ -510,7 +509,7 @@ export function SecurityAuditPanel() {
                       <span className="security-stat-value">
                         {stat.hits.toLocaleString('de-DE')} Anfragen
                         {stat.blocked > 0 && (
-                          <span style={{ color: '#ef4444', marginLeft: '0.4rem', fontSize: '0.75rem' }}>
+                          <span className="text-red-500 ml-1.5 text-xs">
                             ({stat.blocked} blockiert)
                           </span>
                         )}
@@ -518,8 +517,8 @@ export function SecurityAuditPanel() {
                     </div>
                     <div className="security-stat-bar-bg">
                       <div
-                        className={`security-stat-bar-fill ${barClass}`}
-                        style={{ width: `${Math.max(pct, 2)}%` }}
+                        className={`security-stat-bar-fill w-[var(--bar)] ${barClass}`}
+                        style={{ '--bar': `${Math.max(pct, 2)}%` } as CSSProperties}
                       />
                     </div>
                   </div>

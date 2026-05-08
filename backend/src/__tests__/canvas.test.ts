@@ -50,7 +50,7 @@ const VALID_UUID_2 = '22222222-2222-2222-2222-222222222222';
 
 var mockDocument = {
   id: VALID_UUID,
-  context: 'personal',
+  context: 'operations',
   title: 'Test Document',
   content: '# Hello World',
   type: 'markdown',
@@ -99,7 +99,7 @@ jest.mock('../middleware/validate-params', () => ({
       expect(response.body.data).toHaveProperty('id');
       expect(response.body.data).toHaveProperty('title', 'Test Document');
       expect(response.body.data).toHaveProperty('type', 'markdown');
-      expect(response.body.data).toHaveProperty('context', 'personal');
+      expect(response.body.data).toHaveProperty('context', 'operations');
     });
 
     it('should create a code document with language', async () => {
@@ -113,7 +113,7 @@ jest.mock('../middleware/validate-params', () => ({
           type: 'code',
           language: 'typescript',
           content: 'const x = 1;',
-          context: 'work',
+          context: 'finance',
         })
         .expect(201);
 
@@ -179,7 +179,7 @@ jest.mock('../middleware/validate-params', () => ({
         .mockResolvedValueOnce({ rows: [{ total: 1 }] });
 
       const response = await request(app)
-        .get('/api/canvas?context=personal')
+        .get('/api/canvas?context=operations')
         .expect(200);
 
       expect(response.body.success).toBe(true);
@@ -188,13 +188,13 @@ jest.mock('../middleware/validate-params', () => ({
       expect(response.body.data.documents).toHaveLength(1);
     });
 
-    it('should list documents for work context', async () => {
+    it('should list documents for finance context', async () => {
       mockQuery
         .mockResolvedValueOnce({ rows: [] })
         .mockResolvedValueOnce({ rows: [{ total: 0 }] });
 
       const response = await request(app)
-        .get('/api/canvas?context=work')
+        .get('/api/canvas?context=finance')
         .expect(200);
 
       expect(response.body.success).toBe(true);
@@ -216,12 +216,12 @@ jest.mock('../middleware/validate-params', () => ({
         .mockResolvedValueOnce({ rows: [{ total: 50 }] });
 
       await request(app)
-        .get('/api/canvas?context=personal&limit=10&offset=20')
+        .get('/api/canvas?context=operations&limit=10&offset=20')
         .expect(200);
 
       expect(mockQuery).toHaveBeenCalledWith(
         expect.stringContaining('LIMIT'),
-        expect.arrayContaining(['personal', 10, 20])
+        expect.arrayContaining(['operations', 10, 20])
       );
     });
   });

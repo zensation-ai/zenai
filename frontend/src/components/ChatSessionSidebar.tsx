@@ -5,14 +5,12 @@
  * Ermöglicht Wechseln, Löschen und neue Sessions.
  */
 
-import { useState, useEffect, useCallback, useRef, memo } from 'react';
+import { useState, useEffect, useCallback, useRef, memo, type CSSProperties } from 'react';
 import axios from 'axios';
 import type { AIContext } from './ContextSwitcher';
 import type { ChatSession } from './GeneralChat/types';
 import { logError } from '../utils/errors';
 import { showToast } from './Toast';
-import './ChatSessionSidebar.css';
-
 interface ChatSessionSidebarProps {
   context: AIContext;
   activeSessionId: string | null;
@@ -219,8 +217,8 @@ function ChatSessionSidebarComponent({
               <div key={i} className="chat-sidebar-skeleton" aria-hidden="true">
                 <div className="skeleton skeleton-icon" />
                 <div className="chat-sidebar-skeleton-text">
-                  <div className="skeleton skeleton-title" style={{ width: `${70 + i * 5}%` }} />
-                  <div className="skeleton skeleton-line" style={{ width: `${50 + i * 8}%` }} />
+                  <div className="skeleton skeleton-title w-[var(--bar)]" style={{ '--bar': `${70 + i * 5}%` } as CSSProperties} />
+                  <div className="skeleton skeleton-line w-[var(--bar)]" style={{ '--bar': `${50 + i * 8}%` } as CSSProperties} />
                 </div>
               </div>
             ))}

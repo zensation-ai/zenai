@@ -10,6 +10,7 @@
 
 import React, { Suspense, lazy, memo } from 'react';
 import type { AIContext } from './ContextSwitcher';
+import type { Page } from '../types';
 import { HubPage, type TabDef } from './HubPage';
 import { SkeletonLoader } from './SkeletonLoader';
 import { useTabNavigation } from '../hooks/useTabNavigation';
@@ -28,15 +29,16 @@ interface MyAIPageProps {
   context: AIContext;
   onBack: () => void;
   initialTab?: MyAITab;
+  onNavigate?: (page: Page) => void;
 }
 
 const TABS: TabDef<MyAITab>[] = [
   { id: 'personalize', label: 'KI anpassen', icon: '🎨', description: 'Deine KI kennenlernen und trainieren' },
   { id: 'memory', label: 'KI-Wissen', icon: '🧠', description: 'Was deine KI über dich gelernt hat' },
   { id: 'procedures', label: 'Prozeduren', icon: '📋', description: 'Gelernte Vorgehensweisen und Hybrid-Suche' },
-  { id: 'digital-twin', label: 'Digital Twin', icon: '🪞', description: 'Dein KI-Profil und Persoenlichkeitsradar' },
+  { id: 'digital-twin', label: 'Digital Twin', icon: '🪞', description: 'Dein KI-Profil und Persönlichkeitsradar' },
   { id: 'cognitive', label: 'KI-Bewusstsein', icon: '🧪', description: 'Kognitive Architektur und Selbstreflexion' },
-  { id: 'voice-chat', label: 'Sprach-Chat', icon: '🎙️', description: 'Echtzeit-Sprachgespraech mit KI' },
+  { id: 'voice-chat', label: 'Sprach-Chat', icon: '🎙️', description: 'Echtzeit-Sprachgespräch mit KI' },
 ];
 
 const TabLoader = () => (
@@ -49,12 +51,13 @@ const MyAIPageComponent: React.FC<MyAIPageProps> = ({
   context,
   onBack,
   initialTab = 'personalize',
+  onNavigate,
 }) => {
   const { activeTab, handleTabChange } = useTabNavigation<MyAITab>({
     initialTab,
     validTabs: ['personalize', 'memory', 'procedures', 'digital-twin', 'cognitive', 'voice-chat'],
     defaultTab: 'personalize',
-    basePath: '/my-ai',
+    basePath: '/meine-ki',
     rootTab: 'personalize',
   });
 
@@ -128,6 +131,7 @@ const MyAIPageComponent: React.FC<MyAIPageProps> = ({
       onTabChange={handleTabChange}
       onBack={onBack}
       context={context}
+      onNavigate={onNavigate}
     >
       {renderTabContent()}
     </HubPage>

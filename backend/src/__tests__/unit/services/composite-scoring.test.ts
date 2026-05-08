@@ -74,7 +74,7 @@ describe('Composite Importance Scoring', () => {
       // longTermMemory.addFact should not throw when decayClass is omitted
       // (it should be inferred internally)
       await expect(
-        longTermMemory.addFact('personal', {
+        longTermMemory.addFact('operations', {
           factType: 'knowledge',
           content: 'Test fact without decay class',
           confidence: 0.8,
@@ -85,7 +85,7 @@ describe('Composite Importance Scoring', () => {
 
     it('should accept facts with explicit decay class', async () => {
       await expect(
-        longTermMemory.addFact('personal', {
+        longTermMemory.addFact('operations', {
           factType: 'goal',
           content: 'Become fluent in Japanese',
           confidence: 0.9,
@@ -98,14 +98,14 @@ describe('Composite Importance Scoring', () => {
 
   describe('Decay class inference', () => {
     it('should assign permanent to explicit goals', async () => {
-      await longTermMemory.addFact('personal', {
+      await longTermMemory.addFact('operations', {
         factType: 'goal',
         content: 'Test explicit goal',
         confidence: 0.9,
         source: 'explicit',
       });
 
-      const facts = await longTermMemory.getFacts('personal');
+      const facts = await longTermMemory.getFacts('operations');
       const goal = facts.find(f => f.content === 'Test explicit goal');
       if (goal) {
         expect(goal.decayClass).toBe('permanent');
@@ -113,14 +113,14 @@ describe('Composite Importance Scoring', () => {
     });
 
     it('should assign slow_decay to explicit preferences', async () => {
-      await longTermMemory.addFact('personal', {
+      await longTermMemory.addFact('operations', {
         factType: 'preference',
         content: 'Prefers dark mode',
         confidence: 0.8,
         source: 'explicit',
       });
 
-      const facts = await longTermMemory.getFacts('personal');
+      const facts = await longTermMemory.getFacts('operations');
       const pref = facts.find(f => f.content === 'Prefers dark mode');
       if (pref) {
         expect(pref.decayClass).toBe('slow_decay');
@@ -128,14 +128,14 @@ describe('Composite Importance Scoring', () => {
     });
 
     it('should assign fast_decay to context facts', async () => {
-      await longTermMemory.addFact('personal', {
+      await longTermMemory.addFact('operations', {
         factType: 'context',
         content: 'Currently working on project X',
         confidence: 0.7,
         source: 'inferred',
       });
 
-      const facts = await longTermMemory.getFacts('personal');
+      const facts = await longTermMemory.getFacts('operations');
       const ctx = facts.find(f => f.content === 'Currently working on project X');
       if (ctx) {
         expect(ctx.decayClass).toBe('fast_decay');
@@ -146,20 +146,20 @@ describe('Composite Importance Scoring', () => {
   describe('Fact retrieval with usage tracking', () => {
     it('should retrieve facts and sort by composite score', async () => {
       // Initialize with some facts
-      await longTermMemory.addFact('personal', {
+      await longTermMemory.addFact('operations', {
         factType: 'knowledge',
         content: 'Programmiert in TypeScript',
         confidence: 0.9,
         source: 'explicit',
       });
-      await longTermMemory.addFact('personal', {
+      await longTermMemory.addFact('operations', {
         factType: 'preference',
         content: 'Bevorzugt Terminal-basierte Tools',
         confidence: 0.7,
         source: 'inferred',
       });
 
-      const result = await longTermMemory.retrieve('personal', 'TypeScript');
+      const result = await longTermMemory.retrieve('operations', 'TypeScript');
       expect(result.facts).toBeDefined();
       expect(result.contextualMemory).toBeDefined();
     });
@@ -167,23 +167,23 @@ describe('Composite Importance Scoring', () => {
 
   describe('Fact decay with graduated classes', () => {
     it('should not decay permanent facts', async () => {
-      await longTermMemory.addFact('personal', {
+      await longTermMemory.addFact('operations', {
         factType: 'goal',
         content: 'Permanent goal for decay test',
         confidence: 0.9,
         source: 'explicit',
       });
 
-      const factsBefore = await longTermMemory.getFacts('personal');
+      const factsBefore = await longTermMemory.getFacts('operations');
       const permanentFact = factsBefore.find(f => f.content === 'Permanent goal for decay test');
       if (permanentFact) {
         // Simulate old confirmation
         permanentFact.lastConfirmed = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000); // 90 days ago
       }
 
-      const { decayed } = await longTermMemory.applyFactDecay('personal');
+      const { decayed } = await longTermMemory.applyFactDecay('operations');
 
-      const factsAfter = await longTermMemory.getFacts('personal');
+      const factsAfter = await longTermMemory.getFacts('operations');
       const afterFact = factsAfter.find(f => f.content === 'Permanent goal for decay test');
       if (afterFact && permanentFact) {
         // Permanent facts should not have lost confidence
@@ -192,7 +192,7 @@ describe('Composite Importance Scoring', () => {
     });
 
     it('should apply applyFactDecay without errors', async () => {
-      const result = await longTermMemory.applyFactDecay('personal');
+      const result = await longTermMemory.applyFactDecay('operations');
       expect(result).toHaveProperty('decayed');
       expect(result).toHaveProperty('pruned');
       expect(typeof result.decayed).toBe('number');
@@ -202,7 +202,7 @@ describe('Composite Importance Scoring', () => {
 
   describe('getStats', () => {
     it('should return statistics', async () => {
-      const stats = await longTermMemory.getStats('personal');
+      const stats = await longTermMemory.getStats('operations');
       expect(stats).toHaveProperty('factCount');
       expect(stats).toHaveProperty('patternCount');
       expect(stats).toHaveProperty('interactionCount');

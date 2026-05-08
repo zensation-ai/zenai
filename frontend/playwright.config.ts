@@ -17,7 +17,7 @@ export default defineConfig({
   timeout: 15_000,
 
   reporter: process.env.CI
-    ? [['github'], ['list']]
+    ? [['github'], ['list'], ['html', { outputFolder: 'playwright-report', open: 'never' }]]
     : [['html', { outputFolder: 'playwright-report' }], ['list']],
 
   use: {
@@ -28,6 +28,11 @@ export default defineConfig({
     // Short action timeout - fail fast instead of hanging
     actionTimeout: 5_000,
     navigationTimeout: 10_000,
+    // Block service workers so page.route() interceptions work reliably.
+    // Without this, the PWA service worker intercepts fetch() calls from
+    // page.evaluate() before Playwright's CDP-level route handlers run,
+    // causing proxy ECONNREFUSED when no backend is available in CI.
+    serviceWorkers: 'block',
   },
 
   projects: process.env.CI
@@ -44,7 +49,7 @@ export default defineConfig({
       ],
 
   webServer: {
-    command: 'npm run dev',
+    command: 'pnpm run dev',
     url: 'http://localhost:5173',
     reuseExistingServer: !process.env.CI,
     timeout: 60_000,

@@ -19,19 +19,19 @@ const gmailProvider = new GmailProvider();
 
 export async function scheduleGmailSyncJobs(): Promise<GmailSyncJobPayload[]> {
   const result = await pool.query(`
-    SELECT id, google_token_id, 'personal' as context FROM personal.email_accounts
+    SELECT id, google_token_id, 'operations' as context FROM personal.email_accounts
       WHERE provider = 'gmail' AND google_token_id IS NOT NULL
         AND (last_sync_at IS NULL OR last_sync_at < now() - interval '55 seconds')
     UNION ALL
-    SELECT id, google_token_id, 'work' FROM work.email_accounts
+    SELECT id, google_token_id, 'finance' FROM work.email_accounts
       WHERE provider = 'gmail' AND google_token_id IS NOT NULL
         AND (last_sync_at IS NULL OR last_sync_at < now() - interval '55 seconds')
     UNION ALL
-    SELECT id, google_token_id, 'learning' FROM learning.email_accounts
+    SELECT id, google_token_id, 'people' FROM people.email_accounts
       WHERE provider = 'gmail' AND google_token_id IS NOT NULL
         AND (last_sync_at IS NULL OR last_sync_at < now() - interval '55 seconds')
     UNION ALL
-    SELECT id, google_token_id, 'creative' FROM creative.email_accounts
+    SELECT id, google_token_id, 'strategy' FROM creative.email_accounts
       WHERE provider = 'gmail' AND google_token_id IS NOT NULL
         AND (last_sync_at IS NULL OR last_sync_at < now() - interval '55 seconds')
   `);

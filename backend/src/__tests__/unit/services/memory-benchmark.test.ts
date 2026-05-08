@@ -79,7 +79,7 @@ describe('runMemoryBenchmark', () => {
       patterns: [],
     } as never);
 
-    const result: BenchmarkResult = await runMemoryBenchmark('personal', 2);
+    const result: BenchmarkResult = await runMemoryBenchmark('operations', 2);
 
     expect(result).toHaveProperty('totalFacts');
     expect(result).toHaveProperty('retrievedCorrectly');
@@ -101,7 +101,7 @@ describe('runMemoryBenchmark', () => {
     // Mock retrieve to return empty results
     mockRetrieve.mockResolvedValue({ facts: [], patterns: [] } as never);
 
-    const result: BenchmarkResult = await runMemoryBenchmark('personal', 1);
+    const result: BenchmarkResult = await runMemoryBenchmark('operations', 1);
 
     expect(result.totalFacts).toBe(1);
     expect(result.retrievedCorrectly).toBe(0);
@@ -111,7 +111,7 @@ describe('runMemoryBenchmark', () => {
   it('handles empty facts list gracefully', async () => {
     mockGetFacts.mockResolvedValueOnce([] as never);
 
-    const result: BenchmarkResult = await runMemoryBenchmark('personal', 10);
+    const result: BenchmarkResult = await runMemoryBenchmark('operations', 10);
 
     expect(result.totalFacts).toBe(0);
     expect(result.retrievedCorrectly).toBe(0);
@@ -121,7 +121,7 @@ describe('runMemoryBenchmark', () => {
   it('handles DB/retrieval errors gracefully', async () => {
     mockGetFacts.mockRejectedValueOnce(new Error('DB error'));
 
-    const result: BenchmarkResult = await runMemoryBenchmark('personal', 10);
+    const result: BenchmarkResult = await runMemoryBenchmark('operations', 10);
 
     // Should return a safe default result, not throw
     expect(result).toHaveProperty('totalFacts');

@@ -7,8 +7,6 @@
 
 import { memo, useEffect, useRef, useState } from 'react';
 import { AI_PERSONALITY } from '../utils/aiPersonality';
-import './AIQuestionBubble.css';
-
 export type QuestionCategory = 'insight' | 'suggestion' | 'question' | 'celebration';
 
 export interface AIQuestionBubbleProps {

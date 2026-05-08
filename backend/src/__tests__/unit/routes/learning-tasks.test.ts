@@ -22,7 +22,7 @@ jest.mock('../../../utils/logger', () => ({
 }));
 
 jest.mock('../../../utils/database-context', () => ({
-  isValidContext: jest.fn((ctx: string) => ['personal', 'work', 'learning', 'creative'].includes(ctx)),
+  isValidContext: jest.fn((ctx: string) => ['operations', 'finance', 'people', 'strategy'].includes(ctx)),
   isValidUUID: jest.fn((id: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id)),
   AIContext: {},
 }));
@@ -85,7 +85,7 @@ describe('Learning Tasks Routes', () => {
     it('should list learning tasks', async () => {
       mockGetLearningTasks.mockResolvedValue({ tasks: [{ id: '1' }], total: 1 });
 
-      const res = await request(app).get('/api/personal/learning-tasks');
+      const res = await request(app).get('/api/operations/learning-tasks');
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
@@ -103,7 +103,7 @@ describe('Learning Tasks Routes', () => {
       mockCreateLearningTask.mockResolvedValue({ id: VALID_UUID, topic: 'TypeScript' });
 
       const res = await request(app)
-        .post('/api/personal/learning-tasks')
+        .post('/api/operations/learning-tasks')
         .send({ topic: 'TypeScript', category: 'programming' });
 
       expect(res.status).toBe(201);
@@ -113,7 +113,7 @@ describe('Learning Tasks Routes', () => {
 
     it('should reject missing topic', async () => {
       const res = await request(app)
-        .post('/api/personal/learning-tasks')
+        .post('/api/operations/learning-tasks')
         .send({ category: 'programming' });
 
       expect(res.status).toBe(400);
@@ -121,7 +121,7 @@ describe('Learning Tasks Routes', () => {
 
     it('should reject invalid category', async () => {
       const res = await request(app)
-        .post('/api/personal/learning-tasks')
+        .post('/api/operations/learning-tasks')
         .send({ topic: 'Test', category: 'invalid_category' });
 
       expect(res.status).toBe(400);
@@ -129,7 +129,7 @@ describe('Learning Tasks Routes', () => {
 
     it('should reject invalid priority', async () => {
       const res = await request(app)
-        .post('/api/personal/learning-tasks')
+        .post('/api/operations/learning-tasks')
         .send({ topic: 'Test', priority: 'urgent' });
 
       expect(res.status).toBe(400);
@@ -141,7 +141,7 @@ describe('Learning Tasks Routes', () => {
       mockGetLearningTask.mockResolvedValue({ id: VALID_UUID, topic: 'TS' });
       mockGetStudySessions.mockResolvedValue([]);
 
-      const res = await request(app).get(`/api/personal/learning-tasks/${VALID_UUID}`);
+      const res = await request(app).get(`/api/operations/learning-tasks/${VALID_UUID}`);
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
@@ -151,7 +151,7 @@ describe('Learning Tasks Routes', () => {
     it('should return 404 for non-existent task', async () => {
       mockGetLearningTask.mockResolvedValue(null);
 
-      const res = await request(app).get(`/api/personal/learning-tasks/${VALID_UUID}`);
+      const res = await request(app).get(`/api/operations/learning-tasks/${VALID_UUID}`);
       expect(res.status).toBe(404);
     });
   });
@@ -161,7 +161,7 @@ describe('Learning Tasks Routes', () => {
       mockUpdateLearningTask.mockResolvedValue({ id: VALID_UUID, status: 'completed' });
 
       const res = await request(app)
-        .put(`/api/personal/learning-tasks/${VALID_UUID}`)
+        .put(`/api/operations/learning-tasks/${VALID_UUID}`)
         .send({ status: 'completed' });
 
       expect(res.status).toBe(200);
@@ -170,7 +170,7 @@ describe('Learning Tasks Routes', () => {
 
     it('should reject invalid status', async () => {
       const res = await request(app)
-        .put(`/api/personal/learning-tasks/${VALID_UUID}`)
+        .put(`/api/operations/learning-tasks/${VALID_UUID}`)
         .send({ status: 'invalid' });
 
       expect(res.status).toBe(400);
@@ -181,7 +181,7 @@ describe('Learning Tasks Routes', () => {
     it('should delete a learning task', async () => {
       mockDeleteLearningTask.mockResolvedValue(true);
 
-      const res = await request(app).delete(`/api/personal/learning-tasks/${VALID_UUID}`);
+      const res = await request(app).delete(`/api/operations/learning-tasks/${VALID_UUID}`);
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
@@ -190,7 +190,7 @@ describe('Learning Tasks Routes', () => {
     it('should return 404 for non-existent task', async () => {
       mockDeleteLearningTask.mockResolvedValue(false);
 
-      const res = await request(app).delete(`/api/personal/learning-tasks/${VALID_UUID}`);
+      const res = await request(app).delete(`/api/operations/learning-tasks/${VALID_UUID}`);
       expect(res.status).toBe(404);
     });
   });
@@ -199,7 +199,7 @@ describe('Learning Tasks Routes', () => {
     it('should return learning statistics', async () => {
       mockGetLearningStats.mockResolvedValue({ totalTasks: 5, completedTasks: 2 });
 
-      const res = await request(app).get('/api/personal/learning-stats');
+      const res = await request(app).get('/api/operations/learning-stats');
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
@@ -209,7 +209,7 @@ describe('Learning Tasks Routes', () => {
 
   describe('GET /api/:context/learning-categories', () => {
     it('should return available categories', async () => {
-      const res = await request(app).get('/api/personal/learning-categories');
+      const res = await request(app).get('/api/operations/learning-categories');
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);

@@ -25,7 +25,7 @@ jest.mock('../../middleware/validate-params', () => ({
 
 // Mock database context
 jest.mock('../../utils/database-context', () => ({
-  isValidContext: jest.fn((ctx: string) => ['personal', 'work', 'learning', 'creative'].includes(ctx)),
+  isValidContext: jest.fn((ctx: string) => ['operations', 'finance', 'people', 'strategy'].includes(ctx)),
   AIContext: {},
 }));
 
@@ -118,12 +118,12 @@ describe('Automations API Integration Tests', () => {
       mockGetAutomationStats.mockResolvedValueOnce(mockStats);
 
       const response = await request(app)
-        .get('/api/personal/automations/stats')
+        .get('/api/operations/automations/stats')
         .expect(200);
 
       expect(response.body.success).toBe(true);
       expect(response.body.stats).toEqual(mockStats);
-      expect(mockGetAutomationStats).toHaveBeenCalledWith('personal');
+      expect(mockGetAutomationStats).toHaveBeenCalledWith('operations');
     });
 
     it('should reject invalid context', async () => {
@@ -144,7 +144,7 @@ describe('Automations API Integration Tests', () => {
       const mockSuggestions = [
         {
           id: 'sug-1',
-          context: 'personal' as const,
+          context: 'operations' as const,
           name: 'Weekly Review Reminder',
           description: 'Send reminder every Monday',
           trigger: { type: 'schedule' as const, config: { cron: '0 9 * * 1' } },
@@ -158,7 +158,7 @@ describe('Automations API Integration Tests', () => {
         },
         {
           id: 'sug-2',
-          context: 'personal' as const,
+          context: 'operations' as const,
           name: 'High Priority Alert',
           description: 'Notify when high priority idea is created',
           trigger: { type: 'event' as const, config: { eventName: 'idea.created' } },
@@ -175,7 +175,7 @@ describe('Automations API Integration Tests', () => {
       mockGetPendingSuggestions.mockResolvedValueOnce(mockSuggestions);
 
       const response = await request(app)
-        .get('/api/personal/automations/suggestions')
+        .get('/api/operations/automations/suggestions')
         .expect(200);
 
       expect(response.body.success).toBe(true);
@@ -187,22 +187,22 @@ describe('Automations API Integration Tests', () => {
       mockGetPendingSuggestions.mockResolvedValueOnce([]);
 
       await request(app)
-        .get('/api/personal/automations/suggestions')
+        .get('/api/operations/automations/suggestions')
         .query({ limit: '5' })
         .expect(200);
 
-      expect(mockGetPendingSuggestions).toHaveBeenCalledWith('personal', 5);
+      expect(mockGetPendingSuggestions).toHaveBeenCalledWith('operations', 5);
     });
 
     it('should cap limit at 50', async () => {
       mockGetPendingSuggestions.mockResolvedValueOnce([]);
 
       await request(app)
-        .get('/api/personal/automations/suggestions')
+        .get('/api/operations/automations/suggestions')
         .query({ limit: '100' })
         .expect(200);
 
-      expect(mockGetPendingSuggestions).toHaveBeenCalledWith('personal', 50);
+      expect(mockGetPendingSuggestions).toHaveBeenCalledWith('operations', 50);
     });
   });
 
@@ -215,7 +215,7 @@ describe('Automations API Integration Tests', () => {
       const mockAutomations = [
         {
           id: 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11',
-          context: 'personal' as const,
+          context: 'operations' as const,
           name: 'Daily Digest',
           description: 'Sends daily digest',
           trigger: { type: 'schedule' as const, config: { cron: '0 8 * * *' } },
@@ -232,7 +232,7 @@ describe('Automations API Integration Tests', () => {
         },
         {
           id: 'auto-2',
-          context: 'personal' as const,
+          context: 'operations' as const,
           name: 'Idea Backup',
           description: 'Backs up new ideas',
           trigger: { type: 'event' as const, config: { eventName: 'idea.created' } },
@@ -252,7 +252,7 @@ describe('Automations API Integration Tests', () => {
       mockListAutomations.mockResolvedValueOnce(mockAutomations);
 
       const response = await request(app)
-        .get('/api/personal/automations')
+        .get('/api/operations/automations')
         .expect(200);
 
       expect(response.body.success).toBe(true);
@@ -263,11 +263,11 @@ describe('Automations API Integration Tests', () => {
       mockListAutomations.mockResolvedValueOnce([]);
 
       await request(app)
-        .get('/api/personal/automations')
+        .get('/api/operations/automations')
         .query({ active_only: 'true' })
         .expect(200);
 
-      expect(mockListAutomations).toHaveBeenCalledWith('personal', { active_only: true });
+      expect(mockListAutomations).toHaveBeenCalledWith('operations', { active_only: true });
     });
   });
 
@@ -279,7 +279,7 @@ describe('Automations API Integration Tests', () => {
     it('should return a specific automation', async () => {
       const mockAutomation = {
         id: 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11',
-        context: 'personal' as const,
+        context: 'operations' as const,
         name: 'Daily Digest',
         description: 'Sends daily digest email',
         trigger: { type: 'schedule' as const, config: { cron: '0 8 * * *' } },
@@ -298,7 +298,7 @@ describe('Automations API Integration Tests', () => {
       mockGetAutomation.mockResolvedValueOnce(mockAutomation);
 
       const response = await request(app)
-        .get('/api/personal/automations/a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11')
+        .get('/api/operations/automations/a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11')
         .expect(200);
 
       expect(response.body.success).toBe(true);
@@ -309,7 +309,7 @@ describe('Automations API Integration Tests', () => {
       mockGetAutomation.mockResolvedValueOnce(null);
 
       const response = await request(app)
-        .get('/api/personal/automations/non-existent')
+        .get('/api/operations/automations/non-existent')
         .expect(404);
 
       expect(response.body.error).toBeDefined();
@@ -331,7 +331,7 @@ describe('Automations API Integration Tests', () => {
 
       const createdAutomation = {
         id: 'auto-new',
-        context: 'personal' as const,
+        context: 'operations' as const,
         name: newAutomation.name,
         description: newAutomation.description,
         trigger: newAutomation.trigger,
@@ -350,7 +350,7 @@ describe('Automations API Integration Tests', () => {
       mockRegisterAutomation.mockResolvedValueOnce(createdAutomation);
 
       const response = await request(app)
-        .post('/api/personal/automations')
+        .post('/api/operations/automations')
         .send(newAutomation)
         .expect(201);
 
@@ -365,7 +365,7 @@ describe('Automations API Integration Tests', () => {
       };
 
       const response = await request(app)
-        .post('/api/personal/automations')
+        .post('/api/operations/automations')
         .send(invalidAutomation)
         .expect(400);
 
@@ -393,7 +393,7 @@ describe('Automations API Integration Tests', () => {
       mockExecuteAutomation.mockResolvedValueOnce(executionResult);
 
       const response = await request(app)
-        .post('/api/personal/automations/a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11/execute')
+        .post('/api/operations/automations/a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11/execute')
         .expect(200);
 
       expect(response.body.success).toBe(true);
@@ -404,7 +404,7 @@ describe('Automations API Integration Tests', () => {
       mockExecuteAutomation.mockRejectedValueOnce(new Error('Execution failed'));
 
       const response = await request(app)
-        .post('/api/personal/automations/a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11/execute')
+        .post('/api/operations/automations/a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11/execute')
         .expect(500);
 
       expect(response.body.error).toBeDefined();
@@ -420,18 +420,18 @@ describe('Automations API Integration Tests', () => {
       mockDeleteAutomation.mockResolvedValueOnce(true);
 
       const response = await request(app)
-        .delete('/api/personal/automations/a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11')
+        .delete('/api/operations/automations/a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11')
         .expect(200);
 
       expect(response.body.success).toBe(true);
-      expect(mockDeleteAutomation).toHaveBeenCalledWith('personal', 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11');
+      expect(mockDeleteAutomation).toHaveBeenCalledWith('operations', 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11');
     });
 
     it('should return 404 if automation does not exist', async () => {
       mockDeleteAutomation.mockResolvedValueOnce(false);
 
       const response = await request(app)
-        .delete('/api/personal/automations/non-existent')
+        .delete('/api/operations/automations/non-existent')
         .expect(404);
 
       expect(response.body.error).toBeDefined();
@@ -470,7 +470,7 @@ describe('Automations API Integration Tests', () => {
       mockGetExecutionHistory.mockResolvedValueOnce(mockExecutions);
 
       const response = await request(app)
-        .get('/api/personal/automations/a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11/executions')
+        .get('/api/operations/automations/a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11/executions')
         .expect(200);
 
       expect(response.body.success).toBe(true);
@@ -481,11 +481,11 @@ describe('Automations API Integration Tests', () => {
       mockGetExecutionHistory.mockResolvedValueOnce([]);
 
       await request(app)
-        .get('/api/personal/automations/a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11/executions')
+        .get('/api/operations/automations/a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11/executions')
         .query({ limit: '5' })
         .expect(200);
 
-      expect(mockGetExecutionHistory).toHaveBeenCalledWith('personal', 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11', 5);
+      expect(mockGetExecutionHistory).toHaveBeenCalledWith('operations', 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11', 5);
     });
   });
 

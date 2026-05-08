@@ -39,7 +39,7 @@ export const canvasRouter = Router();
 // ============================================================
 
 const CreateCanvasSchema = z.object({
-  context: z.enum(['personal', 'work', 'learning', 'creative']).default('personal'),
+  context: z.enum(['operations', 'finance', 'people', 'strategy']).default('operations'),
   title: z.string().min(1, 'Title is required').max(500).trim(),
   type: z.enum(['markdown', 'code', 'html']).default('markdown'),
   language: z.string().max(50).optional(),
@@ -51,6 +51,7 @@ const UpdateCanvasSchema = z.object({
   content: z.string().max(500000).optional(),
   type: z.enum(['markdown', 'code', 'html']).optional(),
   language: z.string().max(50).optional(),
+  board_data: z.record(z.string(), z.unknown()).optional(),
 });
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -98,13 +99,13 @@ canvasRouter.get(
   '/',
   apiKeyAuth,
   asyncHandler(async (req: Request, res: Response) => {
-    const context = (req.query.context as string) || 'personal';
+    const context = (req.query.context as string) || 'operations';
     const limit = Math.min(parseInt(req.query.limit as string, 10) || 50, 100);
     const offset = parseInt(req.query.offset as string, 10) || 0;
     const userId = getUserId(req);
 
-    if (!['personal', 'work', 'learning', 'creative'].includes(context)) {
-      throw new ValidationError('Context must be "personal", "work", "learning", or "creative"');
+    if (!['operations', 'finance', 'people', 'strategy'].includes(context)) {
+      throw new ValidationError('Context must be "operations", "finance", "people", or "strategy"');
     }
 
     const result = await listCanvasDocuments(context, limit, offset, userId);

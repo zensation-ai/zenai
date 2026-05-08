@@ -4,7 +4,7 @@
 
 jest.mock('../../../utils/database-context', () => ({
   queryContext: jest.fn(),
-  isValidContext: (ctx: string) => ['personal', 'work', 'learning', 'creative'].includes(ctx),
+  isValidContext: (ctx: string) => ['operations', 'finance', 'people', 'strategy'].includes(ctx),
 }));
 
 jest.mock('../../../utils/logger', () => ({
@@ -50,19 +50,19 @@ describe('GraphIndexer', () => {
         relationCount: 0,
       });
 
-      const result = await indexer.indexIdea('idea-1', 'personal');
+      const result = await indexer.indexIdea('idea-1', 'operations');
       expect(result.entityCount).toBe(1);
       expect(mockExtractFromText).toHaveBeenCalledWith(
         expect.stringContaining('Test Idea'),
         'idea-1',
-        'personal'
+        'operations'
       );
     });
 
     it('should return empty result for non-existent idea', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [] } as any);
 
-      const result = await indexer.indexIdea('nonexistent', 'personal');
+      const result = await indexer.indexIdea('nonexistent', 'operations');
       expect(result.entityCount).toBe(0);
       expect(mockExtractFromText).not.toHaveBeenCalled();
     });
@@ -72,7 +72,7 @@ describe('GraphIndexer', () => {
         rows: [{ id: 'idea-short', title: 'Hi', summary: '', raw_content: '' }],
       } as any);
 
-      const result = await indexer.indexIdea('idea-short', 'personal');
+      const result = await indexer.indexIdea('idea-short', 'operations');
       expect(result.entityCount).toBe(0);
       expect(mockExtractFromText).not.toHaveBeenCalled();
     });
@@ -95,7 +95,7 @@ describe('GraphIndexer', () => {
         .mockResolvedValueOnce({ entities: [], relations: [], entityCount: 2, relationCount: 1 })
         .mockResolvedValueOnce({ entities: [], relations: [], entityCount: 1, relationCount: 0 });
 
-      const result = await indexer.indexBatch('personal', { limit: 10 });
+      const result = await indexer.indexBatch('operations', { limit: 10 });
       expect(result.processedCount).toBe(2);
       expect(result.entitiesCreated).toBe(3);
       expect(result.relationsCreated).toBe(1);
@@ -113,7 +113,7 @@ describe('GraphIndexer', () => {
         .mockResolvedValueOnce({ entities: [], relations: [], entityCount: 1, relationCount: 0 })
         .mockRejectedValueOnce(new Error('Extraction failed'));
 
-      const result = await indexer.indexBatch('personal');
+      const result = await indexer.indexBatch('operations');
       expect(result.processedCount).toBe(1);
       expect(result.errors.length).toBe(1);
       expect(result.errors[0]).toContain('idea-fail');
@@ -122,10 +122,10 @@ describe('GraphIndexer', () => {
     it('should respect sinceHours parameter', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [] } as any);
 
-      await indexer.indexBatch('personal', { sinceHours: 24 });
+      await indexer.indexBatch('operations', { sinceHours: 24 });
 
       expect(mockQueryContext).toHaveBeenCalledWith(
-        'personal',
+        'operations',
         expect.stringContaining("INTERVAL '1 hour'"),
         expect.arrayContaining([24])
       );
@@ -135,10 +135,10 @@ describe('GraphIndexer', () => {
       // Start a long-running batch
       mockQueryContext.mockImplementation(() => new Promise(resolve => setTimeout(() => resolve({ rows: [] } as any), 100)));
 
-      const batch1Promise = indexer.indexBatch('personal');
+      const batch1Promise = indexer.indexBatch('operations');
 
       // Try to start another
-      const batch2 = await indexer.indexBatch('personal');
+      const batch2 = await indexer.indexBatch('operations');
       expect(batch2.errors).toContain('Indexing already in progress');
 
       await batch1Promise;
@@ -156,7 +156,7 @@ describe('GraphIndexer', () => {
         .mockResolvedValueOnce({ rows: [{ indexed: '45' }] } as any) // indexed
         .mockResolvedValueOnce({ rows: [{ last_indexed: '2026-03-14T10:00:00Z' }] } as any); // last indexed
 
-      const status = await indexer.getIndexingStatus('personal');
+      const status = await indexer.getIndexingStatus('operations');
       expect(status.totalIdeas).toBe(100);
       expect(status.indexedIdeas).toBe(45);
       expect(status.lastIndexedAt).toBeInstanceOf(Date);
@@ -168,7 +168,7 @@ describe('GraphIndexer', () => {
         .mockResolvedValueOnce({ rows: [{ indexed: '0' }] } as any)
         .mockResolvedValueOnce({ rows: [{ last_indexed: null }] } as any);
 
-      const status = await indexer.getIndexingStatus('personal');
+      const status = await indexer.getIndexingStatus('operations');
       expect(status.totalIdeas).toBe(50);
       expect(status.indexedIdeas).toBe(0);
       expect(status.lastIndexedAt).toBeNull();
@@ -177,7 +177,7 @@ describe('GraphIndexer', () => {
     it('should handle errors gracefully', async () => {
       mockQueryContext.mockRejectedValueOnce(new Error('DB error'));
 
-      const status = await indexer.getIndexingStatus('personal');
+      const status = await indexer.getIndexingStatus('operations');
       expect(status.totalIdeas).toBe(0);
       expect(status.indexedIdeas).toBe(0);
       expect(status.lastIndexedAt).toBeNull();

@@ -33,7 +33,7 @@ import { processGmailSyncJob } from '../../../../services/queue/workers/gmail-sy
 const mockEmitSystemEvent = emitSystemEvent as jest.Mock;
 const mockHandleNewEmails = handleNewEmails as jest.Mock;
 
-const PAYLOAD = { accountId: 'acc-1', context: 'personal' as const, googleTokenId: 'tok-1' };
+const PAYLOAD = { accountId: 'acc-1', context: 'operations' as const, googleTokenId: 'tok-1' };
 
 describe('GmailSyncWorker – Phase 3C event integration', () => {
   beforeEach(() => {
@@ -59,13 +59,13 @@ describe('GmailSyncWorker – Phase 3C event integration', () => {
 
     expect(mockEmitSystemEvent).toHaveBeenCalledWith(
       expect.objectContaining({
-        context: 'personal',
+        context: 'operations',
         eventType: 'email.received',
         eventSource: 'gmail-sync',
         payload: expect.objectContaining({ newMessages: 3 }),
       })
     );
-    expect(mockHandleNewEmails).toHaveBeenCalledWith('personal');
+    expect(mockHandleNewEmails).toHaveBeenCalledWith('operations');
   });
 
   it('should NOT call emitSystemEvent or handleNewEmails when newMessages = 0', async () => {

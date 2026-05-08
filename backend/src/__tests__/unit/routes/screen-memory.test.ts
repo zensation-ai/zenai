@@ -78,7 +78,7 @@ describe('Screen Memory Routes', () => {
 
   describe('GET /api/:context/screen-memory', () => {
     it('should list screen captures', async () => {
-      const res = await request(app).get('/api/personal/screen-memory');
+      const res = await request(app).get('/api/operations/screen-memory');
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
       expect(res.body.data).toHaveLength(1);
@@ -97,7 +97,7 @@ describe('Screen Memory Routes', () => {
 
   describe('GET /api/:context/screen-memory/stats', () => {
     it('should return statistics', async () => {
-      const res = await request(app).get('/api/personal/screen-memory/stats');
+      const res = await request(app).get('/api/operations/screen-memory/stats');
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
       expect(res.body.data).toHaveProperty('totalCaptures');
@@ -110,20 +110,20 @@ describe('Screen Memory Routes', () => {
 
   describe('GET /api/:context/screen-memory/:id', () => {
     it('should return a single capture', async () => {
-      const res = await request(app).get('/api/personal/screen-memory/a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11');
+      const res = await request(app).get('/api/operations/screen-memory/a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11');
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
       expect(res.body.data.id).toBe('c1');
     });
 
     it('should return 400 for invalid UUID', async () => {
-      const res = await request(app).get('/api/personal/screen-memory/not-a-uuid');
+      const res = await request(app).get('/api/operations/screen-memory/not-a-uuid');
       expect(res.status).toBe(400);
     });
 
     it('should return 404 for non-existent capture', async () => {
       mockGetCapture.mockResolvedValueOnce(null);
-      const res = await request(app).get('/api/personal/screen-memory/a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11');
+      const res = await request(app).get('/api/operations/screen-memory/a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11');
       expect(res.status).toBe(404);
     });
   });
@@ -135,7 +135,7 @@ describe('Screen Memory Routes', () => {
   describe('POST /api/:context/screen-memory', () => {
     it('should store a new capture', async () => {
       const res = await request(app)
-        .post('/api/personal/screen-memory')
+        .post('/api/operations/screen-memory')
         .send({ app_name: 'Chrome', text_content: 'some text' });
       expect(res.status).toBe(201);
       expect(res.body.success).toBe(true);
@@ -149,19 +149,19 @@ describe('Screen Memory Routes', () => {
 
   describe('DELETE /api/:context/screen-memory/:id', () => {
     it('should delete a capture', async () => {
-      const res = await request(app).delete('/api/personal/screen-memory/a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11');
+      const res = await request(app).delete('/api/operations/screen-memory/a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11');
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
     });
 
     it('should return 400 for invalid UUID', async () => {
-      const res = await request(app).delete('/api/personal/screen-memory/bad-id');
+      const res = await request(app).delete('/api/operations/screen-memory/bad-id');
       expect(res.status).toBe(400);
     });
 
     it('should return 404 for non-existent capture', async () => {
       mockDeleteCapture.mockResolvedValueOnce(false);
-      const res = await request(app).delete('/api/personal/screen-memory/a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11');
+      const res = await request(app).delete('/api/operations/screen-memory/a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11');
       expect(res.status).toBe(404);
     });
   });
@@ -173,19 +173,19 @@ describe('Screen Memory Routes', () => {
   describe('POST /api/:context/screen-memory/cleanup', () => {
     it('should cleanup old captures with default retention', async () => {
       const res = await request(app)
-        .post('/api/personal/screen-memory/cleanup')
+        .post('/api/operations/screen-memory/cleanup')
         .send({});
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
       expect(res.body.deleted).toBe(5);
-      expect(mockCleanupOldCaptures).toHaveBeenCalledWith('personal', 30, '00000000-0000-0000-0000-000000000001');
+      expect(mockCleanupOldCaptures).toHaveBeenCalledWith('operations', 30, '00000000-0000-0000-0000-000000000001');
     });
 
     it('should cleanup with custom retention days', async () => {
       await request(app)
-        .post('/api/personal/screen-memory/cleanup')
+        .post('/api/operations/screen-memory/cleanup')
         .send({ retention_days: 7 });
-      expect(mockCleanupOldCaptures).toHaveBeenCalledWith('personal', 7, '00000000-0000-0000-0000-000000000001');
+      expect(mockCleanupOldCaptures).toHaveBeenCalledWith('operations', 7, '00000000-0000-0000-0000-000000000001');
     });
   });
 });

@@ -881,7 +881,7 @@ export async function getAccounts(context: AIContext, userId?: string): Promise<
     return result.rows as EmailAccount[];
   } catch (error) {
     const msg = error instanceof Error ? error.message : String(error);
-    if (msg.includes('does not exist')) return [];
+    if (msg.includes('does not exist')) {return [];}
     throw error;
   }
 }

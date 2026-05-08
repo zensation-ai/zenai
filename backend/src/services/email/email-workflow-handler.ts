@@ -109,21 +109,21 @@ export async function createEmailSuggestions(context: AIContext): Promise<void> 
     if (priority === 'urgent' || priority === 'high') {
       await createSuggestion(context, {
         userId: 'system',
-        type: 'email_reply' as any,
+        type: 'email_reply' as const,
         title: `Auf "${subject}" von ${fromAddress} antworten`,
         metadata: { email_id: emailId },
       });
     } else if (actionItems.length > 0) {
       await createSuggestion(context, {
         userId: 'system',
-        type: 'email_task' as any,
+        type: 'email_task' as const,
         title: `${actionItems.length} Aufgaben aus "${subject}" erstellen`,
         metadata: { email_id: emailId, action_items: actionItems },
       });
     } else if (category === 'meeting') {
       await createSuggestion(context, {
         userId: 'system',
-        type: 'email_calendar' as any,
+        type: 'email_calendar' as const,
         title: `Meeting "${subject}" zum Kalender hinzufügen`,
         metadata: { email_id: emailId },
       });

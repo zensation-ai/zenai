@@ -27,7 +27,7 @@ jest.mock('../../utils/logger', () => ({
 
 jest.mock('../../utils/database-context', () => ({
   queryContext: jest.fn(),
-  isValidContext: jest.fn((ctx: string) => ['personal', 'work', 'learning', 'creative'].includes(ctx)),
+  isValidContext: jest.fn((ctx: string) => ['operations', 'finance', 'people', 'strategy'].includes(ctx)),
   isValidUUID: jest.fn((id: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)),
   AIContext: {},
 }));
@@ -113,7 +113,7 @@ describe('Documents API Integration Tests', () => {
     pageCount: 5,
     keywords: ['test'],
     primaryTopicId: null,
-    context: 'personal' as const,
+    context: 'operations' as const,
   };
 
   // ============================================================
@@ -131,7 +131,7 @@ describe('Documents API Integration Tests', () => {
       });
 
       const res = await request(app)
-        .get('/api/personal/documents')
+        .get('/api/operations/documents')
         .expect(200);
 
       expect(res.body.success).toBe(true);
@@ -157,7 +157,7 @@ describe('Documents API Integration Tests', () => {
       mockGetDocument.mockResolvedValueOnce(mockDoc);
 
       const res = await request(app)
-        .get(`/api/personal/documents/${VALID_UUID}`)
+        .get(`/api/operations/documents/${VALID_UUID}`)
         .expect(200);
 
       expect(res.body.success).toBe(true);
@@ -168,13 +168,13 @@ describe('Documents API Integration Tests', () => {
       mockGetDocument.mockResolvedValueOnce(null);
 
       await request(app)
-        .get(`/api/personal/documents/${VALID_UUID}`)
+        .get(`/api/operations/documents/${VALID_UUID}`)
         .expect(404);
     });
 
     it('should reject invalid UUID', async () => {
       await request(app)
-        .get('/api/personal/documents/not-a-uuid')
+        .get('/api/operations/documents/not-a-uuid')
         .expect(400);
     });
   });
@@ -188,7 +188,7 @@ describe('Documents API Integration Tests', () => {
       mockDeleteDocument.mockResolvedValueOnce(true);
 
       const res = await request(app)
-        .delete(`/api/personal/documents/${VALID_UUID}`)
+        .delete(`/api/operations/documents/${VALID_UUID}`)
         .expect(200);
 
       expect(res.body.success).toBe(true);
@@ -199,7 +199,7 @@ describe('Documents API Integration Tests', () => {
       mockDeleteDocument.mockResolvedValueOnce(false);
 
       await request(app)
-        .delete(`/api/personal/documents/${VALID_UUID}`)
+        .delete(`/api/operations/documents/${VALID_UUID}`)
         .expect(404);
     });
   });
@@ -213,7 +213,7 @@ describe('Documents API Integration Tests', () => {
       mockUpdateDocument.mockResolvedValueOnce({ ...mockDoc, title: 'Updated Title' });
 
       const res = await request(app)
-        .put(`/api/personal/documents/${VALID_UUID}`)
+        .put(`/api/operations/documents/${VALID_UUID}`)
         .send({ title: 'Updated Title' })
         .expect(200);
 
@@ -225,7 +225,7 @@ describe('Documents API Integration Tests', () => {
       mockUpdateDocument.mockResolvedValueOnce(null);
 
       await request(app)
-        .put(`/api/personal/documents/${VALID_UUID}`)
+        .put(`/api/operations/documents/${VALID_UUID}`)
         .send({ title: 'New Title' })
         .expect(404);
     });
@@ -240,7 +240,7 @@ describe('Documents API Integration Tests', () => {
       mockSearchDocuments.mockResolvedValueOnce([mockDoc]);
 
       const res = await request(app)
-        .post('/api/personal/documents/search')
+        .post('/api/operations/documents/search')
         .send({ query: 'test query' })
         .expect(200);
 
@@ -251,7 +251,7 @@ describe('Documents API Integration Tests', () => {
 
     it('should reject empty query', async () => {
       const res = await request(app)
-        .post('/api/personal/documents/search')
+        .post('/api/operations/documents/search')
         .send({ query: '' })
         .expect(400);
 
@@ -268,7 +268,7 @@ describe('Documents API Integration Tests', () => {
       mockGetStats.mockResolvedValueOnce({ total: 42, byType: { pdf: 20, docx: 22 } });
 
       const res = await request(app)
-        .get('/api/personal/documents/stats')
+        .get('/api/operations/documents/stats')
         .expect(200);
 
       expect(res.body.success).toBe(true);
@@ -285,7 +285,7 @@ describe('Documents API Integration Tests', () => {
       mockGetFolders.mockResolvedValueOnce([{ path: '/inbox', count: 5 }]);
 
       const res = await request(app)
-        .get('/api/personal/documents/folders')
+        .get('/api/operations/documents/folders')
         .expect(200);
 
       expect(res.body.success).toBe(true);
@@ -302,7 +302,7 @@ describe('Documents API Integration Tests', () => {
       mockCreateFolder.mockResolvedValueOnce({ path: '/projects', name: 'Projects' });
 
       const res = await request(app)
-        .post('/api/personal/documents/folders')
+        .post('/api/operations/documents/folders')
         .send({ name: 'Projects' })
         .expect(201);
 
@@ -312,7 +312,7 @@ describe('Documents API Integration Tests', () => {
 
     it('should reject empty folder name', async () => {
       const res = await request(app)
-        .post('/api/personal/documents/folders')
+        .post('/api/operations/documents/folders')
         .send({ name: '' })
         .expect(400);
 

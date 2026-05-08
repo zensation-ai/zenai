@@ -20,7 +20,7 @@ jest.mock('../../middleware/auth', () => ({
 
 // Mock database context
 jest.mock('../../utils/database-context', () => ({
-  isValidContext: jest.fn((ctx: string) => ['personal', 'work', 'learning', 'creative'].includes(ctx)),
+  isValidContext: jest.fn((ctx: string) => ['operations', 'finance', 'people', 'strategy'].includes(ctx)),
   AIContext: {},
 }));
 
@@ -38,7 +38,7 @@ jest.mock('../../utils/logger', () => ({
 jest.mock('../../utils/validation', () => ({
   isValidUUID: jest.fn((id: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)),
   validateContextParam: jest.fn((context: string) => {
-    const valid = ['personal', 'work', 'learning', 'creative'];
+    const valid = ['operations', 'finance', 'people', 'strategy'];
     if (!valid.includes(context)) {
       const { ValidationError } = jest.requireActual('../../middleware/errorHandler');
       throw new ValidationError('Invalid context');
@@ -131,7 +131,7 @@ var mockAccount = {
   last_sync_at: null,
   last_sync_error: null,
   sync_token: null,
-  context: 'personal',
+  context: 'operations',
   metadata: {},
   created_at: '2026-03-08T10:00:00.000Z',
   updated_at: '2026-03-08T10:00:00.000Z',
@@ -146,7 +146,7 @@ describe('Calendar Accounts Routes', () => {
     it('returns list of accounts', async () => {
       mockGetAccounts.mockResolvedValueOnce([mockAccount]);
 
-      const res = await request(app).get('/api/personal/calendar/accounts');
+      const res = await request(app).get('/api/operations/calendar/accounts');
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
@@ -167,7 +167,7 @@ describe('Calendar Accounts Routes', () => {
     it('returns single account', async () => {
       mockGetAccount.mockResolvedValueOnce(mockAccount);
 
-      const res = await request(app).get(`/api/personal/calendar/accounts/${TEST_UUID}`);
+      const res = await request(app).get(`/api/operations/calendar/accounts/${TEST_UUID}`);
 
       expect(res.status).toBe(200);
       expect(res.body.data.id).toBe(TEST_UUID);
@@ -177,12 +177,12 @@ describe('Calendar Accounts Routes', () => {
     it('returns 404 for missing account', async () => {
       mockGetAccount.mockResolvedValueOnce(null);
 
-      const res = await request(app).get(`/api/personal/calendar/accounts/${TEST_UUID}`);
+      const res = await request(app).get(`/api/operations/calendar/accounts/${TEST_UUID}`);
       expect(res.status).toBe(404);
     });
 
     it('rejects invalid UUID', async () => {
-      const res = await request(app).get('/api/personal/calendar/accounts/not-a-uuid');
+      const res = await request(app).get('/api/operations/calendar/accounts/not-a-uuid');
       expect(res.status).toBe(400);
     });
   });
@@ -201,7 +201,7 @@ describe('Calendar Accounts Routes', () => {
       mockSyncAccount.mockResolvedValueOnce({ created: 5, updated: 0, deleted: 0, errors: 0 });
 
       const res = await request(app)
-        .post('/api/personal/calendar/accounts')
+        .post('/api/operations/calendar/accounts')
         .send({
           provider: 'icloud',
           username: 'test@icloud.com',
@@ -226,7 +226,7 @@ describe('Calendar Accounts Routes', () => {
       });
 
       const res = await request(app)
-        .post('/api/personal/calendar/accounts')
+        .post('/api/operations/calendar/accounts')
         .send({
           provider: 'icloud',
           username: 'test@icloud.com',
@@ -240,7 +240,7 @@ describe('Calendar Accounts Routes', () => {
 
     it('validates required fields', async () => {
       const res = await request(app)
-        .post('/api/personal/calendar/accounts')
+        .post('/api/operations/calendar/accounts')
         .send({ provider: 'icloud' });
 
       expect(res.status).toBe(400);
@@ -248,7 +248,7 @@ describe('Calendar Accounts Routes', () => {
 
     it('validates provider value', async () => {
       const res = await request(app)
-        .post('/api/personal/calendar/accounts')
+        .post('/api/operations/calendar/accounts')
         .send({ provider: 'outlook', username: 'a', password: 'b' });
 
       expect(res.status).toBe(400);
@@ -256,7 +256,7 @@ describe('Calendar Accounts Routes', () => {
 
     it('requires caldav_url for non-iCloud providers', async () => {
       const res = await request(app)
-        .post('/api/personal/calendar/accounts')
+        .post('/api/operations/calendar/accounts')
         .send({ provider: 'caldav', username: 'a', password: 'b' });
 
       expect(res.status).toBe(400);
@@ -271,7 +271,7 @@ describe('Calendar Accounts Routes', () => {
       });
 
       const res = await request(app)
-        .put(`/api/personal/calendar/accounts/${TEST_UUID}`)
+        .put(`/api/operations/calendar/accounts/${TEST_UUID}`)
         .send({ display_name: 'Updated Name' });
 
       expect(res.status).toBe(200);
@@ -282,7 +282,7 @@ describe('Calendar Accounts Routes', () => {
       mockUpdateAccount.mockResolvedValueOnce(null);
 
       const res = await request(app)
-        .put(`/api/personal/calendar/accounts/${TEST_UUID}`)
+        .put(`/api/operations/calendar/accounts/${TEST_UUID}`)
         .send({ display_name: 'X' });
 
       expect(res.status).toBe(404);
@@ -293,7 +293,7 @@ describe('Calendar Accounts Routes', () => {
     it('deletes account', async () => {
       mockDeleteAccount.mockResolvedValueOnce(true);
 
-      const res = await request(app).delete(`/api/personal/calendar/accounts/${TEST_UUID}`);
+      const res = await request(app).delete(`/api/operations/calendar/accounts/${TEST_UUID}`);
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
@@ -303,7 +303,7 @@ describe('Calendar Accounts Routes', () => {
     it('returns 404 when account not found', async () => {
       mockDeleteAccount.mockResolvedValueOnce(false);
 
-      const res = await request(app).delete(`/api/personal/calendar/accounts/${TEST_UUID}`);
+      const res = await request(app).delete(`/api/operations/calendar/accounts/${TEST_UUID}`);
       expect(res.status).toBe(404);
     });
   });
@@ -318,7 +318,7 @@ describe('Calendar Accounts Routes', () => {
       });
 
       const res = await request(app)
-        .post(`/api/personal/calendar/accounts/${TEST_UUID}/test`);
+        .post(`/api/operations/calendar/accounts/${TEST_UUID}/test`);
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
@@ -332,7 +332,7 @@ describe('Calendar Accounts Routes', () => {
       });
 
       const res = await request(app)
-        .post(`/api/personal/calendar/accounts/${TEST_UUID}/sync`);
+        .post(`/api/operations/calendar/accounts/${TEST_UUID}/sync`);
 
       expect(res.status).toBe(200);
       expect(res.body.data.created).toBe(3);
@@ -349,7 +349,7 @@ describe('Calendar Accounts Routes', () => {
       ]);
 
       const res = await request(app)
-        .post(`/api/personal/calendar/accounts/${TEST_UUID}/discover`);
+        .post(`/api/operations/calendar/accounts/${TEST_UUID}/discover`);
 
       expect(res.status).toBe(200);
       expect(res.body.data).toHaveLength(2);
@@ -376,7 +376,7 @@ describe('Calendar AI Routes', () => {
         focus_recommendation: 'Vormittag ist frei.',
       });
 
-      const res = await request(app).get('/api/personal/calendar/ai/briefing');
+      const res = await request(app).get('/api/operations/calendar/ai/briefing');
 
       expect(res.status).toBe(200);
       expect(res.body.data.summary).toBe('Ein ruhiger Tag.');
@@ -394,10 +394,10 @@ describe('Calendar AI Routes', () => {
         tips: [],
       });
 
-      const res = await request(app).get('/api/work/calendar/ai/briefing?date=2026-03-10');
+      const res = await request(app).get('/api/finance/calendar/ai/briefing?date=2026-03-10');
 
       expect(res.status).toBe(200);
-      expect(mockGenerateBriefing).toHaveBeenCalledWith('work', '2026-03-10');
+      expect(mockGenerateBriefing).toHaveBeenCalledWith('finance', '2026-03-10');
     });
   });
 
@@ -409,7 +409,7 @@ describe('Calendar AI Routes', () => {
       ]);
 
       const res = await request(app)
-        .post('/api/work/calendar/ai/suggest')
+        .post('/api/finance/calendar/ai/suggest')
         .send({ title: 'Review', duration_minutes: 60 });
 
       expect(res.status).toBe(200);
@@ -419,7 +419,7 @@ describe('Calendar AI Routes', () => {
 
     it('validates required title', async () => {
       const res = await request(app)
-        .post('/api/work/calendar/ai/suggest')
+        .post('/api/finance/calendar/ai/suggest')
         .send({ duration_minutes: 60 });
 
       expect(res.status).toBe(400);
@@ -427,7 +427,7 @@ describe('Calendar AI Routes', () => {
 
     it('validates duration_minutes minimum', async () => {
       const res = await request(app)
-        .post('/api/work/calendar/ai/suggest')
+        .post('/api/finance/calendar/ai/suggest')
         .send({ title: 'X', duration_minutes: 2 });
 
       expect(res.status).toBe(400);
@@ -445,7 +445,7 @@ describe('Calendar AI Routes', () => {
         },
       ]);
 
-      const res = await request(app).get('/api/work/calendar/ai/conflicts');
+      const res = await request(app).get('/api/finance/calendar/ai/conflicts');
 
       expect(res.status).toBe(200);
       expect(res.body.data).toHaveLength(1);
@@ -455,9 +455,9 @@ describe('Calendar AI Routes', () => {
     it('passes date range query parameters', async () => {
       mockDetectConflicts.mockResolvedValueOnce([]);
 
-      await request(app).get('/api/work/calendar/ai/conflicts?start=2026-03-08&end=2026-03-15');
+      await request(app).get('/api/finance/calendar/ai/conflicts?start=2026-03-08&end=2026-03-15');
 
-      expect(mockDetectConflicts).toHaveBeenCalledWith('work', {
+      expect(mockDetectConflicts).toHaveBeenCalledWith('finance', {
         start: '2026-03-08',
         end: '2026-03-15',
       });
@@ -468,7 +468,7 @@ describe('Calendar AI Routes', () => {
         { type: 'back_to_back', severity: 'warning', events: [], message: 'Warning' },
       ]);
 
-      const res = await request(app).get('/api/work/calendar/ai/conflicts');
+      const res = await request(app).get('/api/finance/calendar/ai/conflicts');
 
       expect(res.body.has_errors).toBe(false);
     });
@@ -479,7 +479,7 @@ describe('Calendar AI Routes', () => {
       mockCheckConflicts.mockResolvedValueOnce([]);
 
       const res = await request(app)
-        .post('/api/work/calendar/ai/check-conflicts')
+        .post('/api/finance/calendar/ai/check-conflicts')
         .send({
           start_time: '2026-03-08T10:00:00Z',
           end_time: '2026-03-08T11:00:00Z',
@@ -491,7 +491,7 @@ describe('Calendar AI Routes', () => {
 
     it('validates required fields', async () => {
       const res = await request(app)
-        .post('/api/work/calendar/ai/check-conflicts')
+        .post('/api/finance/calendar/ai/check-conflicts')
         .send({ start_time: '2026-03-08T10:00:00Z' });
 
       expect(res.status).toBe(400);
@@ -501,7 +501,7 @@ describe('Calendar AI Routes', () => {
       mockCheckConflicts.mockResolvedValueOnce([]);
 
       await request(app)
-        .post('/api/work/calendar/ai/check-conflicts')
+        .post('/api/finance/calendar/ai/check-conflicts')
         .send({
           start_time: '2026-03-08T10:00:00Z',
           end_time: '2026-03-08T11:00:00Z',
@@ -509,7 +509,7 @@ describe('Calendar AI Routes', () => {
         });
 
       expect(mockCheckConflicts).toHaveBeenCalledWith(
-        'work',
+        'finance',
         '2026-03-08T10:00:00Z',
         '2026-03-08T11:00:00Z',
         'event-123'

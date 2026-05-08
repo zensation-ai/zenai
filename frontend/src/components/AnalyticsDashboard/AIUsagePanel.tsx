@@ -65,13 +65,13 @@ const COLORS = {
   input: '#3b82f6',     // Blue
   output: '#22c55e',    // Green
   thinking: '#a855f7',  // Purple
-  cost: '#ff6b35',      // Orange (brand)
+  cost: 'var(--primary)',   // Orange (brand)
   budget: '#ef4444',    // Red
   grid: 'rgba(255,255,255,0.06)',
   text: 'rgba(255,255,255,0.6)',
 };
 
-const PIE_COLORS = ['#ff6b35', '#3b82f6', '#22c55e', '#a855f7', '#f59e0b', '#ec4899', '#06b6d4'];
+const PIE_COLORS = ['var(--primary)', '#3b82f6', '#22c55e', '#a855f7', '#f59e0b', '#ec4899', '#06b6d4'];
 
 const FEATURE_LABELS: Record<string, string> = {
   chat: 'Chat',
@@ -143,9 +143,9 @@ export const AIUsagePanel: React.FC<AIUsagePanelProps> = ({
   }, [dailyUsage, budgetUsd]);
 
   return (
-    <div className="ai-usage-panel" style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+    <div className="ai-usage-panel flex flex-col gap-6">
       {/* Summary Cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '1rem' }}>
+      <div className="grid grid-cols-[repeat(auto-fit,minmax(160px,1fr))] gap-4">
         <SummaryCard label="Tokens gesamt" value={formatTokens(totalTokens)} />
         <SummaryCard label="Kosten gesamt" value={formatCost(totalCost)} />
         <SummaryCard
@@ -162,8 +162,8 @@ export const AIUsagePanel: React.FC<AIUsagePanelProps> = ({
       </div>
 
       {/* Token Usage Stacked Bar Chart */}
-      <div style={sectionStyle}>
-        <h4 style={headingStyle}>Token-Verbrauch pro Tag</h4>
+      <div className={sectionClass}>
+        <h4 className={headingClass}>Token-Verbrauch pro Tag</h4>
         {dailyUsage.length === 0 ? (
           <EmptyState text="Keine Nutzungsdaten vorhanden" />
         ) : (
@@ -186,8 +186,8 @@ export const AIUsagePanel: React.FC<AIUsagePanelProps> = ({
       </div>
 
       {/* Cost Line Chart */}
-      <div style={sectionStyle}>
-        <h4 style={headingStyle}>Kosten pro Tag</h4>
+      <div className={sectionClass}>
+        <h4 className={headingClass}>Kosten pro Tag</h4>
         {costData.length === 0 ? (
           <EmptyState text="Keine Kostendaten vorhanden" />
         ) : (
@@ -215,10 +215,10 @@ export const AIUsagePanel: React.FC<AIUsagePanelProps> = ({
       </div>
 
       {/* Breakdown Charts Row */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+      <div className="grid grid-cols-2 gap-4">
         {/* Model Breakdown */}
-        <div style={sectionStyle}>
-          <h4 style={headingStyle}>Nach Modell</h4>
+        <div className={sectionClass}>
+          <h4 className={headingClass}>Nach Modell</h4>
           {modelPieData.length === 0 ? (
             <EmptyState text="Keine Modelldaten" />
           ) : (
@@ -247,8 +247,8 @@ export const AIUsagePanel: React.FC<AIUsagePanelProps> = ({
         </div>
 
         {/* Feature Breakdown */}
-        <div style={sectionStyle}>
-          <h4 style={headingStyle}>Nach Feature</h4>
+        <div className={sectionClass}>
+          <h4 className={headingClass}>Nach Feature</h4>
           {featurePieData.length === 0 ? (
             <EmptyState text="Keine Featuredaten" />
           ) : (
@@ -290,33 +290,19 @@ const SummaryCard: React.FC<{ label: string; value: string; alert?: boolean }> =
   alert,
 }) => (
   <div
-    style={{
-      background: alert ? 'rgba(239,68,68,0.15)' : 'rgba(255,255,255,0.04)',
-      borderRadius: '0.75rem',
-      padding: '1rem',
-      border: alert ? '1px solid rgba(239,68,68,0.3)' : '1px solid rgba(255,255,255,0.06)',
-    }}
+    className={`rounded-xl p-4 ${alert ? 'bg-red-500/15 border border-red-500/30' : 'bg-white/[0.04] border border-white/[0.06]'}`}
   >
-    <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.5)', marginBottom: '0.25rem' }}>
+    <div className="text-xs text-white/50 mb-1">
       {label}
     </div>
-    <div style={{ fontSize: '1.25rem', fontWeight: 600, color: alert ? '#ef4444' : 'rgba(255,255,255,0.9)' }}>
+    <div className={`text-xl font-semibold ${alert ? 'text-red-400' : 'text-white/90'}`}>
       {value}
     </div>
   </div>
 );
 
 const EmptyState: React.FC<{ text: string }> = ({ text }) => (
-  <div
-    style={{
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      height: '120px',
-      color: 'rgba(255,255,255,0.4)',
-      fontSize: '0.875rem',
-    }}
-  >
+  <div className="flex items-center justify-center h-[120px] text-white/40 text-sm">
     {text}
   </div>
 );
@@ -325,19 +311,9 @@ const EmptyState: React.FC<{ text: string }> = ({ text }) => (
 // Styles
 // ===========================================
 
-const sectionStyle: React.CSSProperties = {
-  background: 'rgba(255,255,255,0.03)',
-  borderRadius: '0.75rem',
-  padding: '1rem',
-  border: '1px solid rgba(255,255,255,0.06)',
-};
+const sectionClass = 'bg-white/[0.03] rounded-xl p-4 border border-white/[0.06]';
 
-const headingStyle: React.CSSProperties = {
-  margin: '0 0 0.75rem 0',
-  fontSize: '0.875rem',
-  fontWeight: 500,
-  color: 'rgba(255,255,255,0.7)',
-};
+const headingClass = 'm-0 mb-3 text-sm font-medium text-white/70';
 
 const tooltipStyle: React.CSSProperties = {
   background: 'rgba(20,20,30,0.95)',

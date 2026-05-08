@@ -2,38 +2,40 @@
  * Page-Specific Skeleton Loading Components
  *
  * Provides content-shaped loading placeholders for different page types.
- * Uses the design system Skeleton component for consistent animation.
+ * Uses the shadcn Skeleton component for consistent animation.
  */
 
-import { Skeleton } from '../../design-system/components/Skeleton';
-import './PageSkeletons.css';
+import { type CSSProperties } from 'react';
+import { Skeleton } from '@/components/ui/skeleton';
 
 /** Chat page: 3 message bubble outlines */
 export function ChatSkeleton() {
   return (
-    <div className="skeleton-chat" role="status" aria-busy="true" aria-label="Chat wird geladen">
+    <div className="flex flex-col gap-6 p-6" role="status" aria-busy="true" aria-label="Chat wird geladen">
       {/* User message */}
-      <div className="skeleton-chat-message skeleton-chat-message--user">
-        <Skeleton variant="circle" width={32} height={32} />
-        <div className="skeleton-chat-bubble">
-          <Skeleton variant="text" count={1} width="60%" />
+      <div className="flex items-start gap-3 justify-end">
+        <div className="space-y-2 max-w-[60%]">
+          <Skeleton className="h-4 w-48" />
         </div>
+        <Skeleton className="h-8 w-8 rounded-full shrink-0" />
       </div>
       {/* Assistant message */}
-      <div className="skeleton-chat-message skeleton-chat-message--assistant">
-        <Skeleton variant="circle" width={32} height={32} />
-        <div className="skeleton-chat-bubble">
-          <Skeleton variant="text" count={3} />
+      <div className="flex items-start gap-3">
+        <Skeleton className="h-8 w-8 rounded-full shrink-0" />
+        <div className="space-y-2 max-w-[80%]">
+          <Skeleton className="h-4 w-full" />
+          <Skeleton className="h-4 w-[90%]" />
+          <Skeleton className="h-4 w-[70%]" />
         </div>
       </div>
       {/* User message */}
-      <div className="skeleton-chat-message skeleton-chat-message--user">
-        <Skeleton variant="circle" width={32} height={32} />
-        <div className="skeleton-chat-bubble">
-          <Skeleton variant="text" count={1} width="45%" />
+      <div className="flex items-start gap-3 justify-end">
+        <div className="space-y-2 max-w-[45%]">
+          <Skeleton className="h-4 w-36" />
         </div>
+        <Skeleton className="h-8 w-8 rounded-full shrink-0" />
       </div>
-      <span className="visually-hidden">Chat wird geladen</span>
+      <span className="sr-only">Chat wird geladen</span>
     </div>
   );
 }
@@ -41,27 +43,27 @@ export function ChatSkeleton() {
 /** Dashboard page: 4 stat cards + 2 chart areas */
 export function DashboardSkeleton() {
   return (
-    <div className="skeleton-dashboard" role="status" aria-busy="true" aria-label="Dashboard wird geladen">
-      <div className="skeleton-dashboard-stats">
+    <div className="space-y-6 p-6" role="status" aria-busy="true" aria-label="Dashboard wird geladen">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {Array.from({ length: 4 }, (_, i) => (
-          <div key={i} className="skeleton-dashboard-stat-card">
-            <Skeleton variant="text" count={1} width="50%" />
-            <Skeleton variant="rectangle" height={28} />
-            <Skeleton variant="text" count={1} width="70%" />
+          <div key={i} className="bg-surface rounded-lg p-4 space-y-3">
+            <Skeleton className="h-4 w-1/2" />
+            <Skeleton className="h-7 w-full" />
+            <Skeleton className="h-3 w-[70%]" />
           </div>
         ))}
       </div>
-      <div className="skeleton-dashboard-charts">
-        <div className="skeleton-dashboard-chart">
-          <Skeleton variant="text" count={1} width="30%" />
-          <Skeleton variant="rectangle" height={180} />
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="bg-surface rounded-lg p-4 space-y-3">
+          <Skeleton className="h-4 w-[30%]" />
+          <Skeleton className="h-[180px] w-full" />
         </div>
-        <div className="skeleton-dashboard-chart">
-          <Skeleton variant="text" count={1} width="30%" />
-          <Skeleton variant="rectangle" height={180} />
+        <div className="bg-surface rounded-lg p-4 space-y-3">
+          <Skeleton className="h-4 w-[30%]" />
+          <Skeleton className="h-[180px] w-full" />
         </div>
       </div>
-      <span className="visually-hidden">Dashboard wird geladen</span>
+      <span className="sr-only">Dashboard wird geladen</span>
     </div>
   );
 }
@@ -69,35 +71,34 @@ export function DashboardSkeleton() {
 /** Smart Page skeleton: toolbar + filter chips + card grid */
 export function SmartPageSkeleton() {
   return (
-    <div className="skeleton-smart-page" role="status" aria-busy="true" aria-label="Seite wird geladen">
+    <div className="space-y-4 p-6" role="status" aria-busy="true" aria-label="Seite wird geladen">
       {/* Filter chip bar */}
-      <div className="skeleton-smart-page__chips">
-        <Skeleton variant="rectangle" width={72} height={32} />
-        <Skeleton variant="rectangle" width={88} height={32} />
-        <Skeleton variant="rectangle" width={64} height={32} />
-        <Skeleton variant="rectangle" width={96} height={32} />
-        <Skeleton variant="rectangle" width={56} height={32} />
+      <div className="flex gap-2">
+        <Skeleton className="h-8 w-[72px] rounded-full" />
+        <Skeleton className="h-8 w-[88px] rounded-full" />
+        <Skeleton className="h-8 w-[64px] rounded-full" />
+        <Skeleton className="h-8 w-[96px] rounded-full" />
+        <Skeleton className="h-8 w-[56px] rounded-full" />
       </div>
 
       {/* Toolbar */}
-      <div className="skeleton-smart-page__toolbar">
-        <Skeleton variant="rectangle" width="100%" height={44} />
-      </div>
+      <Skeleton className="h-11 w-full rounded-md" />
 
       {/* Card grid */}
-      <div className="skeleton-smart-page__grid">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {Array.from({ length: 6 }, (_, i) => (
-          <div key={i} className="skeleton-smart-page__card">
-            <Skeleton variant="text" count={1} width="70%" />
-            <Skeleton variant="text" count={2} />
-            <div className="skeleton-smart-page__card-footer">
-              <Skeleton variant="rectangle" width={48} height={20} />
-              <Skeleton variant="rectangle" width={48} height={20} />
+          <div key={i} className="bg-surface rounded-lg p-4 space-y-3">
+            <Skeleton className="h-4 w-[70%]" />
+            <Skeleton className="h-4 w-full" />
+            <Skeleton className="h-4 w-[85%]" />
+            <div className="flex gap-2 pt-2">
+              <Skeleton className="h-5 w-12 rounded-full" />
+              <Skeleton className="h-5 w-12 rounded-full" />
             </div>
           </div>
         ))}
       </div>
-      <span className="visually-hidden">Seite wird geladen</span>
+      <span className="sr-only">Seite wird geladen</span>
     </div>
   );
 }
@@ -105,17 +106,17 @@ export function SmartPageSkeleton() {
 /** Generic list page: 5 row outlines */
 export function ListSkeleton({ rows = 5 }: { rows?: number }) {
   return (
-    <div className="skeleton-list" role="status" aria-busy="true" aria-label="Liste wird geladen">
+    <div className="space-y-3 p-6" role="status" aria-busy="true" aria-label="Liste wird geladen">
       {Array.from({ length: rows }, (_, i) => (
-        <div key={i} className="skeleton-list-row">
-          <Skeleton variant="circle" width={36} height={36} />
-          <div className="skeleton-list-row-text">
-            <Skeleton variant="text" count={1} width={`${80 - i * 5}%`} />
-            <Skeleton variant="text" count={1} width={`${60 - i * 3}%`} />
+        <div key={i} className="flex items-center gap-3 p-3 bg-surface rounded-lg">
+          <Skeleton className="h-9 w-9 rounded-full shrink-0" />
+          <div className="flex-1 space-y-2">
+            <Skeleton className="h-4 w-[var(--bar)]" style={{ '--bar': `${80 - i * 5}%` } as CSSProperties} />
+            <Skeleton className="h-3 w-[var(--bar)]" style={{ '--bar': `${60 - i * 3}%` } as CSSProperties} />
           </div>
         </div>
       ))}
-      <span className="visually-hidden">Liste wird geladen</span>
+      <span className="sr-only">Liste wird geladen</span>
     </div>
   );
 }

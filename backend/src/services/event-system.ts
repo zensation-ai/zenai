@@ -24,7 +24,8 @@ export type SystemEventType =
   | 'idea.created' | 'idea.updated'
   | 'memory.fact_learned' | 'memory.pattern_detected'
   | 'agent.completed' | 'agent.failed'
-  | 'system.daily_digest' | 'system.weekly_review';
+  | 'system.daily_digest' | 'system.weekly_review'
+  | 'blog_published' | 'phase_completed';
 
 export interface SystemEvent {
   id: string;

@@ -1,0 +1,505 @@
+{
+  "name": "zenbrain",
+  "seeds": [
+    42
+  ],
+  "k": 5,
+  "runs": [
+    {
+      "seed": 42,
+      "wall_time_s": 609.3734675840242,
+      "per_query": [
+        {
+          "question_id": "a06e4cfe",
+          "category": "single-session-user",
+          "n_facts": 534,
+          "n_relevant": 12,
+          "precision_at_k": 1.0,
+          "recall_at_k": 0.4166666666666667,
+          "mrr": 1.0,
+          "ndcg_at_k": 1.0,
+          "retrieved_ids": [
+            "a06e4cfe::s9::t4",
+            "a06e4cfe::s9::t5",
+            "a06e4cfe::s9::t3",
+            "a06e4cfe::s9::t2",
+            "a06e4cfe::s9::t1"
+          ],
+          "latency_ms": 27.49404200585559,
+          "ingest_ms": 21833.849125017878
+        },
+        {
+          "question_id": "60d45044",
+          "category": "single-session-user",
+          "error": "HTTPError: HTTP Error 500: Internal Server Error"
+        },
+        {
+          "question_id": "001be529",
+          "category": "single-session-user",
+          "error": "HTTPError: HTTP Error 500: Internal Server Error"
+        },
+        {
+          "question_id": "36580ce8",
+          "category": "single-session-user",
+          "n_facts": 545,
+          "n_relevant": 12,
+          "precision_at_k": 0.4,
+          "recall_at_k": 0.16666666666666666,
+          "mrr": 0.3333333333333333,
+          "ndcg_at_k": 0.3156484524795145,
+          "retrieved_ids": [
+            "36580ce8::s44::t6",
+            "36580ce8::s11::t6",
+            "36580ce8::s47::t4",
+            "36580ce8::s47::t5",
+            "36580ce8::s11::t12"
+          ],
+          "latency_ms": 27.916292019654065,
+          "ingest_ms": 22939.049042004626
+        },
+        {
+          "question_id": "15745da0_abs",
+          "category": "single-session-user",
+          "n_facts": 547,
+          "n_relevant": 12,
+          "precision_at_k": 1.0,
+          "recall_at_k": 0.4166666666666667,
+          "mrr": 1.0,
+          "ndcg_at_k": 1.0,
+          "retrieved_ids": [
+            "15745da0_abs::s36::t4",
+            "15745da0_abs::s36::t0",
+            "15745da0_abs::s36::t1",
+            "15745da0_abs::s36::t3",
+            "15745da0_abs::s36::t5"
+          ],
+          "latency_ms": 27.980500017292798,
+          "ingest_ms": 23152.700292004738
+        },
+        {
+          "question_id": "gpt4_7fce9456",
+          "category": "multi-session",
+          "n_facts": 493,
+          "n_relevant": 60,
+          "precision_at_k": 1.0,
+          "recall_at_k": 0.08333333333333333,
+          "mrr": 1.0,
+          "ndcg_at_k": 1.0,
+          "retrieved_ids": [
+            "gpt4_7fce9456::s22::t10",
+            "gpt4_7fce9456::s35::t2",
+            "gpt4_7fce9456::s28::t10",
+            "gpt4_7fce9456::s28::t6",
+            "gpt4_7fce9456::s28::t11"
+          ],
+          "latency_ms": 25.077749975025654,
+          "ingest_ms": 23124.42429200746
+        },
+        {
+          "question_id": "00ca467f",
+          "category": "multi-session",
+          "error": "HTTPError: HTTP Error 500: Internal Server Error"
+        },
+        {
+          "question_id": "gpt4_731e37d7",
+          "category": "multi-session",
+          "error": "HTTPError: HTTP Error 500: Internal Server Error"
+        },
+        {
+          "question_id": "bf659f65",
+          "category": "multi-session",
+          "n_facts": 516,
+          "n_relevant": 34,
+          "precision_at_k": 1.0,
+          "recall_at_k": 0.14705882352941177,
+          "mrr": 1.0,
+          "ndcg_at_k": 1.0,
+          "retrieved_ids": [
+            "bf659f65::s3::t2",
+            "bf659f65::s3::t0",
+            "bf659f65::s3::t6",
+            "bf659f65::s3::t8",
+            "bf659f65::s47::t6"
+          ],
+          "latency_ms": 26.55299997422844,
+          "ingest_ms": 22443.378624971956
+        },
+        {
+          "question_id": "edced276_abs",
+          "category": "multi-session",
+          "n_facts": 544,
+          "n_relevant": 18,
+          "precision_at_k": 0.6,
+          "recall_at_k": 0.16666666666666666,
+          "mrr": 1.0,
+          "ndcg_at_k": 0.6992148198508501,
+          "retrieved_ids": [
+            "edced276_abs::s18::t8",
+            "edced276_abs::s18::t4",
+            "edced276_abs::s34::t6",
+            "edced276_abs::s18::t0",
+            "edced276_abs::s29::t4"
+          ],
+          "latency_ms": 28.288041008636355,
+          "ingest_ms": 23931.80687498534
+        },
+        {
+          "question_id": "6b7dfb22",
+          "category": "single-session-preference",
+          "error": "HTTPError: HTTP Error 500: Internal Server Error"
+        },
+        {
+          "question_id": "57f827a0",
+          "category": "single-session-preference",
+          "error": "HTTPError: HTTP Error 500: Internal Server Error"
+        },
+        {
+          "question_id": "75f70248",
+          "category": "single-session-preference",
+          "n_facts": 466,
+          "n_relevant": 12,
+          "precision_at_k": 0.8,
+          "recall_at_k": 0.3333333333333333,
+          "mrr": 1.0,
+          "ndcg_at_k": 0.8687949224876582,
+          "retrieved_ids": [
+            "75f70248::s25::t2",
+            "75f70248::s25::t3",
+            "75f70248::s25::t6",
+            "75f70248::s25::t0",
+            "75f70248::s14::t6"
+          ],
+          "latency_ms": 23.885999980848283,
+          "ingest_ms": 22150.579707988072
+        },
+        {
+          "question_id": "b0479f84",
+          "category": "single-session-preference",
+          "n_facts": 502,
+          "n_relevant": 12,
+          "precision_at_k": 0.8,
+          "recall_at_k": 0.3333333333333333,
+          "mrr": 1.0,
+          "ndcg_at_k": 0.8539316501572937,
+          "retrieved_ids": [
+            "b0479f84::s38::t0",
+            "b0479f84::s38::t1",
+            "b0479f84::s38::t3",
+            "b0479f84::s10::t4",
+            "b0479f84::s38::t2"
+          ],
+          "latency_ms": 25.582749978639185,
+          "ingest_ms": 23314.339000033215
+        },
+        {
+          "question_id": "07b6f563",
+          "category": "single-session-preference",
+          "n_facts": 524,
+          "n_relevant": 14,
+          "precision_at_k": 0.4,
+          "recall_at_k": 0.14285714285714285,
+          "mrr": 0.5,
+          "ndcg_at_k": 0.38356636737133565,
+          "retrieved_ids": [
+            "07b6f563::s27::t0",
+            "07b6f563::s40::t2",
+            "07b6f563::s40::t8",
+            "07b6f563::s35::t11",
+            "07b6f563::s35::t9"
+          ],
+          "latency_ms": 29.165167012251914,
+          "ingest_ms": 22829.465584014542
+        },
+        {
+          "question_id": "gpt4_4929293a",
+          "category": "temporal-reasoning",
+          "n_facts": 486,
+          "n_relevant": 24,
+          "precision_at_k": 1.0,
+          "recall_at_k": 0.20833333333333334,
+          "mrr": 1.0,
+          "ndcg_at_k": 1.0,
+          "retrieved_ids": [
+            "gpt4_4929293a::s27::t8",
+            "gpt4_4929293a::s16::t0",
+            "gpt4_4929293a::s27::t0",
+            "gpt4_4929293a::s27::t9",
+            "gpt4_4929293a::s27::t7"
+          ],
+          "latency_ms": 24.714124971069396,
+          "ingest_ms": 23257.87658302579
+        },
+        {
+          "question_id": "2ebe6c90",
+          "category": "temporal-reasoning",
+          "n_facts": 485,
+          "n_relevant": 22,
+          "precision_at_k": 0.2,
+          "recall_at_k": 0.045454545454545456,
+          "mrr": 0.5,
+          "ndcg_at_k": 0.21398626473452756,
+          "retrieved_ids": [
+            "2ebe6c90::s35::t11",
+            "2ebe6c90::s19::t8",
+            "2ebe6c90::s35::t6",
+            "2ebe6c90::s35::t9",
+            "2ebe6c90::s35::t21"
+          ],
+          "latency_ms": 25.455292023252696,
+          "ingest_ms": 23291.396707994863
+        },
+        {
+          "question_id": "2ebe6c92",
+          "category": "temporal-reasoning",
+          "n_facts": 487,
+          "n_relevant": 22,
+          "precision_at_k": 0.6,
+          "recall_at_k": 0.13636363636363635,
+          "mrr": 1.0,
+          "ndcg_at_k": 0.6992148198508501,
+          "retrieved_ids": [
+            "2ebe6c92::s43::t8",
+            "2ebe6c92::s43::t2",
+            "2ebe6c92::s37::t2",
+            "2ebe6c92::s43::t0",
+            "2ebe6c92::s17::t0"
+          ],
+          "latency_ms": 26.758499967399985,
+          "ingest_ms": 23729.736916022375
+        },
+        {
+          "question_id": "gpt4_59149c78",
+          "category": "temporal-reasoning",
+          "error": "HTTPError: HTTP Error 500: Internal Server Error"
+        },
+        {
+          "question_id": "b29f3365",
+          "category": "temporal-reasoning",
+          "n_facts": 494,
+          "n_relevant": 24,
+          "precision_at_k": 1.0,
+          "recall_at_k": 0.20833333333333334,
+          "mrr": 1.0,
+          "ndcg_at_k": 1.0,
+          "retrieved_ids": [
+            "b29f3365::s16::t2",
+            "b29f3365::s29::t1",
+            "b29f3365::s29::t6",
+            "b29f3365::s16::t0",
+            "b29f3365::s29::t2"
+          ],
+          "latency_ms": 25.780416966881603,
+          "ingest_ms": 24126.6958329943
+        },
+        {
+          "question_id": "ce6d2d27",
+          "category": "knowledge-update",
+          "n_facts": 521,
+          "n_relevant": 24,
+          "precision_at_k": 0.6,
+          "recall_at_k": 0.125,
+          "mrr": 1.0,
+          "ndcg_at_k": 0.6992148198508501,
+          "retrieved_ids": [
+            "ce6d2d27::s17::t0",
+            "ce6d2d27::s17::t8",
+            "ce6d2d27::s8::t6",
+            "ce6d2d27::s17::t10",
+            "ce6d2d27::s8::t3"
+          ],
+          "latency_ms": 29.253499989863485,
+          "ingest_ms": 25520.27762500802
+        },
+        {
+          "question_id": "affe2881",
+          "category": "knowledge-update",
+          "n_facts": 481,
+          "n_relevant": 24,
+          "precision_at_k": 1.0,
+          "recall_at_k": 0.20833333333333334,
+          "mrr": 1.0,
+          "ndcg_at_k": 1.0,
+          "retrieved_ids": [
+            "affe2881::s16::t5",
+            "affe2881::s16::t4",
+            "affe2881::s16::t6",
+            "affe2881::s16::t7",
+            "affe2881::s24::t3"
+          ],
+          "latency_ms": 24.877750023733824,
+          "ingest_ms": 25721.727708005346
+        },
+        {
+          "question_id": "50635ada",
+          "category": "knowledge-update",
+          "n_facts": 531,
+          "n_relevant": 24,
+          "precision_at_k": 1.0,
+          "recall_at_k": 0.20833333333333334,
+          "mrr": 1.0,
+          "ndcg_at_k": 1.0,
+          "retrieved_ids": [
+            "50635ada::s19::t2",
+            "50635ada::s19::t3",
+            "50635ada::s42::t6",
+            "50635ada::s19::t4",
+            "50635ada::s42::t3"
+          ],
+          "latency_ms": 26.923917001113296,
+          "ingest_ms": 26631.80337497033
+        },
+        {
+          "question_id": "f685340e",
+          "category": "knowledge-update",
+          "error": "HTTPError: HTTP Error 500: Internal Server Error"
+        },
+        {
+          "question_id": "cc5ded98",
+          "category": "knowledge-update",
+          "error": "HTTPError: HTTP Error 500: Internal Server Error"
+        },
+        {
+          "question_id": "ceb54acb",
+          "category": "single-session-assistant",
+          "n_facts": 493,
+          "n_relevant": 4,
+          "precision_at_k": 0.4,
+          "recall_at_k": 0.5,
+          "mrr": 1.0,
+          "ndcg_at_k": 0.6366824387328317,
+          "retrieved_ids": [
+            "ceb54acb::s29::t3",
+            "ceb54acb::s29::t1",
+            "ceb54acb::s30::t8",
+            "ceb54acb::s39::t3",
+            "ceb54acb::s18::t0"
+          ],
+          "latency_ms": 24.65504198335111,
+          "ingest_ms": 25141.111042001285
+        },
+        {
+          "question_id": "f523d9fe",
+          "category": "single-session-assistant",
+          "n_facts": 484,
+          "n_relevant": 22,
+          "precision_at_k": 0.8,
+          "recall_at_k": 0.18181818181818182,
+          "mrr": 1.0,
+          "ndcg_at_k": 0.8539316501572937,
+          "retrieved_ids": [
+            "f523d9fe::s28::t14",
+            "f523d9fe::s28::t5",
+            "f523d9fe::s28::t16",
+            "f523d9fe::s29::t4",
+            "f523d9fe::s28::t6"
+          ],
+          "latency_ms": 24.629458028357476,
+          "ingest_ms": 25401.554625015706
+        },
+        {
+          "question_id": "8464fc84",
+          "category": "single-session-assistant",
+          "n_facts": 484,
+          "n_relevant": 12,
+          "precision_at_k": 0.6,
+          "recall_at_k": 0.25,
+          "mrr": 1.0,
+          "ndcg_at_k": 0.7227265726449519,
+          "retrieved_ids": [
+            "8464fc84::s26::t5",
+            "8464fc84::s26::t11",
+            "8464fc84::s26::t4",
+            "8464fc84::s1::t2",
+            "8464fc84::s1::t10"
+          ],
+          "latency_ms": 24.53920803964138,
+          "ingest_ms": 24919.073666038457
+        },
+        {
+          "question_id": "e8a79c70",
+          "category": "single-session-assistant",
+          "n_facts": 483,
+          "n_relevant": 8,
+          "precision_at_k": 0.8,
+          "recall_at_k": 0.5,
+          "mrr": 0.5,
+          "ndcg_at_k": 0.6608397947263839,
+          "retrieved_ids": [
+            "e8a79c70::s13::t3",
+            "e8a79c70::s7::t0",
+            "e8a79c70::s7::t5",
+            "e8a79c70::s7::t1",
+            "e8a79c70::s7::t3"
+          ],
+          "latency_ms": 24.454541970044374,
+          "ingest_ms": 25931.021499971393
+        },
+        {
+          "question_id": "4388e9dd",
+          "category": "single-session-assistant",
+          "error": "HTTPError: HTTP Error 500: Internal Server Error"
+        }
+      ],
+      "aggregate": {
+        "n_scored": 20,
+        "precision_at_k": 0.75,
+        "recall_at_k": 0.23892761650114594,
+        "mrr": 0.8916666666666666,
+        "ndcg_at_k": 0.780387628652217,
+        "latency_ms_mean": 26.199264646857046,
+        "f1": 0.3624041019500679,
+        "per_category_p_at_k": {
+          "single-session-user": 0.7999999999999999,
+          "multi-session": 0.8666666666666667,
+          "single-session-preference": 0.6666666666666666,
+          "temporal-reasoning": 0.7,
+          "knowledge-update": 0.8666666666666667,
+          "single-session-assistant": 0.65
+        }
+      }
+    }
+  ],
+  "error": null,
+  "aggregate": {
+    "precision_at_k": {
+      "mean": 0.75,
+      "ci_low": 0.75,
+      "ci_high": 0.75,
+      "per_seed": [
+        0.75
+      ]
+    },
+    "recall_at_k": {
+      "mean": 0.23892761650114594,
+      "ci_low": 0.23892761650114594,
+      "ci_high": 0.23892761650114594,
+      "per_seed": [
+        0.23892761650114594
+      ]
+    },
+    "mrr": {
+      "mean": 0.8916666666666666,
+      "ci_low": 0.8916666666666666,
+      "ci_high": 0.8916666666666666,
+      "per_seed": [
+        0.8916666666666666
+      ]
+    },
+    "ndcg_at_k": {
+      "mean": 0.780387628652217,
+      "ci_low": 0.780387628652217,
+      "ci_high": 0.780387628652217,
+      "per_seed": [
+        0.780387628652217
+      ]
+    },
+    "f1": {
+      "mean": 0.3624041019500679,
+      "ci_low": 0.3624041019500679,
+      "ci_high": 0.3624041019500679,
+      "per_seed": [
+        0.3624041019500679
+      ]
+    }
+  }
+}

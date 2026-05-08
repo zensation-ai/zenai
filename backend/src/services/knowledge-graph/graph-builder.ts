@@ -11,6 +11,7 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { AIContext, queryContext } from '../../utils/database-context';
 import { generateEmbedding } from '../ai';
+import { recordEvent } from './event-subgraph';
 import { logger } from '../../utils/logger';
 
 // ===========================================
@@ -330,8 +331,14 @@ export class GraphBuilder {
           );
 
           if (result.rows.length > 0) {
-            entityNameToId.set(entity.name, result.rows[0].id);
+            const newEntityId = result.rows[0].id;
+            entityNameToId.set(entity.name, newEntityId);
             entitiesCreated++;
+            // Fire-and-forget: record entity creation event to Layer 1
+            recordEvent(context, 'entity_creation', 'system:graph-builder', {
+              targetEntityId: newEntityId,
+              payload: { name: entity.name, type: entity.type },
+            }).catch(() => {});
           } else {
             // Entity already exists (name collision), try to fetch its ID
             const existing = await queryContext(
@@ -374,6 +381,11 @@ export class GraphBuilder {
           [sourceEntityId, targetEntityId, relation.type, relation.description, relation.strength, sourceId]
         );
         relationsCreated++;
+        // Fire-and-forget: record relation creation event to Layer 1
+        recordEvent(context, 'relation_creation', 'system:graph-builder', {
+          relatedEntityIds: [sourceEntityId, targetEntityId],
+          payload: { relationType: relation.type, strength: relation.strength },
+        }).catch(() => {});
       } catch (error) {
         logger.warn('Relation upsert failed', {
           source: relation.source,

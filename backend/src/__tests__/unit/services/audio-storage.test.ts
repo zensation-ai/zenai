@@ -81,7 +81,7 @@ describe('Audio Storage Service', () => {
     const buffer = Buffer.from('fake-audio-data');
     const meetingId = '123e4567-e89b-12d3-a456-426614174000';
     const mimeType = 'audio/webm';
-    const context = 'work';
+    const context = 'finance';
 
     it('should upload audio and return result on success', async () => {
       const mock = createMockClient();
@@ -155,9 +155,9 @@ describe('Audio Storage Service', () => {
       const mock = createMockClient();
       mockGetClient.mockReturnValue(mock as any);
 
-      const result = await uploadMeetingAudio(buffer, meetingId, mimeType, 'personal');
+      const result = await uploadMeetingAudio(buffer, meetingId, mimeType, 'operations');
 
-      expect(result!.storagePath).toMatch(/^personal\//);
+      expect(result!.storagePath).toMatch(/^operations\//);
     });
 
     it('should use meetingId as second path segment', async () => {
@@ -177,7 +177,7 @@ describe('Audio Storage Service', () => {
   describe('MIME type to extension mapping', () => {
     const buffer = Buffer.from('test');
     const meetingId = 'test-meeting-id';
-    const context = 'work';
+    const context = 'finance';
 
     const mimeTests: Array<{ mime: string; ext: string }> = [
       { mime: 'audio/webm', ext: 'webm' },
@@ -213,7 +213,7 @@ describe('Audio Storage Service', () => {
   // ===========================================
 
   describe('getSignedAudioUrl', () => {
-    const storagePath = 'work/meeting-123/1700000000.webm';
+    const storagePath = 'finance/meeting-123/1700000000.webm';
 
     it('should return signed URL on success', async () => {
       const mock = createMockClient({
@@ -269,7 +269,7 @@ describe('Audio Storage Service', () => {
   // ===========================================
 
   describe('deleteMeetingAudio', () => {
-    const storagePath = 'work/meeting-123/1700000000.webm';
+    const storagePath = 'finance/meeting-123/1700000000.webm';
 
     it('should return true on successful deletion', async () => {
       const mock = createMockClient();

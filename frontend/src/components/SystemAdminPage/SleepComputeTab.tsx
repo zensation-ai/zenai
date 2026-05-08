@@ -52,7 +52,7 @@ export function SleepComputeTab({ context }: { context: AIContext }) {
       // Reload after short delay
       setTimeout(loadData, 2000);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Fehler beim Ausloesen');
+      setError(err instanceof Error ? err.message : 'Fehler beim Auslösen');
     } finally {
       setTriggering(false);
     }
@@ -70,7 +70,7 @@ export function SleepComputeTab({ context }: { context: AIContext }) {
 
   const STATUS_COLORS: Record<string, string> = {
     completed: '#4ade80',
-    running: '#818cf8',
+    running: '#2d8a9e',
     failed: '#ef4444',
     pending: '#fbbf24',
     skipped: '#64748b',
@@ -114,15 +114,15 @@ export function SleepComputeTab({ context }: { context: AIContext }) {
       </div>
 
       {/* Actions */}
-      <div style={{ ...styles.filterBar, marginBottom: '16px' }}>
+      <div style={styles.filterBar} className="mb-4">
         <button
           style={styles.buttonPrimary}
           onClick={handleTrigger}
           disabled={triggering}
         >
-          {triggering ? 'Wird ausgeloest...' : 'Sleep-Zyklus starten'}
+          {triggering ? 'Wird ausgelöst...' : 'Sleep-Zyklus starten'}
         </button>
-        <div style={{ flex: 1 }} />
+        <div className="flex-1" />
         <button style={styles.button} onClick={loadData}>
           Aktualisieren
         </button>
@@ -182,7 +182,7 @@ export function SleepComputeTab({ context }: { context: AIContext }) {
               <tbody>
                 {logs.slice(0, 30).map((log) => (
                   <tr key={log.id}>
-                    <td style={{ ...styles.td, whiteSpace: 'nowrap', fontSize: '12px' }}>
+                    <td style={styles.td} className="whitespace-nowrap text-xs">
                       {formatDate(log.created_at)}
                     </td>
                     <td style={styles.td}>{STAGE_LABELS[log.stage] || log.stage}</td>
@@ -198,8 +198,8 @@ export function SleepComputeTab({ context }: { context: AIContext }) {
               </tbody>
             </table>
             {logs.length > 30 && (
-              <div style={{ ...styles.emptyState, padding: '8px' }}>
-                Zeige 30 von {logs.length} Eintraegen
+              <div style={styles.emptyState} className="p-2">
+                Zeige 30 von {logs.length} Einträgen
               </div>
             )}
           </div>

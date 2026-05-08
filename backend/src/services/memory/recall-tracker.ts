@@ -81,7 +81,7 @@ export function classifyRecallEvents(
  *
  * Fire-and-forget per event: a single DB error will not abort the batch.
  *
- * @param context DB context (personal | work | learning | creative)
+ * @param context DB context (operations | finance | people | strategy)
  * @param events  Recall events produced by classifyRecallEvents (or the caller)
  */
 export async function processRecallEvents(

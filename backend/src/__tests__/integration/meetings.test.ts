@@ -288,7 +288,7 @@ describe('Meetings API Integration Tests', () => {
       expect(mockUpdateMeetingStatus).toHaveBeenCalledWith(
         sampleMeeting.id,
         'completed',
-        'work'
+        'finance'
       );
     });
 
@@ -400,7 +400,7 @@ describe('Meetings API Integration Tests', () => {
         .send({ query: 'test' })
         .expect(200);
 
-      expect(mockSearchMeetings).toHaveBeenCalledWith('test', 10, 'work');
+      expect(mockSearchMeetings).toHaveBeenCalledWith('test', 10, 'finance');
     });
   });
 

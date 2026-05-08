@@ -239,16 +239,16 @@ describe('Validation Utilities', () => {
   // ===========================================
 
   describe('validateContext', () => {
-    it('should validate "personal" context', () => {
-      const result = validateContext('personal');
+    it('should validate "operations" context', () => {
+      const result = validateContext('operations');
       expect(result.success).toBe(true);
-      expect(result.data).toBe('personal');
+      expect(result.data).toBe('operations');
     });
 
-    it('should validate "work" context', () => {
-      const result = validateContext('work');
+    it('should validate "finance" context', () => {
+      const result = validateContext('finance');
       expect(result.success).toBe(true);
-      expect(result.data).toBe('work');
+      expect(result.data).toBe('finance');
     });
 
     it('should fail for invalid context', () => {

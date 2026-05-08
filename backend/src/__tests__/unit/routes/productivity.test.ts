@@ -24,7 +24,7 @@ jest.mock('../../../utils/logger', () => ({
 
 jest.mock('../../../utils/database-context', () => ({
   queryContext: jest.fn(),
-  isValidContext: jest.fn((ctx: string) => ['personal', 'work', 'learning', 'creative'].includes(ctx)),
+  isValidContext: jest.fn((ctx: string) => ['operations', 'finance', 'people', 'strategy'].includes(ctx)),
   AIContext: {},
 }));
 
@@ -66,7 +66,7 @@ describe('Productivity Routes', () => {
       const dashboard = { score: 85, insights: [] };
       mockGetProductivityDashboard.mockResolvedValue(dashboard);
 
-      const res = await request(app).get('/api/personal/productivity/dashboard');
+      const res = await request(app).get('/api/operations/productivity/dashboard');
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
@@ -84,7 +84,7 @@ describe('Productivity Routes', () => {
       const metrics = { totalMinutesSaved: 120, thisWeek: 30 };
       mockGetTimeSavedMetrics.mockResolvedValue(metrics);
 
-      const res = await request(app).get('/api/work/productivity/time-saved');
+      const res = await request(app).get('/api/finance/productivity/time-saved');
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
@@ -102,7 +102,7 @@ describe('Productivity Routes', () => {
       const heatmap = { data: [[0, 1, 2], [3, 4, 5]] };
       mockGetActivityHeatmap.mockResolvedValue(heatmap);
 
-      const res = await request(app).get('/api/learning/productivity/heatmap');
+      const res = await request(app).get('/api/people/productivity/heatmap');
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
@@ -115,7 +115,7 @@ describe('Productivity Routes', () => {
       const growth = { totalEntities: 500, growthRate: 0.12 };
       mockGetKnowledgeGrowth.mockResolvedValue(growth);
 
-      const res = await request(app).get('/api/creative/productivity/knowledge-growth');
+      const res = await request(app).get('/api/strategy/productivity/knowledge-growth');
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
@@ -128,7 +128,7 @@ describe('Productivity Routes', () => {
       const streak = { currentStreak: 14, longestStreak: 30 };
       mockGetStreakInfo.mockResolvedValue(streak);
 
-      const res = await request(app).get('/api/personal/productivity/streak');
+      const res = await request(app).get('/api/operations/productivity/streak');
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
@@ -141,7 +141,7 @@ describe('Productivity Routes', () => {
       const report = { grade: 'A', summary: 'Great week!' };
       mockGetWeeklyReport.mockResolvedValue(report);
 
-      const res = await request(app).get('/api/personal/productivity/weekly-report');
+      const res = await request(app).get('/api/operations/productivity/weekly-report');
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);

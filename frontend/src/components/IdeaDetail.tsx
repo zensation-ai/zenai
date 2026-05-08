@@ -10,9 +10,6 @@ import { IdeaDetailDraft } from './IdeaDetailDraft';
 import { IdeaDetailRelations } from './IdeaDetailRelations';
 import { typeLabels, categoryLabels, priorityLabels } from './IdeaDetailTypes';
 import type { Relation, Suggestion, Draft, IdeaDetailProps } from './IdeaDetailTypes';
-import '../neurodesign.css';
-import './IdeaDetail.css';
-
 export type { IdeaDetailProps };
 export type { Idea } from './IdeaDetailTypes';
 

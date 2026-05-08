@@ -5,9 +5,14 @@
  */
 
 import crypto from 'crypto';
-import axios from 'axios';
+import jwt from 'jsonwebtoken';
 import { pool } from '../../utils/database';
 import { logger } from '../../utils/logger';
+import {
+  checkedAxiosGet,
+  checkedAxiosPost,
+  checkedFetch,
+} from '../../utils/checked-http';
 
 // ===========================================
 // Types
@@ -68,6 +73,12 @@ const PROVIDER_URLS: Record<string, {
     userInfoUrl: 'https://api.github.com/user',
     scopes: ['read:user', 'user:email'],
   },
+  apple: {
+    authUrl: 'https://appleid.apple.com/auth/authorize',
+    tokenUrl: 'https://appleid.apple.com/auth/token',
+    userInfoUrl: '', // Apple uses id_token from token response — no separate endpoint
+    scopes: ['name', 'email'],
+  },
 };
 
 // ===========================================
@@ -107,6 +118,16 @@ class OAuthProviderManager {
         redirectUri: `${apiUrl}/api/auth/callback/github`,
       });
     }
+
+    // Apple Sign In — client_secret is generated dynamically (ES256 JWT)
+    if (process.env.APPLE_CLIENT_ID && process.env.APPLE_TEAM_ID &&
+        process.env.APPLE_KEY_ID && process.env.APPLE_PRIVATE_KEY) {
+      this.configs.set('apple', {
+        clientId: process.env.APPLE_CLIENT_ID,
+        clientSecret: '', // generated per-request in generateAppleClientSecret()
+        redirectUri: `${apiUrl}/api/auth/callback/apple`,
+      });
+    }
   }
 
   /**
@@ -121,6 +142,114 @@ class OAuthProviderManager {
    */
   getAvailableProviders(): string[] {
     return Array.from(this.configs.keys());
+  }
+
+  /**
+   * Generate Apple client_secret as a short-lived ES256 JWT.
+   * Apple requires this instead of a static client secret.
+   */
+  private generateAppleClientSecret(): string {
+    const teamId = process.env.APPLE_TEAM_ID!;
+    const keyId = process.env.APPLE_KEY_ID!;
+    const clientId = process.env.APPLE_CLIENT_ID!;
+    // Support escaped newlines in env vars (common in Railway/Vercel)
+    const privateKey = process.env.APPLE_PRIVATE_KEY!.replace(/\\n/g, '\n');
+
+    return jwt.sign(
+      {
+        iss: teamId,
+        iat: Math.floor(Date.now() / 1000),
+        exp: Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 180, // 6 months max
+        aud: 'https://appleid.apple.com',
+        sub: clientId,
+      },
+      privateKey,
+      { algorithm: 'ES256', keyid: keyId }
+    );
+  }
+
+  /**
+   * Handle Apple's form_post callback (POST request with code + state in body).
+   * Apple may also pass a `user` JSON string on first authorization.
+   */
+  async handleAppleCallback(
+    code: string,
+    state: string,
+    appleUserJson?: string,
+  ): Promise<OAuthUserInfo> {
+    // Verify state from DB
+    const stateResult = await pool.query(
+      'SELECT * FROM public.oauth_states WHERE state = $1 AND provider = $2',
+      [state, 'apple']
+    );
+
+    if (stateResult.rows.length === 0) {
+      throw new OAuthError('Invalid or expired OAuth state', 'INVALID_STATE');
+    }
+
+    const stateRecord = stateResult.rows[0] as OAuthStateRecord;
+    if (new Date(stateRecord.expires_at) < new Date()) {
+      await pool.query('DELETE FROM public.oauth_states WHERE state = $1', [state]);
+      throw new OAuthError('OAuth state expired', 'STATE_EXPIRED');
+    }
+    await pool.query('DELETE FROM public.oauth_states WHERE state = $1', [state]);
+
+    const config = this.configs.get('apple');
+    if (!config) throw new Error('Apple OAuth not configured');
+
+    const clientSecret = this.generateAppleClientSecret();
+
+    // Exchange code for tokens
+    const params = new URLSearchParams({
+      client_id: config.clientId,
+      client_secret: clientSecret,
+      code,
+      redirect_uri: config.redirectUri,
+      grant_type: 'authorization_code',
+    });
+
+    const tokenResponse = await checkedAxiosPost(
+      PROVIDER_URLS.apple.tokenUrl,
+      params.toString(),
+      { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
+    );
+
+    const { id_token } = tokenResponse.data as { id_token: string };
+    if (!id_token) {
+      throw new OAuthError('Apple did not return id_token', 'TOKEN_EXCHANGE_FAILED');
+    }
+
+    // Decode id_token (no signature verification needed — already validated by Apple's server)
+    const decoded = jwt.decode(id_token) as Record<string, unknown>;
+    if (!decoded || !decoded.sub) {
+      throw new OAuthError('Invalid Apple id_token', 'INVALID_TOKEN');
+    }
+
+    // Apple only sends user name on first authorization — parse it if present
+    let name: string | null = null;
+    if (appleUserJson) {
+      try {
+        const user = JSON.parse(appleUserJson) as { name?: { firstName?: string; lastName?: string } };
+        const parts = [user.name?.firstName, user.name?.lastName].filter(Boolean);
+        name = parts.length > 0 ? parts.join(' ') : null;
+      } catch {
+        // user JSON is optional and may be malformed — ignore
+      }
+    }
+
+    const userInfo: OAuthUserInfo = {
+      email: decoded.email as string,
+      name,
+      avatarUrl: null, // Apple does not provide avatars
+      providerId: decoded.sub as string,
+    };
+
+    logger.info('Apple OAuth callback completed', {
+      operation: 'oauth.appleCallback',
+      email: userInfo.email,
+    });
+
+    return userInfo;
   }
 
   /**
@@ -165,10 +294,17 @@ class OAuthProviderManager {
       code_challenge_method: 'S256',
     });
 
-    // GitHub doesn't support PKCE, so remove code_challenge params
+    // GitHub doesn't support PKCE
     if (provider === 'github') {
       params.delete('code_challenge');
       params.delete('code_challenge_method');
+    }
+
+    // Apple requires response_mode=form_post and no PKCE
+    if (provider === 'apple') {
+      params.delete('code_challenge');
+      params.delete('code_challenge_method');
+      params.set('response_mode', 'form_post');
     }
 
     const url = `${providerUrls.authUrl}?${params.toString()}`;
@@ -258,7 +394,11 @@ class OAuthProviderManager {
       headers['Accept'] = 'application/json';
     }
 
-    const response = await axios.post(tokenUrl, new URLSearchParams(params).toString(), { headers });
+    const response = await checkedAxiosPost<{ access_token: string }>(
+      tokenUrl,
+      new URLSearchParams(params).toString(),
+      { headers },
+    );
     const data = response.data;
 
     return data.access_token;
@@ -269,7 +409,7 @@ class OAuthProviderManager {
     accessToken: string,
     userInfoUrl: string
   ): Promise<OAuthUserInfo> {
-    const response = await axios.get(userInfoUrl, {
+    const response = await checkedAxiosGet<Record<string, any>>(userInfoUrl, {
       headers: { Authorization: `Bearer ${accessToken}` },
     });
 
@@ -296,9 +436,10 @@ class OAuthProviderManager {
         let email = data.email;
         // GitHub may not return email in profile, need to fetch separately
         if (!email) {
-          const emailResponse = await axios.get('https://api.github.com/user/emails', {
-            headers: { Authorization: `Bearer ${accessToken}` },
-          });
+          const emailResponse = await checkedAxiosGet<Array<{ primary: boolean; email: string }>>(
+            'https://api.github.com/user/emails',
+            { headers: { Authorization: `Bearer ${accessToken}` } },
+          );
           const primaryEmail = emailResponse.data.find((e: { primary: boolean }) => e.primary);
           email = primaryEmail?.email || emailResponse.data[0]?.email;
         }
@@ -350,7 +491,7 @@ class OAuthProviderManager {
       client_secret: config.clientSecret,
     });
 
-    const response = await fetch(providerUrls.tokenUrl, {
+    const response = await checkedFetch(providerUrls.tokenUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: body.toString(),

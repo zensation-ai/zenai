@@ -10,8 +10,8 @@
  * - GPU-composited transforms
  */
 
-import { useRef, useState, useCallback, type ReactNode } from 'react';
-import './PullToRefresh.css';
+import { useRef, useState, useCallback, type ReactNode, type CSSProperties } from 'react';
+import { cn } from '@/lib/utils';
 
 const PULL_THRESHOLD = 60;
 const MAX_PULL = 120;
@@ -104,7 +104,7 @@ export function PullToRefresh({
 
   return (
     <div
-      className="ptr-container"
+      className="relative overflow-y-auto [-webkit-overflow-scrolling:touch]"
       ref={containerRef}
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
@@ -112,22 +112,28 @@ export function PullToRefresh({
     >
       {/* Pull indicator */}
       <div
-        className={`ptr-indicator ${isPulling || isRefreshing ? 'visible' : ''}`}
+        className={cn(
+          'absolute top-0 left-1/2 -translate-x-1/2 z-10 size-10 flex items-center justify-center rounded-full bg-surface shadow-md pointer-events-none will-change-transform [transform:var(--tf)]',
+          (isPulling || isRefreshing) ? 'opacity-100' : 'opacity-0',
+        )}
         style={{
-          transform: `translateY(${pullDistance - 40}px)`,
+          '--tf': `translateX(-50%) translateY(${pullDistance - 40}px)`,
           transition: isPulling ? 'none' : 'transform 0.3s cubic-bezier(0.22, 1, 0.36, 1)',
-        }}
+        } as CSSProperties}
       >
         <svg
-          className={`ptr-spinner ${isRefreshing ? 'refreshing' : ''}`}
+          className={cn(
+            'text-primary will-change-transform [transform:var(--tf)] opacity-[var(--op)]',
+            isRefreshing && 'animate-ptr-spin',
+          )}
           width="24"
           height="24"
           viewBox="0 0 24 24"
           fill="none"
           style={{
-            transform: isRefreshing ? undefined : `rotate(${rotation}deg)`,
-            opacity: Math.min(progress * 2, 1),
-          }}
+            '--tf': isRefreshing ? undefined : `rotate(${rotation}deg)`,
+            '--op': Math.min(progress * 2, 1),
+          } as CSSProperties}
         >
           <path
             d="M12 4V2m0 2a8 8 0 1 0 8 8"
@@ -149,11 +155,11 @@ export function PullToRefresh({
 
       {/* Content with pull offset */}
       <div
-        className="ptr-content"
+        className="will-change-transform [transform:var(--tf)]"
         style={{
-          transform: pullDistance > 0 ? `translateY(${pullDistance}px)` : undefined,
+          '--tf': pullDistance > 0 ? `translateY(${pullDistance}px)` : undefined,
           transition: isPulling ? 'none' : 'transform 0.3s cubic-bezier(0.22, 1, 0.36, 1)',
-        }}
+        } as CSSProperties}
       >
         {children}
       </div>

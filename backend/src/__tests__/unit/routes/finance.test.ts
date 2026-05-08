@@ -127,22 +127,22 @@ describe('Finance Routes', () => {
   // ===========================================
   describe('GET /api/:context/finance/overview', () => {
     it('should return financial overview', async () => {
-      const res = await request(app).get('/api/personal/finance/overview');
+      const res = await request(app).get('/api/operations/finance/overview');
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
       expect(res.body.data.totalBalance).toBe(5000);
     });
 
     it('should accept months parameter', async () => {
-      const res = await request(app).get('/api/personal/finance/overview?months=3');
+      const res = await request(app).get('/api/operations/finance/overview?months=3');
       expect(res.status).toBe(200);
-      expect(mockGetOverview).toHaveBeenCalledWith('personal', 3, '00000000-0000-0000-0000-000000000001');
+      expect(mockGetOverview).toHaveBeenCalledWith('operations', 3, '00000000-0000-0000-0000-000000000001');
     });
   });
 
   describe('GET /api/:context/finance/categories', () => {
     it('should return category breakdown', async () => {
-      const res = await request(app).get('/api/personal/finance/categories');
+      const res = await request(app).get('/api/operations/finance/categories');
       expect(res.status).toBe(200);
       expect(res.body.data).toHaveLength(1);
       expect(res.body.data[0].category).toBe('Food');
@@ -154,7 +154,7 @@ describe('Finance Routes', () => {
   // ===========================================
   describe('GET /api/:context/finance/accounts', () => {
     it('should list accounts', async () => {
-      const res = await request(app).get('/api/personal/finance/accounts');
+      const res = await request(app).get('/api/operations/finance/accounts');
       expect(res.status).toBe(200);
       expect(res.body.data).toHaveLength(1);
     });
@@ -162,21 +162,21 @@ describe('Finance Routes', () => {
 
   describe('GET /api/:context/finance/accounts/:id', () => {
     it('should return an account', async () => {
-      const res = await request(app).get(`/api/personal/finance/accounts/${UUID}`);
+      const res = await request(app).get(`/api/operations/finance/accounts/${UUID}`);
       expect(res.status).toBe(200);
       expect(res.body.data.name).toBe('Checking');
     });
 
     it('should return 404 for non-existent account', async () => {
       mockGetAccount.mockResolvedValueOnce(null);
-      const res = await request(app).get(`/api/personal/finance/accounts/${UUID}`);
+      const res = await request(app).get(`/api/operations/finance/accounts/${UUID}`);
       expect(res.status).toBe(404);
     });
 
     it('should return 400 for invalid UUID', async () => {
       const { isValidUUID } = require('../../../utils/validation');
       isValidUUID.mockReturnValueOnce(false);
-      const res = await request(app).get('/api/personal/finance/accounts/bad-id');
+      const res = await request(app).get('/api/operations/finance/accounts/bad-id');
       expect(res.status).toBe(400);
     });
   });
@@ -184,7 +184,7 @@ describe('Finance Routes', () => {
   describe('POST /api/:context/finance/accounts', () => {
     it('should create an account', async () => {
       const res = await request(app)
-        .post('/api/personal/finance/accounts')
+        .post('/api/operations/finance/accounts')
         .send({ name: 'Savings', account_type: 'savings' });
       expect(res.status).toBe(201);
       expect(res.body.success).toBe(true);
@@ -194,7 +194,7 @@ describe('Finance Routes', () => {
   describe('PUT /api/:context/finance/accounts/:id', () => {
     it('should update an account', async () => {
       const res = await request(app)
-        .put(`/api/personal/finance/accounts/${UUID}`)
+        .put(`/api/operations/finance/accounts/${UUID}`)
         .send({ name: 'Updated Account' });
       expect(res.status).toBe(200);
       expect(res.body.data.name).toBe('Updated Account');
@@ -203,7 +203,7 @@ describe('Finance Routes', () => {
     it('should return 404 for non-existent account', async () => {
       mockUpdateAccount.mockResolvedValueOnce(null);
       const res = await request(app)
-        .put(`/api/personal/finance/accounts/${UUID}`)
+        .put(`/api/operations/finance/accounts/${UUID}`)
         .send({ name: 'X' });
       expect(res.status).toBe(404);
     });
@@ -211,14 +211,14 @@ describe('Finance Routes', () => {
 
   describe('DELETE /api/:context/finance/accounts/:id', () => {
     it('should delete an account', async () => {
-      const res = await request(app).delete(`/api/personal/finance/accounts/${UUID}`);
+      const res = await request(app).delete(`/api/operations/finance/accounts/${UUID}`);
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
     });
 
     it('should return 404 for non-existent account', async () => {
       mockDeleteAccount.mockResolvedValueOnce(false);
-      const res = await request(app).delete(`/api/personal/finance/accounts/${UUID}`);
+      const res = await request(app).delete(`/api/operations/finance/accounts/${UUID}`);
       expect(res.status).toBe(404);
     });
   });
@@ -228,7 +228,7 @@ describe('Finance Routes', () => {
   // ===========================================
   describe('GET /api/:context/finance/transactions', () => {
     it('should list transactions', async () => {
-      const res = await request(app).get('/api/personal/finance/transactions');
+      const res = await request(app).get('/api/operations/finance/transactions');
       expect(res.status).toBe(200);
       expect(res.body.data).toHaveLength(1);
       expect(res.body.total).toBe(1);
@@ -237,14 +237,14 @@ describe('Finance Routes', () => {
 
   describe('GET /api/:context/finance/transactions/:id', () => {
     it('should return a transaction', async () => {
-      const res = await request(app).get(`/api/personal/finance/transactions/${UUID}`);
+      const res = await request(app).get(`/api/operations/finance/transactions/${UUID}`);
       expect(res.status).toBe(200);
       expect(res.body.data.payee).toBe('Grocery Store');
     });
 
     it('should return 404 for non-existent transaction', async () => {
       mockGetTransaction.mockResolvedValueOnce(null);
-      const res = await request(app).get(`/api/personal/finance/transactions/${UUID}`);
+      const res = await request(app).get(`/api/operations/finance/transactions/${UUID}`);
       expect(res.status).toBe(404);
     });
   });
@@ -252,7 +252,7 @@ describe('Finance Routes', () => {
   describe('POST /api/:context/finance/transactions', () => {
     it('should create a transaction', async () => {
       const res = await request(app)
-        .post('/api/personal/finance/transactions')
+        .post('/api/operations/finance/transactions')
         .send({ amount: 100, payee: 'Store', account_id: UUID });
       expect(res.status).toBe(201);
       expect(res.body.success).toBe(true);
@@ -262,7 +262,7 @@ describe('Finance Routes', () => {
   describe('PUT /api/:context/finance/transactions/:id', () => {
     it('should update a transaction', async () => {
       const res = await request(app)
-        .put(`/api/personal/finance/transactions/${UUID}`)
+        .put(`/api/operations/finance/transactions/${UUID}`)
         .send({ amount: 75 });
       expect(res.status).toBe(200);
       expect(res.body.data.amount).toBe(75);
@@ -271,7 +271,7 @@ describe('Finance Routes', () => {
     it('should return 404 for non-existent transaction', async () => {
       mockUpdateTransaction.mockResolvedValueOnce(null);
       const res = await request(app)
-        .put(`/api/personal/finance/transactions/${UUID}`)
+        .put(`/api/operations/finance/transactions/${UUID}`)
         .send({ amount: 0 });
       expect(res.status).toBe(404);
     });
@@ -279,13 +279,13 @@ describe('Finance Routes', () => {
 
   describe('DELETE /api/:context/finance/transactions/:id', () => {
     it('should delete a transaction', async () => {
-      const res = await request(app).delete(`/api/personal/finance/transactions/${UUID}`);
+      const res = await request(app).delete(`/api/operations/finance/transactions/${UUID}`);
       expect(res.status).toBe(200);
     });
 
     it('should return 404 for non-existent transaction', async () => {
       mockDeleteTransaction.mockResolvedValueOnce(false);
-      const res = await request(app).delete(`/api/personal/finance/transactions/${UUID}`);
+      const res = await request(app).delete(`/api/operations/finance/transactions/${UUID}`);
       expect(res.status).toBe(404);
     });
   });
@@ -295,7 +295,7 @@ describe('Finance Routes', () => {
   // ===========================================
   describe('GET /api/:context/finance/budgets', () => {
     it('should list budgets', async () => {
-      const res = await request(app).get('/api/personal/finance/budgets');
+      const res = await request(app).get('/api/operations/finance/budgets');
       expect(res.status).toBe(200);
       expect(res.body.data).toHaveLength(1);
     });
@@ -303,14 +303,14 @@ describe('Finance Routes', () => {
 
   describe('GET /api/:context/finance/budgets/:id', () => {
     it('should return a budget', async () => {
-      const res = await request(app).get(`/api/personal/finance/budgets/${UUID}`);
+      const res = await request(app).get(`/api/operations/finance/budgets/${UUID}`);
       expect(res.status).toBe(200);
       expect(res.body.data.category).toBe('Food');
     });
 
     it('should return 404 for non-existent budget', async () => {
       mockGetBudget.mockResolvedValueOnce(null);
-      const res = await request(app).get(`/api/personal/finance/budgets/${UUID}`);
+      const res = await request(app).get(`/api/operations/finance/budgets/${UUID}`);
       expect(res.status).toBe(404);
     });
   });
@@ -318,7 +318,7 @@ describe('Finance Routes', () => {
   describe('POST /api/:context/finance/budgets', () => {
     it('should create a budget', async () => {
       const res = await request(app)
-        .post('/api/personal/finance/budgets')
+        .post('/api/operations/finance/budgets')
         .send({ category: 'Transport', amount: 200 });
       expect(res.status).toBe(201);
     });
@@ -327,7 +327,7 @@ describe('Finance Routes', () => {
   describe('PUT /api/:context/finance/budgets/:id', () => {
     it('should update a budget', async () => {
       const res = await request(app)
-        .put(`/api/personal/finance/budgets/${UUID}`)
+        .put(`/api/operations/finance/budgets/${UUID}`)
         .send({ amount: 600 });
       expect(res.status).toBe(200);
       expect(res.body.data.amount).toBe(600);
@@ -336,7 +336,7 @@ describe('Finance Routes', () => {
     it('should return 404 for non-existent budget', async () => {
       mockUpdateBudget.mockResolvedValueOnce(null);
       const res = await request(app)
-        .put(`/api/personal/finance/budgets/${UUID}`)
+        .put(`/api/operations/finance/budgets/${UUID}`)
         .send({ amount: 0 });
       expect(res.status).toBe(404);
     });
@@ -344,13 +344,13 @@ describe('Finance Routes', () => {
 
   describe('DELETE /api/:context/finance/budgets/:id', () => {
     it('should delete a budget', async () => {
-      const res = await request(app).delete(`/api/personal/finance/budgets/${UUID}`);
+      const res = await request(app).delete(`/api/operations/finance/budgets/${UUID}`);
       expect(res.status).toBe(200);
     });
 
     it('should return 404 for non-existent budget', async () => {
       mockDeleteBudget.mockResolvedValueOnce(false);
-      const res = await request(app).delete(`/api/personal/finance/budgets/${UUID}`);
+      const res = await request(app).delete(`/api/operations/finance/budgets/${UUID}`);
       expect(res.status).toBe(404);
     });
   });
@@ -360,7 +360,7 @@ describe('Finance Routes', () => {
   // ===========================================
   describe('GET /api/:context/finance/goals', () => {
     it('should list goals', async () => {
-      const res = await request(app).get('/api/personal/finance/goals');
+      const res = await request(app).get('/api/operations/finance/goals');
       expect(res.status).toBe(200);
       expect(res.body.data).toHaveLength(1);
     });
@@ -368,14 +368,14 @@ describe('Finance Routes', () => {
 
   describe('GET /api/:context/finance/goals/:id', () => {
     it('should return a goal', async () => {
-      const res = await request(app).get(`/api/personal/finance/goals/${UUID}`);
+      const res = await request(app).get(`/api/operations/finance/goals/${UUID}`);
       expect(res.status).toBe(200);
       expect(res.body.data.name).toBe('Emergency Fund');
     });
 
     it('should return 404 for non-existent goal', async () => {
       mockGetGoal.mockResolvedValueOnce(null);
-      const res = await request(app).get(`/api/personal/finance/goals/${UUID}`);
+      const res = await request(app).get(`/api/operations/finance/goals/${UUID}`);
       expect(res.status).toBe(404);
     });
   });
@@ -383,7 +383,7 @@ describe('Finance Routes', () => {
   describe('POST /api/:context/finance/goals', () => {
     it('should create a goal', async () => {
       const res = await request(app)
-        .post('/api/personal/finance/goals')
+        .post('/api/operations/finance/goals')
         .send({ name: 'Vacation', target: 5000 });
       expect(res.status).toBe(201);
     });
@@ -392,7 +392,7 @@ describe('Finance Routes', () => {
   describe('PUT /api/:context/finance/goals/:id', () => {
     it('should update a goal', async () => {
       const res = await request(app)
-        .put(`/api/personal/finance/goals/${UUID}`)
+        .put(`/api/operations/finance/goals/${UUID}`)
         .send({ name: 'Updated Goal' });
       expect(res.status).toBe(200);
       expect(res.body.data.name).toBe('Updated Goal');
@@ -401,7 +401,7 @@ describe('Finance Routes', () => {
     it('should return 404 for non-existent goal', async () => {
       mockUpdateGoal.mockResolvedValueOnce(null);
       const res = await request(app)
-        .put(`/api/personal/finance/goals/${UUID}`)
+        .put(`/api/operations/finance/goals/${UUID}`)
         .send({ name: 'X' });
       expect(res.status).toBe(404);
     });
@@ -409,13 +409,13 @@ describe('Finance Routes', () => {
 
   describe('DELETE /api/:context/finance/goals/:id', () => {
     it('should delete a goal', async () => {
-      const res = await request(app).delete(`/api/personal/finance/goals/${UUID}`);
+      const res = await request(app).delete(`/api/operations/finance/goals/${UUID}`);
       expect(res.status).toBe(200);
     });
 
     it('should return 404 for non-existent goal', async () => {
       mockDeleteGoal.mockResolvedValueOnce(false);
-      const res = await request(app).delete(`/api/personal/finance/goals/${UUID}`);
+      const res = await request(app).delete(`/api/operations/finance/goals/${UUID}`);
       expect(res.status).toBe(404);
     });
   });

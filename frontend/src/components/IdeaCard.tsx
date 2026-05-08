@@ -3,7 +3,7 @@ import { AIContext } from './ContextSwitcher';
 import axios from 'axios';
 import { showToast } from './Toast';
 import { getErrorMessage } from '../utils/errors';
-import { useConfirm } from './ConfirmDialog';
+import { useUndoAction } from '../hooks/useUndoAction';
 import { AIFeedback } from './AIFeedback';
 import { InlineLoader } from './SkeletonLoader';
 import { useNeuroFeedback } from './NeuroFeedback';
@@ -14,9 +14,6 @@ import { getTypeIcon, getTypeLabel, IDEA_CATEGORIES, PRIORITIES } from '../const
 import type { IdeaPriority } from '../types/idea';
 import { formatDate } from '../utils/dateUtils';
 import { IS_NEW_THRESHOLD_MS } from '../constants';
-import '../neurodesign.css';
-import './IdeaCard.css';
-
 interface Idea {
   id: string;
   title: string;
@@ -37,6 +34,8 @@ interface IdeaCardProps {
   onDelete?: (id: string) => void;
   onArchive?: (id: string) => void;
   onRestore?: (id: string) => void;
+  /** Called when user undoes a delete — receives the full idea to re-insert */
+  onUndoDelete?: (idea: Idea) => void;
   onMove?: (id: string, targetContext: AIContext) => void;
   onToggleFavorite?: (id: string) => void;
   isArchived?: boolean;
@@ -46,14 +45,14 @@ interface IdeaCardProps {
   onSelect?: (id: string, selected: boolean) => void;
 }
 
-function IdeaCardComponent({ idea, onDelete, onArchive, onRestore, onMove, onToggleFavorite, isArchived = false, context = 'personal', selectionMode = false, isSelected = false, onSelect }: IdeaCardProps) {
-  const [isDeleting, setIsDeleting] = useState(false);
+function IdeaCardComponent({ idea, onDelete, onArchive, onRestore, onUndoDelete, onMove, onToggleFavorite, isArchived = false, context = 'operations', selectionMode = false, isSelected = false, onSelect }: IdeaCardProps) {
+  const [isDeleting] = useState(false);
   const [isArchiving, setIsArchiving] = useState(false);
   const [isMoving, setIsMoving] = useState(false);
   const [showContextPicker, setShowContextPicker] = useState(false);
-  const confirm = useConfirm();
   const { triggerSuccess } = useNeuroFeedback();
   const announce = useAnnounce();
+  const undoAction = useUndoAction();
 
   // Swipe gestures: swipe left to archive, swipe right to favorite
   const { handlers: swipeHandlers, style: swipeStyle, pastThreshold, direction } = useSwipeAction({
@@ -68,28 +67,24 @@ function IdeaCardComponent({ idea, onDelete, onArchive, onRestore, onMove, onTog
   // Prüfe ob Karte neu ist (weniger als 5 Minuten alt)
   const isNew = idea.created_at ? new Date().getTime() - new Date(idea.created_at).getTime() < IS_NEW_THRESHOLD_MS : false;
 
-  const handleDelete = async (e: React.MouseEvent) => {
+  const handleDelete = (e: React.MouseEvent) => {
     e.stopPropagation();
-    const confirmed = await confirm({
-      title: 'Gedanke löschen',
-      message: 'Möchtest du diese Idee wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden.',
-      confirmText: 'Löschen',
-      cancelText: 'Abbrechen',
-      variant: 'danger',
+    undoAction({
+      optimisticRemove: () => {
+        onDelete?.(idea.id);
+        announce('Gedanke gelöscht', 'assertive');
+      },
+      executeAction: () => axios.delete(`/api/${context}/ideas/${idea.id}`).then(() => undefined),
+      undoRestore: () => {
+        if (onUndoDelete) {
+          onUndoDelete(idea);
+        } else {
+          // Fallback: reload the page to restore the idea list
+          window.location.reload();
+        }
+      },
+      message: 'Gedanke gelöscht',
     });
-    if (!confirmed) return;
-
-    setIsDeleting(true);
-    try {
-      await axios.delete(`/api/${context}/ideas/${idea.id}`);
-      onDelete?.(idea.id);
-      showToast('Gedanke gelöscht', 'success');
-      announce('Gedanke gelöscht', 'assertive');
-    } catch (error: unknown) {
-      showToast(getErrorMessage(error, 'Löschen fehlgeschlagen'), 'error');
-    } finally {
-      setIsDeleting(false);
-    }
   };
 
   const handleArchive = async (e: React.MouseEvent) => {

@@ -31,7 +31,7 @@ import type {
 
 function makeContext(overrides: Partial<PipelineContext> = {}): PipelineContext {
   return {
-    context: 'personal',
+    context: 'operations',
     query: 'test query',
     response: 'test response',
     domain: 'general',

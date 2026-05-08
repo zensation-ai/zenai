@@ -254,7 +254,7 @@ describe('DocumentAnalysisService', () => {
         metadata: { fileSize: 1000, mimeType: 'application/pdf', processingTimeMs: 500 },
       };
 
-      const id = await documentAnalysis.saveToHistory(result, 'general', 'work');
+      const id = await documentAnalysis.saveToHistory(result, 'general', 'finance');
       expect(id).toBe('analysis-123');
       expect(mockQuery).toHaveBeenCalledTimes(1);
     });
@@ -279,7 +279,7 @@ describe('DocumentAnalysisService', () => {
         .mockResolvedValueOnce({ rows: [{ id: '1', filename: 'a.pdf' }] })
         .mockResolvedValueOnce({ rows: [{ total: '5' }] });
 
-      const history = await documentAnalysis.getHistory('work', 20, 0);
+      const history = await documentAnalysis.getHistory('finance', 20, 0);
       expect(history.entries).toHaveLength(1);
       expect(history.total).toBe(5);
     });
@@ -328,7 +328,7 @@ describe('DocumentAnalysisService', () => {
   describe('Custom templates', () => {
     it('should list custom templates', async () => {
       mockQuery.mockResolvedValue({ rows: [{ id: '1', name: 'My Template' }] });
-      const templates = await documentAnalysis.getCustomTemplates('work');
+      const templates = await documentAnalysis.getCustomTemplates('finance');
       expect(templates).toHaveLength(1);
     });
 

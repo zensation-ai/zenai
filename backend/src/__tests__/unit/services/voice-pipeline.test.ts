@@ -6,7 +6,7 @@
 jest.mock('../../../utils/database-context', () => ({
   queryContext: jest.fn(),
   isValidContext: (ctx: string) =>
-    ['personal', 'work', 'learning', 'creative'].includes(ctx),
+    ['operations', 'finance', 'people', 'strategy'].includes(ctx),
 }));
 
 jest.mock('../../../utils/logger', () => ({
@@ -69,7 +69,7 @@ describe('VoicePipeline', () => {
     mockQueryContext.mockResolvedValue({ rows: [], rowCount: 0, command: 'INSERT', oid: 0, fields: [] } as any);
     mockCreateSession.mockResolvedValue({
       id: 'chat-session-123',
-      context: 'personal' as const,
+      context: 'operations' as const,
       title: null,
       createdAt: new Date(),
       updatedAt: new Date(),
@@ -79,15 +79,15 @@ describe('VoicePipeline', () => {
 
   describe('startSession', () => {
     it('should create a new voice session', async () => {
-      const result = await pipeline.startSession('personal' as const);
+      const result = await pipeline.startSession('operations' as const);
 
       expect(result.sessionId).toBe('test-session-uuid');
       expect(result.chatSessionId).toBe('chat-session-123');
-      expect(mockCreateSession).toHaveBeenCalledWith('personal', 'general');
+      expect(mockCreateSession).toHaveBeenCalledWith('operations', 'general');
     });
 
     it('should accept custom config', async () => {
-      const result = await pipeline.startSession('work' as const, {
+      const result = await pipeline.startSession('finance' as const, {
         ttsVoice: 'de-DE-KatjaNeural',
         language: 'de-DE',
         silenceThreshold_ms: 2000,
@@ -97,10 +97,10 @@ describe('VoicePipeline', () => {
     });
 
     it('should persist session to database', async () => {
-      await pipeline.startSession('personal' as const);
+      await pipeline.startSession('operations' as const);
 
       expect(mockQueryContext).toHaveBeenCalledWith(
-        'personal',
+        'operations',
         expect.stringContaining('INSERT INTO voice_sessions'),
         expect.any(Array)
       );
@@ -109,27 +109,27 @@ describe('VoicePipeline', () => {
     it('should handle DB persistence failure gracefully', async () => {
       mockQueryContext.mockRejectedValueOnce(new Error('DB error'));
 
-      const result = await pipeline.startSession('personal' as const);
+      const result = await pipeline.startSession('operations' as const);
       expect(result.sessionId).toBeDefined();
     });
   });
 
   describe('endSession', () => {
     it('should end an active session', async () => {
-      const { sessionId } = await pipeline.startSession('personal' as const);
+      const { sessionId } = await pipeline.startSession('operations' as const);
       await pipeline.endSession(sessionId);
 
       expect(pipeline.getSession(sessionId)).toBeUndefined();
     });
 
     it('should update database on end', async () => {
-      const { sessionId } = await pipeline.startSession('personal' as const);
+      const { sessionId } = await pipeline.startSession('operations' as const);
       mockQueryContext.mockClear();
 
       await pipeline.endSession(sessionId);
 
       expect(mockQueryContext).toHaveBeenCalledWith(
-        'personal',
+        'operations',
         expect.stringContaining('UPDATE voice_sessions'),
         expect.any(Array)
       );
@@ -142,11 +142,11 @@ describe('VoicePipeline', () => {
 
   describe('getSession', () => {
     it('should return session by ID', async () => {
-      const { sessionId } = await pipeline.startSession('personal' as const);
+      const { sessionId } = await pipeline.startSession('operations' as const);
       const session = pipeline.getSession(sessionId);
 
       expect(session).toBeDefined();
-      expect(session?.context).toBe('personal');
+      expect(session?.context).toBe('operations');
     });
 
     it('should return undefined for unknown session', () => {
@@ -156,7 +156,7 @@ describe('VoicePipeline', () => {
 
   describe('processAudioChunk', () => {
     it('should process a silent chunk without triggering STT', async () => {
-      const { sessionId } = await pipeline.startSession('personal' as const);
+      const { sessionId } = await pipeline.startSession('operations' as const);
 
       const silentChunk = Buffer.alloc(200);
       const result = await pipeline.processAudioChunk(sessionId, silentChunk);
@@ -173,7 +173,7 @@ describe('VoicePipeline', () => {
     });
 
     it('should buffer audio during speech', async () => {
-      const { sessionId } = await pipeline.startSession('personal' as const);
+      const { sessionId } = await pipeline.startSession('operations' as const);
 
       // Create loud audio
       const loudChunk = Buffer.alloc(200);
@@ -213,7 +213,7 @@ describe('VoicePipeline', () => {
 
   describe('getSessionStatus', () => {
     it('should return status for active session', async () => {
-      const { sessionId } = await pipeline.startSession('personal' as const);
+      const { sessionId } = await pipeline.startSession('operations' as const);
       const status = pipeline.getSessionStatus(sessionId);
 
       expect(status).toEqual({
@@ -238,21 +238,21 @@ describe('VoicePipeline', () => {
       mockCreateSession
         .mockResolvedValueOnce({
           id: 'chat-1',
-          context: 'personal' as const,
+          context: 'operations' as const,
           title: null,
           createdAt: new Date(),
           updatedAt: new Date(),
         })
         .mockResolvedValueOnce({
           id: 'chat-2',
-          context: 'work' as const,
+          context: 'finance' as const,
           title: null,
           createdAt: new Date(),
           updatedAt: new Date(),
         });
 
-      const s1 = await pipeline.startSession('personal' as const);
-      const s2 = await pipeline.startSession('work' as const);
+      const s1 = await pipeline.startSession('operations' as const);
+      const s2 = await pipeline.startSession('finance' as const);
 
       expect(s1.sessionId).toBe('session-1');
       expect(s2.sessionId).toBe('session-2');
@@ -269,14 +269,14 @@ describe('VoicePipeline', () => {
 
       mockCreateSession.mockResolvedValue({
         id: 'flow-chat',
-        context: 'personal' as const,
+        context: 'operations' as const,
         title: null,
         createdAt: new Date(),
         updatedAt: new Date(),
       });
 
       const testPipeline = new VoicePipeline();
-      const { sessionId } = await testPipeline.startSession('personal' as const, {
+      const { sessionId } = await testPipeline.startSession('operations' as const, {
         silenceThreshold_ms: 0,
       });
 

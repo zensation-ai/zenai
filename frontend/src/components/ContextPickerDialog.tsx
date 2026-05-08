@@ -1,14 +1,11 @@
 import { createPortal } from 'react-dom';
 import { useEffect, useRef } from 'react';
 import { AIContext } from './ContextSwitcher';
-import '../neurodesign.css';
-import './ContextPickerDialog.css';
-
 const CONTEXT_OPTIONS: { id: AIContext; icon: string; label: string; color: string }[] = [
-  { id: 'personal', icon: '\u{1F3E0}', label: 'Privat', color: 'var(--success)' },
-  { id: 'work', icon: '\u{1F4BC}', label: 'Arbeit', color: 'var(--info)' },
-  { id: 'learning', icon: '\u{1F4DA}', label: 'Lernen', color: 'var(--warning)' },
-  { id: 'creative', icon: '\u{1F3A8}', label: 'Kreativ', color: 'var(--accent)' },
+  { id: 'operations', icon: '\u{2699}\u{FE0F}', label: 'Operativ', color: 'var(--success)' },
+  { id: 'finance', icon: '\u{1F4B0}', label: 'Finanzen', color: 'var(--info)' },
+  { id: 'people', icon: '\u{1F465}', label: 'Team', color: 'var(--warning)' },
+  { id: 'strategy', icon: '\u{1F3AF}', label: 'Strategie', color: 'var(--accent)' },
 ];
 
 interface ContextPickerDialogProps {

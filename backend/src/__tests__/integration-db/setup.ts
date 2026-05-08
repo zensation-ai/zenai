@@ -1,32 +1,20 @@
-/**
- * Phase 80: Integration Test Setup
- *
- * Configures the test environment for integration tests that use
- * supertest against the Express app with mocked database layer.
- *
- * These tests verify full request/response cycles including:
- * - Middleware execution (auth, validation, error handling)
- * - Route handler logic
- * - Response format compliance
- * - Multi-user isolation
- */
+// backend/src/__tests__/integration-db/setup.ts
+import { startTestDatabase } from './test-db';
+import { writeFileSync } from 'fs';
+import { join } from 'path';
 
-// Set test environment
-process.env.NODE_ENV = 'test';
-process.env.LOG_LEVEL = 'error';
-process.env.JWT_SECRET = 'test-jwt-secret-for-integration-tests';
+export default async function globalSetup(): Promise<void> {
+  console.log('\n🐘 Starting PostgreSQL test container...');
+  const uri = await startTestDatabase();
+  console.log(`✅ Test database ready: ${uri.replace(/:[^:@]+@/, ':***@')}`);
 
-jest.setTimeout(15000);
+  // Store URI for worker processes (Jest runs setup in main process)
+  process.env.TEST_DATABASE_URL = uri;
 
-// Suppress console noise
-beforeAll(() => {
-  jest.spyOn(console, 'log').mockImplementation(() => {});
-  jest.spyOn(console, 'debug').mockImplementation(() => {});
-});
-
-afterAll(async () => {
-  jest.clearAllTimers();
-  jest.restoreAllMocks();
-  // Allow pending microtasks to complete
-  await new Promise(resolve => setImmediate(resolve));
-});
+  // Write to a temp file so worker processes can read it
+  writeFileSync(
+    join(__dirname, '.test-db-uri'),
+    uri,
+    'utf-8',
+  );
+}

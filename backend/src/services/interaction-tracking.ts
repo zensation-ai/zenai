@@ -525,7 +525,7 @@ export async function getOrCreateSession(
 export async function endSession(sessionToken: string): Promise<void> {
   try {
     await queryContext(
-      'personal', // Session table is global
+      'operations', // Session table is global
       `UPDATE learning_sessions SET ended_at = NOW() WHERE session_token = $1`,
       [sessionToken]
     );

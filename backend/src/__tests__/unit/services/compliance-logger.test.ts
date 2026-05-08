@@ -32,7 +32,7 @@ describe('Compliance Logger', () => {
         modelId: 'claude-sonnet-4-20250514',
         confidence: 0.85,
         sources: [{ type: 'rag', description: 'RAG retrieval' }],
-        context: 'personal',
+        context: 'operations',
         processingTimeMs: 1200,
         toolsUsed: ['web_search'],
         ragUsed: true,
@@ -52,7 +52,7 @@ describe('Compliance Logger', () => {
         modelId: 'claude-sonnet-4-20250514',
         confidence: 0.7,
         sources: [],
-        context: 'work',
+        context: 'finance',
         processingTimeMs: 500,
         toolsUsed: [],
         ragUsed: false,
@@ -74,7 +74,7 @@ describe('Compliance Logger', () => {
           modelId: 'claude-haiku-4-5-20251001',
           confidence: 0.5,
           sources: [],
-          context: 'personal',
+          context: 'operations',
           processingTimeMs: 100,
           toolsUsed: [],
           ragUsed: false,
@@ -99,7 +99,7 @@ describe('Compliance Logger', () => {
         modelId: 'claude-sonnet-4-20250514',
         confidence: 0.9,
         sources: [{ type: 'rag', description: 'RAG' }],
-        context: 'personal',
+        context: 'operations',
         processingTimeMs: 800,
         toolsUsed: [],
         ragUsed: true,
@@ -111,7 +111,7 @@ describe('Compliance Logger', () => {
         modelId: 'claude-haiku-4-5-20251001',
         confidence: 0.6,
         sources: [{ type: 'ai_knowledge', description: 'AI' }],
-        context: 'work',
+        context: 'finance',
         processingTimeMs: 200,
         toolsUsed: [],
         ragUsed: false,
@@ -123,7 +123,7 @@ describe('Compliance Logger', () => {
         modelId: 'claude-sonnet-4-20250514',
         confidence: 0.4,
         sources: [{ type: 'web_search', description: 'Web' }],
-        context: 'personal',
+        context: 'operations',
         processingTimeMs: 1500,
         toolsUsed: ['web_search'],
         ragUsed: false,
@@ -138,9 +138,9 @@ describe('Compliance Logger', () => {
     });
 
     it('should filter by context', () => {
-      const { logs, total } = getDecisionLogs({ context: 'personal' });
+      const { logs, total } = getDecisionLogs({ context: 'operations' });
       expect(total).toBe(2);
-      expect(logs.every(l => l.context === 'personal')).toBe(true);
+      expect(logs.every(l => l.context === 'operations')).toBe(true);
     });
 
     it('should filter by modelId', () => {
@@ -181,7 +181,7 @@ describe('Compliance Logger', () => {
         modelId: 'claude-sonnet-4-20250514',
         confidence: 0.8,
         sources: [],
-        context: 'personal',
+        context: 'operations',
         processingTimeMs: 300,
         toolsUsed: [],
         ragUsed: false,
@@ -208,21 +208,21 @@ describe('Compliance Logger', () => {
         input: 'Q1', output: 'R1',
         modelId: 'claude-sonnet-4-20250514', confidence: 0.9,
         sources: [{ type: 'rag', description: 'RAG' }, { type: 'memory', description: 'Memory' }],
-        context: 'personal', processingTimeMs: 800,
+        context: 'operations', processingTimeMs: 800,
         toolsUsed: [], ragUsed: true, webSearchUsed: false,
       });
       logAIDecision({
         input: 'Q2', output: 'R2',
         modelId: 'claude-haiku-4-5-20251001', confidence: 0.7,
         sources: [{ type: 'ai_knowledge', description: 'AI' }],
-        context: 'work', processingTimeMs: 200,
+        context: 'finance', processingTimeMs: 200,
         toolsUsed: ['web_search'], ragUsed: false, webSearchUsed: true,
       });
       logAIDecision({
         input: 'Q3', output: 'R3',
         modelId: 'claude-sonnet-4-20250514', confidence: 0.85,
         sources: [{ type: 'rag', description: 'RAG' }],
-        context: 'personal', processingTimeMs: 600,
+        context: 'operations', processingTimeMs: 600,
         toolsUsed: [], ragUsed: true, webSearchUsed: false,
       });
     });
@@ -265,9 +265,9 @@ describe('Compliance Logger', () => {
     });
 
     it('should filter by context', () => {
-      const report = generateComplianceReport(30, 'personal');
+      const report = generateComplianceReport(30, 'operations');
       expect(report.summary.totalDecisions).toBe(2);
-      expect(report.decisions.every(d => d.context === 'personal')).toBe(true);
+      expect(report.decisions.every(d => d.context === 'operations')).toBe(true);
     });
 
     it('should handle empty period', () => {
@@ -296,7 +296,7 @@ describe('Compliance Logger', () => {
           { type: 'memory', description: 'Long-term memory', relevance: 0.7 },
           { type: 'web_search', description: 'Brave search', relevance: 0.6 },
         ],
-        context: 'personal',
+        context: 'operations',
         processingTimeMs: 1000,
         toolsUsed: ['web_search'],
         ragUsed: true,
@@ -330,7 +330,7 @@ describe('Compliance Logger', () => {
         modelId: 'claude-sonnet-4-20250514',
         confidence: 0.8,
         sources: [{ type: 'rag', description: 'RAG' }],
-        context: 'personal',
+        context: 'operations',
         processingTimeMs: 500,
         toolsUsed: [],
         ragUsed: true,
@@ -343,7 +343,7 @@ describe('Compliance Logger', () => {
       expect(lines[0]).toBe('ID,Timestamp,Input,Output,Model,Confidence,Sources,RAG,WebSearch,ProcessingMs,Context');
       expect(lines).toHaveLength(2); // header + 1 row
       expect(lines[1]).toContain('claude-sonnet-4-20250514');
-      expect(lines[1]).toContain('"personal"');
+      expect(lines[1]).toContain('"operations"');
     });
 
     it('should handle quotes in content', () => {
@@ -353,7 +353,7 @@ describe('Compliance Logger', () => {
         modelId: 'claude-sonnet-4-20250514',
         confidence: 0.9,
         sources: [],
-        context: 'personal',
+        context: 'operations',
         processingTimeMs: 300,
         toolsUsed: [],
         ragUsed: false,
@@ -381,7 +381,7 @@ describe('Compliance Logger', () => {
       logAIDecision({
         input: 'Test', output: 'Result',
         modelId: 'test', confidence: 0.5,
-        sources: [], context: 'personal',
+        sources: [], context: 'operations',
         processingTimeMs: 100, toolsUsed: [],
         ragUsed: false, webSearchUsed: false,
       });

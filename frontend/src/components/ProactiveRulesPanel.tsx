@@ -9,8 +9,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { AIContext } from './ContextSwitcher';
 import { getApiBaseUrl, getApiFetchHeaders } from '../utils/apiConfig';
-import './ProactiveRulesPanel.css';
-
 // ─── Types ───────────────────────────────────────────────
 
 interface ProactiveRule {
@@ -53,20 +51,20 @@ interface RuleFormData {
 
 const EVENT_TYPES = [
   { value: 'task.created', label: 'Aufgabe erstellt' },
-  { value: 'task.overdue', label: 'Aufgabe ueberfaellig' },
+  { value: 'task.overdue', label: 'Aufgabe überfällig' },
   { value: 'email.received', label: 'E-Mail empfangen' },
   { value: 'memory.fact_learned', label: 'Fakt gelernt' },
   { value: 'idea.created', label: 'Idee erstellt' },
   { value: 'calendar.event_approaching', label: 'Termin naht' },
   { value: 'agent.completed', label: 'Agent abgeschlossen' },
   { value: 'agent.failed', label: 'Agent fehlgeschlagen' },
-  { value: 'system.daily_digest', label: 'Taegl. Zusammenfassung' },
+  { value: 'system.daily_digest', label: 'Tägl. Zusammenfassung' },
 ];
 
 const DECISION_OPTIONS: { value: DecisionType; label: string; icon: string; desc: string }[] = [
   { value: 'notify', label: 'Benachrichtigen', icon: '\uD83D\uDD14', desc: 'Zeigt eine Benachrichtigung' },
   { value: 'prepare_context', label: 'Kontext vorbereiten', icon: '\uD83D\uDCCB', desc: 'Bereitet relevante Daten vor' },
-  { value: 'take_action', label: 'Aktion ausfuehren', icon: '\u26A1', desc: 'Fuehrt automatische Aktion aus' },
+  { value: 'take_action', label: 'Aktion ausführen', icon: '\u26A1', desc: 'Führt automatische Aktion aus' },
   { value: 'trigger_agent', label: 'Agent starten', icon: '\uD83E\uDD16', desc: 'Startet einen KI-Agenten' },
 ];
 
@@ -231,7 +229,7 @@ export function ProactiveRulesPanel({ context }: ProactiveRulesPanelProps) {
       if (!res.ok) throw new Error('Fehler');
       setRules(prev => prev.map(r => r.id === rule.id ? { ...r, isActive: !r.isActive } : r));
     } catch {
-      setError('Status konnte nicht geaendert werden');
+      setError('Status konnte nicht geändert werden');
     }
   };
 
@@ -247,7 +245,7 @@ export function ProactiveRulesPanel({ context }: ProactiveRulesPanelProps) {
       setDeletingId(null);
       setRules(prev => prev.filter(r => r.id !== id));
     } catch {
-      setError('Loeschen fehlgeschlagen');
+      setError('Löschen fehlgeschlagen');
     }
   };
 
@@ -346,8 +344,8 @@ export function ProactiveRulesPanel({ context }: ProactiveRulesPanelProps) {
                     type="button"
                     className="pr-icon-btn pr-icon-btn-danger"
                     onClick={() => setDeletingId(deletingId === rule.id ? null : rule.id)}
-                    aria-label="Loeschen"
-                    title="Loeschen"
+                    aria-label="Löschen"
+                    title="Löschen"
                   >
                     {'\uD83D\uDDD1'}
                   </button>
@@ -373,19 +371,18 @@ export function ProactiveRulesPanel({ context }: ProactiveRulesPanelProps) {
               {/* Delete Confirmation */}
               {deletingId === rule.id && (
                 <div className="pr-delete-confirm">
-                  <span>Regel &quot;{rule.name}&quot; wirklich loeschen?</span>
+                  <span>Regel &quot;{rule.name}&quot; wirklich löschen?</span>
                   <button
                     type="button"
                     className="pr-btn-danger"
                     onClick={() => handleDelete(rule.id)}
                   >
-                    Loeschen
+                    Löschen
                   </button>
                   <button
                     type="button"
-                    className="pr-btn pr-btn-secondary"
+                    className="pr-btn pr-btn-secondary px-3 py-1.5 text-xs"
                     onClick={() => setDeletingId(null)}
-                    style={{ padding: '0.35rem 0.75rem', fontSize: '0.75rem' }}
                   >
                     Abbrechen
                   </button>
@@ -402,7 +399,7 @@ export function ProactiveRulesPanel({ context }: ProactiveRulesPanelProps) {
           <div className="pr-modal" onClick={e => e.stopPropagation()} role="dialog" aria-modal="true" aria-label={editingRule ? 'Regel bearbeiten' : 'Neue Regel erstellen'}>
             <div className="pr-modal-header">
               <h3>{editingRule ? 'Regel bearbeiten' : 'Neue Regel erstellen'}</h3>
-              <button type="button" className="pr-modal-close" onClick={closeModal} aria-label="Schliessen">
+              <button type="button" className="pr-modal-close" onClick={closeModal} aria-label="Schließen">
                 &times;
               </button>
             </div>
@@ -436,15 +433,14 @@ export function ProactiveRulesPanel({ context }: ProactiveRulesPanelProps) {
               {/* Event Types */}
               <div className="pr-field">
                 <label className="pr-field-label">Ereignistypen *</label>
-                <span className="pr-field-hint">Waehle mindestens einen Ereignistyp</span>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.35rem', marginTop: '0.3rem' }}>
+                <span className="pr-field-hint">Wähle mindestens einen Ereignistyp</span>
+                <div className="flex flex-wrap gap-1.5 mt-1">
                   {EVENT_TYPES.map(et => (
                     <button
                       key={et.value}
                       type="button"
-                      className={`pr-badge ${form.eventTypes.includes(et.value) ? 'pr-badge-decision pr-badge-notify' : 'pr-badge-event'}`}
+                      className={`pr-badge cursor-pointer px-2.5 py-1 text-[0.72rem] ${form.eventTypes.includes(et.value) ? 'pr-badge-decision pr-badge-notify' : 'pr-badge-event'}`}
                       onClick={() => toggleEventType(et.value)}
-                      style={{ cursor: 'pointer', padding: '4px 10px', fontSize: '0.72rem' }}
                     >
                       {et.label}
                     </button>
@@ -465,7 +461,7 @@ export function ProactiveRulesPanel({ context }: ProactiveRulesPanelProps) {
                     >
                       <span className="pr-decision-icon" aria-hidden="true">{opt.icon}</span>
                       <span>{opt.label}</span>
-                      <span style={{ fontSize: '0.65rem', fontWeight: 400, opacity: 0.7 }}>{opt.desc}</span>
+                      <span className="text-[0.65rem] font-normal opacity-70">{opt.desc}</span>
                     </button>
                   ))}
                 </div>
@@ -474,7 +470,7 @@ export function ProactiveRulesPanel({ context }: ProactiveRulesPanelProps) {
               {/* Priority & Cooldown */}
               <div className="pr-row">
                 <div className="pr-field">
-                  <label className="pr-field-label">Prioritaet (1-10)</label>
+                  <label className="pr-field-label">Priorität (1-10)</label>
                   <input
                     type="number"
                     className="pr-input"
@@ -501,7 +497,7 @@ export function ProactiveRulesPanel({ context }: ProactiveRulesPanelProps) {
                 <div className="pr-toggle-row">
                   <div>
                     <div className="pr-toggle-label">Genehmigung erforderlich</div>
-                    <div className="pr-toggle-desc">Aktion muss vor Ausfuehrung genehmigt werden</div>
+                    <div className="pr-toggle-desc">Aktion muss vor Ausführung genehmigt werden</div>
                   </div>
                   <label className="settings-toggle">
                     <input
@@ -519,7 +515,7 @@ export function ProactiveRulesPanel({ context }: ProactiveRulesPanelProps) {
               <div className="pr-toggle-row">
                 <div>
                   <div className="pr-toggle-label">Regel aktiv</div>
-                  <div className="pr-toggle-desc">Deaktivierte Regeln werden nicht ausgefuehrt</div>
+                  <div className="pr-toggle-desc">Deaktivierte Regeln werden nicht ausgeführt</div>
                 </div>
                 <label className="settings-toggle">
                   <input

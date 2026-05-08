@@ -303,6 +303,25 @@ export async function updateTask(
     import('./event-system').then(({ emitSystemEvent }) =>
       emitSystemEvent({ context, eventType: 'task.completed', eventSource: 'tasks', payload: { taskId: id, title: result.rows[0]?.title } })
     ).catch(err => { logger.warn('Failed to emit task.completed event', { error: err instanceof Error ? err.message : String(err) }); });
+
+    // Bridge to Episodic Memory — task completions become learnable experiences (Stufe 7.3)
+    bridgeTaskCompletionToMemory(context, mapRowToTask(result.rows[0])).catch(err => {
+      logger.warn('Failed to bridge task completion to memory', {
+        error: err instanceof Error ? err.message : String(err),
+      });
+    });
+
+    // Feedback-Schleife: task completion → FeedbackBus for proactive rule weight adjustment (Stufe 9.2)
+    import('./feedback/feedback-bus').then(({ createFeedbackEvent, recordFeedback }) => {
+      const event = createFeedbackEvent(
+        'tool_success',
+        'task-completion',
+        'proactive-rules',
+        1,
+        { taskId: id, title: result.rows[0]?.title, completedAt: new Date().toISOString() },
+      );
+      recordFeedback(context, event);
+    }).catch(() => {});
   }
 
   return mapRowToTask(result.rows[0]);
@@ -611,4 +630,62 @@ function mapRowToDependency(row: Record<string, unknown>): TaskDependency {
     task_title: row.task_title as string | undefined,
     depends_on_title: row.depends_on_title as string | undefined,
   };
+}
+
+// ===========================================
+// Episodic Memory Bridge (Stufe 7.3)
+// ===========================================
+
+/**
+ * Store task completion as episodic memory for learning loops.
+ * Detects overdue tasks and stores estimation accuracy as a fact.
+ */
+async function bridgeTaskCompletionToMemory(
+  context: AIContext,
+  task: Task
+): Promise<void> {
+  const { episodicMemory } = await import('./memory/episodic-memory');
+
+  const wasOverdue = task.due_date && task.completed_at
+    && new Date(task.completed_at) > new Date(task.due_date);
+
+  // Calculate duration if dates available
+  const durationInfo = task.created_at && task.completed_at
+    ? `Dauer: ${Math.round((new Date(task.completed_at).getTime() - new Date(task.created_at).getTime()) / (1000 * 60 * 60))}h`
+    : '';
+
+  const estimateInfo = task.estimated_hours && task.actual_hours
+    ? `Geschätzt: ${task.estimated_hours}h, Tatsächlich: ${task.actual_hours}h`
+    : '';
+
+  const trigger = `Task abgeschlossen: ${task.title}`;
+  const response = [
+    `Status: ${task.priority} Priorität, ${wasOverdue ? 'ÜBERFÄLLIG' : 'pünktlich'} erledigt.`,
+    durationInfo,
+    estimateInfo,
+    task.description || '',
+  ].filter(Boolean).join(' ');
+
+  await episodicMemory.store(trigger, response, `task-${task.id}`, context);
+
+  // If overdue, store as a learning fact
+  if (wasOverdue) {
+    import('./event-system').then(({ emitSystemEvent }) =>
+      emitSystemEvent({
+        context,
+        eventType: 'memory.fact_learned',
+        eventSource: 'task_learning',
+        payload: {
+          factType: 'task_estimation_miss',
+          content: `Task "${task.title}" war überfällig. ${estimateInfo}`,
+          taskPriority: task.priority,
+          labels: task.labels,
+        },
+      })
+    ).catch(err => {
+      logger.warn('Failed to emit task learning event', {
+        error: err instanceof Error ? err.message : String(err),
+      });
+    });
+  }
 }

@@ -9,6 +9,8 @@
  */
 
 import { logger } from '../../utils/logger';
+import { assertPublicUrl, SsrfBlockedError } from '../security/ssrf-guard';
+import { checkedFetch } from '../../utils/checked-http';
 
 // ===========================================
 // Types
@@ -92,6 +94,23 @@ export class HttpMCPTransport implements IMCPTransport {
 
   async request(method: string, params?: Record<string, unknown>): Promise<MCPTransportResult> {
     const url = (this.config.url ?? '').replace(/\/$/, '');
+
+    // SSRF Protection (Sprint 1.4): MCP server URLs are user-configured,
+    // so they must pass the same public-URL guard as every outbound fetcher.
+    try {
+      await assertPublicUrl(url);
+    } catch (err) {
+      if (err instanceof SsrfBlockedError) {
+        logger.warn('MCP transport SSRF blocked', {
+          operation: 'mcp.transport.ssrf',
+          code: err.code,
+          reason: err.reason,
+        });
+        throw new Error(`MCP server URL rejected: ${err.reason}`);
+      }
+      throw err;
+    }
+
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
     };
@@ -108,7 +127,7 @@ export class HttpMCPTransport implements IMCPTransport {
     const timeout = setTimeout(() => controller.abort(), this.config.timeout);
 
     try {
-      const response = await fetch(url, {
+      const response = await checkedFetch(url, {
         method: 'POST',
         headers,
         body: JSON.stringify({

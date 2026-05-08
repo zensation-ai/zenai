@@ -51,18 +51,18 @@ describe('ThemeContext', () => {
   });
 
   describe('ThemeProvider initialization', () => {
-    it('defaults to system theme when no stored preference', () => {
+    it('defaults to dark theme when no stored preference', () => {
       render(
         <ThemeProvider>
           <ThemeConsumer />
         </ThemeProvider>
       );
 
-      expect(screen.getByTestId('theme').textContent).toBe('system');
+      expect(screen.getByTestId('theme').textContent).toBe('dark');
     });
 
     it('loads stored theme from localStorage', () => {
-      localStorage.setItem('mybrain-theme', 'dark');
+      localStorage.setItem('zenai-theme', 'dark');
 
       render(
         <ThemeProvider>
@@ -75,7 +75,7 @@ describe('ThemeContext', () => {
     });
 
     it('ignores invalid stored theme value', () => {
-      localStorage.setItem('mybrain-theme', 'invalid');
+      localStorage.setItem('zenai-theme', 'invalid');
 
       render(
         <ThemeProvider>
@@ -83,7 +83,7 @@ describe('ThemeContext', () => {
         </ThemeProvider>
       );
 
-      expect(screen.getByTestId('theme').textContent).toBe('system');
+      expect(screen.getByTestId('theme').textContent).toBe('dark');
     });
   });
 
@@ -99,7 +99,7 @@ describe('ThemeContext', () => {
         screen.getByTestId('set-dark').click();
       });
 
-      expect(localStorage.getItem('mybrain-theme')).toBe('dark');
+      expect(localStorage.getItem('zenai-theme')).toBe('dark');
       expect(screen.getByTestId('theme').textContent).toBe('dark');
       expect(screen.getByTestId('resolved').textContent).toBe('dark');
     });
@@ -147,18 +147,20 @@ describe('ThemeContext', () => {
       });
       expect(document.documentElement.classList.contains('dark-mode')).toBe(true);
 
-      // Switch to system
+      // Switch to system — resolves to system preference (light in JSDOM)
       act(() => {
         screen.getByTestId('set-system').click();
       });
+      // System theme resolves to light in JSDOM (prefers-color-scheme defaults to light)
+      // So dark-mode should be removed, and the resolved theme class should be applied
       expect(document.documentElement.classList.contains('dark-mode')).toBe(false);
-      expect(document.documentElement.classList.contains('light-mode')).toBe(false);
+      expect(document.documentElement.getAttribute('data-theme')).toBe('light');
     });
   });
 
   describe('toggleTheme', () => {
     it('toggles from light to dark', () => {
-      localStorage.setItem('mybrain-theme', 'light');
+      localStorage.setItem('zenai-theme', 'light');
 
       render(
         <ThemeProvider>
@@ -176,7 +178,7 @@ describe('ThemeContext', () => {
     });
 
     it('toggles from dark to light', () => {
-      localStorage.setItem('mybrain-theme', 'dark');
+      localStorage.setItem('zenai-theme', 'dark');
 
       render(
         <ThemeProvider>
@@ -193,7 +195,8 @@ describe('ThemeContext', () => {
   });
 
   describe('system theme detection', () => {
-    it('resolves to dark when system prefers dark', () => {
+    it('resolves to dark when system prefers dark and theme is system', () => {
+      localStorage.setItem('zenai-theme', 'system');
       vi.mocked(window.matchMedia).mockImplementation((query) => ({
         matches: query === '(prefers-color-scheme: dark)',
         media: query,
@@ -215,13 +218,16 @@ describe('ThemeContext', () => {
       expect(screen.getByTestId('resolved').textContent).toBe('dark');
     });
 
-    it('resolves to light when system prefers light', () => {
+    it('resolves to light when system prefers light and theme is system', () => {
+      localStorage.setItem('zenai-theme', 'system');
+
       render(
         <ThemeProvider>
           <ThemeConsumer />
         </ThemeProvider>
       );
 
+      expect(screen.getByTestId('theme').textContent).toBe('system');
       expect(screen.getByTestId('resolved').textContent).toBe('light');
     });
   });

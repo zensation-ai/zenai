@@ -62,7 +62,7 @@ export interface LearningInsight {
  */
 export async function submitFeedback(
   input: FeedbackInput,
-  context: AIContext = 'personal'
+  context: AIContext = 'operations'
 ): Promise<AIResponseFeedback> {
   const id = uuidv4();
 
@@ -115,7 +115,7 @@ export async function submitFeedback(
  */
 export async function applyFeedbackToLearning(
   feedbackId: string,
-  context: AIContext = 'personal'
+  context: AIContext = 'operations'
 ): Promise<boolean> {
   // Hole Feedback
   const feedbackResult = await queryContext(
@@ -162,7 +162,7 @@ export async function applyFeedbackToLearning(
  * Holt alle Feedback-Einträge
  */
 export async function getFeedback(
-  context: AIContext = 'personal',
+  context: AIContext = 'operations',
   options: {
     responseType?: string;
     minRating?: number;
@@ -214,66 +214,78 @@ export async function getFeedback(
  * Holt Feedback-Statistiken
  */
 export async function getFeedbackStats(
-  context: AIContext = 'personal'
+  context: AIContext = 'operations'
 ): Promise<FeedbackStats> {
-  // Gesamt-Statistiken
-  const statsResult = await queryContext(
-    context,
-    `SELECT
-       COUNT(*) as total,
-       AVG(rating) as avg_rating,
-       COUNT(CASE WHEN correction IS NOT NULL THEN 1 END) as corrections,
-       COUNT(CASE WHEN applied_to_learning = true THEN 1 END) as applied
-     FROM ai_response_feedback
-     WHERE context = $1`,
-    [context]
-  );
+  try {
+    // Gesamt-Statistiken
+    const statsResult = await queryContext(
+      context,
+      `SELECT
+         COUNT(*) as total,
+         AVG(rating) as avg_rating,
+         COUNT(CASE WHEN correction IS NOT NULL THEN 1 END) as corrections,
+         COUNT(CASE WHEN applied_to_learning = true THEN 1 END) as applied
+       FROM ai_response_feedback
+       WHERE context = $1`,
+      [context]
+    );
 
-  const stats = statsResult.rows[0];
+    const stats = statsResult.rows[0];
 
-  // Ratings-Verteilung
-  const distributionResult = await queryContext(
-    context,
-    `SELECT rating, COUNT(*) as count
-     FROM ai_response_feedback
-     WHERE context = $1
-     GROUP BY rating
-     ORDER BY rating`,
-    [context]
-  );
+    // Ratings-Verteilung
+    const distributionResult = await queryContext(
+      context,
+      `SELECT rating, COUNT(*) as count
+       FROM ai_response_feedback
+       WHERE context = $1
+       GROUP BY rating
+       ORDER BY rating`,
+      [context]
+    );
 
-  const ratingsDistribution: Record<number, number> = {};
-  for (const row of distributionResult.rows) {
-    ratingsDistribution[row.rating] = parseInt(row.count, 10);
+    const ratingsDistribution: Record<number, number> = {};
+    for (const row of distributionResult.rows) {
+      ratingsDistribution[row.rating] = parseInt(row.count, 10);
+    }
+
+    // Statistiken nach Response-Type
+    const typeStatsResult = await queryContext(
+      context,
+      `SELECT
+         response_type as type,
+         COUNT(*) as count,
+         AVG(rating) as avg_rating
+       FROM ai_response_feedback
+       WHERE context = $1
+       GROUP BY response_type
+       ORDER BY count DESC
+       LIMIT 10`,
+      [context]
+    );
+
+    return {
+      total_feedback: parseInt(stats.total, 10) || 0,
+      average_rating: parseFloat(stats.avg_rating) || 0,
+      corrections_count: parseInt(stats.corrections, 10) || 0,
+      applied_count: parseInt(stats.applied, 10) || 0,
+      ratings_distribution: ratingsDistribution,
+      response_type_stats: typeStatsResult.rows.map((row) => ({
+        type: row.type,
+        count: parseInt(row.count, 10),
+        avg_rating: parseFloat(row.avg_rating),
+      })),
+    };
+  } catch (error) {
+    logger.warn('getFeedbackStats failed, returning defaults', { error: error instanceof Error ? error.message : String(error) });
+    return {
+      total_feedback: 0,
+      average_rating: 0,
+      corrections_count: 0,
+      applied_count: 0,
+      ratings_distribution: {},
+      response_type_stats: [],
+    };
   }
-
-  // Statistiken nach Response-Type
-  const typeStatsResult = await queryContext(
-    context,
-    `SELECT
-       response_type as type,
-       COUNT(*) as count,
-       AVG(rating) as avg_rating
-     FROM ai_response_feedback
-     WHERE context = $1
-     GROUP BY response_type
-     ORDER BY count DESC
-     LIMIT 10`,
-    [context]
-  );
-
-  return {
-    total_feedback: parseInt(stats.total, 10) || 0,
-    average_rating: parseFloat(stats.avg_rating) || 0,
-    corrections_count: parseInt(stats.corrections, 10) || 0,
-    applied_count: parseInt(stats.applied, 10) || 0,
-    ratings_distribution: ratingsDistribution,
-    response_type_stats: typeStatsResult.rows.map((row) => ({
-      type: row.type,
-      count: parseInt(row.count, 10),
-      avg_rating: parseFloat(row.avg_rating),
-    })),
-  };
 }
 
 // ===========================================
@@ -285,7 +297,7 @@ export async function getFeedbackStats(
  * Robust gegen fehlende Tabellen - gibt leeres Array zurück bei Fehlern
  */
 export async function analyzeFeedbackPatterns(
-  context: AIContext = 'personal'
+  context: AIContext = 'operations'
 ): Promise<LearningInsight[]> {
   const insights: LearningInsight[] = [];
 
@@ -380,7 +392,7 @@ export async function analyzeFeedbackPatterns(
  */
 export async function findSimilarCorrections(
   responseText: string,
-  context: AIContext = 'personal',
+  context: AIContext = 'operations',
   limit: number = 3
 ): Promise<Array<{ correction: string; similarity: number }>> {
   try {
@@ -420,9 +432,9 @@ export async function findSimilarCorrections(
 export async function quickThumbsUp(
   responseType: string,
   originalResponse: string,
-  context: AIContext = 'personal'
+  context: AIContext = 'operations'
 ): Promise<AIResponseFeedback> {
-  return submitFeedback(
+  const result = await submitFeedback(
     {
       responseType,
       originalResponse,
@@ -430,6 +442,11 @@ export async function quickThumbsUp(
     },
     context
   );
+
+  // Feedback-Schleife: positive chat rating → FeedbackBus + RAG feedback
+  emitChatRatingFeedback(context, true, responseType, originalResponse).catch(() => {});
+
+  return result;
 }
 
 /**
@@ -439,9 +456,9 @@ export async function quickThumbsDown(
   responseType: string,
   originalResponse: string,
   feedbackText: string,
-  context: AIContext = 'personal'
+  context: AIContext = 'operations'
 ): Promise<AIResponseFeedback> {
-  return submitFeedback(
+  const result = await submitFeedback(
     {
       responseType,
       originalResponse,
@@ -450,6 +467,46 @@ export async function quickThumbsDown(
     },
     context
   );
+
+  // Feedback-Schleife: negative chat rating → FeedbackBus + RAG feedback
+  emitChatRatingFeedback(context, false, responseType, originalResponse).catch(() => {});
+
+  return result;
+}
+
+/**
+ * Feedback-Schleife: Bridge chat ratings to FeedbackBus and RAG feedback.
+ * Positive ratings reinforce related memories; negative ratings trigger weakening.
+ */
+async function emitChatRatingFeedback(
+  context: AIContext,
+  isPositive: boolean,
+  responseType: string,
+  originalResponse: string,
+): Promise<void> {
+  try {
+    const { createFeedbackEvent, recordFeedback } = await import('./feedback/feedback-bus');
+    const event = createFeedbackEvent(
+      'response_rating',
+      'chat-feedback',
+      responseType,
+      isPositive ? 1 : -1,
+      { responseType, responseSnippet: originalResponse.slice(0, 200), isPositive },
+    );
+    await recordFeedback(context, event);
+
+    // Also record as RAG feedback if available
+    const { recordRAGFeedback } = await import('./rag-feedback');
+    await recordRAGFeedback(context, {
+      queryText: originalResponse.slice(0, 200),
+      wasHelpful: isPositive,
+      relevanceRating: isPositive ? 5 : 1,
+    });
+  } catch (err) {
+    logger.debug('emitChatRatingFeedback failed (non-critical)', {
+      error: err instanceof Error ? err.message : String(err),
+    });
+  }
 }
 
 /**
@@ -459,7 +516,7 @@ export async function submitCorrection(
   responseType: string,
   originalResponse: string,
   correction: string,
-  context: AIContext = 'personal'
+  context: AIContext = 'operations'
 ): Promise<AIResponseFeedback> {
   return submitFeedback(
     {

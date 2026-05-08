@@ -9,7 +9,7 @@ import { AIContext } from '../../utils/database-context';
 import { createCalendarEvent } from '../calendar';
 import { logger } from '../../utils/logger';
 import type { DetectedIntent } from '../intent-detector';
-import type { IntentHandlerResult } from './index';
+import type { IntentHandlerResult } from './intent-types';
 
 /**
  * Handle a calendar_event intent

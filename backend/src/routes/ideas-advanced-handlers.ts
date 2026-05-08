@@ -688,7 +688,7 @@ export async function handleMoveIdea(req: Request, res: Response) {
   }
 
   if (!targetContext || !isValidContext(targetContext)) {
-    throw new ValidationError('Invalid targetContext. Use "personal", "work", "learning", or "creative".');
+    throw new ValidationError('Invalid targetContext. Use "operations", "finance", "people", or "strategy".');
   }
 
   if (sourceContext === targetContext) {

@@ -181,6 +181,34 @@ export function isTracingEnabled(): boolean {
 }
 
 /**
+ * LOAD_TEST_MODE flips trace sample rate to 100 % and makes every response
+ * wear a `load_test=true` tag so Grafana can filter it out of SaaS-health
+ * dashboards. Driven purely by env var so a misconfigured staging run can be
+ * stopped with a restart rather than a code deploy.
+ *
+ * See scripts/load-test/README.md for the safety-rails discussion.
+ */
+export function isLoadTestMode(): boolean {
+  const v = process.env.LOAD_TEST_MODE;
+  if (!v) {return false;}
+  return v === '1' || v.toLowerCase() === 'true';
+}
+
+/**
+ * Resolve the effective trace sample rate. 100 % when LOAD_TEST_MODE is on,
+ * otherwise whatever OTEL_TRACES_SAMPLER_ARG is set to (default 0.1).
+ */
+export function getEffectiveSampleRate(): number {
+  if (isLoadTestMode()) {return 1.0;}
+  const raw = process.env.OTEL_TRACES_SAMPLER_ARG;
+  if (!raw) {return 0.1;}
+  const parsed = Number.parseFloat(raw);
+  if (!Number.isFinite(parsed) || parsed < 0) {return 0.1;}
+  if (parsed > 1) {return 1;}
+  return parsed;
+}
+
+/**
  * Gracefully shut down the tracing SDK.
  */
 export async function shutdownTracing(): Promise<void> {

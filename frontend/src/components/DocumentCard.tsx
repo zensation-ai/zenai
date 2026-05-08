@@ -4,7 +4,7 @@
  * Displays a single document with preview, metadata, and actions.
  */
 
-import React, { memo, useState } from 'react';
+import React, { memo, useState, type CSSProperties } from 'react';
 import {
   Document,
   formatFileSize,
@@ -13,8 +13,6 @@ import {
   PROCESSING_STATUS_LABELS,
   PROCESSING_STATUS_COLORS,
 } from '../types/document';
-import './DocumentCard.css';
-
 interface DocumentCardProps {
   document: Document;
   onClick?: () => void;
@@ -125,8 +123,8 @@ function DocumentCardComponent({
           {/* Processing Status Badge */}
           {(isProcessing || isPending) && (
             <div
-              className="status-badge"
-              style={{ backgroundColor: PROCESSING_STATUS_COLORS[document.processingStatus] }}
+              className="status-badge bg-[var(--bg)]"
+              style={{ '--bg': PROCESSING_STATUS_COLORS[document.processingStatus] } as CSSProperties}
             >
               {isProcessing && <span className="spinner-small" />}
               {PROCESSING_STATUS_LABELS[document.processingStatus]}
@@ -262,8 +260,8 @@ function DocumentCardComponent({
       {/* Status */}
       {(isProcessing || isPending || hasFailed) && (
         <div
-          className="list-status"
-          style={{ color: PROCESSING_STATUS_COLORS[document.processingStatus] }}
+          className="list-status text-[var(--c)]"
+          style={{ '--c': PROCESSING_STATUS_COLORS[document.processingStatus] } as CSSProperties}
         >
           {isProcessing && <span className="spinner-small" />}
           {PROCESSING_STATUS_LABELS[document.processingStatus]}

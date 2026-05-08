@@ -3,7 +3,7 @@
  *
  * Core Memory blocks are structured text blocks that are ALWAYS injected
  * into Claude's system prompt. Each user has exactly one block per type
- * per context (personal/work/learning/creative).
+ * per context (operations/finance/people/strategy).
  *
  * Block types:
  *   - user_profile:    Who the user is (background, identity)
@@ -154,9 +154,14 @@ export async function updateCoreMemoryBlock(
 
   const result = await queryContext(context, sql, [userId, blockType, truncated, updatedBy]);
 
-  logger.debug('Core memory block updated', { context, userId, blockType, version: result.rows[0]?.version });
+  const row = result.rows[0];
+  if (!row) {
+    throw new Error(`Failed to upsert core memory block: ${blockType}`);
+  }
 
-  return rowToBlock(result.rows[0]);
+  logger.debug('Core memory block updated', { context, userId, blockType, version: row.version });
+
+  return rowToBlock(row);
 }
 
 /**

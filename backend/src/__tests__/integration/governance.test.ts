@@ -40,7 +40,7 @@ jest.mock('../../utils/logger', () => ({
 
 jest.mock('../../utils/database-context', () => ({
   queryContext: jest.fn(),
-  isValidContext: jest.fn((ctx: string) => ['personal', 'work', 'learning', 'creative'].includes(ctx)),
+  isValidContext: jest.fn((ctx: string) => ['operations', 'finance', 'people', 'strategy'].includes(ctx)),
   AIContext: {},
 }));
 
@@ -105,7 +105,7 @@ describe('Governance API Integration Tests', () => {
       mockGetPendingActions.mockResolvedValueOnce(actions);
 
       const response = await request(app)
-        .get('/api/personal/governance/pending')
+        .get('/api/operations/governance/pending')
         .expect(200);
 
       expect(response.body.success).toBe(true);
@@ -117,7 +117,7 @@ describe('Governance API Integration Tests', () => {
       mockGetPendingActions.mockResolvedValueOnce([]);
 
       const response = await request(app)
-        .get('/api/personal/governance/pending')
+        .get('/api/operations/governance/pending')
         .expect(200);
 
       expect(response.body.data).toHaveLength(0);
@@ -144,7 +144,7 @@ describe('Governance API Integration Tests', () => {
       mockGetActionHistory.mockResolvedValueOnce(actions);
 
       const response = await request(app)
-        .get('/api/work/governance/history')
+        .get('/api/finance/governance/history')
         .expect(200);
 
       expect(response.body.success).toBe(true);
@@ -155,11 +155,11 @@ describe('Governance API Integration Tests', () => {
       mockGetActionHistory.mockResolvedValueOnce([]);
 
       await request(app)
-        .get('/api/personal/governance/history?status=approved')
+        .get('/api/operations/governance/history?status=approved')
         .expect(200);
 
       expect(mockGetActionHistory).toHaveBeenCalledWith(
-        'personal',
+        'operations',
         expect.objectContaining({ status: 'approved' }),
       );
     });
@@ -180,7 +180,7 @@ describe('Governance API Integration Tests', () => {
       mockRequestApproval.mockResolvedValueOnce(action);
 
       const response = await request(app)
-        .post('/api/personal/governance/request')
+        .post('/api/operations/governance/request')
         .send({
           action_type: 'memory_delete',
           action_source: 'agent',
@@ -194,7 +194,7 @@ describe('Governance API Integration Tests', () => {
 
     it('should reject missing required fields', async () => {
       const response = await request(app)
-        .post('/api/personal/governance/request')
+        .post('/api/operations/governance/request')
         .send({ action_type: 'memory_delete' })
         .expect(400);
 
@@ -225,7 +225,7 @@ describe('Governance API Integration Tests', () => {
       mockApproveAction.mockResolvedValueOnce(action);
 
       const response = await request(app)
-        .post(`/api/personal/governance/${VALID_UUID}/approve`)
+        .post(`/api/operations/governance/${VALID_UUID}/approve`)
         .send({ approved_by: 'admin' })
         .expect(200);
 
@@ -244,7 +244,7 @@ describe('Governance API Integration Tests', () => {
       mockRejectAction.mockResolvedValueOnce(action);
 
       const response = await request(app)
-        .post(`/api/personal/governance/${VALID_UUID}/reject`)
+        .post(`/api/operations/governance/${VALID_UUID}/reject`)
         .send({ reason: 'Not appropriate', rejected_by: 'admin' })
         .expect(200);
 
@@ -254,7 +254,7 @@ describe('Governance API Integration Tests', () => {
 
     it('should reject without reason', async () => {
       const response = await request(app)
-        .post(`/api/personal/governance/${VALID_UUID}/reject`)
+        .post(`/api/operations/governance/${VALID_UUID}/reject`)
         .send({})
         .expect(400);
 
@@ -274,7 +274,7 @@ describe('Governance API Integration Tests', () => {
       mockGetAuditLog.mockResolvedValueOnce(entries);
 
       const response = await request(app)
-        .get('/api/personal/governance/audit')
+        .get('/api/operations/governance/audit')
         .expect(200);
 
       expect(response.body.success).toBe(true);
@@ -292,7 +292,7 @@ describe('Governance API Integration Tests', () => {
       mockListPolicies.mockResolvedValueOnce(policies);
 
       const response = await request(app)
-        .get('/api/personal/governance/policies')
+        .get('/api/operations/governance/policies')
         .expect(200);
 
       expect(response.body.success).toBe(true);
@@ -307,7 +307,7 @@ describe('Governance API Integration Tests', () => {
       mockLogAudit.mockResolvedValueOnce(undefined);
 
       const response = await request(app)
-        .post('/api/personal/governance/policies')
+        .post('/api/operations/governance/policies')
         .send({
           name: 'Test Policy',
           action_type: 'memory_delete',
@@ -321,7 +321,7 @@ describe('Governance API Integration Tests', () => {
 
     it('should reject missing required fields', async () => {
       const response = await request(app)
-        .post('/api/personal/governance/policies')
+        .post('/api/operations/governance/policies')
         .send({ description: 'No name or action_type' })
         .expect(400);
 
@@ -334,7 +334,7 @@ describe('Governance API Integration Tests', () => {
       mockDeletePolicy.mockResolvedValueOnce(true);
 
       const response = await request(app)
-        .delete(`/api/personal/governance/policies/${VALID_UUID}`)
+        .delete(`/api/operations/governance/policies/${VALID_UUID}`)
         .expect(200);
 
       expect(response.body.success).toBe(true);
@@ -344,7 +344,7 @@ describe('Governance API Integration Tests', () => {
       mockDeletePolicy.mockResolvedValueOnce(false);
 
       const response = await request(app)
-        .delete(`/api/personal/governance/policies/${VALID_UUID}`)
+        .delete(`/api/operations/governance/policies/${VALID_UUID}`)
         .expect(404);
 
       expect(response.body.success).toBe(false);

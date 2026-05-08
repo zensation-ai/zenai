@@ -70,7 +70,7 @@ digestRouter.post('/:context/digest/generate/daily', apiKeyAuth, requireScope('w
   const { date } = req.body; // Optional: specific date (YYYY-MM-DD)
 
   if (!isValidContext(context)) {
-    throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
+    throw new ValidationError('Invalid context. Use "operations", "finance", "people", or "strategy".');
   }
 
   const ctx = context as AIContext;
@@ -181,7 +181,7 @@ digestRouter.post('/:context/digest/generate/weekly', apiKeyAuth, requireScope('
   const { weekOffset = 0 } = req.body; // 0 = current week, -1 = last week
 
   if (!isValidContext(context)) {
-    throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
+    throw new ValidationError('Invalid context. Use "operations", "finance", "people", or "strategy".');
   }
 
   const ctx = context as AIContext;
@@ -301,7 +301,7 @@ digestRouter.get('/:context/digest/history', apiKeyAuth, asyncHandler(async (req
   const { type, limit = '10' } = req.query;
 
   if (!isValidContext(context)) {
-    throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
+    throw new ValidationError('Invalid context. Use "operations", "finance", "people", or "strategy".');
   }
 
   const ctx = context as AIContext;
@@ -346,7 +346,7 @@ digestRouter.get('/:context/digest/latest', apiKeyAuth, asyncHandler(async (req:
   const { type } = req.query;
 
   if (!isValidContext(context)) {
-    throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
+    throw new ValidationError('Invalid context. Use "operations", "finance", "people", or "strategy".');
   }
 
   const ctx = context as AIContext;
@@ -397,7 +397,7 @@ digestRouter.get('/:context/digest/goals', apiKeyAuth, asyncHandler(async (req: 
   getUserId(req); // auth check
 
   if (!isValidContext(context)) {
-    throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
+    throw new ValidationError('Invalid context. Use "operations", "finance", "people", or "strategy".');
   }
 
   const ctx = context as AIContext;
@@ -448,7 +448,7 @@ digestRouter.put('/:context/digest/goals', apiKeyAuth, requireScope('write'), as
   const { dailyIdeasTarget, weeklyIdeasTarget, focusCategories, enabledInsights, digestTime } = req.body;
 
   if (!isValidContext(context)) {
-    throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
+    throw new ValidationError('Invalid context. Use "operations", "finance", "people", or "strategy".');
   }
 
   const ctx = context as AIContext;

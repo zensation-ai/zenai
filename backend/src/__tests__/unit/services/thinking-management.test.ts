@@ -42,7 +42,7 @@ describe('Thinking Management Service', () => {
         }],
       } as never);
 
-      const result = await getThinkingChainById('chain-1', 'personal');
+      const result = await getThinkingChainById('chain-1', 'operations');
       expect(result).not.toBeNull();
       expect(result!.id).toBe('chain-1');
       expect(result!.taskType).toBe('analysis');
@@ -53,14 +53,14 @@ describe('Thinking Management Service', () => {
     it('should return null if chain not found', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [] } as never);
 
-      const result = await getThinkingChainById('nonexistent', 'personal');
+      const result = await getThinkingChainById('nonexistent', 'operations');
       expect(result).toBeNull();
     });
 
     it('should return null on error', async () => {
       mockQueryContext.mockRejectedValueOnce(new Error('DB error'));
 
-      const result = await getThinkingChainById('chain-1', 'personal');
+      const result = await getThinkingChainById('chain-1', 'operations');
       expect(result).toBeNull();
     });
   });
@@ -69,11 +69,11 @@ describe('Thinking Management Service', () => {
     it('should delete a thinking chain', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [] } as never);
 
-      await deleteThinkingChain('chain-1', 'personal');
+      await deleteThinkingChain('chain-1', 'operations');
       expect(mockQueryContext).toHaveBeenCalledWith(
-        'personal',
+        'operations',
         expect.stringContaining('DELETE FROM thinking_chains'),
-        ['chain-1', 'personal']
+        ['chain-1', 'operations']
       );
     });
   });
@@ -82,12 +82,12 @@ describe('Thinking Management Service', () => {
     it('should persist all budget strategies', async () => {
       mockQueryContext.mockResolvedValue({ rows: [] } as never);
 
-      await persistStrategies('personal');
+      await persistStrategies('operations');
 
       // Should persist 8 task types
       expect(mockQueryContext).toHaveBeenCalledTimes(8);
       expect(mockQueryContext).toHaveBeenCalledWith(
-        'personal',
+        'operations',
         expect.stringContaining('INSERT INTO thinking_budget_strategies'),
         expect.arrayContaining(['simple_structuring'])
       );
@@ -110,7 +110,7 @@ describe('Thinking Management Service', () => {
         ],
       } as never);
 
-      const result = await getStrategyHistory('personal');
+      const result = await getStrategyHistory('operations');
 
       expect(result.strategies).toBeDefined();
       expect(result.strategies.length).toBeGreaterThan(0);

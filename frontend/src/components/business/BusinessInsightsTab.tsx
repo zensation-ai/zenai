@@ -108,8 +108,8 @@ export const BusinessInsightsTab: React.FC = () => {
 
   return (
     <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+      <div className="flex justify-between items-center mb-6">
+        <div className="flex gap-2 flex-wrap">
           {FILTERS.map(f => (
             <button
               key={f.id}
@@ -137,9 +137,9 @@ export const BusinessInsightsTab: React.FC = () => {
       ) : (
         filtered.map(insight => (
           <div key={insight.id} className={`business-insight-card ${insight.severity}`}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.5rem' }}>
+            <div className="flex justify-between items-start mb-2">
               <div className="business-insight-title">{insight.title}</div>
-              <div style={{ display: 'flex', gap: '0.25rem', flexShrink: 0 }}>
+              <div className="flex gap-1 shrink-0">
                 <span className={`business-kpi-badge ${insight.severity === 'critical' ? 'negative' : insight.severity === 'warning' ? 'neutral' : 'positive'}`}>
                   {SEVERITY_LABELS[insight.severity] ?? insight.severity}
                 </span>
@@ -147,20 +147,20 @@ export const BusinessInsightsTab: React.FC = () => {
             </div>
             <div className="business-insight-desc">{insight.description}</div>
             {insight.data_source && (
-              <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', marginTop: '0.25rem' }}>
+              <div className="text-xs text-white/40 mt-1">
                 Quelle: {SOURCE_LABELS[insight.data_source] ?? insight.data_source}
               </div>
             )}
             {insight.action_items && insight.action_items.length > 0 && (
-              <div style={{ marginTop: '0.5rem', paddingTop: '0.5rem', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+              <div className="mt-2 pt-2 border-t border-white/[0.06]">
                 {insight.action_items.map((item, idx) => (
-                  <div key={idx} style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)', padding: '0.2rem 0' }}>
+                  <div key={idx} className="text-sm text-white/60 py-0.5">
                     → {item.title}
                   </div>
                 ))}
               </div>
             )}
-            <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.75rem' }}>
+            <div className="flex gap-2 mt-3">
               <button type="button" className="business-btn" onClick={() => actOnInsight(insight.id)}>
                 ✅ Erledigt
               </button>

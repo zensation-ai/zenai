@@ -10,7 +10,7 @@ const mockToolRegistryExecute = jest.fn();
 
 jest.mock('../../../utils/database-context', () => ({
   queryContext: (...args: any[]) => mockQueryContext(...args),
-  AIContext: 'personal',
+  AIContext: 'operations',
 }));
 
 jest.mock('../../../utils/logger', () => ({
@@ -33,7 +33,7 @@ jest.mock('../../../services/claude/tool-use', () => ({
 import { handleMCPRequest, getExposedTools } from '../../../services/mcp-server';
 
 describe('MCP Server V2 (Phase 55)', () => {
-  const context = 'personal' as any;
+  const context = 'operations' as any;
 
   beforeEach(() => {
     jest.clearAllMocks();

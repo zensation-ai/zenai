@@ -63,7 +63,7 @@ function makeAnalysis(overrides: Partial<QueryAnalysis> = {}): QueryAnalysis {
 }
 
 const CTX: ModuleContext = {
-  aiContext: 'personal',
+  aiContext: 'operations',
   userId: 'user-42',
   sessionId: 'sess-1',
 };
@@ -164,7 +164,7 @@ describe('LongTermFactsModule', () => {
   });
 
   it('returns 0.7 when domain matches known fact domain', async () => {
-    const knownDomains = ['personal', 'work', 'learning', 'creative'];
+    const knownDomains = ['operations', 'finance', 'people', 'strategy'];
     for (const domain of knownDomains) {
       const result = await mod.computeSalience('q', makeAnalysis({ domain, intent: 'question' }), CTX);
       expect(result.score).toBeGreaterThanOrEqual(0.7);
@@ -378,7 +378,7 @@ describe('CalendarContextModule', () => {
   it('score does not exceed 1.0', async () => {
     const result = await mod.computeSalience(
       'meeting termin kalender schedule',
-      makeAnalysis({ temporalReference: 'future', domain: 'personal' }),
+      makeAnalysis({ temporalReference: 'future', domain: 'operations' }),
       CTX,
     );
     expect(result.score).toBeLessThanOrEqual(1.0);
@@ -439,8 +439,8 @@ describe('ProceduralMemoryModule', () => {
 // ─── ALL_WORKSPACE_MODULES ────────────────────────────────────────────────────
 
 describe('ALL_WORKSPACE_MODULES', () => {
-  it('exports an array of 8 modules', () => {
-    expect(ALL_WORKSPACE_MODULES).toHaveLength(8);
+  it('exports an array of 11 modules', () => {
+    expect(ALL_WORKSPACE_MODULES).toHaveLength(11);
   });
 
   it('each module has required interface fields', () => {

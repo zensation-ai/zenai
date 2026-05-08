@@ -5,6 +5,7 @@
  */
 
 import { Menu, app, BrowserWindow, shell, MenuItemConstructorOptions } from 'electron';
+import { toggleSpotlight } from './windows/spotlight-window';
 const APP_NAME = 'ZenAI';
 
 /**
@@ -153,6 +154,12 @@ export function createAppMenu(getMainWindow: () => BrowserWindow | null): void {
         ] : [
           { role: 'close' as const, label: 'Schliessen' },
         ]),
+        { type: 'separator' },
+        {
+          label: 'Spotlight oeffnen',
+          accelerator: 'CmdOrCtrl+Shift+Space',
+          click: () => toggleSpotlight(),
+        },
       ] as MenuItemConstructorOptions[],
     },
 

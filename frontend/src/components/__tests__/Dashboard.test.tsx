@@ -80,6 +80,14 @@ vi.mock('../SetupChecklist', () => ({
   SetupChecklist: () => <div data-testid="setup-checklist">SetupChecklist</div>,
 }));
 
+vi.mock('../Dashboard/StreakWidget', () => ({
+  StreakWidget: () => <div data-testid="streak-widget">StreakWidget</div>,
+}));
+
+vi.mock('../Dashboard/SetupProgress', () => ({
+  SetupProgress: () => <div data-testid="setup-progress">SetupProgress</div>,
+}));
+
 vi.mock('../QueryErrorState', () => ({
   QueryErrorState: ({ refetch }: { refetch: () => void }) => (
     <div data-testid="query-error-state">
@@ -104,7 +112,7 @@ vi.mock('../../utils/navIcons', () => ({
 import { Dashboard } from '../Dashboard';
 
 const defaultProps = {
-  context: 'personal' as const,
+  context: 'operations' as const,
   onNavigate: vi.fn(),
   isAIActive: false,
   ideasCount: 42,
@@ -132,8 +140,8 @@ describe('Dashboard Component', () => {
   it('shows loading skeletons when data is loading', () => {
     mockSummaryLoading = true;
     const { container } = render(<Dashboard {...defaultProps} />);
-    // Should show skeleton placeholders (ds-skeleton from design system)
-    const skeletons = container.querySelectorAll('.ds-skeleton, .bento-stat .ds-skeleton');
+    // Should show skeleton placeholders (shadcn Skeleton uses data-slot="skeleton")
+    const skeletons = container.querySelectorAll('[data-slot="skeleton"], [role="status"]');
     expect(skeletons.length).toBeGreaterThan(0);
   });
 
@@ -200,7 +208,7 @@ describe('Dashboard Component', () => {
 
   it('shows AI activity section with unread badge', () => {
     render(<Dashboard {...defaultProps} />);
-    expect(screen.getByText('KI-Aktivitaet')).toBeInTheDocument();
+    expect(screen.getByText('KI-Aktivität')).toBeInTheDocument();
     expect(screen.getByText('Neue Idee erstellt')).toBeInTheDocument();
   });
 
@@ -212,8 +220,8 @@ describe('Dashboard Component', () => {
   });
 
   it('shows context badge with correct label', () => {
-    render(<Dashboard {...defaultProps} context="work" />);
-    expect(screen.getByText('Arbeit')).toBeInTheDocument();
+    render(<Dashboard {...defaultProps} context="finance" />);
+    expect(screen.getByText('Finanzen')).toBeInTheDocument();
   });
 
   it('shows upcoming events section', () => {

@@ -11,8 +11,6 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { usePWA } from '../hooks/usePWA';
-import './OfflineIndicator.css';
-
 export function OfflineIndicator() {
   const { isOnline, pendingSync } = usePWA();
 
@@ -105,7 +103,7 @@ export function OfflineIndicator() {
             Offline
             {pendingSync > 0 && (
               <span className="offline-indicator__count">
-                {' '}&mdash; {pendingSync} Aenderung{pendingSync !== 1 ? 'en' : ''} warten
+                {' '}&mdash; {pendingSync} Änderung{pendingSync !== 1 ? 'en' : ''} warten
               </span>
             )}
           </span>

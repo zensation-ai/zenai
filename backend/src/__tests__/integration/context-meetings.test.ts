@@ -138,7 +138,7 @@ describe('Context-Aware Meetings API Integration Tests', () => {
       });
 
       const res = await request(app)
-        .get('/api/work/meetings')
+        .get('/api/finance/meetings')
         .expect(200);
 
       expect(res.body.success).toBe(true);
@@ -151,11 +151,11 @@ describe('Context-Aware Meetings API Integration Tests', () => {
       mockGetMeetings.mockResolvedValueOnce({ meetings: [], total: 0 });
 
       await request(app)
-        .get('/api/personal/meetings')
+        .get('/api/operations/meetings')
         .expect(200);
 
       expect(mockGetMeetings).toHaveBeenCalledWith(
-        expect.objectContaining({ context: 'personal' })
+        expect.objectContaining({ context: 'operations' })
       );
     });
 
@@ -163,7 +163,7 @@ describe('Context-Aware Meetings API Integration Tests', () => {
       mockGetMeetings.mockResolvedValueOnce({ meetings: [], total: 0 });
 
       await request(app)
-        .get('/api/work/meetings?has_audio=true')
+        .get('/api/finance/meetings?has_audio=true')
         .expect(200);
 
       expect(mockGetMeetings).toHaveBeenCalledWith(
@@ -175,7 +175,7 @@ describe('Context-Aware Meetings API Integration Tests', () => {
       mockGetMeetings.mockResolvedValueOnce({ meetings: [], total: 0 });
 
       const res = await request(app)
-        .get('/api/work/meetings')
+        .get('/api/finance/meetings')
         .expect(200);
 
       expect(res.body.data).toHaveLength(0);
@@ -193,7 +193,7 @@ describe('Context-Aware Meetings API Integration Tests', () => {
       mockGetMeetingNotes.mockResolvedValueOnce(sampleNotes as any);
 
       const res = await request(app)
-        .get(`/api/work/meetings/${VALID_UUID}`)
+        .get(`/api/finance/meetings/${VALID_UUID}`)
         .expect(200);
 
       expect(res.body.success).toBe(true);
@@ -205,7 +205,7 @@ describe('Context-Aware Meetings API Integration Tests', () => {
       mockGetMeeting.mockResolvedValueOnce(null);
 
       const res = await request(app)
-        .get(`/api/work/meetings/${VALID_UUID}`)
+        .get(`/api/finance/meetings/${VALID_UUID}`)
         .expect(404);
 
       expect(res.body).toHaveProperty('error');
@@ -213,7 +213,7 @@ describe('Context-Aware Meetings API Integration Tests', () => {
 
     it('should return 400 for invalid UUID', async () => {
       const res = await request(app)
-        .get(`/api/work/meetings/${INVALID_UUID}`)
+        .get(`/api/finance/meetings/${INVALID_UUID}`)
         .expect(400);
 
       expect(res.body).toHaveProperty('error');
@@ -229,7 +229,7 @@ describe('Context-Aware Meetings API Integration Tests', () => {
       mockCreateMeeting.mockResolvedValueOnce(sampleMeeting);
 
       const res = await request(app)
-        .post('/api/work/meetings')
+        .post('/api/finance/meetings')
         .send({
           title: 'Sprint Planning',
           date: '2026-03-01T10:00:00Z',
@@ -245,7 +245,7 @@ describe('Context-Aware Meetings API Integration Tests', () => {
       mockCreateMeeting.mockResolvedValueOnce(sampleMeeting);
 
       await request(app)
-        .post('/api/learning/meetings')
+        .post('/api/people/meetings')
         .send({
           title: 'Study Session',
           date: '2026-03-01T10:00:00Z',
@@ -253,7 +253,7 @@ describe('Context-Aware Meetings API Integration Tests', () => {
         .expect(201);
 
       expect(mockCreateMeeting).toHaveBeenCalledWith(
-        expect.objectContaining({ context: 'learning' })
+        expect.objectContaining({ context: 'people' })
       );
     });
   });
@@ -268,7 +268,7 @@ describe('Context-Aware Meetings API Integration Tests', () => {
       mockProcessMeetingNotes.mockResolvedValueOnce(sampleNotes as any);
 
       const res = await request(app)
-        .post(`/api/work/meetings/${VALID_UUID}/notes`)
+        .post(`/api/finance/meetings/${VALID_UUID}/notes`)
         .send({ transcript: 'We discussed the roadmap.' })
         .expect(200);
 
@@ -281,7 +281,7 @@ describe('Context-Aware Meetings API Integration Tests', () => {
       mockGetMeeting.mockResolvedValueOnce(sampleMeeting);
 
       const res = await request(app)
-        .post(`/api/work/meetings/${VALID_UUID}/notes`)
+        .post(`/api/finance/meetings/${VALID_UUID}/notes`)
         .send({})
         .expect(400);
 
@@ -292,7 +292,7 @@ describe('Context-Aware Meetings API Integration Tests', () => {
       mockGetMeeting.mockResolvedValueOnce(null);
 
       const res = await request(app)
-        .post(`/api/work/meetings/${VALID_UUID}/notes`)
+        .post(`/api/finance/meetings/${VALID_UUID}/notes`)
         .send({ transcript: 'Some text' })
         .expect(404);
 
@@ -301,7 +301,7 @@ describe('Context-Aware Meetings API Integration Tests', () => {
 
     it('should return 400 for invalid meeting UUID', async () => {
       const res = await request(app)
-        .post(`/api/work/meetings/${INVALID_UUID}/notes`)
+        .post(`/api/finance/meetings/${INVALID_UUID}/notes`)
         .send({ transcript: 'Some text' })
         .expect(400);
 
@@ -320,7 +320,7 @@ describe('Context-Aware Meetings API Integration Tests', () => {
       ] as any);
 
       const res = await request(app)
-        .post('/api/work/meetings/search')
+        .post('/api/finance/meetings/search')
         .send({ query: 'roadmap' })
         .expect(200);
 
@@ -332,7 +332,7 @@ describe('Context-Aware Meetings API Integration Tests', () => {
 
     it('should return 400 for empty query', async () => {
       const res = await request(app)
-        .post('/api/work/meetings/search')
+        .post('/api/finance/meetings/search')
         .send({ query: '' })
         .expect(400);
 
@@ -341,7 +341,7 @@ describe('Context-Aware Meetings API Integration Tests', () => {
 
     it('should return 400 for missing query', async () => {
       const res = await request(app)
-        .post('/api/work/meetings/search')
+        .post('/api/finance/meetings/search')
         .send({})
         .expect(400);
 
@@ -352,11 +352,11 @@ describe('Context-Aware Meetings API Integration Tests', () => {
       mockSearchMeetingsHybrid.mockResolvedValueOnce([]);
 
       await request(app)
-        .post('/api/work/meetings/search')
+        .post('/api/finance/meetings/search')
         .send({ query: 'test', limit: 100 })
         .expect(200);
 
-      expect(mockSearchMeetingsHybrid).toHaveBeenCalledWith('test', 50, 'work');
+      expect(mockSearchMeetingsHybrid).toHaveBeenCalledWith('test', 50, 'finance');
     });
   });
 
@@ -377,7 +377,7 @@ describe('Context-Aware Meetings API Integration Tests', () => {
       mockGetSignedAudioUrl.mockResolvedValueOnce('https://supabase.co/signed/abc');
 
       const res = await request(app)
-        .get(`/api/work/meetings/${VALID_UUID}/audio-url`)
+        .get(`/api/finance/meetings/${VALID_UUID}/audio-url`)
         .expect(200);
 
       expect(res.body.success).toBe(true);
@@ -392,7 +392,7 @@ describe('Context-Aware Meetings API Integration Tests', () => {
       mockGetMeetingNotes.mockResolvedValueOnce(sampleNotes as any);
 
       const res = await request(app)
-        .get(`/api/work/meetings/${VALID_UUID}/audio-url`)
+        .get(`/api/finance/meetings/${VALID_UUID}/audio-url`)
         .expect(200);
 
       expect(res.body.success).toBe(true);
@@ -404,7 +404,7 @@ describe('Context-Aware Meetings API Integration Tests', () => {
       mockGetMeetingNotes.mockResolvedValueOnce(null);
 
       const res = await request(app)
-        .get(`/api/work/meetings/${VALID_UUID}/audio-url`)
+        .get(`/api/finance/meetings/${VALID_UUID}/audio-url`)
         .expect(404);
 
       expect(res.body).toHaveProperty('error');
@@ -412,7 +412,7 @@ describe('Context-Aware Meetings API Integration Tests', () => {
 
     it('should return 400 for invalid UUID', async () => {
       const res = await request(app)
-        .get(`/api/work/meetings/${INVALID_UUID}/audio-url`)
+        .get(`/api/finance/meetings/${INVALID_UUID}/audio-url`)
         .expect(400);
 
       expect(res.body).toHaveProperty('error');
@@ -444,7 +444,7 @@ describe('Context-Aware Meetings API Integration Tests', () => {
       mockGetMeetings.mockRejectedValueOnce(new Error('Database error'));
 
       const res = await request(app)
-        .get('/api/work/meetings')
+        .get('/api/finance/meetings')
         .expect(500);
 
       expect(res.body).toHaveProperty('error');

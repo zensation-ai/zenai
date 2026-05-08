@@ -47,7 +47,7 @@ jest.mock('../../../services/email-search', () => ({
 
 describe('Email Tool Handlers', () => {
   const execContext: ToolExecutionContext = {
-    aiContext: 'work',
+    aiContext: 'finance',
     sessionId: 'test-session',
   };
 

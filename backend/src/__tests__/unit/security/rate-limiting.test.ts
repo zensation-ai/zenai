@@ -17,12 +17,12 @@ describe('Security: Rate Limiting (Sprint 2)', () => {
       'GET:/api/keys': { limit: 30, windowMs: 60 * 1000 },
 
       // Heavy computation - stricter limits
-      'POST:/api/personal/topics/generate': { limit: 2, windowMs: 60 * 1000 },
-      'POST:/api/work/topics/generate': { limit: 2, windowMs: 60 * 1000 },
-      'POST:/api/personal/incubator/consolidate': { limit: 5, windowMs: 60 * 1000 },
-      'POST:/api/work/incubator/consolidate': { limit: 5, windowMs: 60 * 1000 },
-      'POST:/api/personal/knowledge-graph/discover': { limit: 3, windowMs: 60 * 1000 },
-      'POST:/api/work/knowledge-graph/discover': { limit: 3, windowMs: 60 * 1000 },
+      'POST:/api/operations/topics/generate': { limit: 2, windowMs: 60 * 1000 },
+      'POST:/api/finance/topics/generate': { limit: 2, windowMs: 60 * 1000 },
+      'POST:/api/operations/incubator/consolidate': { limit: 5, windowMs: 60 * 1000 },
+      'POST:/api/finance/incubator/consolidate': { limit: 5, windowMs: 60 * 1000 },
+      'POST:/api/operations/knowledge-graph/discover': { limit: 3, windowMs: 60 * 1000 },
+      'POST:/api/finance/knowledge-graph/discover': { limit: 3, windowMs: 60 * 1000 },
 
       // AI Chat endpoints
       'POST:/api/chat/sessions': { limit: 10, windowMs: 60 * 1000 },
@@ -33,8 +33,8 @@ describe('Security: Rate Limiting (Sprint 2)', () => {
       'POST:/api/voice-memo': { limit: 20, windowMs: 60 * 1000 },
       'POST:/api/voice-memo/text': { limit: 30, windowMs: 60 * 1000 },
       'POST:/api/voice-memo/transcribe': { limit: 15, windowMs: 60 * 1000 },
-      'POST:/api/personal/voice-memo': { limit: 20, windowMs: 60 * 1000 },
-      'POST:/api/work/voice-memo': { limit: 20, windowMs: 60 * 1000 },
+      'POST:/api/operations/voice-memo': { limit: 20, windowMs: 60 * 1000 },
+      'POST:/api/finance/voice-memo': { limit: 20, windowMs: 60 * 1000 },
 
       // Export endpoints - prevent data scraping
       'GET:/api/export/backup': { limit: 2, windowMs: 60 * 1000 },
@@ -44,10 +44,10 @@ describe('Security: Rate Limiting (Sprint 2)', () => {
       'GET:/api/export/ideas/markdown': { limit: 10, windowMs: 60 * 1000 },
 
       // Write operations
-      'POST:/api/personal/ideas': { limit: 60, windowMs: 60 * 1000 },
-      'POST:/api/work/ideas': { limit: 60, windowMs: 60 * 1000 },
-      'PUT:/api/personal/ideas': { limit: 100, windowMs: 60 * 1000 },
-      'PUT:/api/work/ideas': { limit: 100, windowMs: 60 * 1000 },
+      'POST:/api/operations/ideas': { limit: 60, windowMs: 60 * 1000 },
+      'POST:/api/finance/ideas': { limit: 60, windowMs: 60 * 1000 },
+      'PUT:/api/operations/ideas': { limit: 100, windowMs: 60 * 1000 },
+      'PUT:/api/finance/ideas': { limit: 100, windowMs: 60 * 1000 },
 
       // Webhooks
       'POST:/api/webhooks': { limit: 10, windowMs: 60 * 1000 },
@@ -72,20 +72,20 @@ describe('Security: Rate Limiting (Sprint 2)', () => {
     });
 
     it('should have strict limits for heavy computation endpoints', () => {
-      const topicsLimit = expectedLimits['POST:/api/personal/topics/generate'];
+      const topicsLimit = expectedLimits['POST:/api/operations/topics/generate'];
       expect(topicsLimit.limit).toBeLessThanOrEqual(5);
 
-      const knowledgeLimit = expectedLimits['POST:/api/personal/knowledge-graph/discover'];
+      const knowledgeLimit = expectedLimits['POST:/api/operations/knowledge-graph/discover'];
       expect(knowledgeLimit.limit).toBeLessThanOrEqual(5);
     });
 
-    it('should have consistent limits for both contexts (personal/work)', () => {
-      // Verify personal and work contexts have same limits
-      expect(expectedLimits['POST:/api/personal/ideas'].limit)
-        .toBe(expectedLimits['POST:/api/work/ideas'].limit);
+    it('should have consistent limits for both contexts (operations/finance)', () => {
+      // Verify operations and finance contexts have same limits
+      expect(expectedLimits['POST:/api/operations/ideas'].limit)
+        .toBe(expectedLimits['POST:/api/finance/ideas'].limit);
 
-      expect(expectedLimits['POST:/api/personal/voice-memo'].limit)
-        .toBe(expectedLimits['POST:/api/work/voice-memo'].limit);
+      expect(expectedLimits['POST:/api/operations/voice-memo'].limit)
+        .toBe(expectedLimits['POST:/api/finance/voice-memo'].limit);
     });
   });
 

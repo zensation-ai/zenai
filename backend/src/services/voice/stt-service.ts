@@ -9,6 +9,16 @@
 
 import { logger } from '../../utils/logger';
 import { transcribeWithOpenAI, isOpenAIAvailable } from '../openai';
+import { checkedFetch } from '../../utils/checked-http';
+import { recordVoicePhase, recordFailover } from './voice-metrics';
+import { getTracer } from '../observability/tracing';
+import {
+  buildProviderPriority,
+  classifyProviderError,
+  PROVIDER_TIMEOUT_MS,
+  sttCircuitBreaker,
+  withProviderTimeout,
+} from './provider-registry';
 
 // ============================================================
 // Types
@@ -76,7 +86,7 @@ class DeepgramProvider implements STTProvider {
     const startTime = Date.now();
     const language = options?.language || 'de';
 
-    const response = await fetch('https://api.deepgram.com/v1/listen?model=nova-2&language=' + language, {
+    const response = await checkedFetch('https://api.deepgram.com/v1/listen?model=nova-2&language=' + language, {
       method: 'POST',
       headers: {
         'Authorization': `Token ${this.apiKey}`,
@@ -149,33 +159,89 @@ export class STTService {
     options?: { language?: string; provider?: string; format?: string }
   ): Promise<STTResult> {
     const preferredName = options?.provider || this.defaultProvider;
-    const preferred = this.providers.get(preferredName);
+    const tracer = getTracer('voice');
 
-    // Try preferred provider first
-    if (preferred && preferred.isAvailable()) {
-      try {
-        return await preferred.transcribe(audio, options);
-      } catch (error) {
-        logger.warn(`STT provider ${preferredName} failed, trying fallback`, {
-          error: error instanceof Error ? error.message : String(error),
-        });
-      }
-    }
+    return tracer.startActiveSpan('voice.stt.transcribe', async (span) => {
+      span.setAttributes({
+        'voice.phase': 'stt',
+        'voice.provider.preferred': preferredName,
+        'voice.audio.bytes': audio.length,
+      });
 
-    // Fallback to any available provider
-    for (const [name, provider] of this.providers) {
-      if (name !== preferredName && provider.isAvailable()) {
+      const priority = buildProviderPriority(this.providers, preferredName);
+      const trail: Array<{ provider: string; reason: string }> = [];
+      let lastError: unknown;
+
+      for (const [name, provider] of priority) {
+        if (!provider.isAvailable()) {
+          trail.push({ provider: name, reason: 'unavailable' });
+          continue;
+        }
+        if (sttCircuitBreaker.isOpen(name)) {
+          trail.push({ provider: name, reason: 'breaker_open' });
+          continue;
+        }
+
+        const start = Date.now();
         try {
-          return await provider.transcribe(audio, options);
-        } catch (error) {
-          logger.warn(`STT fallback provider ${name} also failed`, {
-            error: error instanceof Error ? error.message : String(error),
+          const result = await withProviderTimeout(
+            provider.transcribe(audio, options),
+            PROVIDER_TIMEOUT_MS,
+            name,
+          );
+          const duration = Date.now() - start;
+          const usedFallback = trail.length > 0;
+          sttCircuitBreaker.recordSuccess(name);
+          recordVoicePhase('stt', duration, {
+            provider: name,
+            outcome: usedFallback ? 'fallback' : 'ok',
           });
+          if (usedFallback) {
+            recordFailover(preferredName, name, trail[0].reason);
+          }
+          span.setAttributes({
+            'voice.provider.used': name,
+            'voice.stt.duration_ms': duration,
+            'voice.stt.outcome': usedFallback ? 'fallback' : 'ok',
+          });
+          span.end();
+          return result;
+        } catch (error) {
+          const duration = Date.now() - start;
+          const { classification, reason } = classifyProviderError(error);
+          recordVoicePhase('stt', duration, { provider: name, outcome: 'error' });
+          logger.warn(`STT provider ${name} failed`, {
+            error: error instanceof Error ? error.message : String(error),
+            classification,
+            reason,
+          });
+          trail.push({ provider: name, reason });
+          lastError = error;
+
+          if (classification === 'non_retryable') {
+            span.setStatus({ code: 2, message: `STT failed (non-retryable): ${reason}` });
+            span.setAttributes({
+              'voice.provider.used': name,
+              'voice.stt.outcome': 'error',
+              'voice.stt.failure_reason': reason,
+            });
+            span.end();
+            throw error;
+          }
+
+          // Retryable failure → count toward breaker
+          sttCircuitBreaker.recordFailure(name);
         }
       }
-    }
 
-    throw new Error('No STT provider available');
+      const summary = trail.map((t) => `${t.provider}:${t.reason}`).join(',');
+      span.setStatus({ code: 2, message: `All STT providers failed: ${summary}` });
+      span.setAttribute('voice.stt.failure_trail', summary);
+      span.end();
+      throw lastError instanceof Error
+        ? lastError
+        : new Error(`No STT provider succeeded (tried: ${summary || 'none'})`);
+    });
   }
 
   getAvailableProviders(): string[] {

@@ -13,9 +13,7 @@
  * - Apple Human Interface Guidelines 2025
  */
 
-import { useState, useEffect, useCallback, useRef, createContext, useContext, type ReactNode } from 'react';
-import './NeuroFeedback.css';
-
+import React, { useState, useEffect, useCallback, useRef, createContext, useContext, type ReactNode } from 'react';
 // ===========================================
 // Types
 // ===========================================
@@ -193,10 +191,10 @@ const ProgressIndicator = ({ isVisible, step, total, message }: ProgressIndicato
         <span className="progress-message">{message || `Schritt ${step} von ${total}`}</span>
         <div className="progress-bar-container">
           <div
-            className="progress-bar-fill"
-            style={{ width: `${progress}%` }}
+            className="progress-bar-fill w-[var(--bar)]"
+            style={{ '--bar': `${progress}%` } as React.CSSProperties}
           />
-          <div className="progress-glow" style={{ left: `${progress}%` }} />
+          <div className="progress-glow left-[var(--left)]" style={{ '--left': `${progress}%` } as React.CSSProperties} />
         </div>
       </div>
     </div>

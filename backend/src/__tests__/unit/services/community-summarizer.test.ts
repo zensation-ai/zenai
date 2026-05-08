@@ -4,7 +4,7 @@
 
 jest.mock('../../../utils/database-context', () => ({
   queryContext: jest.fn(),
-  isValidContext: (ctx: string) => ['personal', 'work', 'learning', 'creative'].includes(ctx),
+  isValidContext: (ctx: string) => ['operations', 'finance', 'people', 'strategy'].includes(ctx),
 }));
 
 jest.mock('../../../utils/logger', () => ({
@@ -97,7 +97,7 @@ describe('CommunitySummarizer', () => {
       // Store in DB
       mockQueryContext.mockResolvedValueOnce({ rows: [] } as any);
 
-      const summaries = await summarizer.buildCommunitySummaries('personal');
+      const summaries = await summarizer.buildCommunitySummaries('operations');
       expect(summaries.length).toBe(1);
       expect(summaries[0].summary).toBe('A group of UI frameworks');
       expect(summaries[0].keyThemes).toEqual(['UI', 'frontend']);
@@ -106,7 +106,7 @@ describe('CommunitySummarizer', () => {
     it('should handle empty graph (no communities)', async () => {
       mockDetectCommunities.mockResolvedValueOnce([]);
 
-      const summaries = await summarizer.buildCommunitySummaries('personal');
+      const summaries = await summarizer.buildCommunitySummaries('operations');
       expect(summaries).toEqual([]);
     });
 
@@ -128,7 +128,7 @@ describe('CommunitySummarizer', () => {
       // No relations
       mockQueryContext.mockResolvedValueOnce({ rows: [] } as any);
 
-      const summaries = await summarizer.buildCommunitySummaries('personal');
+      const summaries = await summarizer.buildCommunitySummaries('operations');
       expect(summaries).toEqual([]);
     });
 
@@ -155,7 +155,7 @@ describe('CommunitySummarizer', () => {
       // Store in DB
       mockQueryContext.mockResolvedValueOnce({ rows: [] } as any);
 
-      const summaries = await summarizer.buildCommunitySummaries('personal');
+      const summaries = await summarizer.buildCommunitySummaries('operations');
       expect(summaries.length).toBe(1);
       expect(summaries[0].summary).toContain('Lonely');
     });
@@ -185,7 +185,7 @@ describe('CommunitySummarizer', () => {
         rows: [{ name: 'TensorFlow' }, { name: 'PyTorch' }],
       } as any);
 
-      const summaries = await summarizer.getCommunitySummaries('personal');
+      const summaries = await summarizer.getCommunitySummaries('operations');
       expect(summaries.length).toBe(1);
       expect(summaries[0].summary).toBe('AI technologies');
       expect(summaries[0].entityNames).toEqual(['TensorFlow', 'PyTorch']);
@@ -194,7 +194,7 @@ describe('CommunitySummarizer', () => {
     it('should handle database errors', async () => {
       mockQueryContext.mockRejectedValueOnce(new Error('DB error'));
 
-      const summaries = await summarizer.getCommunitySummaries('personal');
+      const summaries = await summarizer.getCommunitySummaries('operations');
       expect(summaries).toEqual([]);
     });
   });
@@ -219,7 +219,7 @@ describe('CommunitySummarizer', () => {
         }],
       } as any);
 
-      const results = await summarizer.searchCommunitySummaries('machine learning', 'personal', 5);
+      const results = await summarizer.searchCommunitySummaries('machine learning', 'operations', 5);
       expect(results.length).toBe(1);
       expect(results[0].summary).toBe('Machine learning cluster');
     });
@@ -227,7 +227,7 @@ describe('CommunitySummarizer', () => {
     it('should return empty array on error', async () => {
       mockQueryContext.mockRejectedValueOnce(new Error('Search failed'));
 
-      const results = await summarizer.searchCommunitySummaries('query', 'personal');
+      const results = await summarizer.searchCommunitySummaries('query', 'operations');
       expect(results).toEqual([]);
     });
   });
@@ -244,10 +244,10 @@ describe('CommunitySummarizer', () => {
       // buildCommunitySummaries internals
       mockDetectCommunities.mockResolvedValueOnce([]);
 
-      const count = await summarizer.refreshStaleCommunitySummaries('personal', 24);
+      const count = await summarizer.refreshStaleCommunitySummaries('operations', 24);
       expect(count).toBe(0); // No new summaries (empty graph)
       expect(mockQueryContext).toHaveBeenCalledWith(
-        'personal',
+        'operations',
         expect.stringContaining('DELETE FROM graph_communities_v2'),
         [24]
       );
@@ -256,7 +256,7 @@ describe('CommunitySummarizer', () => {
     it('should handle refresh errors', async () => {
       mockQueryContext.mockRejectedValueOnce(new Error('Refresh failed'));
 
-      const count = await summarizer.refreshStaleCommunitySummaries('personal');
+      const count = await summarizer.refreshStaleCommunitySummaries('operations');
       expect(count).toBe(0);
     });
   });
@@ -290,7 +290,7 @@ describe('CommunitySummarizer', () => {
 
       mockQueryContext.mockResolvedValueOnce({ rows: [] } as any);
 
-      const summaries = await summarizer.buildCommunitySummaries('personal');
+      const summaries = await summarizer.buildCommunitySummaries('operations');
       expect(summaries.length).toBe(1);
       expect(summaries[0].entityCount).toBe(1);
     });

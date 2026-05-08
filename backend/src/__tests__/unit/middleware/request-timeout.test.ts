@@ -10,7 +10,7 @@ describe('Request Timeout Middleware', () => {
   describe('getTimeoutForPath', () => {
     it('returns default timeout for standard paths', () => {
       expect(getTimeoutForPath('/api/ideas')).toBe(DEFAULT_TIMEOUT_MS);
-      expect(getTimeoutForPath('/api/personal/tasks')).toBe(DEFAULT_TIMEOUT_MS);
+      expect(getTimeoutForPath('/api/operations/tasks')).toBe(DEFAULT_TIMEOUT_MS);
       expect(getTimeoutForPath('/api/health')).toBe(DEFAULT_TIMEOUT_MS);
     });
 
@@ -20,7 +20,7 @@ describe('Request Timeout Middleware', () => {
     });
 
     it('returns streaming timeout for /voice paths', () => {
-      expect(getTimeoutForPath('/api/personal/voice/session/start')).toBe(STREAMING_TIMEOUT_MS);
+      expect(getTimeoutForPath('/api/operations/voice/session/start')).toBe(STREAMING_TIMEOUT_MS);
       expect(getTimeoutForPath('/ws/voice')).toBe(STREAMING_TIMEOUT_MS);
     });
 

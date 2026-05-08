@@ -60,7 +60,7 @@ describe('Structured Extraction Service', () => {
 
     const result = await extractStructuredKnowledge(
       'Wir müssen unsere Marketing-Automatisierung verbessern. Alex soll sich Mailchimp-Alternativen anschauen. Deadline ist der 15. Februar. Außerdem brauchen wir ein Team-Meeting für Q2-Planung.',
-      'personal'
+      'operations'
     );
 
     expect(result.coreIdeas).toHaveLength(2);
@@ -85,7 +85,7 @@ describe('Structured Extraction Service', () => {
       content: [{ type: 'text', text: '{}' }],
     });
 
-    const result = await extractStructuredKnowledge('Kurze Notiz.', 'personal', { enableAutoLinking: false });
+    const result = await extractStructuredKnowledge('Kurze Notiz.', 'operations', { enableAutoLinking: false });
 
     expect(result.coreIdeas).toHaveLength(0);
     expect(result.actionItems).toHaveLength(0);
@@ -97,7 +97,7 @@ describe('Structured Extraction Service', () => {
   it('should handle Claude API failure gracefully', async () => {
     mockCreate.mockRejectedValueOnce(new Error('API timeout'));
 
-    const result = await extractStructuredKnowledge('Some transcript.', 'personal', { enableAutoLinking: false });
+    const result = await extractStructuredKnowledge('Some transcript.', 'operations', { enableAutoLinking: false });
 
     expect(result.coreIdeas).toHaveLength(0);
     expect(result.actionItems).toHaveLength(0);
@@ -118,12 +118,12 @@ describe('Structured Extraction Service', () => {
           ],
           actionItems: [],
           mentions: [],
-          mood: { primary: 'creative', confidence: 0.8 },
+          mood: { primary: 'strategy', confidence: 0.8 },
         }),
       }],
     });
 
-    const result = await extractStructuredKnowledge('Long transcript.', 'personal', { enableAutoLinking: false });
+    const result = await extractStructuredKnowledge('Long transcript.', 'operations', { enableAutoLinking: false });
 
     expect(result.coreIdeas).toHaveLength(3);
   });
@@ -143,7 +143,7 @@ describe('Structured Extraction Service', () => {
       }],
     });
 
-    const result = await extractStructuredKnowledge('Test.', 'personal', { enableAutoLinking: false });
+    const result = await extractStructuredKnowledge('Test.', 'operations', { enableAutoLinking: false });
 
     // Invalid category defaults to 'personal'
     expect(result.coreIdeas[0].category).toBe('personal');
@@ -164,7 +164,7 @@ describe('Structured Extraction Service', () => {
       }],
     });
 
-    const result = await extractStructuredKnowledge('Test transcript.', 'personal', { enableAutoLinking: false });
+    const result = await extractStructuredKnowledge('Test transcript.', 'operations', { enableAutoLinking: false });
 
     expect(mockQuickRetrieve).not.toHaveBeenCalled();
     expect(result.suggestedLinks).toHaveLength(0);
@@ -178,14 +178,14 @@ describe('Structured Extraction Service', () => {
           coreIdeas: [{ title: 'Test', summary: 'Idea', category: 'business', confidence: 0.9 }],
           actionItems: [],
           mentions: [],
-          mood: { primary: 'creative', confidence: 0.7 },
+          mood: { primary: 'strategy', confidence: 0.7 },
         }),
       }],
     });
 
     mockQuickRetrieve.mockRejectedValue(new Error('RAG unavailable'));
 
-    const result = await extractStructuredKnowledge('Test transcript.', 'personal');
+    const result = await extractStructuredKnowledge('Test transcript.', 'operations');
 
     // Should still return extraction results even if linking fails
     expect(result.coreIdeas).toHaveLength(1);

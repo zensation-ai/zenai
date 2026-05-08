@@ -2,11 +2,10 @@
  * EmailGridView - Virtualized grid of email cards using TanStack Virtual
  */
 import React, { useRef } from 'react';
+import type { CSSProperties } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import type { Email } from './types';
 import { EmailCard } from './EmailCard';
-import './EmailGridView.css';
-
 interface EmailGridViewProps {
   emails: Email[];
   selectedId: string | null;
@@ -36,7 +35,9 @@ export const EmailGridView: React.FC<EmailGridViewProps> = ({
   if (emails.length === 0) {
     return (
       <div className="email-grid-empty" role="status">
-        <p>Keine E-Mails gefunden</p>
+        <span className="text-[2.5rem] block mb-3">📭</span>
+        <p className="font-medium text-base">Keine E-Mails gefunden</p>
+        <p className="text-sm opacity-60 mt-1">Passe die Filter an oder warte auf neue Nachrichten</p>
       </div>
     );
   }
@@ -45,26 +46,18 @@ export const EmailGridView: React.FC<EmailGridViewProps> = ({
     <div
       ref={parentRef}
       data-view="grid"
-      className="email-grid-container"
-      style={{ height: '100%', minHeight: 200, overflow: 'auto' }}
+      className="email-grid-container h-full min-h-[200px] overflow-auto"
       aria-label="E-Mail Kacheln"
     >
-      <div style={{ height: `${virtualizer.getTotalSize()}px`, width: '100%', position: 'relative' }}>
+      <div className="relative w-full h-[var(--total-h)]" style={{ '--total-h': `${virtualizer.getTotalSize()}px` } as CSSProperties}>
         {virtualizer.getVirtualItems().map(virtualRow => {
           const startIdx = virtualRow.index * COLUMNS;
           const rowEmails = emails.slice(startIdx, startIdx + COLUMNS);
           return (
             <div
               key={virtualRow.key}
-              className="email-grid-row"
-              style={{
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                width: '100%',
-                height: `${virtualRow.size}px`,
-                transform: `translateY(${virtualRow.start}px)`,
-              }}
+              className="email-grid-row absolute left-0 w-full h-[var(--h)]"
+              style={{ '--h': `${virtualRow.size}px`, transform: `translateY(${virtualRow.start}px)` } as CSSProperties}
             >
               {rowEmails.map(email => (
                 <EmailCard

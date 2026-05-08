@@ -77,12 +77,12 @@ describe('Database Context Utilities', () => {
   // ===========================================
 
   describe('isValidContext', () => {
-    it('should validate "personal" context', () => {
-      expect(isValidContext('personal')).toBe(true);
+    it('should validate "operations" context', () => {
+      expect(isValidContext('operations')).toBe(true);
     });
 
-    it('should validate "work" context', () => {
-      expect(isValidContext('work')).toBe(true);
+    it('should validate "finance" context', () => {
+      expect(isValidContext('finance')).toBe(true);
     });
 
     it('should reject empty string', () => {
@@ -116,12 +116,12 @@ describe('Database Context Utilities', () => {
   describe('AIContext Type', () => {
     it('should only allow valid context values', () => {
       // TypeScript compile-time check - these should be valid
-      const validContexts: AIContext[] = ['personal', 'work', 'learning', 'creative'];
+      const validContexts: AIContext[] = ['operations', 'finance', 'people', 'strategy'];
 
-      expect(validContexts).toContain('personal');
-      expect(validContexts).toContain('work');
-      expect(validContexts).toContain('learning');
-      expect(validContexts).toContain('creative');
+      expect(validContexts).toContain('operations');
+      expect(validContexts).toContain('finance');
+      expect(validContexts).toContain('people');
+      expect(validContexts).toContain('strategy');
       expect(validContexts.length).toBe(4);
     });
 
@@ -130,8 +130,8 @@ describe('Database Context Utilities', () => {
         return isValidContext(ctx);
       };
 
-      expect(testContext('personal')).toBe(true);
-      expect(testContext('work')).toBe(true);
+      expect(testContext('operations')).toBe(true);
+      expect(testContext('finance')).toBe(true);
       expect(testContext('invalid')).toBe(false);
     });
   });

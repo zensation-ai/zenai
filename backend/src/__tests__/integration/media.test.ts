@@ -17,7 +17,7 @@ jest.mock('../../utils/database', () => ({
 jest.mock('../../utils/database-context', () => ({
   queryContext: jest.fn(),
   isValidUUID: (id: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id),
-  isValidContext: (ctx: string) => ['personal', 'work', 'learning', 'creative'].includes(ctx),
+  isValidContext: (ctx: string) => ['operations', 'finance', 'people', 'strategy'].includes(ctx),
 }));
 
 // Mock auth middleware to bypass authentication in tests
@@ -109,14 +109,14 @@ describe('Media API Integration Tests', () => {
           media_type: 'photo',
           filename: 'test.jpg',
           caption: 'Test caption',
-          context: 'personal',
+          context: 'operations',
           created_at: new Date().toISOString(),
         }],
         rowCount: 1,
       } as any);
 
       const response = await request(app)
-        .post('/api/personal/media')
+        .post('/api/operations/media')
         .attach('media', Buffer.from('fake image'), 'test.jpg')
         .field('caption', 'Test caption');
 
@@ -128,7 +128,7 @@ describe('Media API Integration Tests', () => {
 
     it('should return error for missing file', async () => {
       const response = await request(app)
-        .post('/api/personal/media')
+        .post('/api/operations/media')
         .field('caption', 'No file')
         .expect(400);
 
@@ -145,12 +145,12 @@ describe('Media API Integration Tests', () => {
 
     it('should generate embedding for caption', async () => {
       mockQueryContext.mockResolvedValueOnce({
-        rows: [{ id: 'id', media_type: 'photo', filename: 'test.jpg', caption: 'Test', context: 'personal' }],
+        rows: [{ id: 'id', media_type: 'photo', filename: 'test.jpg', caption: 'Test', context: 'operations' }],
         rowCount: 1,
       } as any);
 
       const response = await request(app)
-        .post('/api/personal/media')
+        .post('/api/operations/media')
         .attach('media', Buffer.from('image'), 'test.jpg')
         .field('caption', 'This is a test caption');
 
@@ -160,19 +160,19 @@ describe('Media API Integration Tests', () => {
 
     it('should handle media without caption', async () => {
       mockQueryContext.mockResolvedValueOnce({
-        rows: [{ id: 'id', media_type: 'photo', filename: 'test.jpg', caption: '', context: 'work' }],
+        rows: [{ id: 'id', media_type: 'photo', filename: 'test.jpg', caption: '', context: 'finance' }],
         rowCount: 1,
       } as any);
 
       const response = await request(app)
-        .post('/api/work/media')
+        .post('/api/finance/media')
         .attach('media', Buffer.from('image'), 'photo.png');
 
       expect([200, 500]).toContain(response.status);
     });
 
     it('should accept valid contexts', async () => {
-      const contexts = ['personal', 'work'];
+      const contexts = ['operations', 'finance'];
 
       for (const context of contexts) {
         mockQueryContext.mockResolvedValueOnce({
@@ -198,8 +198,8 @@ describe('Media API Integration Tests', () => {
     it('should return list of media items', async () => {
       mockQueryContext.mockResolvedValueOnce({
         rows: [
-          { id: '1', media_type: 'photo', filename: 'photo1.jpg', caption: 'Test 1', context: 'personal' },
-          { id: '2', media_type: 'video', filename: 'video1.mp4', caption: 'Test 2', context: 'work' },
+          { id: '1', media_type: 'photo', filename: 'photo1.jpg', caption: 'Test 1', context: 'operations' },
+          { id: '2', media_type: 'video', filename: 'video1.mp4', caption: 'Test 2', context: 'finance' },
         ],
         rowCount: 2,
       } as any);
@@ -215,18 +215,18 @@ describe('Media API Integration Tests', () => {
 
     it('should filter by context', async () => {
       mockQueryContext.mockResolvedValueOnce({
-        rows: [{ id: '1', media_type: 'photo', filename: 'photo1.jpg', context: 'personal' }],
+        rows: [{ id: '1', media_type: 'photo', filename: 'photo1.jpg', context: 'operations' }],
         rowCount: 1,
       } as any);
 
       await request(app)
-        .get('/api/all-media?context=personal')
+        .get('/api/all-media?context=operations')
         .expect(200);
 
       expect(mockQueryContext).toHaveBeenCalledWith(
-        'personal',
+        'operations',
         expect.stringContaining('context = $'),
-        expect.arrayContaining(['personal'])
+        expect.arrayContaining(['operations'])
       );
     });
 
@@ -238,7 +238,7 @@ describe('Media API Integration Tests', () => {
         .expect(200);
 
       expect(mockQueryContext).toHaveBeenCalledWith(
-        'personal',
+        'operations',
         expect.stringContaining('media_type = $'),
         expect.arrayContaining(['video'])
       );
@@ -252,7 +252,7 @@ describe('Media API Integration Tests', () => {
         .expect(200);
 
       expect(mockQueryContext).toHaveBeenCalledWith(
-        'personal',
+        'operations',
         expect.any(String),
         expect.arrayContaining([10])
       );
@@ -300,13 +300,13 @@ describe('Media API Integration Tests', () => {
           media_type: 'photo',
           filename: 'analyzed.jpg',
           caption: 'Test image description',
-          context: 'personal',
+          context: 'operations',
         }],
         rowCount: 1,
       } as any);
 
       const response = await request(app)
-        .post('/api/personal/media/analyze')
+        .post('/api/operations/media/analyze')
         .attach('image', Buffer.from('fake image'), 'test.jpg')
         .field('type', 'general');
 
@@ -318,12 +318,12 @@ describe('Media API Integration Tests', () => {
 
     it('should handle document analysis type', async () => {
       mockQueryContext.mockResolvedValueOnce({
-        rows: [{ id: 'doc-id', media_type: 'photo', filename: 'doc.jpg', context: 'work' }],
+        rows: [{ id: 'doc-id', media_type: 'photo', filename: 'doc.jpg', context: 'finance' }],
         rowCount: 1,
       } as any);
 
       const response = await request(app)
-        .post('/api/work/media/analyze')
+        .post('/api/finance/media/analyze')
         .attach('image', Buffer.from('document'), 'document.png')
         .field('type', 'document');
 
@@ -332,7 +332,7 @@ describe('Media API Integration Tests', () => {
 
     it('should return error for missing image', async () => {
       const response = await request(app)
-        .post('/api/personal/media/analyze')
+        .post('/api/operations/media/analyze')
         .field('type', 'general');
 
       expect([400, 500]).toContain(response.status);

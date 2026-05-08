@@ -48,7 +48,7 @@ export function OverviewTab() {
               color: health?.status === 'ok' || health?.status === 'healthy'
                 ? '#4ade80' : '#ef4444',
             }}>
-              {health?.status === 'ok' || health?.status === 'healthy' ? 'Healthy' : health?.status || 'Unknown'}
+              {health?.status === 'ok' || health?.status === 'healthy' ? 'Betriebsbereit' : health?.status || 'Unbekannt'}
             </div>
             <div style={styles.statLabel}>Status</div>
           </div>
@@ -87,7 +87,7 @@ export function OverviewTab() {
         </div>
       )}
 
-      <div style={{ textAlign: 'right' }}>
+      <div className="text-right">
         <button style={styles.button} onClick={loadData}>
           Aktualisieren
         </button>

@@ -11,7 +11,9 @@
 
 import { AIContext, queryContext } from '../../utils/database-context';
 import { logger } from '../../utils/logger';
+import { checkedFetch } from '../../utils/checked-http';
 import { A2AAgentCard } from './agent-card';
+import { assertPublicUrl, SsrfBlockedError } from '../security/ssrf-guard';
 
 // ===========================================
 // Types
@@ -56,13 +58,38 @@ export class A2AClient {
   private readonly timeout = 10000; // 10 second timeout
 
   /**
+   * Guard every outbound A2A call with the shared SSRF allowlist.
+   * Sprint 1.6: raw `fetch()` previously let tenants register an A2A agent
+   * pointing at 169.254.169.254 or an internal cluster service. Now every
+   * call-site passes through `assertPublicUrl` first.
+   */
+  private async guardOutbound(rawUrl: string, operation: string): Promise<void> {
+    try {
+      await assertPublicUrl(rawUrl, {
+        requireHttps: process.env.NODE_ENV === 'production',
+      });
+    } catch (err) {
+      if (err instanceof SsrfBlockedError) {
+        logger.warn('A2A outbound call blocked by SSRF guard', {
+          operation,
+          url: rawUrl,
+          code: err.code,
+          reason: err.reason,
+        });
+      }
+      throw err;
+    }
+  }
+
+  /**
    * Discover an agent by fetching its Agent Card
    */
   async discoverAgent(url: string): Promise<A2AAgentCard> {
     const agentCardUrl = `${url.replace(/\/$/, '')}/.well-known/agent.json`;
+    await this.guardOutbound(agentCardUrl, 'a2a.discoverAgent');
 
     try {
-      const response = await fetch(agentCardUrl, {
+      const response = await checkedFetch(agentCardUrl, {
         method: 'GET',
         headers: { 'Accept': 'application/json' },
         signal: AbortSignal.timeout(this.timeout),
@@ -98,6 +125,7 @@ export class A2AClient {
     authToken?: string
   ): Promise<Record<string, unknown>> {
     const taskUrl = `${agentUrl.replace(/\/$/, '')}/api/a2a/tasks`;
+    await this.guardOutbound(taskUrl, 'a2a.sendTask');
 
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
@@ -109,7 +137,7 @@ export class A2AClient {
     }
 
     try {
-      const response = await fetch(taskUrl, {
+      const response = await checkedFetch(taskUrl, {
         method: 'POST',
         headers,
         body: JSON.stringify({
@@ -146,6 +174,7 @@ export class A2AClient {
     authToken?: string
   ): Promise<Record<string, unknown>> {
     const statusUrl = `${agentUrl.replace(/\/$/, '')}/api/a2a/tasks/${taskId}`;
+    await this.guardOutbound(statusUrl, 'a2a.getTaskStatus');
 
     const headers: Record<string, string> = {
       'Accept': 'application/json',
@@ -156,7 +185,7 @@ export class A2AClient {
     }
 
     try {
-      const response = await fetch(statusUrl, {
+      const response = await checkedFetch(statusUrl, {
         method: 'GET',
         headers,
         signal: AbortSignal.timeout(this.timeout),
@@ -186,6 +215,7 @@ export class A2AClient {
     authToken?: string
   ): Promise<void> {
     const cancelUrl = `${agentUrl.replace(/\/$/, '')}/api/a2a/tasks/${taskId}`;
+    await this.guardOutbound(cancelUrl, 'a2a.cancelTask');
 
     const headers: Record<string, string> = {
       'Accept': 'application/json',
@@ -196,7 +226,7 @@ export class A2AClient {
     }
 
     try {
-      const response = await fetch(cancelUrl, {
+      const response = await checkedFetch(cancelUrl, {
         method: 'DELETE',
         headers,
         signal: AbortSignal.timeout(this.timeout),

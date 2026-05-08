@@ -1,0 +1,68 @@
+name: Sync Website to ZenSation-Web
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'website/**'
+
+  # Allow manual trigger
+  workflow_dispatch:
+
+concurrency:
+  group: website-sync
+  cancel-in-progress: true
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout KI-AB
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Checkout ZenSation-Web
+        uses: actions/checkout@v4
+        with:
+          repository: Alexander-Bering/ZenSation-Web
+          token: ${{ secrets.WEBSITE_SYNC_TOKEN }}
+          path: zensation-web
+          fetch-depth: 1
+
+      - name: Sync website directory
+        run: |
+          rsync -av --delete \
+            --exclude 'node_modules' \
+            --exclude '.next' \
+            --exclude '.env*' \
+            --exclude '.git' \
+            --exclude 'tsconfig.tsbuildinfo' \
+            website/ zensation-web/
+
+      - name: Check for changes
+        id: diff
+        working-directory: zensation-web
+        run: |
+          git add -A
+          if git diff --staged --quiet; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Commit and push
+        if: steps.diff.outputs.changed == 'true'
+        working-directory: zensation-web
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          # Get commit info from KI-AB for the commit message
+          COMMIT_SHA="${{ github.sha }}"
+          COMMIT_MSG=$(git -C "${{ github.workspace }}" log -1 --format="%s" HEAD)
+
+          git commit -m "sync: ${COMMIT_MSG}
+
+          Source: Alexander-Bering/KI-AB@${COMMIT_SHA:0:7}"
+          git push

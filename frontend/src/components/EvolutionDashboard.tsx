@@ -6,13 +6,10 @@
  * Shows learning timeline, accuracy trends, context depth, and milestones.
  */
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, type CSSProperties } from 'react';
 import { AIContext } from './ContextSwitcher';
 import axios from 'axios';
 import { getTimeBasedGreeting, EMPTY_STATE_MESSAGES } from '../utils/aiPersonality';
-import '../neurodesign.css';
-import './EvolutionDashboard.css';
-
 interface EvolutionDashboardProps {
   context: AIContext;
   onBack?: () => void;
@@ -207,7 +204,7 @@ export function EvolutionDashboard({ context, onBack, embedded }: EvolutionDashb
             <h1>{greeting.emoji} KI-Evolution</h1>
             <span className="greeting-subtext neuro-subtext-emotional">{greeting.subtext}</span>
           </div>
-          <span className="context-badge">{{ personal: '🏠 Persönlich', work: '💼 Arbeit', learning: '📚 Lernen', creative: '🎨 Kreativ' }[context]}</span>
+          <span className="context-badge">{{ operations: '⚙️ Operativ', finance: '💰 Finanzen', people: '👥 Team', strategy: '🎯 Strategie' }[context]}</span>
         </header>
       )}
 
@@ -309,15 +306,15 @@ export function EvolutionDashboard({ context, onBack, embedded }: EvolutionDashb
               <h3>Kontext-Tiefe Aufschlusselung</h3>
               <div className="depth-bars neuro-flow-list">
                 {contextDepth.slice(0, 7).map((item, index) => (
-                  <div key={item.name} className="depth-bar-item neuro-stagger-item" style={{ animationDelay: `${index * 50}ms` }}>
+                  <div key={item.name} className="depth-bar-item neuro-stagger-item [animation-delay:var(--delay)]" style={{ '--delay': `${index * 50}ms` } as CSSProperties}>
                     <div className="bar-header">
                       <span className="bar-label">{item.name}</span>
                       <span className="bar-value">{Math.round(item.score)} / {item.max}</span>
                     </div>
                     <div className="bar-track">
                       <div
-                        className="bar-fill"
-                        style={{ width: `${(item.score / item.max) * 100}%` }}
+                        className="bar-fill w-[var(--bar-w)]"
+                        style={{ '--bar-w': `${(item.score / item.max) * 100}%` } as CSSProperties}
                       />
                     </div>
                     <span className="bar-description">{item.description}</span>
@@ -365,8 +362,8 @@ export function EvolutionDashboard({ context, onBack, embedded }: EvolutionDashb
                         <span className="milestone-title">{milestone.title}</span>
                         <div className="progress-bar">
                           <div
-                            className="progress-fill"
-                            style={{ width: `${milestone.progress_percent}%` }}
+                            className="progress-fill w-[var(--prog-w)]"
+                            style={{ '--prog-w': `${milestone.progress_percent}%` } as CSSProperties}
                           />
                         </div>
                         <span className="progress-text">
@@ -397,7 +394,7 @@ export function EvolutionDashboard({ context, onBack, embedded }: EvolutionDashb
             ) : (
               <div className="timeline neuro-flow-list">
                 {(showAllTimeline ? data.learning_timeline : data.learning_timeline.slice(0, 7)).map((event, index) => (
-                  <div key={event.id} className={`timeline-item neuro-stagger-item ${event.color}`} style={{ animationDelay: `${index * 80}ms` }}>
+                  <div key={event.id} className={`timeline-item neuro-stagger-item [animation-delay:var(--delay)] ${event.color}`} style={{ '--delay': `${index * 80}ms` } as CSSProperties}>
                     <div className="timeline-marker">
                       <span className="event-icon">{event.icon}</span>
                     </div>
@@ -472,8 +469,8 @@ export function EvolutionDashboard({ context, onBack, embedded }: EvolutionDashb
                   {data.snapshots_30d.map((snapshot, index) => (
                     <div
                       key={snapshot.date}
-                      className="chart-bar"
-                      style={{ height: `${snapshot.accuracy_score}%` }}
+                      className="chart-bar h-[var(--bar-h)]"
+                      style={{ '--bar-h': `${snapshot.accuracy_score}%` } as CSSProperties}
                       title={`${formatDate(snapshot.date)}: ${Math.round(snapshot.accuracy_score)}%`}
                     >
                       {index === data.snapshots_30d.length - 1 && (
@@ -517,7 +514,7 @@ export function EvolutionDashboard({ context, onBack, embedded }: EvolutionDashb
                 <h3>Erreichte Meilensteine ({data.achieved_milestones.length})</h3>
                 <div className="milestones-grid neuro-flow-list">
                   {(showAllMilestones ? data.achieved_milestones : data.achieved_milestones.slice(0, 7)).map((milestone, index) => (
-                    <div key={milestone.id} className="milestone-badge achieved neuro-hover-lift neuro-stagger-item" style={{ animationDelay: `${index * 50}ms` }}>
+                    <div key={milestone.id} className="milestone-badge achieved neuro-hover-lift neuro-stagger-item [animation-delay:var(--delay)]" style={{ '--delay': `${index * 50}ms` } as CSSProperties}>
                       <span className="badge-icon">{milestone.icon}</span>
                       <span className="badge-title">{milestone.title}</span>
                       {milestone.achieved_at && (
@@ -553,8 +550,8 @@ export function EvolutionDashboard({ context, onBack, embedded }: EvolutionDashb
                         <div className="progress-bar-container">
                           <div className="progress-bar">
                             <div
-                              className="progress-fill"
-                              style={{ width: `${milestone.progress_percent}%` }}
+                              className="progress-fill w-[var(--prog-w)]"
+                              style={{ '--prog-w': `${milestone.progress_percent}%` } as CSSProperties}
                             />
                           </div>
                           <span className="progress-percent">{Math.round(milestone.progress_percent)}%</span>

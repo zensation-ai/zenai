@@ -98,7 +98,7 @@ const CATEGORY_KEYWORDS: Record<string, KeywordConfig> = {
   },
   personal: {
     de: ['ich', 'mir', 'mein', 'meine', 'privat', 'hobby', 'zuhause', 'familie', 'freund', 'gesundheit', 'fitness', 'urlaub', 'freizeit'],
-    en: ['i', 'me', 'my', 'mine', 'private', 'hobby', 'home', 'family', 'friend', 'health', 'fitness', 'vacation', 'leisure', 'personal'],
+    en: ['i', 'me', 'my', 'mine', 'private', 'hobby', 'home', 'family', 'friend', 'health', 'fitness', 'vacation', 'leisure', 'operations'],
     patterns: [/für mich (selbst|persönlich)/i, /in meiner freizeit/i, /for myself/i, /my own/i, /work-life/i],
   },
   learning: {
@@ -114,12 +114,12 @@ const CATEGORY_KEYWORDS: Record<string, KeywordConfig> = {
 const CONTEXT_KEYWORDS: Record<string, KeywordConfig> = {
   work: {
     de: ['arbeit', 'beruf', 'büro', 'meeting', 'kunde', 'projekt', 'geschäft', 'firma', 'team', 'kollege', 'chef', 'vertrieb', 'umsatz', 'budget', 'deadline'],
-    en: ['work', 'office', 'meeting', 'client', 'project', 'business', 'company', 'team', 'colleague', 'boss', 'sales', 'revenue', 'budget', 'deadline', 'professional'],
+    en: ['finance', 'office', 'meeting', 'client', 'project', 'business', 'company', 'team', 'colleague', 'boss', 'sales', 'revenue', 'budget', 'deadline', 'professional'],
     patterns: [/\b(arbeits|berufs|geschäfts)/i, /\b(work|office|corporate|b2b)/i, /im büro/i, /beim kunden/i, /at work/i],
   },
   personal: {
     de: ['privat', 'persönlich', 'zuhause', 'familie', 'freund', 'gesundheit', 'hobby', 'sport', 'urlaub', 'einkaufen', 'kochen', 'garten', 'wohnung'],
-    en: ['private', 'personal', 'home', 'family', 'friend', 'health', 'hobby', 'sport', 'vacation', 'shopping', 'cooking', 'garden', 'apartment'],
+    en: ['private', 'operations', 'home', 'family', 'friend', 'health', 'hobby', 'sport', 'vacation', 'shopping', 'cooking', 'garden', 'apartment'],
     patterns: [/für mich/i, /\b(privat|persönlich|zuhause)/i, /\b(personal|private|at home)/i, /meine (familie|frau|mann|kinder)/i],
   },
   learning: {
@@ -129,7 +129,7 @@ const CONTEXT_KEYWORDS: Record<string, KeywordConfig> = {
   },
   creative: {
     de: ['kreativ', 'design', 'kunst', 'musik', 'schreiben', 'malen', 'zeichnen', 'foto', 'video', 'content', 'blog', 'story', 'gedicht', 'komposition'],
-    en: ['creative', 'design', 'art', 'music', 'write', 'paint', 'draw', 'photo', 'video', 'content', 'blog', 'story', 'poem', 'composition'],
+    en: ['strategy', 'design', 'art', 'music', 'write', 'paint', 'draw', 'photo', 'video', 'content', 'blog', 'story', 'poem', 'composition'],
     patterns: [/\b(kreativ|künstlerisch|gestalten)/i, /\b(creative|artistic|design)/i, /content (erstellen|creation)/i, /\b(figma|photoshop|canva|premiere)/i],
   },
 };

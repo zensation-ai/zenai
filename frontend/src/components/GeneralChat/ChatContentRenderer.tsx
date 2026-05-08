@@ -10,6 +10,7 @@
 
 import React, { useCallback } from 'react';
 import { ArtifactButton } from '../ArtifactButton';
+import { DocumentDownloadCard } from './DocumentDownloadCard';
 import { extractArtifacts, type Artifact } from '../../types/artifacts';
 import { MAX_ARTIFACT_CACHE } from '../../config/chat';
 
@@ -72,7 +73,7 @@ export function useChatContentRenderer({ artifacts, setArtifacts, setActiveArtif
     }
 
     // Split by code blocks and artifact references
-    const parts = processedContent.split(/(```[\s\S]*?```|\[\[ARTIFACT:[^\]]+\]\])/g);
+    const parts = processedContent.split(/(```[\s\S]*?```|\[\[ARTIFACT:[^\]]+\]\]|\[\[DOCUMENT_DOWNLOAD:[^\]]+\]\]|\[\[GUARDRAIL_BLOCK:[^\]]+\]\])/g);
 
     return parts.map((part, i) => {
       // Check for artifact reference
@@ -91,6 +92,45 @@ export function useChatContentRenderer({ artifacts, setArtifacts, setActiveArtif
           );
         }
         return null;
+      }
+
+      // Guardrail block notice — the backend aborted this response because its
+      // output-scanner detected a policy violation (secret leak, system-prompt
+      // disclosure, jailbreak ack). Show a quiet inline warning, not an error.
+      const guardrailMatch = part.match(/\[\[GUARDRAIL_BLOCK:([^\]]+)\]\]/);
+      if (guardrailMatch) {
+        const reason = guardrailMatch[1];
+        const label = reason === 'plaintext_secret'
+          ? 'Antwort abgebrochen (mögliche Zugangsdaten entdeckt).'
+          : reason === 'system_prompt_disclosure'
+            ? 'Antwort abgebrochen (System-Prompt-Offenlegung).'
+            : reason === 'jailcode' || reason === 'jailbreak_acknowledged'
+              ? 'Antwort abgebrochen (Sicherheitsrichtlinie).'
+              : 'Antwort abgebrochen (Sicherheitsrichtlinie).';
+        return (
+          <div
+            key={i}
+            role="status"
+            className="chat-guardrail-notice"
+            data-reason={reason}
+          >
+            <span aria-hidden="true">🛡️</span> {label}
+          </div>
+        );
+      }
+
+      // Document download markers
+      const docMatch = part.match(/\[\[DOCUMENT_DOWNLOAD:([^:]+):([^:]+):([^\]]+)\]\]/);
+      if (docMatch) {
+        const [, docId, docFilename, docMimeType] = docMatch;
+        return (
+          <DocumentDownloadCard
+            key={i}
+            documentId={docId}
+            filename={docFilename}
+            mimeType={docMimeType}
+          />
+        );
       }
 
       if (part.startsWith('```') && part.endsWith('```')) {

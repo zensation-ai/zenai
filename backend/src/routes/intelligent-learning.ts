@@ -76,7 +76,7 @@ const MAX_FEEDBACK_LENGTH = 5000;
 
 function validateContext(context: string): AIContext {
   if (!isValidContext(context)) {
-    throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
+    throw new ValidationError('Invalid context. Use "operations", "finance", "people", or "strategy".');
   }
   return context as AIContext;
 }
@@ -846,18 +846,8 @@ router.get('/:context/learning/dashboard', apiKeyAuth, asyncHandler(async (req: 
   const context = validateContext(req.params.context);
   getUserId(req); // auth check
 
-  // Fetch all data in parallel
-  const [
-    focusAreas,
-    focusStats,
-    feedbackStats,
-    feedbackInsights,
-    pendingResearch,
-    suggestions,
-    suggestionStats,
-    learningLogs,
-    profileStats,
-  ] = await Promise.all([
+  // Fetch all data in parallel — use allSettled so one failure doesn't crash the dashboard
+  const results = await Promise.allSettled([
     getAllDomainFocus(context, true),
     getDomainFocusStats(context),
     getFeedbackStats(context),
@@ -868,6 +858,19 @@ router.get('/:context/learning/dashboard', apiKeyAuth, asyncHandler(async (req: 
     getDailyLearningLogs(context, 7),
     getProfileStats(context),
   ]);
+
+  const settled = <T>(r: PromiseSettledResult<T>, fallback: T): T =>
+    r.status === 'fulfilled' ? r.value : fallback;
+
+  const focusAreas = settled(results[0], []);
+  const focusStats = settled(results[1], { total_focus_areas: 0, active_focus_areas: 0, total_ideas_linked: 0, most_active_focus: null, least_active_focus: null });
+  const feedbackStats = settled(results[2], { total_feedback: 0, average_rating: 0, corrections_count: 0, applied_count: 0, ratings_distribution: {}, response_type_stats: [] });
+  const feedbackInsights = settled(results[3], []);
+  const pendingResearch = settled(results[4], []);
+  const suggestions = settled(results[5], []);
+  const suggestionStats = settled(results[6], { total_suggestions: 0, pending_count: 0, accepted_count: 0, dismissed_count: 0, acceptance_rate: 0, avg_priority: 5 });
+  const learningLogs = settled(results[7], []);
+  const profileStats = settled(results[8], { profile_completeness: 0, topics_tracked: 0, top_topics: [], tech_stack_count: 0, insights_count: 0, last_updated: null });
 
   res.json({
     success: true,

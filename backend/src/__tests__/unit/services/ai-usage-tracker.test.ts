@@ -83,7 +83,7 @@ describe('AI Usage Tracker', () => {
         thinkingTokens: 200,
         costUsd: 0,
         feature: 'chat',
-        context: 'personal',
+        context: 'operations',
         responseTimeMs: 1200,
       };
 
@@ -98,7 +98,7 @@ describe('AI Usage Tracker', () => {
       expect(params[2]).toBe(800);  // output_tokens
       expect(params[3]).toBe(200);  // thinking_tokens
       expect(params[5]).toBe('chat');
-      expect(params[6]).toBe('personal');
+      expect(params[6]).toBe('operations');
       expect(params[7]).toBe(1200); // response_time_ms
     });
 
@@ -112,7 +112,7 @@ describe('AI Usage Tracker', () => {
         thinkingTokens: 0,
         costUsd: 0.05,
         feature: 'rag',
-        context: 'work',
+        context: 'finance',
         responseTimeMs: 800,
       });
 
@@ -130,7 +130,7 @@ describe('AI Usage Tracker', () => {
         thinkingTokens: 0,
         costUsd: 0,
         feature: 'chat',
-        context: 'personal',
+        context: 'operations',
         responseTimeMs: 500,
       });
 
@@ -150,7 +150,7 @@ describe('AI Usage Tracker', () => {
           thinkingTokens: 0,
           costUsd: 0,
           feature: 'other',
-          context: 'personal',
+          context: 'operations',
           responseTimeMs: 100,
         });
       }).not.toThrow();

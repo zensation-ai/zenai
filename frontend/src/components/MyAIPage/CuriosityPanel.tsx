@@ -4,6 +4,7 @@
  * Phase 141: Knowledge Gaps, Hypotheses, Information Gain
  */
 
+import type { CSSProperties } from 'react';
 import type { AIContext } from '../ContextSwitcher';
 import {
   useCuriosityGaps,
@@ -28,13 +29,13 @@ const ACTION_LABELS: Record<string, string> = {
 
 const SOURCE_LABELS: Record<string, string> = {
   incomplete_pattern: 'Muster',
-  temporal_gap: 'Zeitluecke',
+  temporal_gap: 'Zeitlücke',
   contradiction: 'Widerspruch',
 };
 
 const STATUS_LABELS: Record<string, string> = {
   pending: 'Offen',
-  confirmed: 'Bestaetigt',
+  confirmed: 'Bestätigt',
   refuted: 'Widerlegt',
 };
 
@@ -48,7 +49,7 @@ function GapsSection({ gaps, isLoading }: { gaps: KnowledgeGapDetail[] | undefin
   if (isLoading) {
     return (
       <div className="cognitive-loading" role="status" aria-live="polite">
-        Lade Wissensluecken...
+        Lade Wissenslücken...
       </div>
     );
   }
@@ -56,12 +57,12 @@ function GapsSection({ gaps, isLoading }: { gaps: KnowledgeGapDetail[] | undefin
   const items = gaps ?? [];
 
   return (
-    <div className="cognitive-list-card" role="region" aria-label="Wissensluecken">
-      <div className="cognitive-section-title">Wissensluecken</div>
+    <div className="cognitive-list-card" role="region" aria-label="Wissenslücken">
+      <div className="cognitive-section-title">Wissenslücken</div>
       {items.length === 0 ? (
         <div className="cognitive-empty">
           <div className="cognitive-empty-icon">{'\u{2705}'}</div>
-          <div>Keine Wissensluecken erkannt</div>
+          <div>Keine Wissenslücken erkannt</div>
         </div>
       ) : (
         <div className="cognitive-list-items">
@@ -73,8 +74,8 @@ function GapsSection({ gaps, isLoading }: { gaps: KnowledgeGapDetail[] | undefin
                   className={`cognitive-gap-severity ${severity}`}
                   title={severity === 'high' ? 'Hoch' : severity === 'medium' ? 'Mittel' : 'Niedrig'}
                 />
-                <div className="cognitive-gap-content" style={{ flex: 1 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div className="cognitive-gap-content flex-1">
+                  <div className="flex justify-between items-center">
                     <span className="cognitive-gap-area">{gap.topic}</span>
                     <span className="gap-action-badge">
                       {ACTION_LABELS[gap.suggestedAction] ?? gap.suggestedAction}
@@ -83,10 +84,10 @@ function GapsSection({ gaps, isLoading }: { gaps: KnowledgeGapDetail[] | undefin
                   <span className="cognitive-gap-description">
                     {gap.domain} &middot; {gap.queryCount} Anfragen &middot; {gap.factCount} Fakten
                   </span>
-                  <div className="cognitive-progress-bar" style={{ marginTop: 6 }} role="progressbar" aria-valuenow={Math.round(gap.gapScore * 100)} aria-valuemin={0} aria-valuemax={100} aria-label={`Gap Score fuer ${gap.topic}`}>
+                  <div className="cognitive-progress-bar mt-1.5" role="progressbar" aria-valuenow={Math.round(gap.gapScore * 100)} aria-valuemin={0} aria-valuemax={100} aria-label={`Gap Score für ${gap.topic}`}>
                     <div
-                      className={`cognitive-progress-fill ${severity}`}
-                      style={{ width: `${Math.round(gap.gapScore * 100)}%` }}
+                      className={`cognitive-progress-fill w-[var(--bar)] ${severity}`}
+                      style={{ '--bar': `${Math.round(gap.gapScore * 100)}%` } as CSSProperties}
                     />
                   </div>
                 </div>
@@ -129,14 +130,14 @@ function HypothesesSection({
       ) : (
         <div className="cognitive-list-items">
           {items.map(h => (
-            <div key={h.id} className="cognitive-gap-item" style={{ flexDirection: 'column', alignItems: 'stretch' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 }}>
-                <span className="cognitive-gap-area" style={{ flex: 1 }}>{h.hypothesis}</span>
+            <div key={h.id} className="cognitive-gap-item flex-col items-stretch">
+              <div className="flex justify-between items-start gap-2">
+                <span className="cognitive-gap-area flex-1">{h.hypothesis}</span>
                 <span className={`cognitive-prediction-badge ${h.status}`}>
                   {STATUS_LABELS[h.status] ?? h.status}
                 </span>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 4 }}>
+              <div className="flex justify-between items-center mt-1">
                 <span className="cognitive-gap-description">
                   {SOURCE_LABELS[h.sourceType] ?? h.sourceType} &middot; Konfidenz: {Math.round(h.confidence * 100)}%
                 </span>
@@ -193,7 +194,7 @@ function InformationGainSection({ entries, isLoading }: { entries: InformationGa
               <span className="cognitive-prediction-text" title={entry.queryText}>
                 {entry.queryText}
               </span>
-              <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
+              <div className="flex gap-2 shrink-0">
                 <span className="gap-action-badge" title="Ueberraschung">
                   S: {entry.surprise.toFixed(2)}
                 </span>

@@ -16,7 +16,7 @@ import { CanvasMarkdownToolbar } from './CanvasMarkdownToolbar';
 import { showToast } from '../Toast';
 import { logError } from '../../utils/errors';
 
-export type ViewMode = 'edit' | 'preview' | 'split';
+export type ViewMode = 'edit' | 'preview' | 'split' | 'board';
 
 interface CanvasEditorPanelProps {
   content: string;
@@ -72,14 +72,14 @@ function loadMermaid(): Promise<MermaidAPI | null> {
         startOnLoad: false,
         theme: 'dark',
         themeVariables: {
-          primaryColor: '#6366f1',
+          primaryColor: '#144A56',
           primaryTextColor: '#e2e8f0',
-          primaryBorderColor: '#818cf8',
+          primaryBorderColor: '#2d8a9e',
           lineColor: '#94a3b8',
           secondaryColor: '#1e1b4b',
           tertiaryColor: '#312e81',
         },
-        fontFamily: 'Inter, system-ui, sans-serif',
+        fontFamily: "'Space Grotesk', system-ui, sans-serif",
         securityLevel: 'strict',
       });
       return api;
@@ -107,7 +107,7 @@ function MermaidDiagram({ code, diagramId }: { code: string; diagramId: string }
       if (cancelled) return;
 
       if (!mermaid) {
-        setError('Mermaid-Bibliothek konnte nicht geladen werden. Bitte Internetverbindung pruefen.');
+        setError('Mermaid-Bibliothek konnte nicht geladen werden. Bitte Internetverbindung prüfen.');
         setSvgContent('');
         return;
       }
@@ -253,13 +253,13 @@ export const CanvasEditorPanel = forwardRef<CanvasEditorPanelHandle, CanvasEdito
 
       const files = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/'));
       if (files.length === 0) {
-        showToast('Nur Bilddateien werden unterstuetzt', 'error');
+        showToast('Nur Bilddateien werden unterstützt', 'error');
         return;
       }
 
       for (const file of files) {
         if (file.size > MAX_IMAGE_SIZE_BYTES) {
-          showToast(`"${file.name}" ist groesser als ${MAX_IMAGE_SIZE_MB}MB`, 'error');
+          showToast(`"${file.name}" ist größer als ${MAX_IMAGE_SIZE_MB}MB`, 'error');
           continue;
         }
 
@@ -272,10 +272,10 @@ export const CanvasEditorPanel = forwardRef<CanvasEditorPanelHandle, CanvasEdito
           const cursorPos = textarea ? textarea.selectionStart : content.length;
           const newContent = content.substring(0, cursorPos) + markdownImage + content.substring(cursorPos);
           onChange(newContent);
-          showToast(`Bild "${file.name}" eingefuegt`, 'success');
+          showToast(`Bild "${file.name}" eingefügt`, 'success');
         } catch (err) {
           logError('canvas-image-drop', err);
-          showToast(`Fehler beim Einfuegen von "${file.name}"`, 'error');
+          showToast(`Fehler beim Einfügen von "${file.name}"`, 'error');
         }
       }
     }, [content, onChange]);

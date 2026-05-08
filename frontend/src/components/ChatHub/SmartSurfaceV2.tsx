@@ -14,8 +14,6 @@ import type { AIContext } from '../ContextSwitcher';
 import { useSmartSuggestions, isMorningBriefingTime } from '../../hooks/useSmartSuggestions';
 import type { SmartSuggestion } from '../../hooks/useSmartSuggestions';
 import { X, ChevronRight } from 'lucide-react';
-import './SmartSurfaceV2.css';
-
 const MAX_CARDS = 3;
 const STAGGER_MS = 100;
 
@@ -28,12 +26,12 @@ function getCardMeta(type: string): { emoji: string; accentVar: string } {
   switch (type) {
     case 'morning_briefing': return { emoji: '\u2600\uFE0F', accentVar: 'var(--color-warning)' };
     case 'task_reminder': return { emoji: '\u2705', accentVar: 'var(--color-success)' };
-    case 'email_followup': return { emoji: '\u2709\uFE0F', accentVar: 'var(--color-accent-2)' };
-    case 'meeting_prep': return { emoji: '\uD83D\uDCC5', accentVar: 'var(--color-accent)' };
+    case 'email_followup': return { emoji: '\u2709\uFE0F', accentVar: 'var(--calm-accent-2)' };
+    case 'meeting_prep': return { emoji: '\uD83D\uDCC5', accentVar: 'var(--calm-accent)' };
     case 'contradiction': return { emoji: '\u26A0\uFE0F', accentVar: 'var(--color-danger)' };
     case 'learning_suggestion': return { emoji: '\uD83D\uDCDA', accentVar: 'var(--ctx-learning)' };
-    case 'pattern_detected': return { emoji: '\uD83D\uDD0D', accentVar: 'var(--color-accent)' };
-    default: return { emoji: '\uD83D\uDCA1', accentVar: 'var(--color-accent)' };
+    case 'pattern_detected': return { emoji: '\uD83D\uDD0D', accentVar: 'var(--calm-accent)' };
+    default: return { emoji: '\uD83D\uDCA1', accentVar: 'var(--calm-accent)' };
   }
 }
 
@@ -98,7 +96,7 @@ export function SmartSurfaceV2({ context }: SmartSurfaceV2Props) {
       className="smart-surface-v2"
       role="region"
       aria-live="polite"
-      aria-label="Proaktive Vorschlaege"
+      aria-label="Proaktive Vorschläge"
     >
       <div className="smart-surface-v2__track">
         {cards.map((card, i) => {
@@ -123,7 +121,7 @@ export function SmartSurfaceV2({ context }: SmartSurfaceV2Props) {
                 <button
                   className="smart-surface-v2__action smart-surface-v2__action--accept"
                   onClick={() => handleAccept(card.id)}
-                  aria-label="Aktion ausfuehren"
+                  aria-label="Aktion ausführen"
                 >
                   <ChevronRight size={16} />
                 </button>

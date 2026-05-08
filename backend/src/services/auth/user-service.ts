@@ -6,6 +6,8 @@
 import bcrypt from 'bcrypt';
 import { queryPublic } from '../../utils/database-context';
 import { logger } from '../../utils/logger';
+import { FEATURES } from '../../config/feature-flags';
+import { createOrganization } from '../organization-service';
 
 const BCRYPT_SALT_ROUNDS = 12;
 
@@ -27,6 +29,8 @@ export interface User {
   preferences: Record<string, unknown>;
   last_login: string | null;
   login_count: number;
+  onboarding_completed_at: string | null;
+  consent_banner_shown_at: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -44,6 +48,8 @@ export interface UserProfile {
   preferences: Record<string, unknown>;
   last_login: string | null;
   login_count: number;
+  onboarding_completed_at: string | null;
+  consent_banner_shown_at: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -100,9 +106,53 @@ export function toUserProfile(user: User): UserProfile {
     preferences: user.preferences,
     last_login: user.last_login,
     login_count: user.login_count,
+    onboarding_completed_at: user.onboarding_completed_at ?? null,
+    consent_banner_shown_at: user.consent_banner_shown_at ?? null,
     created_at: user.created_at,
     updated_at: user.updated_at,
   };
+}
+
+/**
+ * Mark the user's welcome-wizard as completed. Idempotent: if already set,
+ * returns the previously stored timestamp without overwriting it so we don't
+ * reset the true onboarding date.
+ */
+export async function markOnboardingComplete(userId: string): Promise<string> {
+  const result = await queryPublic(
+    `UPDATE public.users
+        SET onboarding_completed_at = COALESCE(onboarding_completed_at, NOW()),
+            updated_at = NOW()
+      WHERE id = $1
+      RETURNING onboarding_completed_at`,
+    [userId],
+  );
+  if (result.rows.length === 0) {
+    throw new UserServiceError('User not found', 'NOT_FOUND', 404);
+  }
+  const row = result.rows[0] as { onboarding_completed_at: string };
+  return row.onboarding_completed_at;
+}
+
+/**
+ * Mark that the user has acknowledged the DSGVO consent banner. Idempotent:
+ * if already set, returns the previously stored timestamp unchanged so we
+ * preserve the original acknowledgement time for audit purposes.
+ */
+export async function markConsentBannerShown(userId: string): Promise<string> {
+  const result = await queryPublic(
+    `UPDATE public.users
+        SET consent_banner_shown_at = COALESCE(consent_banner_shown_at, NOW()),
+            updated_at = NOW()
+      WHERE id = $1
+      RETURNING consent_banner_shown_at`,
+    [userId],
+  );
+  if (result.rows.length === 0) {
+    throw new UserServiceError('User not found', 'NOT_FOUND', 404);
+  }
+  const row = result.rows[0] as { consent_banner_shown_at: string };
+  return row.consent_banner_shown_at;
 }
 
 /**
@@ -145,13 +195,26 @@ export async function register(input: RegisterInput): Promise<User> {
   const user = result.rows[0] as User;
 
   // Grant access to all 4 contexts by default
-  const contexts = ['personal', 'work', 'learning', 'creative'] as const;
+  const contexts = ['operations', 'finance', 'people', 'strategy'] as const;
   for (const ctx of contexts) {
     await queryPublic(
       `INSERT INTO public.user_contexts (user_id, context, role) VALUES ($1, $2, 'owner')
        ON CONFLICT DO NOTHING`,
       [user.id, ctx]
     );
+  }
+
+  // Multi-tenancy: auto-create organization for new users (behind feature flag)
+  if (FEATURES.MULTI_TENANCY_ENABLED) {
+    try {
+      await createOrganization({
+        name: user.display_name || user.email.split('@')[0] + "'s Space",
+        ownerId: user.id,
+      });
+    } catch (err) {
+      // Non-fatal: user exists even if org creation fails
+      console.error('Auto-org creation failed:', err);
+    }
   }
 
   logger.info('User registered', {
@@ -285,7 +348,7 @@ export async function findOrCreateOAuthUser(params: {
   const newUser = result.rows[0] as User;
 
   // Grant access to all 4 contexts
-  const contexts = ['personal', 'work', 'learning', 'creative'] as const;
+  const contexts = ['operations', 'finance', 'people', 'strategy'] as const;
   for (const ctx of contexts) {
     await queryPublic(
       `INSERT INTO public.user_contexts (user_id, context, role) VALUES ($1, $2, 'owner')
@@ -409,6 +472,19 @@ export async function changePassword(userId: string, currentPassword: string, ne
 }
 
 /**
+ * Verify a user's password (for sensitive operations like ownership transfer).
+ */
+export async function verifyPassword(userId: string, password: string): Promise<boolean> {
+  const result = await queryPublic(
+    'SELECT password_hash FROM public.users WHERE id = $1',
+    [userId],
+  );
+  const row = result.rows[0];
+  if (!row?.password_hash) return false;
+  return bcrypt.compare(password, row.password_hash);
+}
+
+/**
  * Create a password reset token (random, hashed in DB, 1 hour expiry).
  * Returns the raw token for inclusion in the email link.
  */
@@ -479,6 +555,171 @@ export async function resetPasswordWithToken(token: string, newPassword: string)
   await queryPublic('DELETE FROM public.password_reset_tokens WHERE user_id = $1', [userId]);
 
   logger.info('Password reset completed', { operation: 'user.resetPassword', userId });
+}
+
+// ===========================================
+// Account Deletion (DSGVO Art. 17 — Right to be forgotten)
+// ===========================================
+
+/**
+ * Sprint 1.1 (2026-04-16):
+ * Permanently delete a user and ALL associated data across the platform.
+ *
+ * Cascade scope:
+ *   1. All 4 context schemas (operations, finance, people, strategy) — every table
+ *      with a `user_id` column is deleted via dynamic information_schema lookup.
+ *      pgvector embedding rows are removed alongside their parent rows.
+ *   2. public.users (FK-cascades remove subscriptions, sessions, MFA, OAuth links,
+ *      org memberships, audit-log foreign-keys → audit rows are anonymized to NULL).
+ *   3. Redis: revoke all sessions, purge per-user cache keys (best-effort).
+ *   4. Sentry: clear user context so subsequent events carry no PII for this id.
+ *
+ * Properties:
+ *   - **Idempotent**: returning early if the user does not exist (no error).
+ *   - **Transactional per schema** for SQL deletes; Redis/Sentry are best-effort.
+ *   - **Returns a tally** of affected rows for audit/observability.
+ *
+ * Notes for the caller:
+ *   - The route layer must verify the requester is the user themselves (or admin)
+ *     and revoke their JWT/session BEFORE calling this. We also revoke here.
+ *   - We do not anonymize-in-place — DSGVO Art. 17 requires deletion, not pseudonymization.
+ */
+export interface DeleteCascadeResult {
+  userId: string;
+  existed: boolean;
+  rowsDeletedByContext: Record<string, number>;
+  rowsDeletedPublic: number;
+  sessionsRevoked: number;
+  cachePurged: boolean;
+}
+
+export async function deleteUserCascade(userId: string): Promise<DeleteCascadeResult> {
+  const result: DeleteCascadeResult = {
+    userId,
+    existed: false,
+    rowsDeletedByContext: { operations: 0, finance: 0, people: 0, strategy: 0 },
+    rowsDeletedPublic: 0,
+    sessionsRevoked: 0,
+    cachePurged: false,
+  };
+
+  // Idempotency check
+  const existing = await queryPublic('SELECT id FROM public.users WHERE id = $1', [userId]);
+  if (existing.rows.length === 0) {
+    logger.info('deleteUserCascade: user not found, no-op', { userId });
+    return result;
+  }
+  result.existed = true;
+
+  // 1. Schema-isolated deletes — dynamic lookup so future tables with `user_id` are caught.
+  const { queryContext, withTransaction } = await import('../../utils/database-context');
+  const contexts = ['operations', 'finance', 'people', 'strategy'] as const;
+
+  for (const ctx of contexts) {
+    try {
+      const tablesRes = await queryContext(
+        ctx,
+        `SELECT table_name FROM information_schema.columns
+         WHERE table_schema = $1 AND column_name = 'user_id'`,
+        [ctx],
+      );
+      const tables = (tablesRes.rows as Array<{ table_name: string }>).map(r => r.table_name);
+
+      if (tables.length === 0) continue;
+
+      await withTransaction(ctx, async (q) => {
+        for (const tbl of tables) {
+          // Identifier comes from information_schema (PostgreSQL system catalog),
+          // not from user input — safe to interpolate.
+          // eslint-disable-next-line security/detect-non-literal-fs-filename
+          const del = await q(`DELETE FROM "${tbl}" WHERE user_id = $1`, [userId]);
+          result.rowsDeletedByContext[ctx] += del.rowCount ?? 0;
+        }
+      });
+    } catch (err) {
+      logger.error(`deleteUserCascade: context ${ctx} failed`,
+        err instanceof Error ? err : undefined,
+        { userId, ctx });
+      // Do not abort the cascade — other contexts and public-schema cleanup must still run.
+    }
+  }
+
+  // 2. Public-schema cleanup. The users row itself is deleted last; FK ON DELETE CASCADE
+  //    or ON DELETE SET NULL handles subscriptions, sessions, oauth_accounts, etc.
+  //    For tables without explicit cascade, we delete defensively.
+  const publicTables = [
+    'user_credits',
+    'user_contexts',
+    'password_reset_tokens',
+    'user_sessions',
+    'oauth_accounts',
+    'subscriptions',
+    'organization_members',
+    'workspace_members',
+    'workspace_invitations',
+    'organization_invitations',
+  ];
+  for (const tbl of publicTables) {
+    try {
+      // eslint-disable-next-line security/detect-non-literal-fs-filename
+      const del = await queryPublic(`DELETE FROM public."${tbl}" WHERE user_id = $1`, [userId]);
+      result.rowsDeletedPublic += del.rowCount ?? 0;
+    } catch (err) {
+      // Table may not exist in this deployment; log and continue.
+      logger.debug(`deleteUserCascade: skip public.${tbl}`, {
+        userId,
+        error: err instanceof Error ? err.message : String(err),
+      });
+    }
+  }
+
+  // 3. Final delete of the user row itself (FK-cascades trigger).
+  const userDel = await queryPublic('DELETE FROM public.users WHERE id = $1', [userId]);
+  result.rowsDeletedPublic += userDel.rowCount ?? 0;
+
+  // 4. Redis cleanup (best-effort).
+  try {
+    const { sessionStore } = await import('./session-store');
+    await sessionStore.revokeAllUserSessions(userId);
+    result.sessionsRevoked = 1; // boolean-ish: we revoked the user's sessions
+  } catch (err) {
+    logger.warn('deleteUserCascade: session revoke failed', {
+      userId,
+      error: err instanceof Error ? err.message : String(err),
+    });
+  }
+  try {
+    const { cache } = await import('../../utils/cache');
+    if (cache.isAvailable()) {
+      // Purge any per-user cache namespaces. Pattern is intentionally broad to catch
+      // legacy keys; SCAN-based delPattern is non-blocking.
+      await cache.delPattern(`*:${userId}:*`);
+      await cache.delPattern(`*:${userId}`);
+      result.cachePurged = true;
+    }
+  } catch (err) {
+    logger.warn('deleteUserCascade: cache purge failed', {
+      userId,
+      error: err instanceof Error ? err.message : String(err),
+    });
+  }
+
+  // 5. Sentry: clear user context so subsequent events for this request don't carry PII.
+  try {
+    const { setUser } = await import('../observability/sentry');
+    setUser(null);
+  } catch {
+    // Sentry not initialized — ignore.
+  }
+
+  logger.info('deleteUserCascade completed', {
+    operation: 'user.deleteCascade',
+    userId,
+    rowsDeletedByContext: result.rowsDeletedByContext,
+    rowsDeletedPublic: result.rowsDeletedPublic,
+  });
+
+  return result;
 }
 
 // ===========================================

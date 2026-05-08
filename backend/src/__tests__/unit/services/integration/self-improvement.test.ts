@@ -222,37 +222,37 @@ describe('identifyImprovements', () => {
 describe('checkBudget', () => {
   it('returns full budget on fresh day (0 used)', async () => {
     mockQueryContext.mockResolvedValueOnce({ rows: [{ cnt: 0 }] } as any);
-    const budget = await checkBudget('personal');
+    const budget = await checkBudget('operations');
     expect(budget).toEqual({ maxActionsPerDay: 3, usedToday: 0, remainingToday: 3 });
   });
 
   it('reflects used actions', async () => {
     mockQueryContext.mockResolvedValueOnce({ rows: [{ cnt: 2 }] } as any);
-    const budget = await checkBudget('work');
+    const budget = await checkBudget('finance');
     expect(budget).toEqual({ maxActionsPerDay: 3, usedToday: 2, remainingToday: 1 });
   });
 
   it('returns 0 remaining when at limit', async () => {
     mockQueryContext.mockResolvedValueOnce({ rows: [{ cnt: 3 }] } as any);
-    const budget = await checkBudget('personal');
+    const budget = await checkBudget('operations');
     expect(budget.remainingToday).toBe(0);
   });
 
   it('respects custom maxPerDay', async () => {
     mockQueryContext.mockResolvedValueOnce({ rows: [{ cnt: 1 }] } as any);
-    const budget = await checkBudget('personal', 5);
+    const budget = await checkBudget('operations', 5);
     expect(budget).toEqual({ maxActionsPerDay: 5, usedToday: 1, remainingToday: 4 });
   });
 
   it('falls back to full budget on DB error', async () => {
     mockQueryContext.mockRejectedValueOnce(new Error('DB down'));
-    const budget = await checkBudget('personal');
+    const budget = await checkBudget('operations');
     expect(budget).toEqual({ maxActionsPerDay: 3, usedToday: 0, remainingToday: 3 });
   });
 
   it('clamps remaining to 0 when over limit', async () => {
     mockQueryContext.mockResolvedValueOnce({ rows: [{ cnt: 10 }] } as any);
-    const budget = await checkBudget('personal');
+    const budget = await checkBudget('operations');
     expect(budget.remainingToday).toBe(0);
   });
 });
@@ -290,10 +290,10 @@ describe('recordImprovementAction', () => {
 
   it('calls queryContext with correct params', async () => {
     mockQueryContext.mockResolvedValueOnce({ rows: [] } as any);
-    await recordImprovementAction('personal', action);
+    await recordImprovementAction('operations', action);
     expect(mockQueryContext).toHaveBeenCalledTimes(1);
     const [ctx, sql, params] = mockQueryContext.mock.calls[0];
-    expect(ctx).toBe('personal');
+    expect(ctx).toBe('operations');
     expect(sql).toContain('INSERT INTO improvement_actions');
     expect(params).toContain('test-id');
     expect(params).toContain('calibration_fix');
@@ -301,7 +301,7 @@ describe('recordImprovementAction', () => {
 
   it('does not throw on DB error (fire-and-forget)', async () => {
     mockQueryContext.mockRejectedValueOnce(new Error('DB fail'));
-    await expect(recordImprovementAction('personal', action)).resolves.toBeUndefined();
+    await expect(recordImprovementAction('operations', action)).resolves.toBeUndefined();
   });
 });
 
@@ -324,7 +324,7 @@ describe('getImprovementHistory', () => {
         },
       ],
     } as any);
-    const history = await getImprovementHistory('work', 10);
+    const history = await getImprovementHistory('finance', 10);
     expect(history).toHaveLength(1);
     expect(history[0].id).toBe('abc');
     expect(history[0].type).toBe('team_learning');
@@ -333,20 +333,20 @@ describe('getImprovementHistory', () => {
 
   it('returns empty array on DB error', async () => {
     mockQueryContext.mockRejectedValueOnce(new Error('DB fail'));
-    const history = await getImprovementHistory('personal');
+    const history = await getImprovementHistory('operations');
     expect(history).toEqual([]);
   });
 
   it('uses default limit of 20', async () => {
     mockQueryContext.mockResolvedValueOnce({ rows: [] } as any);
-    await getImprovementHistory('personal');
+    await getImprovementHistory('operations');
     const params = mockQueryContext.mock.calls[0][2];
     expect(params).toContain(20);
   });
 
   it('respects custom limit', async () => {
     mockQueryContext.mockResolvedValueOnce({ rows: [] } as any);
-    await getImprovementHistory('personal', 5);
+    await getImprovementHistory('operations', 5);
     const params = mockQueryContext.mock.calls[0][2];
     expect(params).toContain(5);
   });

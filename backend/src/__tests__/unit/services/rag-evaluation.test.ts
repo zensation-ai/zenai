@@ -132,10 +132,10 @@ describe('recordRAGEvaluation', () => {
       resultCount: 5,
     };
 
-    const id = await recordRAGEvaluation('personal', record);
+    const id = await recordRAGEvaluation('operations', record);
     expect(id).toBe('eval-123');
     expect(mockQueryContext).toHaveBeenCalledWith(
-      'personal',
+      'operations',
       expect.stringContaining('INSERT INTO rag_evaluation_metrics'),
       expect.any(Array)
     );
@@ -154,7 +154,7 @@ describe('recordRAGEvaluation', () => {
     };
 
     // Should not throw, returns empty string on error
-    const id = await recordRAGEvaluation('personal', record);
+    const id = await recordRAGEvaluation('operations', record);
     expect(typeof id).toBe('string');
   });
 });
@@ -177,7 +177,7 @@ describe('getRAGEvaluationStats', () => {
       ],
     } as never);
 
-    const stats = await getRAGEvaluationStats('personal', 30);
+    const stats = await getRAGEvaluationStats('operations', 30);
     expect(stats).toHaveLength(1);
     expect(stats[0]).toMatchObject({
       strategyUsed: 'hyde',
@@ -191,14 +191,14 @@ describe('getRAGEvaluationStats', () => {
   it('returns empty array when no data', async () => {
     mockQueryContext.mockResolvedValueOnce({ rows: [] } as never);
 
-    const stats = await getRAGEvaluationStats('work', 7);
+    const stats = await getRAGEvaluationStats('finance', 7);
     expect(stats).toEqual([]);
   });
 
   it('handles DB error gracefully', async () => {
     mockQueryContext.mockRejectedValueOnce(new Error('DB error'));
 
-    const stats = await getRAGEvaluationStats('personal', 30);
+    const stats = await getRAGEvaluationStats('operations', 30);
     expect(stats).toEqual([]);
   });
 });

@@ -2,7 +2,7 @@
  * Projects Service - Phase 37
  *
  * Context-aware project management for grouping tasks.
- * Projects live in each context schema (personal, work, learning, creative).
+ * Projects live in each context schema (operations, finance, people, strategy).
  */
 
 import { v4 as uuidv4 } from 'uuid';

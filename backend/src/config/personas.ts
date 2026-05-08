@@ -20,7 +20,7 @@ import { AIContext } from '../utils/database-context';
 // Types
 // ===========================================
 
-export type PersonalPersonaId = 'companion' | 'coach' | 'creative';
+export type PersonalPersonaId = 'companion' | 'coach' | 'strategy';
 export type WorkPersonaId = 'coordinator' | 'analyst' | 'strategist';
 export type SubPersonaId = PersonalPersonaId | WorkPersonaId;
 
@@ -147,7 +147,7 @@ WICHTIG:
     },
   },
   {
-    id: 'creative',
+    id: 'strategy',
     displayName: 'Kreativ',
     icon: '🎨',
     description: 'Wild assoziativ, "Was wäre wenn...", Querdenker',
@@ -345,19 +345,19 @@ WICHTIG:
 // ===========================================
 
 export const CONTEXT_PERSONAS: Record<AIContext, ContextPersonas> = {
-  personal: {
+  operations: {
     default: 'companion',
     personas: PERSONAL_PERSONAS,
   },
-  work: {
+  finance: {
     default: 'coordinator',
     personas: WORK_PERSONAS,
   },
-  learning: {
+  people: {
     default: 'companion',
     personas: PERSONAL_PERSONAS,
   },
-  creative: {
+  strategy: {
     default: 'companion',
     personas: PERSONAL_PERSONAS,
   },

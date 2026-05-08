@@ -6,10 +6,11 @@
  * working memory, facts, procedures, and upcoming events.
  */
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import axios from 'axios';
+import { cn } from '@/lib/utils';
+import { useAuth } from '../../contexts/AuthContext';
 import type { AIContext } from '../ContextSwitcher';
-import './ContextIndicator.css';
 
 interface ActiveContextData {
   context: string;
@@ -35,14 +36,28 @@ interface ContextIndicatorProps {
   context: AIContext;
 }
 
-const CONTEXT_LABELS: Record<AIContext, string> = {
-  personal: 'Persoenlich',
-  work: 'Arbeit',
-  learning: 'Lernen',
-  creative: 'Kreativ',
+const DEFAULT_CONTEXT_LABELS: Record<AIContext, string> = {
+  operations: 'Operativ',
+  finance: 'Finanzen',
+  people: 'Team',
+  strategy: 'Strategie',
 };
 
 export function ContextIndicator({ context }: ContextIndicatorProps) {
+  const { workspaceContexts } = useAuth();
+
+  // Build context label map: prefer workspace custom names, fall back to defaults
+  const contextLabels = useMemo(() => {
+    if (workspaceContexts.length === 0) return DEFAULT_CONTEXT_LABELS;
+    const labels = { ...DEFAULT_CONTEXT_LABELS };
+    for (const wc of workspaceContexts) {
+      const base = wc.base_schema as AIContext;
+      if (base in labels) {
+        labels[base] = wc.name;
+      }
+    }
+    return labels;
+  }, [workspaceContexts]);
   const [data, setData] = useState<ActiveContextData | null>(null);
   const [cognitive, setCognitive] = useState<CognitiveMetrics | null>(null);
   const [open, setOpen] = useState(false);
@@ -113,11 +128,15 @@ export function ContextIndicator({ context }: ContextIndicatorProps) {
     : 0;
 
   return (
-    <div className="ctx-indicator-wrapper">
+    <div className="relative flex items-center max-md:hidden">
       <button
         ref={triggerRef}
         type="button"
-        className={`ctx-indicator-trigger ${open ? 'active' : ''}`}
+        className={cn(
+          'flex items-center gap-[5px] px-2.5 py-1 h-7 bg-[var(--border)] border border-white/8 rounded-sm text-text-secondary text-xs font-medium cursor-pointer transition-all duration-150',
+          'hover:bg-surface-hover hover:border-surface-hover hover:text-text-secondary',
+          open && 'bg-[rgba(139,92,246,0.15)] border-[rgba(139,92,246,0.3)] text-[rgba(139,92,246,0.9)]',
+        )}
         onClick={() => {
           setOpen(prev => !prev);
           if (!open) fetchContext();
@@ -126,85 +145,94 @@ export function ContextIndicator({ context }: ContextIndicatorProps) {
         aria-expanded={open}
         title="Aktiver Kontext"
       >
-        <span className="ctx-indicator-dot" />
-        <span className="ctx-indicator-label">
+        <span className="size-1.5 rounded-full bg-[rgba(139,92,246,0.7)] shadow-[0_0_6px_rgba(139,92,246,0.3)] shrink-0 animate-ctx-dot-pulse" />
+        <span className="leading-none">
           {loading ? '...' : totalItems}
         </span>
       </button>
 
       {open && (
-        <div className="ctx-indicator-popover" ref={popoverRef} role="dialog" aria-label="Kontext-Details">
-          <div className="ctx-indicator-popover-header">
-            <span className="ctx-indicator-popover-title">
-              Aktiver Kontext: {CONTEXT_LABELS[context]}
+        <div
+          className="absolute top-[calc(100%+8px)] right-0 w-70 bg-[rgba(16,32,42,0.92)] backdrop-blur-[24px] backdrop-saturate-[180%] border border-border rounded-md shadow-[0_8px_32px_rgba(0,0,0,0.3),0_2px_8px_rgba(0,0,0,0.15)] z-dropdown overflow-hidden animate-ctx-popover-in"
+          ref={popoverRef}
+          role="dialog"
+          aria-label="Kontext-Details"
+        >
+          <div className="px-4 py-3 border-b border-border">
+            <span className="text-[0.8rem] font-semibold text-text">
+              Aktiver Kontext: {contextLabels[context]}
             </span>
           </div>
 
-          <div className="ctx-indicator-popover-grid">
-            <div className="ctx-indicator-popover-stat">
-              <span className="ctx-indicator-popover-stat-value">
+          <div className="grid grid-cols-2 gap-px bg-white/4">
+            <div className="flex flex-col items-center py-2.5 px-2 bg-[rgba(16,32,42,0.6)]">
+              <span className="text-[1.1rem] font-bold text-text leading-tight">
                 {data?.workingMemoryCount ?? 0}
               </span>
-              <span className="ctx-indicator-popover-stat-label">Working Memory</span>
+              <span className="text-[0.65rem] text-text-secondary mt-0.5 text-center">Working Memory</span>
             </div>
-            <div className="ctx-indicator-popover-stat">
-              <span className="ctx-indicator-popover-stat-value">
+            <div className="flex flex-col items-center py-2.5 px-2 bg-[rgba(16,32,42,0.6)]">
+              <span className="text-[1.1rem] font-bold text-text leading-tight">
                 {data?.factsCount ?? 0}
               </span>
-              <span className="ctx-indicator-popover-stat-label">Langzeit-Fakten</span>
+              <span className="text-[0.65rem] text-text-secondary mt-0.5 text-center">Langzeit-Fakten</span>
             </div>
-            <div className="ctx-indicator-popover-stat">
-              <span className="ctx-indicator-popover-stat-value">
+            <div className="flex flex-col items-center py-2.5 px-2 bg-[rgba(16,32,42,0.6)]">
+              <span className="text-[1.1rem] font-bold text-text leading-tight">
                 {data?.proceduresCount ?? 0}
               </span>
-              <span className="ctx-indicator-popover-stat-label">Prozeduren</span>
+              <span className="text-[0.65rem] text-text-secondary mt-0.5 text-center">Prozeduren</span>
             </div>
-            <div className="ctx-indicator-popover-stat">
-              <span className="ctx-indicator-popover-stat-value">
+            <div className="flex flex-col items-center py-2.5 px-2 bg-[rgba(16,32,42,0.6)]">
+              <span className="text-[1.1rem] font-bold text-text leading-tight">
                 {data?.upcomingEventsCount ?? 0}
               </span>
-              <span className="ctx-indicator-popover-stat-label">Termine (2h)</span>
+              <span className="text-[0.65rem] text-text-secondary mt-0.5 text-center">Termine (2h)</span>
             </div>
           </div>
 
           {cognitive && (
-            <div className="ctx-indicator-popover-grid" style={{ marginTop: '0.5rem' }}>
-              <div className="ctx-indicator-popover-stat">
-                <span className="ctx-indicator-popover-stat-value" style={{ color: cognitive.calibration.isWellCalibrated ? 'var(--color-success, #22c55e)' : 'var(--color-warning, #f59e0b)' }}>
+            <div className="grid grid-cols-2 gap-px bg-white/4 mt-2">
+              <div className="flex flex-col items-center py-2.5 px-2 bg-[rgba(16,32,42,0.6)]">
+                <span className={cn('text-[1.1rem] font-bold leading-tight', cognitive.calibration.isWellCalibrated ? 'text-green-500' : 'text-amber-500')}>
                   {cognitive.calibration.isWellCalibrated ? 'Gut' : Math.round(cognitive.calibration.ece * 100) + '%'}
                 </span>
-                <span className="ctx-indicator-popover-stat-label">Kalibrierung</span>
+                <span className="text-[0.65rem] text-text-secondary mt-0.5 text-center">Kalibrierung</span>
               </div>
-              <div className="ctx-indicator-popover-stat">
-                <span className="ctx-indicator-popover-stat-value">
+              <div className="flex flex-col items-center py-2.5 px-2 bg-[rgba(16,32,42,0.6)]">
+                <span className="text-[1.1rem] font-bold text-text leading-tight">
                   {cognitive.predictions.totalPredictions > 0 ? Math.round(cognitive.predictions.accuracy * 100) + '%' : '–'}
                 </span>
-                <span className="ctx-indicator-popover-stat-label">Vorhersage</span>
+                <span className="text-[0.65rem] text-text-secondary mt-0.5 text-center">Vorhersage</span>
               </div>
-              <div className="ctx-indicator-popover-stat">
-                <span className="ctx-indicator-popover-stat-value">
+              <div className="flex flex-col items-center py-2.5 px-2 bg-[rgba(16,32,42,0.6)]">
+                <span className="text-[1.1rem] font-bold text-text leading-tight">
                   {cognitive.curiosity.activeGaps}
                 </span>
-                <span className="ctx-indicator-popover-stat-label">Wissensluecken</span>
+                <span className="text-[0.65rem] text-text-secondary mt-0.5 text-center">Wissenslücken</span>
               </div>
-              <div className="ctx-indicator-popover-stat">
-                <span className="ctx-indicator-popover-stat-value">
+              <div className="flex flex-col items-center py-2.5 px-2 bg-[rgba(16,32,42,0.6)]">
+                <span className="text-[1.1rem] font-bold text-text leading-tight">
                   {cognitive.curiosity.pendingHypotheses}
                 </span>
-                <span className="ctx-indicator-popover-stat-label">Hypothesen</span>
+                <span className="text-[0.65rem] text-text-secondary mt-0.5 text-center">Hypothesen</span>
               </div>
             </div>
           )}
 
           {data?.upcomingEvents && data.upcomingEvents.length > 0 && (
-            <div className="ctx-indicator-popover-events">
-              <span className="ctx-indicator-popover-section-title">Anstehende Termine</span>
+            <div className="px-3 pt-2 pb-3 border-t border-border">
+              <span className="block text-[0.65rem] font-semibold uppercase tracking-wide text-text-muted mb-1.5">
+                Anstehende Termine
+              </span>
               {data.upcomingEvents.map(event => (
-                <div key={event.id} className="ctx-indicator-popover-event">
-                  <span className="ctx-indicator-popover-event-time">
+                <div key={event.id} className="flex items-center gap-2 py-1">
+                  <span className="text-xs font-medium text-[rgba(139,92,246,0.8)] shrink-0 min-w-10">
                     {formatEventTime(event.start_time)}
                   </span>
-                  <span className="ctx-indicator-popover-event-title">{event.title}</span>
+                  <span className="text-[0.8rem] text-text overflow-hidden text-ellipsis whitespace-nowrap">
+                    {event.title}
+                  </span>
                 </div>
               ))}
             </div>

@@ -66,7 +66,7 @@ export interface CreateDomainFocusInput {
  */
 export async function createDomainFocus(
   input: CreateDomainFocusInput,
-  context: AIContext = 'personal'
+  context: AIContext = 'operations'
 ): Promise<DomainFocus> {
   const id = uuidv4();
 
@@ -112,7 +112,7 @@ export async function createDomainFocus(
 export async function updateDomainFocus(
   id: string,
   updates: Partial<CreateDomainFocusInput>,
-  context: AIContext = 'personal'
+  context: AIContext = 'operations'
 ): Promise<DomainFocus | null> {
   // Hole existierenden Focus
   const existing = await getDomainFocus(id, context);
@@ -167,7 +167,7 @@ export async function updateDomainFocus(
  */
 export async function getDomainFocus(
   id: string,
-  context: AIContext = 'personal'
+  context: AIContext = 'operations'
 ): Promise<DomainFocus | null> {
   const result = await queryContext(
     context,
@@ -184,7 +184,7 @@ export async function getDomainFocus(
  * Holt alle Domain Focus Bereiche
  */
 export async function getAllDomainFocus(
-  context: AIContext = 'personal',
+  context: AIContext = 'operations',
   activeOnly: boolean = false
 ): Promise<DomainFocus[]> {
   const result = await queryContext(
@@ -204,7 +204,7 @@ export async function getAllDomainFocus(
 export async function toggleDomainFocus(
   id: string,
   isActive: boolean,
-  context: AIContext = 'personal'
+  context: AIContext = 'operations'
 ): Promise<boolean> {
   const result = await queryContext(
     context,
@@ -221,7 +221,7 @@ export async function toggleDomainFocus(
  */
 export async function deleteDomainFocus(
   id: string,
-  context: AIContext = 'personal'
+  context: AIContext = 'operations'
 ): Promise<boolean> {
   const result = await queryContext(
     context,
@@ -240,7 +240,7 @@ export async function deleteDomainFocus(
  * Holt den aktiven Fokus-Kontext für LLM-Prompts
  */
 export async function getActiveFocusContext(
-  context: AIContext = 'personal'
+  context: AIContext = 'operations'
 ): Promise<string> {
   const activeFocus = await getAllDomainFocus(context, true);
 
@@ -272,7 +272,7 @@ Wenn die Anfrage zu einem dieser Themen passt, gehe besonders detailliert darauf
  */
 export async function findMatchingFocus(
   text: string,
-  context: AIContext = 'personal'
+  context: AIContext = 'operations'
 ): Promise<DomainFocus | null> {
   try {
     // 1. Generiere Embedding für den Text
@@ -341,7 +341,7 @@ export function matchesFocusKeywords(
  * Holt Statistiken für Domain Focus
  */
 export async function getDomainFocusStats(
-  context: AIContext = 'personal'
+  context: AIContext = 'operations'
 ): Promise<{
   total_focus_areas: number;
   active_focus_areas: number;
@@ -418,7 +418,7 @@ function parseJSON<T>(value: unknown, defaultValue: T): T {
  * Erstellt vordefinierte Focus-Bereiche
  */
 export async function createPresetFocusAreas(
-  context: AIContext = 'work'
+  context: AIContext = 'finance'
 ): Promise<void> {
   const presets: CreateDomainFocusInput[] = [
     {

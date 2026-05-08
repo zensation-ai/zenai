@@ -85,7 +85,7 @@ describe('Browser Routes', () => {
 
   describe('GET /api/:context/browser/history', () => {
     it('should list browsing history', async () => {
-      const res = await request(app).get('/api/personal/browser/history');
+      const res = await request(app).get('/api/operations/browser/history');
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
       expect(res.body.data).toHaveLength(1);
@@ -93,8 +93,8 @@ describe('Browser Routes', () => {
     });
 
     it('should pass filter params to service', async () => {
-      await request(app).get('/api/work/browser/history?domain=example.com&limit=10');
-      expect(mockGetHistory).toHaveBeenCalledWith('work', expect.objectContaining({
+      await request(app).get('/api/finance/browser/history?domain=example.com&limit=10');
+      expect(mockGetHistory).toHaveBeenCalledWith('finance', expect.objectContaining({
         domain: 'example.com',
         limit: 10,
       }), '00000000-0000-0000-0000-000000000001');
@@ -108,7 +108,7 @@ describe('Browser Routes', () => {
 
   describe('GET /api/:context/browser/history/domains', () => {
     it('should return domain stats', async () => {
-      const res = await request(app).get('/api/personal/browser/history/domains');
+      const res = await request(app).get('/api/operations/browser/history/domains');
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
       expect(res.body.data).toHaveLength(1);
@@ -117,20 +117,20 @@ describe('Browser Routes', () => {
 
   describe('GET /api/:context/browser/history/:id', () => {
     it('should return a single history entry', async () => {
-      const res = await request(app).get('/api/personal/browser/history/a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11');
+      const res = await request(app).get('/api/operations/browser/history/a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11');
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
       expect(res.body.data.id).toBe('h1');
     });
 
     it('should return 400 for invalid UUID', async () => {
-      const res = await request(app).get('/api/personal/browser/history/not-a-uuid');
+      const res = await request(app).get('/api/operations/browser/history/not-a-uuid');
       expect(res.status).toBe(400);
     });
 
     it('should return 404 for non-existent entry', async () => {
       mockGetHistoryEntry.mockResolvedValueOnce(null);
-      const res = await request(app).get('/api/personal/browser/history/a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11');
+      const res = await request(app).get('/api/operations/browser/history/a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11');
       expect(res.status).toBe(404);
     });
   });
@@ -138,7 +138,7 @@ describe('Browser Routes', () => {
   describe('POST /api/:context/browser/history', () => {
     it('should create a history entry', async () => {
       const res = await request(app)
-        .post('/api/personal/browser/history')
+        .post('/api/operations/browser/history')
         .send({ url: 'https://new.com', domain: 'new.com', title: 'New Page' });
       expect(res.status).toBe(201);
       expect(res.body.success).toBe(true);
@@ -146,14 +146,14 @@ describe('Browser Routes', () => {
 
     it('should return 400 when url is missing', async () => {
       const res = await request(app)
-        .post('/api/personal/browser/history')
+        .post('/api/operations/browser/history')
         .send({ domain: 'example.com' });
       expect(res.status).toBe(400);
     });
 
     it('should return 400 when domain is missing', async () => {
       const res = await request(app)
-        .post('/api/personal/browser/history')
+        .post('/api/operations/browser/history')
         .send({ url: 'https://example.com' });
       expect(res.status).toBe(400);
     });
@@ -161,26 +161,26 @@ describe('Browser Routes', () => {
 
   describe('DELETE /api/:context/browser/history/:id', () => {
     it('should delete a history entry', async () => {
-      const res = await request(app).delete('/api/personal/browser/history/a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11');
+      const res = await request(app).delete('/api/operations/browser/history/a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11');
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
     });
 
     it('should return 404 for non-existent entry', async () => {
       mockDeleteHistoryEntry.mockResolvedValueOnce(false);
-      const res = await request(app).delete('/api/personal/browser/history/a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11');
+      const res = await request(app).delete('/api/operations/browser/history/a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11');
       expect(res.status).toBe(404);
     });
 
     it('should return 400 for invalid UUID', async () => {
-      const res = await request(app).delete('/api/personal/browser/history/bad-id');
+      const res = await request(app).delete('/api/operations/browser/history/bad-id');
       expect(res.status).toBe(400);
     });
   });
 
   describe('DELETE /api/:context/browser/history (clear)', () => {
     it('should clear browsing history', async () => {
-      const res = await request(app).delete('/api/personal/browser/history');
+      const res = await request(app).delete('/api/operations/browser/history');
       expect(res.status).toBe(200);
       expect(res.body.count).toBe(3);
     });
@@ -192,7 +192,7 @@ describe('Browser Routes', () => {
 
   describe('GET /api/:context/browser/bookmarks', () => {
     it('should list bookmarks', async () => {
-      const res = await request(app).get('/api/personal/browser/bookmarks');
+      const res = await request(app).get('/api/operations/browser/bookmarks');
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
       expect(res.body.data).toHaveLength(1);
@@ -201,7 +201,7 @@ describe('Browser Routes', () => {
 
   describe('GET /api/:context/browser/bookmarks/folders', () => {
     it('should return folder structure', async () => {
-      const res = await request(app).get('/api/personal/browser/bookmarks/folders');
+      const res = await request(app).get('/api/operations/browser/bookmarks/folders');
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
       expect(res.body.data).toHaveLength(1);
@@ -210,19 +210,19 @@ describe('Browser Routes', () => {
 
   describe('GET /api/:context/browser/bookmarks/:id', () => {
     it('should return a single bookmark', async () => {
-      const res = await request(app).get('/api/personal/browser/bookmarks/a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11');
+      const res = await request(app).get('/api/operations/browser/bookmarks/a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11');
       expect(res.status).toBe(200);
       expect(res.body.data.id).toBe('b1');
     });
 
     it('should return 404 for non-existent bookmark', async () => {
       mockGetBookmark.mockResolvedValueOnce(null);
-      const res = await request(app).get('/api/personal/browser/bookmarks/a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11');
+      const res = await request(app).get('/api/operations/browser/bookmarks/a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11');
       expect(res.status).toBe(404);
     });
 
     it('should return 400 for invalid UUID', async () => {
-      const res = await request(app).get('/api/personal/browser/bookmarks/bad-id');
+      const res = await request(app).get('/api/operations/browser/bookmarks/bad-id');
       expect(res.status).toBe(400);
     });
   });
@@ -230,7 +230,7 @@ describe('Browser Routes', () => {
   describe('POST /api/:context/browser/bookmarks', () => {
     it('should create a bookmark', async () => {
       const res = await request(app)
-        .post('/api/personal/browser/bookmarks')
+        .post('/api/operations/browser/bookmarks')
         .send({ url: 'https://new-bookmark.com', title: 'New' });
       expect(res.status).toBe(201);
       expect(res.body.success).toBe(true);
@@ -238,7 +238,7 @@ describe('Browser Routes', () => {
 
     it('should return 400 when url is missing', async () => {
       const res = await request(app)
-        .post('/api/personal/browser/bookmarks')
+        .post('/api/operations/browser/bookmarks')
         .send({ title: 'No URL' });
       expect(res.status).toBe(400);
     });
@@ -247,7 +247,7 @@ describe('Browser Routes', () => {
   describe('PUT /api/:context/browser/bookmarks/:id', () => {
     it('should update a bookmark', async () => {
       const res = await request(app)
-        .put('/api/personal/browser/bookmarks/a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11')
+        .put('/api/operations/browser/bookmarks/a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11')
         .send({ title: 'Updated' });
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
@@ -256,7 +256,7 @@ describe('Browser Routes', () => {
     it('should return 404 for non-existent bookmark', async () => {
       mockUpdateBookmark.mockResolvedValueOnce(null);
       const res = await request(app)
-        .put('/api/personal/browser/bookmarks/a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11')
+        .put('/api/operations/browser/bookmarks/a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11')
         .send({ title: 'X' });
       expect(res.status).toBe(404);
     });
@@ -264,14 +264,14 @@ describe('Browser Routes', () => {
 
   describe('DELETE /api/:context/browser/bookmarks/:id', () => {
     it('should delete a bookmark', async () => {
-      const res = await request(app).delete('/api/personal/browser/bookmarks/a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11');
+      const res = await request(app).delete('/api/operations/browser/bookmarks/a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11');
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
     });
 
     it('should return 404 for non-existent bookmark', async () => {
       mockDeleteBookmark.mockResolvedValueOnce(false);
-      const res = await request(app).delete('/api/personal/browser/bookmarks/a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11');
+      const res = await request(app).delete('/api/operations/browser/bookmarks/a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11');
       expect(res.status).toBe(404);
     });
   });
@@ -283,7 +283,7 @@ describe('Browser Routes', () => {
   describe('POST /api/:context/browser/analyze', () => {
     it('should analyze page content', async () => {
       const res = await request(app)
-        .post('/api/personal/browser/analyze')
+        .post('/api/operations/browser/analyze')
         .send({ url: 'https://example.com', text: 'Some content to analyze' });
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
@@ -292,14 +292,14 @@ describe('Browser Routes', () => {
 
     it('should return 400 when url is missing', async () => {
       const res = await request(app)
-        .post('/api/personal/browser/analyze')
+        .post('/api/operations/browser/analyze')
         .send({ text: 'Some content' });
       expect(res.status).toBe(400);
     });
 
     it('should return 400 when text is missing', async () => {
       const res = await request(app)
-        .post('/api/personal/browser/analyze')
+        .post('/api/operations/browser/analyze')
         .send({ url: 'https://example.com' });
       expect(res.status).toBe(400);
     });
@@ -307,7 +307,7 @@ describe('Browser Routes', () => {
     it('should return 503 when analysis service is unavailable', async () => {
       mockAnalyzePage.mockResolvedValueOnce(null);
       const res = await request(app)
-        .post('/api/personal/browser/analyze')
+        .post('/api/operations/browser/analyze')
         .send({ url: 'https://example.com', text: 'content' });
       expect(res.status).toBe(503);
     });

@@ -1,0 +1,257 @@
+{
+  "model": "gpt-4o",
+  "dataset_mode": "longmemeval",
+  "n_queries": 30,
+  "n_scored": 30,
+  "per_query": [
+    {
+      "query_id": "a06e4cfe",
+      "category": "single-session-user",
+      "score": 5,
+      "rationale": "The retrieved facts clearly state the user's preferred gin-to-vermouth ratio for a classic gin martini as 3:1.",
+      "n_retrieved": 20
+    },
+    {
+      "query_id": "60d45044",
+      "category": "single-session-user",
+      "score": 5,
+      "rationale": "The retrieved facts clearly state that the user's favorite rice is Japanese short-grain rice.",
+      "n_retrieved": 12
+    },
+    {
+      "query_id": "001be529",
+      "category": "single-session-user",
+      "score": 3,
+      "rationale": "The retrieved facts indicate the asylum application took over a year, but lack specific details on the exact waiting period.",
+      "n_retrieved": 11
+    },
+    {
+      "query_id": "36580ce8",
+      "category": "single-session-user",
+      "score": 5,
+      "rationale": "The retrieved facts clearly state that the user initially thought they had a cold, but it turned out to be bronchitis.",
+      "n_retrieved": 7
+    },
+    {
+      "query_id": "15745da0_abs",
+      "category": "single-session-user",
+      "score": 0,
+      "rationale": "The retrieved facts focus on vintage cameras and vinyl records, not vintage films.",
+      "n_retrieved": 9
+    },
+    {
+      "query_id": "gpt4_7fce9456",
+      "category": "multi-session",
+      "score": 0,
+      "rationale": "None of the retrieved facts mention the number of properties viewed before making an offer.",
+      "n_retrieved": 8
+    },
+    {
+      "query_id": "00ca467f",
+      "category": "multi-session",
+      "score": 0,
+      "rationale": "The retrieved facts are completely unrelated to the query about doctor's appointments in March.",
+      "n_retrieved": 2
+    },
+    {
+      "query_id": "gpt4_731e37d7",
+      "category": "multi-session",
+      "score": 2,
+      "rationale": "The facts mention attending workshops but do not provide the total money spent.",
+      "n_retrieved": 14
+    },
+    {
+      "query_id": "bf659f65",
+      "category": "multi-session",
+      "score": 0,
+      "rationale": "None of the retrieved facts address the number of music albums or EPs purchased or downloaded by the user.",
+      "n_retrieved": 9
+    },
+    {
+      "query_id": "edced276_abs",
+      "category": "multi-session",
+      "score": 0,
+      "rationale": "None of the retrieved facts mention Hawaii or Seattle, nor do they provide information on travel days related to those locations.",
+      "n_retrieved": 6
+    },
+    {
+      "query_id": "6b7dfb22",
+      "category": "single-session-preference",
+      "score": 2,
+      "rationale": "The facts touch on finding inspiration through social media and challenges, but do not directly answer the query about finding new inspiration for paintings.",
+      "n_retrieved": 2
+    },
+    {
+      "query_id": "57f827a0",
+      "category": "single-session-preference",
+      "score": 0,
+      "rationale": "The retrieved facts are unrelated to rearranging bedroom furniture.",
+      "n_retrieved": 2
+    },
+    {
+      "query_id": "75f70248",
+      "category": "single-session-preference",
+      "score": 3,
+      "rationale": "The facts provide tips for reducing dust and allergens in the living room, which partially addresses the query about sneezing.",
+      "n_retrieved": 2
+    },
+    {
+      "query_id": "b0479f84",
+      "category": "single-session-preference",
+      "score": 5,
+      "rationale": "The retrieved facts provide a comprehensive list of documentary recommendations across various genres, fully addressing the query.",
+      "n_retrieved": 4
+    },
+    {
+      "query_id": "07b6f563",
+      "category": "single-session-preference",
+      "score": 0,
+      "rationale": "The retrieved facts do not address phone accessories and are unrelated to the query.",
+      "n_retrieved": 4
+    },
+    {
+      "query_id": "gpt4_4929293a",
+      "category": "temporal-reasoning",
+      "score": 3,
+      "rationale": "The facts indicate that the cousin's wedding has already occurred, but it's unclear when Michael's engagement party took place relative to it.",
+      "n_retrieved": 8
+    },
+    {
+      "query_id": "2ebe6c90",
+      "category": "temporal-reasoning",
+      "score": 0,
+      "rationale": "The retrieved facts are unrelated to the query about finishing 'The Nightingale' by Kristin Hannah.",
+      "n_retrieved": 2
+    },
+    {
+      "query_id": "2ebe6c92",
+      "category": "temporal-reasoning",
+      "score": 0,
+      "rationale": "The retrieved facts do not mention any book that was finished a week ago.",
+      "n_retrieved": 2
+    },
+    {
+      "query_id": "gpt4_59149c78",
+      "category": "temporal-reasoning",
+      "score": 3,
+      "rationale": "The retrieved facts indicate the user attended an event at the City Art Museum, but it's unclear if this is the art-related event from two weeks ago.",
+      "n_retrieved": 3
+    },
+    {
+      "query_id": "b29f3365",
+      "category": "temporal-reasoning",
+      "score": 0,
+      "rationale": "None of the retrieved facts mention how long the user had been taking guitar lessons before buying the new amp.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "ce6d2d27",
+      "category": "knowledge-update",
+      "score": 5,
+      "rationale": "The retrieved facts clearly state that the cocktail-making class is on Friday.",
+      "n_retrieved": 9
+    },
+    {
+      "query_id": "affe2881",
+      "category": "knowledge-update",
+      "score": 5,
+      "rationale": "The retrieved facts clearly state that the user has seen 27 different species of birds in their local park.",
+      "n_retrieved": 10
+    },
+    {
+      "query_id": "50635ada",
+      "category": "knowledge-update",
+      "score": 0,
+      "rationale": "The retrieved facts do not address the user's previous frequent flyer status on United Airlines.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "f685340e",
+      "category": "knowledge-update",
+      "score": 0,
+      "rationale": "No facts were retrieved to answer the query.",
+      "n_retrieved": 0
+    },
+    {
+      "query_id": "cc5ded98",
+      "category": "knowledge-update",
+      "score": 5,
+      "rationale": "The retrieved facts clearly state that the user dedicates about two hours each day to coding exercises, directly answering the query.",
+      "n_retrieved": 14
+    },
+    {
+      "query_id": "ceb54acb",
+      "category": "single-session-assistant",
+      "score": 5,
+      "rationale": "The retrieved facts clearly list the four alternative terms suggested previously.",
+      "n_retrieved": 3
+    },
+    {
+      "query_id": "f523d9fe",
+      "category": "single-session-assistant",
+      "score": 5,
+      "rationale": "The retrieved fact clearly states that 'Doc Martin' was the show mentioned as an example.",
+      "n_retrieved": 1
+    },
+    {
+      "query_id": "8464fc84",
+      "category": "single-session-assistant",
+      "score": 4,
+      "rationale": "The retrieved facts mention Roscioli, a famous deli near the Vatican known for its cured meats and cheeses, which essentially answers the query.",
+      "n_retrieved": 3
+    },
+    {
+      "query_id": "e8a79c70",
+      "category": "single-session-assistant",
+      "score": 5,
+      "rationale": "The retrieved facts clearly state that 3 eggs are needed for the classic French omelette recipe.",
+      "n_retrieved": 9
+    },
+    {
+      "query_id": "4388e9dd",
+      "category": "single-session-assistant",
+      "score": 5,
+      "rationale": "The retrieved fact clearly states that Andy wears an untidy, stained white shirt, directly answering the query.",
+      "n_retrieved": 1
+    }
+  ],
+  "aggregate": {
+    "mean": 2.5,
+    "ci_low": 1.7,
+    "ci_high": 3.2666666666666666,
+    "normalized_mean": 0.5,
+    "per_category": {
+      "single-session-user": {
+        "n": 5,
+        "mean": 3.6,
+        "normalized_mean": 0.72
+      },
+      "multi-session": {
+        "n": 5,
+        "mean": 0.4,
+        "normalized_mean": 0.08
+      },
+      "single-session-preference": {
+        "n": 5,
+        "mean": 2.0,
+        "normalized_mean": 0.4
+      },
+      "temporal-reasoning": {
+        "n": 5,
+        "mean": 1.2,
+        "normalized_mean": 0.24
+      },
+      "knowledge-update": {
+        "n": 5,
+        "mean": 3.0,
+        "normalized_mean": 0.6
+      },
+      "single-session-assistant": {
+        "n": 5,
+        "mean": 4.8,
+        "normalized_mean": 0.96
+      }
+    }
+  },
+  "baseline": "mem0"
+}

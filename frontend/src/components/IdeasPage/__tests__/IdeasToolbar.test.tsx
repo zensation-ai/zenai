@@ -35,11 +35,11 @@ describe('IdeasToolbar', () => {
 
   it('shows batch actions when selectionMode is true', () => {
     render(<IdeasToolbar {...defaultProps} selectionMode={true} selectedCount={3} />);
-    expect(screen.getByText(/3 ausgewaehlt/i)).toBeInTheDocument();
+    expect(screen.getByText(/3 ausgewählt/i)).toBeInTheDocument();
   });
 
   it('hides batch actions when selectionMode is false', () => {
     render(<IdeasToolbar {...defaultProps} />);
-    expect(screen.queryByText(/ausgewaehlt/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/ausgewählt/i)).not.toBeInTheDocument();
   });
 });

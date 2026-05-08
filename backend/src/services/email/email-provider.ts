@@ -129,6 +129,7 @@ export function getEmailProvider(type: EmailProviderType): EmailProvider {
       throw new Error(`Unknown email provider: ${type}`);
   }
 
-  providerInstances.set(type, instance!);
-  return instance!;
+  const resolved = instance as EmailProvider;
+  providerInstances.set(type, resolved);
+  return resolved;
 }

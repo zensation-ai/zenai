@@ -10,7 +10,7 @@
 jest.mock('../../../utils/database-context', () => ({
   queryContext: jest.fn(),
   isValidContext: (ctx: string) =>
-    ['personal', 'work', 'learning', 'creative'].includes(ctx),
+    ['operations', 'finance', 'people', 'strategy'].includes(ctx),
 }));
 
 jest.mock('../../../utils/logger', () => ({
@@ -184,30 +184,30 @@ describe('computeHomeostaticNormalization', () => {
 describe('recordCoactivation', () => {
   it('generates C(n,2) pairs for n entities', async () => {
     mockQueryContext.mockResolvedValue({ rows: [], rowCount: 0 });
-    await recordCoactivation('personal', ['a', 'b', 'c']);
+    await recordCoactivation('operations', ['a', 'b', 'c']);
     // C(3,2) = 3 pairs: (a,b), (a,c), (b,c)
     expect(mockQueryContext).toHaveBeenCalledTimes(3);
   });
 
   it('generates 1 pair for 2 entities', async () => {
     mockQueryContext.mockResolvedValue({ rows: [], rowCount: 0 });
-    await recordCoactivation('personal', ['entity1', 'entity2']);
+    await recordCoactivation('operations', ['entity1', 'entity2']);
     expect(mockQueryContext).toHaveBeenCalledTimes(1);
   });
 
   it('skips when fewer than 2 entities provided', async () => {
-    await recordCoactivation('personal', ['only-one']);
+    await recordCoactivation('operations', ['only-one']);
     expect(mockQueryContext).not.toHaveBeenCalled();
   });
 
   it('skips when empty array provided', async () => {
-    await recordCoactivation('personal', []);
+    await recordCoactivation('operations', []);
     expect(mockQueryContext).not.toHaveBeenCalled();
   });
 
   it('sorts entity pairs consistently (smaller id first)', async () => {
     mockQueryContext.mockResolvedValue({ rows: [], rowCount: 0 });
-    await recordCoactivation('personal', ['z-entity', 'a-entity']);
+    await recordCoactivation('operations', ['z-entity', 'a-entity']);
     const call = mockQueryContext.mock.calls[0];
     const params = call[2] as string[];
     // sorted: a-entity < z-entity
@@ -217,14 +217,14 @@ describe('recordCoactivation', () => {
 
   it('uses upsert / ON CONFLICT pattern in SQL', async () => {
     mockQueryContext.mockResolvedValue({ rows: [], rowCount: 0 });
-    await recordCoactivation('work', ['e1', 'e2']);
+    await recordCoactivation('finance', ['e1', 'e2']);
     const sql = mockQueryContext.mock.calls[0][1] as string;
     expect(sql.toLowerCase()).toContain('on conflict');
   });
 
   it('generates C(4,2) = 6 pairs for 4 entities', async () => {
     mockQueryContext.mockResolvedValue({ rows: [], rowCount: 0 });
-    await recordCoactivation('learning', ['a', 'b', 'c', 'd']);
+    await recordCoactivation('people', ['a', 'b', 'c', 'd']);
     expect(mockQueryContext).toHaveBeenCalledTimes(6);
   });
 });
@@ -242,7 +242,7 @@ describe('strengthenEdge', () => {
       .mockResolvedValueOnce({ rows: [{ hebbian_weight: currentWeight }], rowCount: 1 })
       .mockResolvedValueOnce({ rows: [], rowCount: 1 });
 
-    const result = await strengthenEdge('personal', 'source-id', 'target-id');
+    const result = await strengthenEdge('operations', 'source-id', 'target-id');
     expect(result).toBeCloseTo(expectedNew, 5);
     expect(mockQueryContext).toHaveBeenCalledTimes(2);
   });
@@ -253,7 +253,7 @@ describe('strengthenEdge', () => {
       .mockResolvedValueOnce({ rows: [], rowCount: 0 })
       .mockResolvedValueOnce({ rows: [], rowCount: 1 });
 
-    const result = await strengthenEdge('personal', 'src', 'tgt');
+    const result = await strengthenEdge('operations', 'src', 'tgt');
     expect(result).toBeCloseTo(expectedNew, 5);
   });
 
@@ -262,9 +262,9 @@ describe('strengthenEdge', () => {
       .mockResolvedValueOnce({ rows: [{ hebbian_weight: 1.0 }], rowCount: 1 })
       .mockResolvedValueOnce({ rows: [], rowCount: 1 });
 
-    await strengthenEdge('work', 'src', 'tgt');
-    expect(mockQueryContext.mock.calls[0][0]).toBe('work');
-    expect(mockQueryContext.mock.calls[1][0]).toBe('work');
+    await strengthenEdge('finance', 'src', 'tgt');
+    expect(mockQueryContext.mock.calls[0][0]).toBe('finance');
+    expect(mockQueryContext.mock.calls[1][0]).toBe('finance');
   });
 
   it('returns the new computed weight', async () => {
@@ -274,7 +274,7 @@ describe('strengthenEdge', () => {
       .mockResolvedValueOnce({ rows: [{ hebbian_weight: current }], rowCount: 1 })
       .mockResolvedValueOnce({ rows: [], rowCount: 1 });
 
-    const result = await strengthenEdge('creative', 'a', 'b');
+    const result = await strengthenEdge('strategy', 'a', 'b');
     expect(result).toBeCloseTo(expected, 5);
   });
 });
@@ -286,7 +286,7 @@ describe('strengthenEdge', () => {
 describe('applyHebbianDecayBatch', () => {
   it('returns zero counts when no relations need decay', async () => {
     mockQueryContext.mockResolvedValueOnce({ rows: [], rowCount: 0 });
-    const result = await applyHebbianDecayBatch('personal');
+    const result = await applyHebbianDecayBatch('operations');
     expect(result.decayed).toBe(0);
     expect(result.pruned).toBe(0);
   });
@@ -300,7 +300,7 @@ describe('applyHebbianDecayBatch', () => {
       .mockResolvedValueOnce({ rows: relations, rowCount: 2 })
       .mockResolvedValue({ rows: [], rowCount: 1 });
 
-    const result = await applyHebbianDecayBatch('personal');
+    const result = await applyHebbianDecayBatch('operations');
     expect(result.decayed).toBe(2);
     expect(result.pruned).toBe(0);
   });
@@ -313,7 +313,7 @@ describe('applyHebbianDecayBatch', () => {
       .mockResolvedValueOnce({ rows: relations, rowCount: 1 })
       .mockResolvedValue({ rows: [], rowCount: 1 });
 
-    const result = await applyHebbianDecayBatch('work');
+    const result = await applyHebbianDecayBatch('finance');
     expect(result.pruned).toBe(1);
     expect(result.decayed).toBe(1);
   });
@@ -328,7 +328,7 @@ describe('applyHebbianDecayBatch', () => {
       .mockResolvedValueOnce({ rows: relations, rowCount: 3 })
       .mockResolvedValue({ rows: [], rowCount: 1 });
 
-    const result = await applyHebbianDecayBatch('learning');
+    const result = await applyHebbianDecayBatch('people');
     expect(result.decayed).toBe(3);
     expect(result.pruned).toBe(1);
   });
@@ -344,19 +344,19 @@ describe('getHebbianWeight', () => {
       rows: [{ hebbian_weight: 4.5 }],
       rowCount: 1,
     });
-    const result = await getHebbianWeight('personal', 'entity-a', 'entity-b');
+    const result = await getHebbianWeight('operations', 'entity-a', 'entity-b');
     expect(result).toBe(4.5);
   });
 
   it('returns NEUTRAL_WEIGHT when relation not found', async () => {
     mockQueryContext.mockResolvedValueOnce({ rows: [], rowCount: 0 });
-    const result = await getHebbianWeight('personal', 'entity-a', 'entity-b');
+    const result = await getHebbianWeight('operations', 'entity-a', 'entity-b');
     expect(result).toBe(HEBBIAN_CONFIG.NEUTRAL_WEIGHT);
   });
 
   it('checks both directions (A→B and B→A)', async () => {
     mockQueryContext.mockResolvedValueOnce({ rows: [], rowCount: 0 });
-    await getHebbianWeight('personal', 'entity-a', 'entity-b');
+    await getHebbianWeight('operations', 'entity-a', 'entity-b');
     const sql = mockQueryContext.mock.calls[0][1] as string;
     // SQL should check both source→target and target→source
     expect(sql).toContain('OR');
@@ -364,7 +364,7 @@ describe('getHebbianWeight', () => {
 
   it('uses the correct context', async () => {
     mockQueryContext.mockResolvedValueOnce({ rows: [{ hebbian_weight: 2.0 }], rowCount: 1 });
-    await getHebbianWeight('creative', 'x', 'y');
-    expect(mockQueryContext.mock.calls[0][0]).toBe('creative');
+    await getHebbianWeight('strategy', 'x', 'y');
+    expect(mockQueryContext.mock.calls[0][0]).toBe('strategy');
   });
 });

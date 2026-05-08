@@ -141,7 +141,7 @@ vi.mock('../ConfirmDialog', () => ({
 vi.mock('../../utils/aiPersonality', () => ({
   getTimeBasedGreeting: () => ({ emoji: '👋', subtext: 'Willkommen!' }),
   EMPTY_STATE_MESSAGES: {
-    learning: { description: 'Lerne und wachse mit KI-Unterstuetzung' },
+    learning: { description: 'Lerne und wachse mit KI-Unterstützung' },
   },
 }));
 
@@ -161,7 +161,7 @@ vi.mock('axios', () => ({
 import { LearningDashboard } from '../LearningDashboard/LearningDashboard';
 
 const defaultProps = {
-  context: 'personal' as const,
+  context: 'operations' as const,
   onBack: vi.fn(),
   initialTab: 'overview' as const,
 };

@@ -6,7 +6,7 @@
  * @module services/business/lighthouse-connector
  */
 
-import axios from 'axios';
+import { checkedAxiosGet } from '../../utils/checked-http';
 // pool.query() is used intentionally — business tables are global (not per-context schema)
 import { pool } from '../../utils/database';
 import { logger } from '../../utils/logger';
@@ -64,7 +64,12 @@ class LighthouseConnector implements BusinessConnector {
       params.key = this.apiKey;
     }
 
-    const response = await axios.get(PAGESPEED_API, {
+    const response = await checkedAxiosGet<{
+      lighthouseResult?: {
+        categories?: Record<string, { score?: number }>;
+        audits?: Record<string, { numericValue?: number }>;
+      };
+    }>(PAGESPEED_API, {
       params,
       timeout: 60000,
     });

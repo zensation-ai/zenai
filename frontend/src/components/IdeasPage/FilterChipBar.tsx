@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { X } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import type { FilterChipDef, IdeaFilters, IdeaStatus } from './types';
-import './FilterChipBar.css';
 
 interface FilterChipBarProps {
   chips: FilterChipDef[];
@@ -36,22 +36,28 @@ export function FilterChipBar({ chips, filters, onToggle, onClear, activeCount =
   }, [chips]);
 
   return (
-    <div className="filter-chip-bar" role="toolbar" aria-label="Chip-Auswahl">
-      <div className="filter-chip-bar__scroll">
+    <div className="relative px-4 overflow-hidden after:content-[''] after:absolute after:right-0 after:top-0 after:bottom-0 after:w-10 after:bg-gradient-to-r after:from-transparent after:to-bg after:pointer-events-none after:z-[1]" role="toolbar" aria-label="Chip-Auswahl">
+      <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-none py-1 pr-8 [-webkit-overflow-scrolling:touch]">
         {grouped.map((g, gi) => (
-          <div key={g.group} className="filter-chip-bar__group">
-            {gi > 0 && <div className="filter-chip-bar__separator" />}
+          <div key={g.group} className="flex items-center gap-1.5 shrink-0">
+            {gi > 0 && <div data-testid="filter-separator" className="w-px h-5 bg-glass-border mx-1 shrink-0" role="separator" />}
             {g.chips.map(chip => {
               const active = isChipActive(chip, filters);
               return (
                 <button
                   key={chip.id}
-                  className={`filter-chip-bar__chip ${active ? 'filter-chip-bar__chip--active' : ''}`}
+                  className={cn(
+                    'inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-glass-border text-text-secondary text-[13px] cursor-pointer transition-all duration-150 whitespace-nowrap shrink-0',
+                    'hover:bg-surface-hover hover:text-text',
+                    'focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2',
+                    'touch-coarse:min-h-[44px] touch-coarse:px-3.5 touch-coarse:py-2',
+                    active && 'bg-primary/10 text-primary border-primary/20 font-medium hover:bg-primary/15 hover:text-primary'
+                  )}
                   aria-pressed={active}
                   onClick={() => onToggle(chip.group, chip.value)}
                 >
                   {chip.label}
-                  {chip.count != null && <span className="filter-chip-bar__count">{chip.count}</span>}
+                  {chip.count != null && <span className="text-[11px] opacity-60">{chip.count}</span>}
                 </button>
               );
             })}
@@ -59,7 +65,7 @@ export function FilterChipBar({ chips, filters, onToggle, onClear, activeCount =
         ))}
         {activeCount > 0 && (
           <button
-            className="filter-chip-bar__clear"
+            className="inline-flex items-center justify-center w-7 h-7 rounded-full border border-glass-border bg-transparent text-text-secondary cursor-pointer shrink-0 transition-all duration-150 hover:bg-red-500 hover:text-white hover:border-red-500 touch-coarse:min-w-[44px] touch-coarse:min-h-[44px]"
             onClick={onClear}
             aria-label={`${activeCount} Filter entfernen`}
           >

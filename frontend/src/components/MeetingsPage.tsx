@@ -6,8 +6,6 @@ import { showToast } from './Toast';
 import { getRandomReward } from '../utils/aiPersonality';
 import { getErrorMessage } from '../utils/errors';
 import type { MeetingNotes } from '../types/meeting';
-import './MeetingsPage.css';
-import '../neurodesign.css';
 
 interface MeetingsPageProps {
   onBack: () => void;

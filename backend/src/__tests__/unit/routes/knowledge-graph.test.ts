@@ -21,7 +21,7 @@ jest.mock('../../../utils/logger', () => ({
 }));
 
 jest.mock('../../../utils/database-context', () => ({
-  isValidContext: jest.fn((ctx: string) => ['personal', 'work', 'learning', 'creative'].includes(ctx)),
+  isValidContext: jest.fn((ctx: string) => ['operations', 'finance', 'people', 'strategy'].includes(ctx)),
   AIContext: {},
 }));
 
@@ -141,7 +141,7 @@ describe('Knowledge Graph Routes', () => {
       mockGetFullGraph.mockResolvedValue({ nodes: [], edges: [] });
 
       const res = await request(app)
-        .get('/api/knowledge-graph/full?context=personal');
+        .get('/api/knowledge-graph/full?context=operations');
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
@@ -161,7 +161,7 @@ describe('Knowledge Graph Routes', () => {
 
       const res = await request(app)
         .post('/api/knowledge-graph/discover')
-        .send({ context: 'personal' });
+        .send({ context: 'operations' });
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
@@ -174,7 +174,7 @@ describe('Knowledge Graph Routes', () => {
       mockGetTopics.mockResolvedValue([{ id: 't1', name: 'Tech' }]);
 
       const res = await request(app)
-        .get('/api/knowledge-graph/topics?context=personal');
+        .get('/api/knowledge-graph/topics?context=operations');
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
@@ -188,7 +188,7 @@ describe('Knowledge Graph Routes', () => {
 
       const res = await request(app)
         .post('/api/knowledge-graph/topics/merge')
-        .send({ context: 'personal', topicIds: ['t1', 't2'], newName: 'Combined' });
+        .send({ context: 'operations', topicIds: ['t1', 't2'], newName: 'Combined' });
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
@@ -197,7 +197,7 @@ describe('Knowledge Graph Routes', () => {
     it('should reject merge with fewer than 2 topics', async () => {
       const res = await request(app)
         .post('/api/knowledge-graph/topics/merge')
-        .send({ context: 'personal', topicIds: ['t1'], newName: 'X' });
+        .send({ context: 'operations', topicIds: ['t1'], newName: 'X' });
 
       expect(res.status).toBe(400);
     });
@@ -205,7 +205,7 @@ describe('Knowledge Graph Routes', () => {
     it('should reject merge without newName', async () => {
       const res = await request(app)
         .post('/api/knowledge-graph/topics/merge')
-        .send({ context: 'personal', topicIds: ['t1', 't2'] });
+        .send({ context: 'operations', topicIds: ['t1', 't2'] });
 
       expect(res.status).toBe(400);
     });

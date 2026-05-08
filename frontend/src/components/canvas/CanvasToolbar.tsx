@@ -186,7 +186,7 @@ export function CanvasToolbar({
     code { background: #f1f5f9; padding: 2px 6px; border-radius: 3px; font-size: 0.9em; }
     pre { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 12px 16px; overflow-x: auto; }
     pre code { background: none; padding: 0; }
-    blockquote { border-left: 3px solid #6366f1; margin: 0.8em 0; padding: 4px 16px; color: #475569; }
+    blockquote { border-left: 3px solid #144A56; margin: 0.8em 0; padding: 4px 16px; color: #475569; }
     img { max-width: 100%; height: auto; }
     table { border-collapse: collapse; width: 100%; }
     th, td { border: 1px solid #e2e8f0; padding: 6px 10px; text-align: left; }
@@ -329,6 +329,14 @@ export function CanvasToolbar({
             aria-pressed={viewMode === 'preview'}
           >
             Vorschau
+          </button>
+          <button
+            className={`canvas-view-btn ${viewMode === 'board' ? 'active' : ''}`}
+            onClick={() => onViewModeChange('board')}
+            title="Board-Ansicht"
+            aria-pressed={viewMode === 'board'}
+          >
+            Board
           </button>
         </div>
 

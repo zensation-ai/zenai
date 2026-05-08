@@ -21,7 +21,7 @@ import { trackActivity } from '../services/activity-tracker';
 import { generateEmbedding } from '../services/ai';
 import { formatForPgVector } from '../utils/embedding';
 import { v4 as uuidv4 } from 'uuid';
-import axios from 'axios';
+import { checkedAxiosPost } from '../utils/checked-http';
 import { apiKeyAuth, requireScope } from '../middleware/auth';
 import { logger } from '../utils/logger';
 import { extractStructuredKnowledge } from '../services/structured-extraction';
@@ -114,7 +114,7 @@ voiceMemoContextRouter.post('/:context/voice-memo', apiKeyAuth, requireScope('wr
 
   // Validate context
   if (!isValidContext(context)) {
-    throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
+    throw new ValidationError('Invalid context. Use "operations", "finance", "people", or "strategy".');
   }
 
   const startTime = Date.now();
@@ -530,7 +530,7 @@ OUTPUT FORMAT:
 {
   "title": "Kurzer, prägnanter Titel (max 50 Zeichen)",
   "type": "idea|task|problem|question|insight",
-  "category": "${context === 'work' ? 'business|technical|personal|learning' : 'personal|business|technical|learning'}",
+  "category": "${context === 'finance' ? 'business|technical|personal|learning' : 'personal|business|technical|learning'}",
   "priority": "low|medium|high",
   "summary": "2-3 Sätze Zusammenfassung",
   "next_steps": ["Schritt 1", "Schritt 2"],
@@ -564,7 +564,7 @@ OUTPUT FORMAT:
 
   // Fallback to Ollama (local development)
   try {
-    const response = await axios.post(
+    const response = await checkedAxiosPost<{ response: string }>(
       `${OLLAMA_URL}/api/generate`,
       {
         model: persona.modelName,
@@ -574,7 +574,7 @@ OUTPUT FORMAT:
           temperature: persona.temperature,
         },
       },
-      { timeout: 60000 }
+      { timeout: 60000, allowLoopback: true }
     );
 
     const content = response.data.response;
@@ -623,7 +623,7 @@ voiceMemoContextRouter.post('/:context/voice-memo/extract', apiKeyAuth, requireS
   getUserId(req); // auth check
   const { context } = req.params;
   if (!isValidContext(context)) {
-    throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
+    throw new ValidationError('Invalid context. Use "operations", "finance", "people", or "strategy".');
   }
 
   const { transcript } = req.body;
@@ -655,7 +655,7 @@ voiceMemoContextRouter.get('/:context/stats', apiKeyAuth, asyncHandler(async (re
   const { context } = req.params;
 
   if (!isValidContext(context)) {
-    throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
+    throw new ValidationError('Invalid context. Use "operations", "finance", "people", or "strategy".');
   }
 
   const [ideasCount, thoughtsCount, clustersCount] = await Promise.all([
@@ -692,7 +692,7 @@ voiceMemoContextRouter.get('/:context/personas', apiKeyAuth, (req: Request, res:
   if (!isValidContext(context)) {
     return res.status(400).json({
       success: false,
-      error: 'Invalid context. Use "personal", "work", "learning", or "creative".',
+      error: 'Invalid context. Use "operations", "finance", "people", or "strategy".',
       code: 'VALIDATION_ERROR',
     });
   }

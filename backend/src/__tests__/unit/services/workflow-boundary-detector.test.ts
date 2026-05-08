@@ -43,7 +43,7 @@ describe('Workflow Boundary Detector', () => {
         ],
       });
 
-      const result = await processWorkflowBoundary('idea_saved', 'personal', {
+      const result = await processWorkflowBoundary('idea_saved', 'operations', {
         ideaId: 'new-idea',
         ideaTitle: 'Marketing Strategy',
       });
@@ -58,7 +58,7 @@ describe('Workflow Boundary Detector', () => {
     it('should return null when no similar ideas exist', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [] });
 
-      const result = await processWorkflowBoundary('idea_saved', 'personal', {
+      const result = await processWorkflowBoundary('idea_saved', 'operations', {
         ideaId: 'new-idea',
         ideaTitle: 'Unique Topic',
       });
@@ -76,7 +76,7 @@ describe('Workflow Boundary Detector', () => {
         rows: [{ count: '5' }],
       });
 
-      const result = await processWorkflowBoundary('chat_session_end', 'personal', {
+      const result = await processWorkflowBoundary('chat_session_end', 'operations', {
         sessionId: 'session-123',
       });
 
@@ -91,7 +91,7 @@ describe('Workflow Boundary Detector', () => {
         rows: [{ count: '1' }],
       });
 
-      const result = await processWorkflowBoundary('chat_session_end', 'personal', {
+      const result = await processWorkflowBoundary('chat_session_end', 'operations', {
         sessionId: 'session-short',
       });
 
@@ -111,11 +111,11 @@ describe('Workflow Boundary Detector', () => {
       // New drafts count
       mockQueryContext.mockResolvedValueOnce({ rows: [{ count: '1' }] });
 
-      const state = getFrequencyState('personal');
+      const state = getFrequencyState('operations');
       // Verify clean state
       expect(state.hourlyCount).toBe(0);
 
-      const result = await processWorkflowBoundary('login_after_absence', 'personal', {
+      const result = await processWorkflowBoundary('login_after_absence', 'operations', {
         lastActiveAt: sixHoursAgo,
       });
 
@@ -128,7 +128,7 @@ describe('Workflow Boundary Detector', () => {
     it('should not trigger for short absence', async () => {
       const oneHourAgo = new Date(Date.now() - 1 * 60 * 60 * 1000);
 
-      const result = await processWorkflowBoundary('login_after_absence', 'personal', {
+      const result = await processWorkflowBoundary('login_after_absence', 'operations', {
         lastActiveAt: oneHourAgo,
       });
 
@@ -141,7 +141,7 @@ describe('Workflow Boundary Detector', () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [{ count: '0' }] });
       mockQueryContext.mockResolvedValueOnce({ rows: [{ count: '0' }] });
 
-      const result = await processWorkflowBoundary('login_after_absence', 'personal', {
+      const result = await processWorkflowBoundary('login_after_absence', 'operations', {
         lastActiveAt: sixHoursAgo,
       });
 
@@ -154,7 +154,7 @@ describe('Workflow Boundary Detector', () => {
   // ========================================
   describe('draft_completed', () => {
     it('should suggest reviewing related ideas', async () => {
-      const result = await processWorkflowBoundary('draft_completed', 'personal', {
+      const result = await processWorkflowBoundary('draft_completed', 'operations', {
         draftId: 'draft-1',
         ideaTitle: 'AI Strategy Paper',
       });
@@ -175,19 +175,19 @@ describe('Workflow Boundary Detector', () => {
         rows: [{ id: 'sim-1', title: 'Similar' }],
       });
 
-      await processWorkflowBoundary('idea_saved', 'personal', {
+      await processWorkflowBoundary('idea_saved', 'operations', {
         ideaId: 'id-1',
         ideaTitle: 'Test',
       });
 
-      const state = getFrequencyState('personal');
+      const state = getFrequencyState('operations');
       expect(state.hourlyCount).toBe(1);
       expect(state.dailyCount).toBe(1);
     });
 
     it('should reset state per context', () => {
-      resetFrequencyState('personal');
-      const state = getFrequencyState('personal');
+      resetFrequencyState('operations');
+      const state = getFrequencyState('operations');
       expect(state.hourlyCount).toBe(0);
       expect(state.dailyCount).toBe(0);
     });

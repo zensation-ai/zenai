@@ -17,6 +17,7 @@ import { AIContext, queryContext } from '../../utils/database-context';
 import { logger } from '../../utils/logger';
 import { generateEmbedding } from '../ai';
 import { RetrievalResult } from '../agentic-rag';
+import { mmrRerank, MMRItem } from './mmr-reranker';
 
 // ===========================================
 // Types & Interfaces
@@ -39,6 +40,25 @@ export interface AdaptiveRetrievalOptions {
   minScore?: number;
   /** RRF constant k (default 60) */
   rrfK?: number;
+  /**
+   * When true, apply MMR (Maximal Marginal Relevance, Carbonell &
+   * Goldstein 1998) AFTER the RRF fusion in the hybrid path. Plain
+   * top-K by RRF score returns a high-relevance but often
+   * near-duplicate set; MMR diversifies by trading off relevance vs.
+   * dissimilarity to already-selected items. Spec § H2 task 6.
+   *
+   * Defaults to the env-driven `H2_MMR_POST_RRF` flag (truthy → on).
+   * Off by default so existing callers see no behaviour change until
+   * the eval harness validates the diversity trade-off on LoCoMo
+   * Cat 1 (Multi-Hop) and Cat 4 (Single-Hop list) queries.
+   */
+  enableMMR?: boolean;
+  /**
+   * MMR lambda in [0, 1]. Default 0.5 (SIGIR-1998 standard). 1.0 makes
+   * MMR a no-op (pure relevance); 0.0 is pure diversity. Only
+   * consulted when `enableMMR` resolves to true.
+   */
+  mmrLambda?: number;
 }
 
 export interface AdaptiveRetrievalResult {
@@ -58,6 +78,14 @@ export interface AdaptiveRetrievalResult {
 const DEFAULT_MAX_RESULTS = 10;
 const DEFAULT_MIN_SCORE = 0.1;
 const DEFAULT_RRF_K = 60;
+const DEFAULT_MMR_LAMBDA = 0.5;
+
+/** Read the H2_MMR_POST_RRF env flag once at module load. */
+const H2_MMR_POST_RRF_DEFAULT = (() => {
+  const raw = process.env.H2_MMR_POST_RRF;
+  if (typeof raw !== 'string') return false;
+  return raw === 'true' || raw === '1' || raw.toLowerCase() === 'yes';
+})();
 
 /** Words that indicate a conceptual/question-style query */
 const QUESTION_INDICATORS = /^(was|wie|warum|wann|wo|wer|welche|can|how|what|why|when|where|who|which|explain|describe|tell me|show me)/i;
@@ -292,12 +320,21 @@ export function rrfFusion(
 
 /**
  * Hybrid retrieval combining dense + sparse with RRF fusion.
+ *
+ * Phase H2.6 binding: when `mmr` options are passed (or the
+ * `H2_MMR_POST_RRF` env flag is on), the fused list is diversified via
+ * Maximal Marginal Relevance before slicing top-K. MMR uses a
+ * Jaccard-on-token-set similarity over title + summary content — this
+ * keeps the binding embedding-free (we don't always have embeddings
+ * cached at this stage) while still providing a meaningful diversity
+ * signal. Eval harness can sweep `mmrLambda` for Cat 1 vs Cat 4 effects.
  */
 export async function hybridRetrieve(
   query: string,
   context: AIContext,
   maxResults: number = DEFAULT_MAX_RESULTS,
-  rrfK: number = DEFAULT_RRF_K
+  rrfK: number = DEFAULT_RRF_K,
+  mmr?: { enable?: boolean; lambda?: number },
 ): Promise<RetrievalResult[]> {
   // Run both in parallel
   const [denseResults, sparseResults] = await Promise.all([
@@ -306,7 +343,64 @@ export async function hybridRetrieve(
   ]);
 
   const fused = rrfFusion(denseResults, sparseResults, rrfK);
-  return fused.slice(0, maxResults);
+
+  const useMMR = mmr?.enable ?? H2_MMR_POST_RRF_DEFAULT;
+  if (!useMMR || fused.length <= 1) {
+    return fused.slice(0, maxResults);
+  }
+
+  return diversifyViaMMR(fused, maxResults, mmr?.lambda ?? DEFAULT_MMR_LAMBDA);
+}
+
+/**
+ * Apply MMR over a relevance-sorted list of `RetrievalResult`s. The
+ * relevance score for MMR is the post-RRF normalised score; the pairwise
+ * similarity is Jaccard over the token set of `title + summary +
+ * content` (a cheap proxy for content-overlap that does NOT require an
+ * embedding round-trip and is robust to score-magnitude differences).
+ *
+ * Returns at most `maxResults` items in MMR-selection order.
+ */
+function diversifyViaMMR(
+  results: ReadonlyArray<RetrievalResult>,
+  maxResults: number,
+  lambda: number,
+): RetrievalResult[] {
+  const candidates: MMRItem<RetrievalResult>[] = results.map((r) => ({
+    item: r,
+    relevance: r.score,
+  }));
+  const reranked = mmrRerank<RetrievalResult>(candidates, {
+    lambda,
+    k: maxResults,
+    similarity: jaccardContentSimilarity,
+    itemId: (r) => r.id,
+  });
+  return reranked.map((m) => m.item);
+}
+
+/** Token-set Jaccard over title+summary+content. Lower-cased,
+ *  whitespace-split, length-2+ tokens. Returns 0..1. */
+function jaccardContentSimilarity(a: RetrievalResult, b: RetrievalResult): number {
+  const toks = (r: RetrievalResult): Set<string> => {
+    const text = `${r.title ?? ''} ${r.summary ?? ''} ${r.content ?? ''}`
+      .toLowerCase()
+      .replace(/[^\p{L}\p{N}\s]+/gu, ' ');
+    const out = new Set<string>();
+    for (const t of text.split(/\s+/)) {
+      if (t.length >= 2) out.add(t);
+    }
+    return out;
+  };
+  const sa = toks(a);
+  const sb = toks(b);
+  if (sa.size === 0 || sb.size === 0) return 0;
+  let intersection = 0;
+  // Iterate the smaller set for speed.
+  const [small, large] = sa.size <= sb.size ? [sa, sb] : [sb, sa];
+  for (const t of small) if (large.has(t)) intersection++;
+  const union = sa.size + sb.size - intersection;
+  return union > 0 ? intersection / union : 0;
 }
 
 // ===========================================
@@ -353,7 +447,10 @@ export async function retrieve(
         results = await sparseRetrieve(query, context, maxResults);
         break;
       case 'hybrid':
-        results = await hybridRetrieve(query, context, maxResults, rrfK);
+        results = await hybridRetrieve(query, context, maxResults, rrfK, {
+          enable: options.enableMMR,
+          lambda: options.mmrLambda,
+        });
         break;
       default:
         results = await denseRetrieve(query, context, maxResults);

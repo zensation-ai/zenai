@@ -21,7 +21,7 @@ import { queryContext } from '../../../utils/database-context';
 const mockQueryContext = queryContext as jest.MockedFunction<typeof queryContext>;
 
 const execContext = {
-  aiContext: 'personal' as const,
+  aiContext: 'operations' as const,
   sessionId: 'session-123',
 };
 

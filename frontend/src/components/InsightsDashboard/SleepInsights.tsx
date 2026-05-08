@@ -9,8 +9,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import type { AIContext } from '../ContextSwitcher';
-import './SleepInsights.css';
-
 interface SleepCycle {
   id: string;
   cycle_type: string;
@@ -165,7 +163,7 @@ export function SleepInsights({ context }: SleepInsightsProps) {
         </div>
         <div className="sleep-stat-card">
           <div className="sleep-stat-value">{parseInt(summary.total_contradictions || '0', 10)}</div>
-          <div className="sleep-stat-label">Konflikte geloest</div>
+          <div className="sleep-stat-label">Konflikte gelöst</div>
         </div>
         <div className="sleep-stat-card">
           <div className="sleep-stat-value">{formatDuration(parseInt(summary.avg_duration_ms || '0', 10))}</div>
@@ -251,7 +249,7 @@ export function SleepInsights({ context }: SleepInsightsProps) {
                   <div className="sleep-timeline-metrics">
                     <span title="Verarbeitete Episoden">{cycle.processed_items} verarbeitet</span>
                     <span title="Neue Erkenntnisse">{cycle.insights_generated} Erkenntnisse</span>
-                    <span title="Konflikte geloest">{cycle.contradictions_resolved} Konflikte</span>
+                    <span title="Konflikte gelöst">{cycle.contradictions_resolved} Konflikte</span>
                     <span title="Memory Updates">{cycle.memory_updates} Updates</span>
                   </div>
                 </div>

@@ -6,9 +6,6 @@
  */
 
 import { useState, useRef, useEffect, useCallback, useMemo, memo } from 'react';
-import '../neurodesign.css';
-import './SearchFilterBar.css';
-
 // Multi-Select Filter Interface (2026 Best Practice)
 export interface AdvancedFilters {
   types: Set<string>;

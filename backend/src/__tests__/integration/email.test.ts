@@ -14,7 +14,7 @@ var mockQueryContext = jest.fn();
 
 jest.mock('../../utils/database-context', () => ({
   queryContext: (...args: unknown[]) => mockQueryContext(...args),
-  isValidContext: jest.fn((ctx: string) => ['personal', 'work', 'learning', 'creative'].includes(ctx)),
+  isValidContext: jest.fn((ctx: string) => ['operations', 'finance', 'people', 'strategy'].includes(ctx)),
   AIContext: {},
 }));
 
@@ -22,7 +22,7 @@ jest.mock('../../utils/database-context', () => ({
 // to ensure validateContextParam works properly with our mocked isValidContext
 jest.mock('../../utils/validation', () => {
   const { ValidationError: RouteValidationError } = jest.requireActual('../../middleware/errorHandler');
-  const VALID_CONTEXTS = ['personal', 'work', 'learning', 'creative'];
+  const VALID_CONTEXTS = ['operations', 'finance', 'people', 'strategy'];
 
   return {
     ...jest.requireActual('../../utils/validation'),
@@ -151,7 +151,7 @@ const MOCK_ACCOUNT = {
   display_name: 'Test Account',
   domain: 'zensation.ai',
   is_default: true,
-  context: 'work',
+  context: 'finance',
   created_at: '2026-03-01T00:00:00Z',
 };
 
@@ -181,7 +181,7 @@ describe('Email API', () => {
         by_account: [{ account_id: 'acc-1', email: 'me@zensation.ai', count: 42 }],
       });
 
-      const res = await request(app).get('/api/work/emails/stats');
+      const res = await request(app).get('/api/finance/emails/stats');
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
@@ -204,7 +204,7 @@ describe('Email API', () => {
         total: 1,
       });
 
-      const res = await request(app).get('/api/work/emails?folder=inbox');
+      const res = await request(app).get('/api/finance/emails?folder=inbox');
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
@@ -213,16 +213,16 @@ describe('Email API', () => {
     });
 
     it('rejects invalid folder', async () => {
-      const res = await request(app).get('/api/work/emails?folder=invalid');
+      const res = await request(app).get('/api/finance/emails?folder=invalid');
       expect(res.status).toBe(400);
     });
 
     it('passes search filter', async () => {
       (getEmails as jest.Mock).mockResolvedValueOnce({ emails: [], total: 0 });
 
-      await request(app).get('/api/work/emails?folder=inbox&search=test');
+      await request(app).get('/api/finance/emails?folder=inbox&search=test');
 
-      expect(getEmails).toHaveBeenCalledWith('work', expect.objectContaining({
+      expect(getEmails).toHaveBeenCalledWith('finance', expect.objectContaining({
         search: 'test',
         folder: 'inbox',
       }), '00000000-0000-0000-0000-000000000001');
@@ -231,9 +231,9 @@ describe('Email API', () => {
     it('limits to max 200 results', async () => {
       (getEmails as jest.Mock).mockResolvedValueOnce({ emails: [], total: 0 });
 
-      await request(app).get('/api/work/emails?folder=inbox&limit=999');
+      await request(app).get('/api/finance/emails?folder=inbox&limit=999');
 
-      expect(getEmails).toHaveBeenCalledWith('work', expect.objectContaining({
+      expect(getEmails).toHaveBeenCalledWith('finance', expect.objectContaining({
         limit: 200,
       }), '00000000-0000-0000-0000-000000000001');
     });
@@ -246,17 +246,17 @@ describe('Email API', () => {
       (getEmail as jest.Mock).mockResolvedValueOnce({ ...MOCK_EMAIL, status: 'received' });
       (markAsRead as jest.Mock).mockResolvedValueOnce({ ...MOCK_EMAIL, status: 'read' });
 
-      const res = await request(app).get(`/api/work/emails/${MOCK_EMAIL.id}`);
+      const res = await request(app).get(`/api/finance/emails/${MOCK_EMAIL.id}`);
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
-      expect(markAsRead).toHaveBeenCalledWith('work', MOCK_EMAIL.id, '00000000-0000-0000-0000-000000000001');
+      expect(markAsRead).toHaveBeenCalledWith('finance', MOCK_EMAIL.id, '00000000-0000-0000-0000-000000000001');
     });
 
     it('does not mark already-read email', async () => {
       (getEmail as jest.Mock).mockResolvedValueOnce({ ...MOCK_EMAIL, status: 'read' });
 
-      const res = await request(app).get(`/api/work/emails/${MOCK_EMAIL.id}`);
+      const res = await request(app).get(`/api/finance/emails/${MOCK_EMAIL.id}`);
 
       expect(res.status).toBe(200);
       expect(markAsRead).not.toHaveBeenCalled();
@@ -265,13 +265,13 @@ describe('Email API', () => {
     it('returns 404 for non-existent email', async () => {
       (getEmail as jest.Mock).mockResolvedValueOnce(null);
 
-      const res = await request(app).get(`/api/work/emails/${MOCK_EMAIL.id}`);
+      const res = await request(app).get(`/api/finance/emails/${MOCK_EMAIL.id}`);
 
       expect(res.status).toBe(404);
     });
 
     it('rejects invalid UUID', async () => {
-      const res = await request(app).get('/api/work/emails/not-a-uuid');
+      const res = await request(app).get('/api/finance/emails/not-a-uuid');
       expect(res.status).toBe(400);
     });
   });
@@ -283,7 +283,7 @@ describe('Email API', () => {
       (getEmail as jest.Mock).mockResolvedValueOnce(MOCK_EMAIL);
       (getThread as jest.Mock).mockResolvedValueOnce([MOCK_EMAIL, { ...MOCK_EMAIL, id: 'email-2' }]);
 
-      const res = await request(app).get(`/api/work/emails/${MOCK_EMAIL.id}/thread`);
+      const res = await request(app).get(`/api/finance/emails/${MOCK_EMAIL.id}/thread`);
 
       expect(res.status).toBe(200);
       expect(res.body.data).toHaveLength(2);
@@ -296,7 +296,7 @@ describe('Email API', () => {
     it('sends a new email', async () => {
       (sendNewEmail as jest.Mock).mockResolvedValueOnce({ ...MOCK_EMAIL, direction: 'outbound', status: 'sent' });
 
-      const res = await request(app).post('/api/work/emails/send').send({
+      const res = await request(app).post('/api/finance/emails/send').send({
         to_addresses: [{ email: 'recipient@example.com' }],
         subject: 'Test',
         body_text: 'Hello World',
@@ -307,7 +307,7 @@ describe('Email API', () => {
     });
 
     it('rejects missing recipients', async () => {
-      const res = await request(app).post('/api/work/emails/send').send({
+      const res = await request(app).post('/api/finance/emails/send').send({
         subject: 'Test',
         body_text: 'Hello',
       });
@@ -316,7 +316,7 @@ describe('Email API', () => {
     });
 
     it('rejects invalid email format', async () => {
-      const res = await request(app).post('/api/work/emails/send').send({
+      const res = await request(app).post('/api/finance/emails/send').send({
         to_addresses: [{ email: 'not-an-email' }],
         subject: 'Test',
         body_text: 'Hello',
@@ -326,7 +326,7 @@ describe('Email API', () => {
     });
 
     it('validates CC addresses too', async () => {
-      const res = await request(app).post('/api/work/emails/send').send({
+      const res = await request(app).post('/api/finance/emails/send').send({
         to_addresses: [{ email: 'valid@example.com' }],
         cc_addresses: [{ email: 'bad address' }],
         subject: 'Test',
@@ -343,7 +343,7 @@ describe('Email API', () => {
     it('creates a draft', async () => {
       (createDraft as jest.Mock).mockResolvedValueOnce({ ...MOCK_EMAIL, status: 'draft', direction: 'outbound' });
 
-      const res = await request(app).post('/api/work/emails').send({
+      const res = await request(app).post('/api/finance/emails').send({
         to_addresses: [{ email: 'recipient@example.com' }],
         subject: 'Draft Test',
         body_text: 'Draft content',
@@ -361,7 +361,7 @@ describe('Email API', () => {
       (getEmail as jest.Mock).mockResolvedValueOnce(MOCK_EMAIL);
       (replyToEmail as jest.Mock).mockResolvedValueOnce({ ...MOCK_EMAIL, direction: 'outbound', status: 'sent' });
 
-      const res = await request(app).post(`/api/work/emails/${MOCK_EMAIL.id}/reply`).send({
+      const res = await request(app).post(`/api/finance/emails/${MOCK_EMAIL.id}/reply`).send({
         body_text: 'Reply text',
       });
 
@@ -376,7 +376,7 @@ describe('Email API', () => {
       (getEmail as jest.Mock).mockResolvedValueOnce(MOCK_EMAIL);
       (forwardEmail as jest.Mock).mockResolvedValueOnce({ ...MOCK_EMAIL, direction: 'outbound', status: 'sent' });
 
-      const res = await request(app).post(`/api/work/emails/${MOCK_EMAIL.id}/forward`).send({
+      const res = await request(app).post(`/api/finance/emails/${MOCK_EMAIL.id}/forward`).send({
         to_addresses: [{ email: 'forward@example.com' }],
       });
 
@@ -390,7 +390,7 @@ describe('Email API', () => {
     it('toggles star', async () => {
       (toggleStar as jest.Mock).mockResolvedValueOnce({ ...MOCK_EMAIL, is_starred: true });
 
-      const res = await request(app).patch(`/api/work/emails/${MOCK_EMAIL.id}/star`);
+      const res = await request(app).patch(`/api/finance/emails/${MOCK_EMAIL.id}/star`);
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
@@ -403,7 +403,7 @@ describe('Email API', () => {
     it('performs batch status update', async () => {
       (batchUpdateStatus as jest.Mock).mockResolvedValueOnce(3);
 
-      const res = await request(app).post('/api/work/emails/batch').send({
+      const res = await request(app).post('/api/finance/emails/batch').send({
         ids: [MOCK_EMAIL.id, 'b0b0b0b0-c1c1-d2d2-e3e3-f4f4f4f4f4f4', 'c0c0c0c0-d1d1-e2e2-f3f3-a4a4a4a4a4a4'],
         status: 'archived',
       });
@@ -413,7 +413,7 @@ describe('Email API', () => {
     });
 
     it('rejects empty ids array', async () => {
-      const res = await request(app).post('/api/work/emails/batch').send({
+      const res = await request(app).post('/api/finance/emails/batch').send({
         ids: [],
         status: 'read',
       });
@@ -422,7 +422,7 @@ describe('Email API', () => {
     });
 
     it('rejects invalid status', async () => {
-      const res = await request(app).post('/api/work/emails/batch').send({
+      const res = await request(app).post('/api/finance/emails/batch').send({
         ids: [MOCK_EMAIL.id],
         status: 'invalid-status',
       });
@@ -435,7 +435,7 @@ describe('Email API', () => {
         `${i.toString().padStart(8, '0')}-0000-4000-8000-000000000000`
       );
 
-      const res = await request(app).post('/api/work/emails/batch').send({
+      const res = await request(app).post('/api/finance/emails/batch').send({
         ids,
         status: 'read',
       });
@@ -450,7 +450,7 @@ describe('Email API', () => {
     it('moves email to trash', async () => {
       (moveToTrash as jest.Mock).mockResolvedValueOnce({ ...MOCK_EMAIL, status: 'trash' });
 
-      const res = await request(app).delete(`/api/work/emails/${MOCK_EMAIL.id}`);
+      const res = await request(app).delete(`/api/finance/emails/${MOCK_EMAIL.id}`);
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
@@ -463,7 +463,7 @@ describe('Email API', () => {
     it('GET /:context/emails/accounts - lists accounts', async () => {
       (getAccounts as jest.Mock).mockResolvedValueOnce([MOCK_ACCOUNT]);
 
-      const res = await request(app).get('/api/work/emails/accounts');
+      const res = await request(app).get('/api/finance/emails/accounts');
 
       expect(res.status).toBe(200);
       expect(res.body.data).toHaveLength(1);
@@ -472,7 +472,7 @@ describe('Email API', () => {
     it('POST /:context/emails/accounts - creates account', async () => {
       (createAccount as jest.Mock).mockResolvedValueOnce(MOCK_ACCOUNT);
 
-      const res = await request(app).post('/api/work/emails/accounts').send({
+      const res = await request(app).post('/api/finance/emails/accounts').send({
         email_address: 'new@zensation.ai',
         domain: 'zensation.ai',
         is_default: true,
@@ -483,7 +483,7 @@ describe('Email API', () => {
     });
 
     it('POST /:context/emails/accounts - rejects missing email', async () => {
-      const res = await request(app).post('/api/work/emails/accounts').send({
+      const res = await request(app).post('/api/finance/emails/accounts').send({
         domain: 'zensation.ai',
       });
 
@@ -499,7 +499,7 @@ describe('Email API', () => {
         { id: 'lbl-1', name: 'Important', color: '#ff0000' },
       ]);
 
-      const res = await request(app).get('/api/work/emails/labels');
+      const res = await request(app).get('/api/finance/emails/labels');
 
       expect(res.status).toBe(200);
       expect(res.body.data).toHaveLength(1);
@@ -512,7 +512,7 @@ describe('Email API', () => {
         color: '#ff0000',
       });
 
-      const res = await request(app).post('/api/work/emails/labels').send({
+      const res = await request(app).post('/api/finance/emails/labels').send({
         name: 'Urgent',
         color: '#ff0000',
       });

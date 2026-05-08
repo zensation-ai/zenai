@@ -8,6 +8,7 @@
  */
 
 import { useState, useMemo, lazy, Suspense, useCallback } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import type { PlannerTab, Task, Project } from './types';
 import {
   useTasksQuery,
@@ -61,7 +62,7 @@ export function PlannerPage({ context, initialTab = 'calendar', onBack }: Planne
     initialTab,
     validTabs: ['calendar', 'tasks', 'projects', 'meetings', 'map'],
     defaultTab: 'calendar',
-    basePath: '/calendar',
+    basePath: '/planer',
     rootTab: 'calendar',
   });
   const [projectFilter, setProjectFilter] = useState<string | undefined>(undefined);
@@ -148,8 +149,15 @@ export function PlannerPage({ context, initialTab = 'calendar', onBack }: Planne
             refetch={() => { tasksQuery.refetch(); projectsQuery.refetch(); }}
           />
         )}
-        <Suspense fallback={<SkeletonLoader type="card" count={1} />}>
-          {activeTab === 'calendar' && (
+        <AnimatePresence mode="wait">
+          {tasksLoading ? (
+            <motion.div key="skeleton" exit={{ opacity: 0 }} transition={{ duration: 0.1 }}>
+              <SkeletonLoader type="card" count={1} />
+            </motion.div>
+          ) : (
+            <motion.div key="content" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+              <Suspense fallback={<SkeletonLoader type="card" count={1} />}>
+                {activeTab === 'calendar' && (
             <CalendarPage context={context} embedded={true} />
           )}
           {activeTab === 'tasks' && (
@@ -181,7 +189,10 @@ export function PlannerPage({ context, initialTab = 'calendar', onBack }: Planne
           {activeTab === 'map' && (
             <MapView context={context} />
           )}
-        </Suspense>
+              </Suspense>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </HubPage>
 
       {showTaskForm && (

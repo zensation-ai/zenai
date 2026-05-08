@@ -14,7 +14,7 @@ export type LogLevel = 'debug' | 'info' | 'warn' | 'error';
 interface LogContext {
   requestId?: string;
   userId?: string;
-  context?: 'personal' | 'work' | 'learning' | 'creative' | 'demo';
+  context?: 'operations' | 'finance' | 'people' | 'strategy' | 'demo';
   operation?: string;
   duration?: number;
   [key: string]: unknown;
@@ -31,6 +31,8 @@ interface LogEntry {
     stack?: string;
   };
 }
+
+import { requestContext } from './request-context';
 
 const LOG_LEVEL_PRIORITY: Record<LogLevel, number> = {
   debug: 0,
@@ -109,17 +111,49 @@ const SENSITIVE_FIELDS = new Set([
  * Patterns that indicate sensitive data in string values
  */
 const SENSITIVE_PATTERNS = [
-  /^ab_live_[a-f0-9]+$/i,          // API key format
+  /^ab_live_[a-f0-9]+$/i,          // API key format (legacy)
+  /^ab_[a-z0-9]{32,}$/i,           // API key format (Sprint 1.4)
   /^Bearer\s+.+$/i,                 // Bearer token
   /^sk-[a-zA-Z0-9]+$/,              // OpenAI/Stripe secret keys
   /^[a-f0-9]{64}$/i,                // Hashed values (SHA256)
   /^\$2[aby]?\$\d+\$.+$/,           // bcrypt hashes
+  /^eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}$/, // JWT (Sprint 1.4)
 ];
 
 /**
  * Replacement string for redacted values
  */
 const REDACTED = '[REDACTED]';
+
+/** Key names whose value is always an IP — anonymize instead of redact. */
+const IP_FIELD_KEYS = new Set(['ip', 'ipaddress', 'ip_address', 'remoteaddress', 'remote_address', 'clientip', 'client_ip']);
+
+/**
+ * Anonymize an IP address per GDPR guidance (IPv4 /24, IPv6 /64).
+ * Sprint 1.4: exported so middleware can reuse the same trimming.
+ */
+export function anonymizeIp(ip: string): string {
+  if (typeof ip !== 'string' || ip.length === 0) {return ip;}
+  const v4 = /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/.exec(ip);
+  if (v4) {
+    return `${v4[1]}.${v4[2]}.${v4[3]}.0`;
+  }
+  if (ip.includes(':') && /^[0-9a-fA-F:]+$/.test(ip.replace(/::/, ':'))) {
+    const parts = ip.includes('::')
+      ? (() => {
+          const [head, tail] = ip.split('::');
+          const headParts = head ? head.split(':') : [];
+          const tailParts = tail ? tail.split(':') : [];
+          const missing = 8 - headParts.length - tailParts.length;
+          return [...headParts, ...Array.from({ length: missing }, () => '0'), ...tailParts];
+        })()
+      : ip.split(':');
+    if (parts.length >= 4) {
+      return `${parts[0]}:${parts[1]}:${parts[2]}:${parts[3]}::`;
+    }
+  }
+  return ip;
+}
 
 /**
  * Check if a value looks like sensitive data
@@ -132,28 +166,37 @@ function isSensitiveValue(value: unknown): boolean {
 /**
  * Recursively filter sensitive data from an object
  * SECURITY: This prevents accidental exposure of credentials in logs
+ * Idempotent: filterSensitiveData(filterSensitiveData(x)) === filterSensitiveData(x)
+ * Sprint 1.4: handles WeakSet-based cycle detection and IP anonymization.
  */
-function filterSensitiveData<T>(obj: T, depth: number = 0): T {
+function filterSensitiveData<T>(obj: T, depth: number = 0, seen?: WeakSet<object>): T {
   // Prevent infinite recursion
   if (depth > 10) {return obj;}
+  const seenSet = seen ?? new WeakSet<object>();
 
   if (obj === null || obj === undefined) {
     return obj;
   }
 
   if (typeof obj === 'string') {
-    // Check if the string itself looks like sensitive data
-    if (isSensitiveValue(obj)) {
+    // Scrub known patterns in-string (email, Bearer, JWT, connection strings)
+    const scrubbed = filterErrorMessage(obj);
+    // If the whole value is sensitive (e.g. bare API key), redact
+    if (isSensitiveValue(scrubbed)) {
       return REDACTED as unknown as T;
     }
-    return obj;
+    return scrubbed as unknown as T;
   }
 
   if (Array.isArray(obj)) {
-    return obj.map(item => filterSensitiveData(item, depth + 1)) as unknown as T;
+    if (seenSet.has(obj as unknown as object)) {return ('[Circular]' as unknown) as T;}
+    seenSet.add(obj as unknown as object);
+    return obj.map(item => filterSensitiveData(item, depth + 1, seenSet)) as unknown as T;
   }
 
   if (typeof obj === 'object') {
+    if (seenSet.has(obj as unknown as object)) {return ('[Circular]' as unknown) as T;}
+    seenSet.add(obj as unknown as object);
     const filtered: Record<string, unknown> = {};
 
     for (const [key, value] of Object.entries(obj as Record<string, unknown>)) {
@@ -162,12 +205,15 @@ function filterSensitiveData<T>(obj: T, depth: number = 0): T {
       // Check if the key is in our sensitive list
       if (SENSITIVE_FIELDS.has(key) || SENSITIVE_FIELDS.has(lowerKey)) {
         filtered[key] = REDACTED;
-      } else if (typeof value === 'string' && isSensitiveValue(value)) {
-        // Check if the value looks sensitive
-        filtered[key] = REDACTED;
+      } else if (IP_FIELD_KEYS.has(lowerKey) && typeof value === 'string') {
+        // Sprint 1.4: IP fields are anonymized, not redacted.
+        filtered[key] = anonymizeIp(value);
+      } else if (typeof value === 'string') {
+        const scrubbed = filterErrorMessage(value);
+        filtered[key] = isSensitiveValue(scrubbed) ? REDACTED : scrubbed;
       } else if (typeof value === 'object' && value !== null) {
         // Recursively filter nested objects
-        filtered[key] = filterSensitiveData(value, depth + 1);
+        filtered[key] = filterSensitiveData(value, depth + 1, seenSet);
       } else {
         filtered[key] = value;
       }
@@ -180,17 +226,44 @@ function filterSensitiveData<T>(obj: T, depth: number = 0): T {
 }
 
 /**
- * Filter sensitive data from error messages
+ * Filter sensitive data from error messages.
+ * Sprint 1.4: added email, JWT, and ab_ API-key patterns.
  */
 function filterErrorMessage(message: string): string {
-  // Replace potential API keys in error messages
-  let filtered = message.replace(/ab_live_[a-f0-9]+/gi, 'ab_live_[REDACTED]');
-  // Replace Bearer tokens
+  let filtered = message;
+  // API keys
+  filtered = filtered.replace(/ab_live_[a-f0-9]{16,}/gi, 'ab_live_[REDACTED]');
+  filtered = filtered.replace(/ab_[a-z0-9]{32,}/gi, 'ab_[REDACTED]');
+  filtered = filtered.replace(/sk-[A-Za-z0-9]{20,}/g, 'sk-[REDACTED]');
+  // JWTs (eyJ...three-segments...)
+  filtered = filtered.replace(
+    /eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}/g,
+    '[REDACTED:jwt]'
+  );
+  // Bearer tokens
   filtered = filtered.replace(/Bearer\s+\S+/gi, 'Bearer [REDACTED]');
-  // Replace connection strings
+  // Connection strings
   filtered = filtered.replace(/postgres(ql)?:\/\/[^@]+@/gi, 'postgresql://[REDACTED]@');
   filtered = filtered.replace(/mysql:\/\/[^@]+@/gi, 'mysql://[REDACTED]@');
+  // Email addresses (last, so earlier tokens aren't misidentified as emails)
+  filtered = filtered.replace(
+    /[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}/gi,
+    '[REDACTED:email]'
+  );
   return filtered;
+}
+
+/**
+ * Public sanitizer primitive for callers that want the same scrubbing the
+ * logger applies but need to hand a cleaned object to another sink (e.g.
+ * metrics, third-party SDK). Idempotent and cycle-safe.
+ *
+ * @example
+ *   const clean = sanitizeMeta({ email: 'a@b.de', authorization: 'Bearer x' });
+ *   // => { email: '[REDACTED:email]', authorization: '[REDACTED]' }
+ */
+export function sanitizeMeta<T>(meta: T): T {
+  return filterSensitiveData(meta);
 }
 
 // Get current log level from environment
@@ -261,9 +334,18 @@ function log(level: LogLevel, message: string, context?: LogContext, error?: Err
     message: filteredMessage,
   };
 
+  // Auto-inject request context from AsyncLocalStorage
+  const reqCtx = requestContext.getStore();
+  const autoContext: LogContext = {};
+  if (reqCtx?.requestId) { autoContext.requestId = reqCtx.requestId; }
+  if (reqCtx?.userId) { autoContext.userId = reqCtx.userId; }
+
+  // Merge: auto-injected < explicit (explicit wins)
+  const mergedContext = { ...autoContext, ...context };
+
   // SECURITY: Filter sensitive data from context
-  if (context && Object.keys(context).length > 0) {
-    entry.context = filterSensitiveData(context);
+  if (mergedContext && Object.keys(mergedContext).length > 0) {
+    entry.context = filterSensitiveData(mergedContext);
   }
 
   // SECURITY: Filter sensitive data from error

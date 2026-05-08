@@ -1,0 +1,31 @@
+# LaTeX build artifacts
+*.aux
+*.bbl
+*.blg
+*.log
+*.out
+*.fls
+*.fdb_latexmk
+*.synctex.gz
+*.nav
+*.snm
+*.toc
+*.vrb
+
+# Exception: track the arxiv-bundle .bbl (required for ZIP packaging,
+# arXiv compiles cleaner with pre-generated bibliography)
+!arxiv-bundle/zenbrain.bbl
+
+# Generated PDFs — track the compiled paper, ignore other build artifacts
+*.pdf
+!zenbrain.pdf
+
+# Standalone figure builds
+figures/*.aux
+figures/*.log
+figures/*.pdf
+
+# Editor files
+*.swp
+*~
+.DS_Store

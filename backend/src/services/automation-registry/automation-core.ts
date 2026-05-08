@@ -8,6 +8,8 @@ import { v4 as uuidv4 } from 'uuid';
 import { queryContext, AIContext } from '../../utils/database-context';
 import { triggerWebhook, WebhookEventType } from '../webhooks';
 import { logger } from '../../utils/logger';
+import { assertPublicUrl, SsrfBlockedError } from '../security/ssrf-guard';
+import { checkedFetch } from '../../utils/checked-http';
 
 // ===========================================
 // Types
@@ -448,15 +450,38 @@ async function executeAction(
     case 'webhook_call': {
       const webhookUrl = action.config.url as string;
       if (webhookUrl) {
-        const axios = (await import('axios')).default;
+        try {
+          await assertPublicUrl(webhookUrl, {
+            requireHttps: process.env.NODE_ENV === 'production',
+          });
+        } catch (err) {
+          if (err instanceof SsrfBlockedError) {
+            logger.warn('Automation webhook_call blocked by SSRF guard', {
+              context,
+              url: webhookUrl,
+              code: err.code,
+              reason: err.reason,
+            });
+            break;
+          }
+          throw err;
+        }
         const payload = action.config.payload && typeof action.config.payload === 'object'
           ? action.config.payload as Record<string, unknown>
           : {};
-        await axios.post(webhookUrl, {
-          automation: true,
-          trigger_data: triggerData,
-          ...payload,
-        }, { timeout: 10000 });
+        const res = await checkedFetch(webhookUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            automation: true,
+            trigger_data: triggerData,
+            ...payload,
+          }),
+          signal: AbortSignal.timeout(10000),
+        });
+        if (!res.ok) {
+          throw new Error(`Webhook call failed: HTTP ${res.status}`);
+        }
       }
       break;
     }

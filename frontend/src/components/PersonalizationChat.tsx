@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, type CSSProperties } from 'react';
 import axios from 'axios';
 import { showToast } from './Toast';
 import { AI_PERSONALITY, AI_AVATAR, FEEDBACK_REACTIONS } from '../utils/aiPersonality';
@@ -9,8 +9,6 @@ import { PersonalizationFacts } from './PersonalizationFacts';
 import { PersonalizationSummary } from './PersonalizationSummary';
 import { logError } from '../utils/errors';
 import { safeLocalStorage } from '../utils/storage';
-import './PersonalizationChat.css';
-import '../neurodesign.css';
 
 interface ChatMessage {
   id: string;
@@ -335,7 +333,7 @@ export function PersonalizationChat({ onBack, context, embedded }: Personalizati
                 <div key={p.category} className="progress-item">
                   <span className="progress-icon">{categoryLabels[p.category]?.icon ?? '📌'}</span>
                   <div className="progress-bar-container">
-                    <div className="progress-bar-fill" style={{ width: `${p.completeness * 100}%` }} />
+                    <div className="progress-bar-fill w-[var(--bar)]" style={{ '--bar': `${p.completeness * 100}%` } as CSSProperties} />
                   </div>
                   <span className="progress-count">{p.facts_count}</span>
                 </div>

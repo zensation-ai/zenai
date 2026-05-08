@@ -71,13 +71,13 @@ describe('RAG Analytics Routes', () => {
   describe('POST /api/:context/rag/feedback', () => {
     it('should record RAG feedback', async () => {
       const res = await request(app)
-        .post('/api/personal/rag/feedback')
+        .post('/api/operations/rag/feedback')
         .send({ queryText: 'How does HiMeS work?', wasHelpful: true, relevanceRating: 4 });
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
       expect(res.body.data.id).toBe('fb-123');
-      expect(mockRecordFeedback).toHaveBeenCalledWith('personal', expect.objectContaining({
+      expect(mockRecordFeedback).toHaveBeenCalledWith('operations', expect.objectContaining({
         queryText: 'How does HiMeS work?',
         wasHelpful: true,
         relevanceRating: 4,
@@ -86,7 +86,7 @@ describe('RAG Analytics Routes', () => {
 
     it('should return 400 without queryText', async () => {
       const res = await request(app)
-        .post('/api/personal/rag/feedback')
+        .post('/api/operations/rag/feedback')
         .send({ wasHelpful: true });
 
       expect(res.status).toBe(400);
@@ -94,7 +94,7 @@ describe('RAG Analytics Routes', () => {
 
     it('should return 400 without wasHelpful', async () => {
       const res = await request(app)
-        .post('/api/personal/rag/feedback')
+        .post('/api/operations/rag/feedback')
         .send({ queryText: 'test' });
 
       expect(res.status).toBe(400);
@@ -102,7 +102,7 @@ describe('RAG Analytics Routes', () => {
 
     it('should return 400 with non-boolean wasHelpful', async () => {
       const res = await request(app)
-        .post('/api/personal/rag/feedback')
+        .post('/api/operations/rag/feedback')
         .send({ queryText: 'test', wasHelpful: 'yes' });
 
       expect(res.status).toBe(400);
@@ -124,17 +124,17 @@ describe('RAG Analytics Routes', () => {
   // ===========================================
   describe('GET /api/:context/rag/analytics', () => {
     it('should return RAG analytics with default days', async () => {
-      const res = await request(app).get('/api/personal/rag/analytics');
+      const res = await request(app).get('/api/operations/rag/analytics');
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
       expect(res.body.data.totalQueries).toBe(100);
-      expect(mockGetAnalytics).toHaveBeenCalledWith('personal', 30);
+      expect(mockGetAnalytics).toHaveBeenCalledWith('operations', 30);
     });
 
     it('should accept days parameter', async () => {
-      const res = await request(app).get('/api/personal/rag/analytics?days=7');
+      const res = await request(app).get('/api/operations/rag/analytics?days=7');
       expect(res.status).toBe(200);
-      expect(mockGetAnalytics).toHaveBeenCalledWith('personal', 7);
+      expect(mockGetAnalytics).toHaveBeenCalledWith('operations', 7);
     });
   });
 
@@ -143,7 +143,7 @@ describe('RAG Analytics Routes', () => {
   // ===========================================
   describe('GET /api/:context/rag/strategies', () => {
     it('should return strategy performance', async () => {
-      const res = await request(app).get('/api/personal/rag/strategies');
+      const res = await request(app).get('/api/operations/rag/strategies');
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
       expect(res.body.data).toHaveLength(1);
@@ -151,9 +151,9 @@ describe('RAG Analytics Routes', () => {
     });
 
     it('should accept days parameter', async () => {
-      const res = await request(app).get('/api/personal/rag/strategies?days=14');
+      const res = await request(app).get('/api/operations/rag/strategies?days=14');
       expect(res.status).toBe(200);
-      expect(mockGetStrategyPerformance).toHaveBeenCalledWith('personal', 14);
+      expect(mockGetStrategyPerformance).toHaveBeenCalledWith('operations', 14);
     });
   });
 
@@ -162,17 +162,17 @@ describe('RAG Analytics Routes', () => {
   // ===========================================
   describe('GET /api/:context/rag/history', () => {
     it('should return query history with default limit', async () => {
-      const res = await request(app).get('/api/personal/rag/history');
+      const res = await request(app).get('/api/operations/rag/history');
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
       expect(res.body.data).toHaveLength(1);
-      expect(mockGetQueryHistory).toHaveBeenCalledWith('personal', 50);
+      expect(mockGetQueryHistory).toHaveBeenCalledWith('operations', 50);
     });
 
     it('should accept limit parameter', async () => {
-      const res = await request(app).get('/api/personal/rag/history?limit=10');
+      const res = await request(app).get('/api/operations/rag/history?limit=10');
       expect(res.status).toBe(200);
-      expect(mockGetQueryHistory).toHaveBeenCalledWith('personal', 10);
+      expect(mockGetQueryHistory).toHaveBeenCalledWith('operations', 10);
     });
   });
 });

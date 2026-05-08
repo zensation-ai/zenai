@@ -14,7 +14,7 @@ const mockPoolQuery = jest.fn();
 jest.mock('../../../utils/database-context', () => ({
   queryContext: jest.fn(),
   isValidContext: (ctx: string) =>
-    ['personal', 'work', 'learning', 'creative'].includes(ctx),
+    ['operations', 'finance', 'people', 'strategy'].includes(ctx),
   pool: { query: mockPoolQuery },
 }));
 
@@ -551,7 +551,7 @@ describe('AgentGraph', () => {
         Promise.resolve(`${role} output`)
       );
 
-      const result = await graph.execute('test task', 'personal', executor);
+      const result = await graph.execute('test task', 'operations', executor);
 
       expect(result.success).toBe(true);
       expect(result.nodeHistory).toHaveLength(3);
@@ -578,7 +578,7 @@ describe('AgentGraph', () => {
         .mockResolvedValueOnce('good results')
         .mockResolvedValueOnce('final write');
 
-      const result = await graph.execute('test', 'personal', executor);
+      const result = await graph.execute('test', 'operations', executor);
 
       expect(result.success).toBe(true);
       expect(result.nodeHistory).toHaveLength(3); // start + condition + done
@@ -586,14 +586,14 @@ describe('AgentGraph', () => {
 
     it('should pause on human_review node', async () => {
       const graph = new AgentGraph('review')
-        .addNode({ id: 'work', type: 'agent', config: { agentRole: 'coder' } })
+        .addNode({ id: 'finance', type: 'agent', config: { agentRole: 'coder' } })
         .addNode({ id: 'review', type: 'human_review', config: { label: 'Human Review' } })
         .addNode({ id: 'publish', type: 'agent', config: { agentRole: 'writer' } })
-        .addEdge({ from: 'work', to: 'review' })
+        .addEdge({ from: 'finance', to: 'review' })
         .addEdge({ from: 'review', to: 'publish' })
-        .setStart('work');
+        .setStart('finance');
 
-      const result = await graph.execute('test', 'personal');
+      const result = await graph.execute('test', 'operations');
 
       expect(result.state.status).toBe('paused');
       expect(result.nodeHistory).toHaveLength(2); // work + review
@@ -608,7 +608,7 @@ describe('AgentGraph', () => {
         .addEdge({ from: 'b', to: 'a' })
         .setStart('a');
 
-      const result = await graph.execute('test', 'personal', undefined, undefined, 3);
+      const result = await graph.execute('test', 'operations', undefined, undefined, 3);
 
       expect(result.success).toBe(false);
       expect(result.state.status).toBe('failed');
@@ -622,7 +622,7 @@ describe('AgentGraph', () => {
 
       const executor = jest.fn().mockRejectedValue(new Error('API error'));
 
-      const result = await graph.execute('test', 'personal', executor);
+      const result = await graph.execute('test', 'operations', executor);
 
       expect(result.success).toBe(false);
       expect(result.state.status).toBe('failed');
@@ -633,7 +633,7 @@ describe('AgentGraph', () => {
     it('should handle empty graph', async () => {
       const graph = new AgentGraph('empty');
 
-      const result = await graph.execute('test', 'personal');
+      const result = await graph.execute('test', 'operations');
 
       expect(result.success).toBe(false);
       expect(result.finalOutput).toBe('No start node defined');
@@ -644,7 +644,7 @@ describe('AgentGraph', () => {
         .addNode({ id: 'n1', type: 'agent', config: { agentRole: 'writer' } })
         .setStart('n1');
 
-      const result = await graph.execute('hello world', 'personal');
+      const result = await graph.execute('hello world', 'operations');
 
       expect(result.success).toBe(true);
       expect(result.finalOutput).toContain('[Agent writer output for:');
@@ -657,7 +657,7 @@ describe('AgentGraph', () => {
 
       const toolExec = jest.fn().mockResolvedValue('search results');
 
-      const result = await graph.execute('test', 'personal', undefined, toolExec);
+      const result = await graph.execute('test', 'operations', undefined, toolExec);
 
       expect(result.success).toBe(true);
       expect(toolExec).toHaveBeenCalledWith('web_search', expect.any(Object));
@@ -672,7 +672,7 @@ describe('AgentGraph', () => {
         })
         .setStart('cond');
 
-      const result = await graph.execute('test', 'personal');
+      const result = await graph.execute('test', 'operations');
 
       expect(result.success).toBe(false);
       expect(result.nodeHistory[0].output).toContain('Condition routed to unknown node');
@@ -683,7 +683,7 @@ describe('AgentGraph', () => {
         .addNode({ id: 'cond', type: 'condition', config: {} })
         .setStart('cond');
 
-      const result = await graph.execute('test', 'personal');
+      const result = await graph.execute('test', 'operations');
 
       expect(result.success).toBe(false);
       expect(result.nodeHistory[0].output).toContain('has no condition function');
@@ -698,7 +698,7 @@ describe('AgentGraph', () => {
         .setStart('n1')
         .setProgressCallback((e) => events.push(e));
 
-      await graph.execute('test', 'personal');
+      await graph.execute('test', 'operations');
 
       const types = events.map(e => e.type);
       expect(types).toContain('node_start');
@@ -713,7 +713,7 @@ describe('AgentGraph', () => {
         .setStart('hr')
         .setProgressCallback((e) => events.push(e));
 
-      await graph.execute('test', 'personal');
+      await graph.execute('test', 'operations');
 
       const types = events.map(e => e.type);
       expect(types).toContain('workflow_paused');
@@ -727,7 +727,7 @@ describe('AgentGraph', () => {
         .setProgressCallback((e) => events.push(e));
 
       const badExec = jest.fn().mockRejectedValue(new Error('boom'));
-      await graph.execute('test', 'personal', badExec);
+      await graph.execute('test', 'operations', badExec);
 
       const types = events.map(e => e.type);
       expect(types).toContain('node_error');
@@ -740,7 +740,7 @@ describe('AgentGraph', () => {
         .setProgressCallback(() => { throw new Error('cb error'); });
 
       // Should not throw
-      const result = await graph.execute('test', 'personal');
+      const result = await graph.execute('test', 'operations');
       expect(result.success).toBe(true);
     });
   });
@@ -796,7 +796,7 @@ describe('AgentGraph', () => {
     it('templates execute successfully', async () => {
       const graph = createResearchWriteReviewGraph();
       const executor = jest.fn().mockResolvedValue('output');
-      const result = await graph.execute('task', 'personal', executor);
+      const result = await graph.execute('task', 'operations', executor);
       expect(result.success).toBe(true);
       expect(executor).toHaveBeenCalledTimes(3);
     });

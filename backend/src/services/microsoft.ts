@@ -10,6 +10,7 @@ import axios, { AxiosInstance } from 'axios';
 import { pool } from '../utils/database';
 import { triggerWebhook } from './webhooks';
 import { logger } from '../utils/logger';
+import { getCheckedAgent, checkedAxiosPost } from '../utils/checked-http';
 
 // Microsoft Graph API endpoints
 const GRAPH_API_BASE = 'https://graph.microsoft.com/v1.0';
@@ -50,8 +51,13 @@ interface CalendarEvent {
  * Create axios instance with auth headers
  */
 function createGraphClient(accessToken: string): AxiosInstance {
+  // DNS-rebinding defense: outbound Graph calls go through checked agents.
+  const httpsAgent = getCheckedAgent(GRAPH_API_BASE) as import('https').Agent;
+  const httpAgent = getCheckedAgent(GRAPH_API_BASE) as import('http').Agent;
   return axios.create({
     baseURL: GRAPH_API_BASE,
+    httpsAgent,
+    httpAgent,
     headers: {
       'Authorization': `Bearer ${accessToken}`,
       'Content-Type': 'application/json'
@@ -88,7 +94,12 @@ export async function exchangeCodeForTokens(
   clientSecret: string,
   redirectUri: string
 ): Promise<OAuthTokens> {
-  const response = await axios.post(OAUTH_TOKEN_URL, new URLSearchParams({
+  const response = await checkedAxiosPost<{
+    access_token: string;
+    refresh_token: string;
+    expires_in: number;
+    scope: string;
+  }>(OAUTH_TOKEN_URL, new URLSearchParams({
     client_id: clientId,
     client_secret: clientSecret,
     code,
@@ -116,7 +127,12 @@ export async function refreshAccessToken(
   clientId: string,
   clientSecret: string
 ): Promise<OAuthTokens> {
-  const response = await axios.post(OAUTH_TOKEN_URL, new URLSearchParams({
+  const response = await checkedAxiosPost<{
+    access_token: string;
+    refresh_token?: string;
+    expires_in: number;
+    scope: string;
+  }>(OAUTH_TOKEN_URL, new URLSearchParams({
     client_id: clientId,
     client_secret: clientSecret,
     refresh_token: refreshToken,

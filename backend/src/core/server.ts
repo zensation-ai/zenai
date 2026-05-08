@@ -1,5 +1,10 @@
+// IMPORTANT: env-preload must be the FIRST import.
+// It calls dotenv.config({ override: true }) so .env values take precedence
+// over empty shell environment variables (e.g. ANTHROPIC_API_KEY="").
+// Service modules like claude/client.ts read process.env at import time.
+import './env-preload';
+
 import express from 'express';
-import dotenv from 'dotenv';
 import { secretsManager } from '../services/secrets-manager';
 import { modules } from '../modules';
 import { setServerReady } from '../modules/middleware';
@@ -15,9 +20,9 @@ import {
   validateRequiredExtensions,
   ensurePerformanceIndexes,
   ensureSchemas,
+  getPool,
 } from '../utils/database-context';
-
-dotenv.config();
+import { runMigrations } from '../db/migrate';
 
 // ===========================================
 // Server Configuration Interface
@@ -148,6 +153,17 @@ async function startServer(): Promise<void> {
       logger.warn('Schema creation check failed (non-fatal)', { error: error instanceof Error ? error.message : String(error) });
     }
 
+    // Auto-apply pending SQL migrations from backend/sql/migrations/
+    try {
+      await runMigrations(getPool('operations'));
+      logger.info('Database migrations applied', { operation: 'startup' });
+    } catch (error) {
+      logger.warn('Auto-migration failed (non-fatal — run db:migrate manually if needed)', {
+        error: error instanceof Error ? error.message : String(error),
+        operation: 'startup',
+      });
+    }
+
     // Test all database connections
     logger.info('Testing database connections...');
     const dbStatus = await testConnections();
@@ -155,7 +171,7 @@ async function startServer(): Promise<void> {
 
     if (Object.values(dbStatus).every(ok => ok)) {
       logger.info('All databases connected successfully', { dbStatus, operation: 'startup' });
-    } else if (!dbStatus.personal && !dbStatus.work) {
+    } else if (!dbStatus.operations && !dbStatus.finance) {
       logger.error('CRITICAL: Both primary databases failed to connect - shutting down', undefined, { dbStatus, operation: 'startup' });
       process.exit(1);
     } else {

@@ -30,7 +30,7 @@ import type { ReasoningChain } from '../../../../services/reasoning/chain-store'
 jest.mock('../../../../utils/database-context', () => ({
   queryContext: jest.fn(),
   isValidContext: (ctx: string) =>
-    ['personal', 'work', 'learning', 'creative'].includes(ctx),
+    ['operations', 'finance', 'people', 'strategy'].includes(ctx),
 }));
 
 jest.mock('../../../../utils/logger', () => ({
@@ -102,7 +102,7 @@ describe('chain-store', () => {
     it('should generate an embedding from the query', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [mockChainRow], rowCount: 1 } as any);
 
-      await storeChain('personal', {
+      await storeChain('operations', {
         userId: 'user-001',
         query: 'What is the capital of France?',
         steps: mockChainRow.steps,
@@ -121,7 +121,7 @@ describe('chain-store', () => {
     it('should insert the chain and return the new ID', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [mockChainRow], rowCount: 1 } as any);
 
-      const id = await storeChain('personal', {
+      const id = await storeChain('operations', {
         userId: 'user-001',
         query: 'What is the capital of France?',
         steps: mockChainRow.steps,
@@ -143,7 +143,7 @@ describe('chain-store', () => {
       mockGenerateEmbedding.mockResolvedValueOnce(fakeEmbedding);
       mockQueryContext.mockResolvedValueOnce({ rows: [mockChainRow], rowCount: 1 } as any);
 
-      await storeChain('work', {
+      await storeChain('finance', {
         userId: 'user-002',
         query: 'Explain TypeScript generics',
         steps: [],
@@ -165,7 +165,7 @@ describe('chain-store', () => {
       mockGenerateEmbedding.mockRejectedValueOnce(new Error('embedding service down'));
       mockQueryContext.mockResolvedValueOnce({ rows: [{ ...mockChainRow, id: 'chain-002' }], rowCount: 1 } as any);
 
-      const id = await storeChain('personal', {
+      const id = await storeChain('operations', {
         userId: 'user-001',
         query: 'fallback test',
         steps: [],
@@ -184,7 +184,7 @@ describe('chain-store', () => {
     it('should use the correct context for the DB call', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [mockChainRow], rowCount: 1 } as any);
 
-      await storeChain('learning', {
+      await storeChain('people', {
         userId: 'user-001',
         query: 'test query',
         steps: [],
@@ -197,7 +197,7 @@ describe('chain-store', () => {
         reusable: false,
       });
 
-      expect(mockQueryContext).toHaveBeenCalledWith('learning', expect.any(String), expect.any(Array));
+      expect(mockQueryContext).toHaveBeenCalledWith('people', expect.any(String), expect.any(Array));
     });
   });
 
@@ -209,7 +209,7 @@ describe('chain-store', () => {
     it('should return chains with similarity scores', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [similarRow], rowCount: 1 } as any);
 
-      const results = await findSimilarChains('personal', 'What is Paris?');
+      const results = await findSimilarChains('operations', 'What is Paris?');
 
       expect(results).toHaveLength(1);
       expect(results[0].similarity).toBe(0.92);
@@ -219,7 +219,7 @@ describe('chain-store', () => {
     it('should default to limit=3', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any);
 
-      await findSimilarChains('personal', 'some query');
+      await findSimilarChains('operations', 'some query');
 
       const [, , params] = mockQueryContext.mock.calls[0];
       // limit is passed as a parameter
@@ -229,7 +229,7 @@ describe('chain-store', () => {
     it('should respect a custom limit', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any);
 
-      await findSimilarChains('personal', 'some query', 10);
+      await findSimilarChains('operations', 'some query', 10);
 
       const [, , params] = mockQueryContext.mock.calls[0];
       expect(params).toContain(10);
@@ -238,7 +238,7 @@ describe('chain-store', () => {
     it('should default to minSimilarity=0.85', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any);
 
-      await findSimilarChains('personal', 'some query');
+      await findSimilarChains('operations', 'some query');
 
       const [, , params] = mockQueryContext.mock.calls[0];
       expect(params).toContain(0.85);
@@ -247,7 +247,7 @@ describe('chain-store', () => {
     it('should respect a custom minSimilarity', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any);
 
-      await findSimilarChains('personal', 'some query', 3, 0.70);
+      await findSimilarChains('operations', 'some query', 3, 0.70);
 
       const [, , params] = mockQueryContext.mock.calls[0];
       expect(params).toContain(0.70);
@@ -256,7 +256,7 @@ describe('chain-store', () => {
     it('should only query reusable chains', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any);
 
-      await findSimilarChains('personal', 'some query');
+      await findSimilarChains('operations', 'some query');
 
       const [, sql] = mockQueryContext.mock.calls[0];
       expect(sql).toMatch(/reusable\s*=\s*true/i);
@@ -265,7 +265,7 @@ describe('chain-store', () => {
     it('should order results by similarity DESC', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any);
 
-      await findSimilarChains('personal', 'some query');
+      await findSimilarChains('operations', 'some query');
 
       const [, sql] = mockQueryContext.mock.calls[0];
       expect(sql).toMatch(/ORDER BY similarity DESC/i);
@@ -277,7 +277,7 @@ describe('chain-store', () => {
         rowCount: 1,
       } as any);
 
-      const [chain] = await findSimilarChains('personal', 'What is Paris?');
+      const [chain] = await findSimilarChains('operations', 'What is Paris?');
 
       expect(chain.id).toBe('chain-001');
       expect(chain.userId).toBe('user-001');
@@ -294,7 +294,7 @@ describe('chain-store', () => {
     it('should return a ReasoningChain when found', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [mockChainRow], rowCount: 1 } as any);
 
-      const chain = await getChain('personal', 'chain-001');
+      const chain = await getChain('operations', 'chain-001');
 
       expect(chain).not.toBeNull();
       expect(chain!.id).toBe('chain-001');
@@ -306,7 +306,7 @@ describe('chain-store', () => {
     it('should return null when chain is not found', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any);
 
-      const chain = await getChain('personal', 'nonexistent-id');
+      const chain = await getChain('operations', 'nonexistent-id');
 
       expect(chain).toBeNull();
     });
@@ -314,10 +314,10 @@ describe('chain-store', () => {
     it('should query by the provided ID', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [mockChainRow], rowCount: 1 } as any);
 
-      await getChain('work', 'chain-abc');
+      await getChain('finance', 'chain-abc');
 
       const [context, , params] = mockQueryContext.mock.calls[0];
-      expect(context).toBe('work');
+      expect(context).toBe('finance');
       expect(params).toContain('chain-abc');
     });
   });
@@ -328,7 +328,7 @@ describe('chain-store', () => {
     it('should update the reusable flag to true', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [], rowCount: 1 } as any);
 
-      await markReusable('personal', 'chain-001', true);
+      await markReusable('operations', 'chain-001', true);
 
       const [, sql, params] = mockQueryContext.mock.calls[0];
       expect(sql).toMatch(/UPDATE reasoning_chains/i);
@@ -339,7 +339,7 @@ describe('chain-store', () => {
     it('should update the reusable flag to false', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [], rowCount: 1 } as any);
 
-      await markReusable('personal', 'chain-001', false);
+      await markReusable('operations', 'chain-001', false);
 
       const [, , params] = mockQueryContext.mock.calls[0];
       expect(params).toContain(false);
@@ -348,7 +348,7 @@ describe('chain-store', () => {
     it('should resolve without error on success', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [], rowCount: 1 } as any);
 
-      await expect(markReusable('personal', 'chain-001', true)).resolves.toBeUndefined();
+      await expect(markReusable('operations', 'chain-001', true)).resolves.toBeUndefined();
     });
   });
 
@@ -359,7 +359,7 @@ describe('chain-store', () => {
       // First call: update feedback, second call: markReusable (for high rating)
       mockQueryContext.mockResolvedValue({ rows: [], rowCount: 1 } as any);
 
-      await recordFeedback('personal', 'chain-001', 3);
+      await recordFeedback('operations', 'chain-001', 3);
 
       const [, sql, params] = mockQueryContext.mock.calls[0];
       expect(sql).toMatch(/UPDATE reasoning_chains/i);
@@ -370,7 +370,7 @@ describe('chain-store', () => {
     it('should auto-mark as reusable when rating >= 4', async () => {
       mockQueryContext.mockResolvedValue({ rows: [], rowCount: 1 } as any);
 
-      await recordFeedback('personal', 'chain-001', 4);
+      await recordFeedback('operations', 'chain-001', 4);
 
       // Should make two DB calls: one for feedback, one for reusable
       expect(mockQueryContext).toHaveBeenCalledTimes(2);
@@ -382,7 +382,7 @@ describe('chain-store', () => {
     it('should auto-mark as reusable for rating = 5', async () => {
       mockQueryContext.mockResolvedValue({ rows: [], rowCount: 1 } as any);
 
-      await recordFeedback('personal', 'chain-001', 5);
+      await recordFeedback('operations', 'chain-001', 5);
 
       expect(mockQueryContext).toHaveBeenCalledTimes(2);
     });
@@ -390,7 +390,7 @@ describe('chain-store', () => {
     it('should NOT auto-mark as reusable when rating < 4', async () => {
       mockQueryContext.mockResolvedValue({ rows: [], rowCount: 1 } as any);
 
-      await recordFeedback('personal', 'chain-001', 3);
+      await recordFeedback('operations', 'chain-001', 3);
 
       // Only the feedback update, no reusable update
       expect(mockQueryContext).toHaveBeenCalledTimes(1);
@@ -399,7 +399,7 @@ describe('chain-store', () => {
     it('should resolve without error', async () => {
       mockQueryContext.mockResolvedValue({ rows: [], rowCount: 1 } as any);
 
-      await expect(recordFeedback('personal', 'chain-001', 5)).resolves.toBeUndefined();
+      await expect(recordFeedback('operations', 'chain-001', 5)).resolves.toBeUndefined();
     });
   });
 
@@ -409,7 +409,7 @@ describe('chain-store', () => {
     it('should issue an UPDATE with reuse_count + 1', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [], rowCount: 1 } as any);
 
-      await incrementReuseCount('personal', 'chain-001');
+      await incrementReuseCount('operations', 'chain-001');
 
       const [, sql, params] = mockQueryContext.mock.calls[0];
       expect(sql).toMatch(/reuse_count\s*=\s*reuse_count\s*\+\s*1/i);
@@ -419,15 +419,15 @@ describe('chain-store', () => {
     it('should use the correct context', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [], rowCount: 1 } as any);
 
-      await incrementReuseCount('creative', 'chain-xyz');
+      await incrementReuseCount('strategy', 'chain-xyz');
 
-      expect(mockQueryContext).toHaveBeenCalledWith('creative', expect.any(String), expect.any(Array));
+      expect(mockQueryContext).toHaveBeenCalledWith('strategy', expect.any(String), expect.any(Array));
     });
 
     it('should resolve without error', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [], rowCount: 1 } as any);
 
-      await expect(incrementReuseCount('personal', 'chain-001')).resolves.toBeUndefined();
+      await expect(incrementReuseCount('operations', 'chain-001')).resolves.toBeUndefined();
     });
   });
 
@@ -440,7 +440,7 @@ describe('chain-store', () => {
         rowCount: 1,
       } as any);
 
-      const chain = await getReusableChainForQuery('personal', 'What is Paris the capital of?');
+      const chain = await getReusableChainForQuery('operations', 'What is Paris the capital of?');
 
       expect(chain).not.toBeNull();
       expect(chain!.id).toBe('chain-001');
@@ -449,7 +449,7 @@ describe('chain-store', () => {
     it('should return null when no similar chain exists', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any);
 
-      const chain = await getReusableChainForQuery('personal', 'Something completely unrelated');
+      const chain = await getReusableChainForQuery('operations', 'Something completely unrelated');
 
       expect(chain).toBeNull();
     });
@@ -459,7 +459,7 @@ describe('chain-store', () => {
       const row2 = { ...mockChainRow, id: 'chain-second', similarity: 0.88 };
       mockQueryContext.mockResolvedValueOnce({ rows: [row1, row2], rowCount: 2 } as any);
 
-      const chain = await getReusableChainForQuery('personal', 'France question');
+      const chain = await getReusableChainForQuery('operations', 'France question');
 
       expect(chain!.id).toBe('chain-best');
     });
@@ -467,7 +467,7 @@ describe('chain-store', () => {
     it('should use limit=1 internally for efficiency', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any);
 
-      await getReusableChainForQuery('personal', 'test');
+      await getReusableChainForQuery('operations', 'test');
 
       const [, , params] = mockQueryContext.mock.calls[0];
       expect(params).toContain(1);

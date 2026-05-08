@@ -12,12 +12,11 @@
  */
 
 import { useRef, memo, useCallback } from 'react';
+import type { CSSProperties } from 'react';
 import { AIContext } from './ContextSwitcher';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { IdeaCard } from './IdeaCard';
 import type { StructuredIdea } from '../types/idea';
-import './VirtualizedIdeaList.css';
-
 interface VirtualizedIdeaListProps {
   ideas: StructuredIdea[];
   viewMode: 'grid' | 'list';
@@ -127,20 +126,11 @@ function VirtualizedIdeaListComponent({
   return (
     <div
       ref={parentRef}
-      className={`virtualized-list-container virtualized-${viewMode}`}
-      style={{
-        height: 'calc(100vh - 300px)',
-        minHeight: '400px',
-        overflow: 'auto',
-      }}
+      className={`virtualized-list-container virtualized-${viewMode} overflow-auto h-[calc(100vh-300px)] min-h-[400px]`}
     >
       <div
-        className="virtualized-list-inner"
-        style={{
-          height: `${rowVirtualizer.getTotalSize()}px`,
-          width: '100%',
-          position: 'relative',
-        }}
+        className="virtualized-list-inner relative w-full h-[var(--total-h)]"
+        style={{ '--total-h': `${rowVirtualizer.getTotalSize()}px` } as CSSProperties}
       >
         {rowVirtualizer.getVirtualItems().map((virtualRow) => {
           const rowIdeas = getRowIdeas(virtualRow.index);
@@ -148,22 +138,13 @@ function VirtualizedIdeaListComponent({
           return (
             <div
               key={virtualRow.key}
-              className={`virtualized-row ${viewMode === 'grid' ? 'virtualized-grid-row' : 'virtualized-list-row'}`}
+              className={`virtualized-row ${viewMode === 'grid' ? 'virtualized-grid-row grid [grid-template-columns:var(--cols)] gap-[var(--gap)]' : 'virtualized-list-row'} absolute left-0 w-full h-[var(--h)] [transform:translateY(var(--ty))] ${viewMode === 'list' ? 'pb-4' : ''}`}
               style={{
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                width: '100%',
-                height: `${virtualRow.size}px`,
-                transform: `translateY(${virtualRow.start}px)`,
-                display: viewMode === 'grid' ? 'grid' : 'block',
-                gridTemplateColumns:
-                  viewMode === 'grid'
-                    ? `repeat(${GRID_COLUMNS}, 1fr)`
-                    : undefined,
-                gap: viewMode === 'grid' ? `${GRID_GAP}px` : undefined,
-                padding: viewMode === 'list' ? '0 0 16px 0' : '0',
-              }}
+                '--h': `${virtualRow.size}px`,
+                '--ty': `${virtualRow.start}px`,
+                '--cols': viewMode === 'grid' ? `repeat(${GRID_COLUMNS}, 1fr)` : undefined,
+                '--gap': viewMode === 'grid' ? `${GRID_GAP}px` : undefined,
+              } as CSSProperties}
             >
               {rowIdeas.map((idea) => (
                 <div

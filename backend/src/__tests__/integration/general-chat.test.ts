@@ -34,7 +34,7 @@ jest.mock('../../utils/logger', () => ({
 
 jest.mock('../../utils/database-context', () => ({
   queryContext: jest.fn(),
-  isValidContext: jest.fn((ctx: string) => ['personal', 'work', 'learning', 'creative'].includes(ctx)),
+  isValidContext: jest.fn((ctx: string) => ['operations', 'finance', 'people', 'strategy'].includes(ctx)),
   AIContext: {},
 }));
 
@@ -200,7 +200,7 @@ describe('General Chat API Integration Tests', () => {
     it('should create a new chat session', async () => {
       const session = {
         id: VALID_UUID,
-        context: 'personal',
+        context: 'operations',
         type: 'general',
         created_at: new Date().toISOString(),
       };
@@ -208,18 +208,18 @@ describe('General Chat API Integration Tests', () => {
 
       const response = await request(app)
         .post('/api/chat/sessions')
-        .send({ context: 'personal' })
+        .send({ context: 'operations' })
         .expect(201);
 
       expect(response.body.success).toBe(true);
       expect(response.body.session).toHaveProperty('id', VALID_UUID);
-      expect(response.body.session.context).toBe('personal');
+      expect(response.body.session.context).toBe('operations');
     });
 
     it('should create an assistant session', async () => {
       const session = {
         id: VALID_UUID,
-        context: 'work',
+        context: 'finance',
         type: 'assistant',
         created_at: new Date().toISOString(),
       };
@@ -227,7 +227,7 @@ describe('General Chat API Integration Tests', () => {
 
       const response = await request(app)
         .post('/api/chat/sessions')
-        .send({ context: 'work', type: 'assistant' })
+        .send({ context: 'finance', type: 'assistant' })
         .expect(201);
 
       expect(response.body.success).toBe(true);
@@ -242,12 +242,12 @@ describe('General Chat API Integration Tests', () => {
   describe('GET /api/chat/sessions', () => {
     it('should list sessions for a context', async () => {
       const sessions = [
-        { id: VALID_UUID, context: 'personal', type: 'general', title: 'Chat 1' },
+        { id: VALID_UUID, context: 'operations', type: 'general', title: 'Chat 1' },
       ];
       mockGetSessions.mockResolvedValueOnce(sessions);
 
       const response = await request(app)
-        .get('/api/chat/sessions?context=personal')
+        .get('/api/chat/sessions?context=operations')
         .expect(200);
 
       expect(response.body.success).toBe(true);
@@ -255,14 +255,14 @@ describe('General Chat API Integration Tests', () => {
       expect(response.body.count).toBe(1);
     });
 
-    it('should default to personal context', async () => {
+    it('should default to operations context', async () => {
       mockGetSessions.mockResolvedValueOnce([]);
 
       await request(app)
         .get('/api/chat/sessions')
         .expect(200);
 
-      expect(mockGetSessions).toHaveBeenCalledWith('personal', expect.any(Number), undefined, expect.any(String));
+      expect(mockGetSessions).toHaveBeenCalledWith('operations', expect.any(Number), undefined, expect.any(String));
     });
 
     it('should reject invalid context', async () => {
@@ -282,7 +282,7 @@ describe('General Chat API Integration Tests', () => {
     it('should return session with messages', async () => {
       const session = {
         id: VALID_UUID,
-        context: 'personal',
+        context: 'operations',
         messages: [
           { role: 'user', content: 'Hello' },
           { role: 'assistant', content: 'Hi there!' },
@@ -358,7 +358,7 @@ describe('General Chat API Integration Tests', () => {
 
   describe('POST /api/chat/sessions/:id/messages', () => {
     it('should call sendMessage for a valid session', async () => {
-      const session = { id: VALID_UUID, context: 'personal', messages: [] };
+      const session = { id: VALID_UUID, context: 'operations', messages: [] };
       mockGetSession.mockResolvedValueOnce(session);
       mockSendMessage.mockResolvedValueOnce({
         response: 'Hello! How can I help?',

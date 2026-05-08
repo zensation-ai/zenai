@@ -30,9 +30,9 @@ const router = Router();
 
 // Helper to extract and validate context from request
 function getContextFromRequest(req: Request): AIContext {
-  const context = (req.query.context as string) || (req.body?.context as string) || 'personal';
+  const context = (req.query.context as string) || (req.body?.context as string) || 'operations';
   if (!isValidContext(context)) {
-    throw new ValidationError(`Invalid context: ${context}. Must be one of: personal, work, learning, creative`);
+    throw new ValidationError(`Invalid context: ${context}. Must be one of: operations, finance, people, strategy`);
   }
   return context;
 }
@@ -265,9 +265,13 @@ router.post('/backfill-embeddings', apiKeyAuth, requireScope('write'), asyncHand
 /**
  * GET /api/incubator/debug
  * Debug endpoint to inspect thought state
- * Requires admin scope - for debugging only
+ * Requires admin scope - only available in development
  */
 router.get('/debug', apiKeyAuth, requireScope('admin'), asyncHandler(async (req: Request, res: Response) => {
+  if (process.env.NODE_ENV === 'production') {
+    res.status(404).json({ success: false, error: 'Not found' });
+    return;
+  }
   const context = getContextFromRequest(req);
   const userId = getUserId(req);
   if (!isValidContext(context)) {
@@ -275,10 +279,10 @@ router.get('/debug', apiKeyAuth, requireScope('admin'), asyncHandler(async (req:
     return;
   }
   const SEARCH_PATHS: Record<string, string> = {
-    personal: 'SET search_path TO personal, public',
-    work: 'SET search_path TO work, public',
-    learning: 'SET search_path TO learning, public',
-    creative: 'SET search_path TO creative, public',
+    operations: 'SET search_path TO operations, public',
+    finance: 'SET search_path TO finance, public',
+    people: 'SET search_path TO people, public',
+    strategy: 'SET search_path TO strategy, public',
   };
   const pool = getPool(context);
   const client = await pool.connect();

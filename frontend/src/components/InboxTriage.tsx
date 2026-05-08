@@ -8,9 +8,8 @@ import { logError } from '../utils/errors';
 import type { IdeaPriority } from '../types/idea';
 import { TriageCard } from './TriageCard';
 import { TriageActions } from './TriageActions';
-import './InboxTriage.css';
-
-export type TriageAction = 'priority' | 'keep' | 'later' | 'archive';
+import type { TriageAction } from './triageTypes';
+export type { TriageAction } from './triageTypes';
 
 interface TriageIdea {
   id: string;
@@ -319,7 +318,7 @@ const InboxTriageComponent: React.FC<InboxTriageProps> = ({ context, apiBase, on
         <span className="triage-progress">
           {currentIndex + 1} von {ideas.length}
           {processedIds.length > 0 && (
-            <span className="neuro-reward-badge" style={{ marginLeft: '0.5rem', padding: '2px 8px', fontSize: '0.75rem' }}>{processedIds.length} erledigt</span>
+            <span className="neuro-reward-badge ml-2 px-2 py-px text-xs">{processedIds.length} erledigt</span>
           )}
         </span>
       </header>
@@ -332,7 +331,7 @@ const InboxTriageComponent: React.FC<InboxTriageProps> = ({ context, apiBase, on
       )}
 
       {showUndoHint && lastAction && (
-        <div className="neuro-next-step" style={{ position: 'fixed', bottom: '100px', left: '50%', transform: 'translateX(-50%)', zIndex: 100 }}>
+        <div className="neuro-next-step fixed bottom-[100px] left-1/2 -translate-x-1/2 z-[100]">
           <span className="step-icon">↩️</span>
           <span>{ANTICIPATORY_MESSAGES.nextSteps.afterTriage}</span>
         </div>
@@ -358,7 +357,7 @@ const InboxTriageComponent: React.FC<InboxTriageProps> = ({ context, apiBase, on
         <div className="triage-remaining">
           <div className="triage-remaining-stack">
             {[...Array(Math.min(remainingCount - 1, 3))].map((_, i) => (
-              <div key={i} className="triage-remaining-card neuro-stagger-item" style={{ transform: 'translateY(' + ((i + 1) * 4) + 'px) scale(' + (1 - (i + 1) * 0.02) + ')', opacity: 1 - (i + 1) * 0.2 }} />
+              <div key={i} className="triage-remaining-card neuro-stagger-item [transform:var(--tf)] opacity-[var(--op)]" style={{ '--tf': `translateY(${(i+1)*4}px) scale(${1-(i+1)*0.02})`, '--op': `${1-(i+1)*0.2}` } as React.CSSProperties} />
             ))}
           </div>
         </div>

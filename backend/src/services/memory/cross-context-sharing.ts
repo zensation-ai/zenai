@@ -2,7 +2,7 @@
  * Cross-Context Insight Sharing (HiMeS Enhancement)
  *
  * Breaks schema isolation for specific fact types that should be
- * consistent across all contexts (personal, work, learning, creative).
+ * consistent across all contexts (operations, finance, people, strategy).
  *
  * Shared fact types:
  * - preference (communication style, language, format preferences)
@@ -36,7 +36,7 @@ const CONFIG = {
   /** Minimum occurrences for a fact to be shared */
   MIN_SHARE_OCCURRENCES: 2,
   /** All contexts to share between */
-  ALL_CONTEXTS: ['personal', 'work', 'learning', 'creative'] as AIContext[],
+  ALL_CONTEXTS: ['operations', 'finance', 'people', 'strategy'] as AIContext[],
   /** Maximum shared facts to load per context */
   MAX_SHARED_FACTS: 50,
 };

@@ -248,7 +248,7 @@ documentAnalysisRouter.post(
     }
 
     // Save to history (non-blocking)
-    const aiContext = typeof req.body.aiContext === 'string' ? req.body.aiContext : 'work';
+    const aiContext = typeof req.body.aiContext === 'string' ? req.body.aiContext : 'finance';
     const historyId = await documentAnalysis.saveToHistory(result, template, aiContext);
 
     // Return cache key for follow-up questions
@@ -356,7 +356,7 @@ documentAnalysisRouter.post(
     }
 
     // Save comparison to history
-    const aiContext = typeof req.body.aiContext === 'string' ? req.body.aiContext : 'work';
+    const aiContext = typeof req.body.aiContext === 'string' ? req.body.aiContext : 'finance';
     const historyId = await documentAnalysis.saveToHistory(result, 'comparison', aiContext);
 
     res.json({
@@ -435,7 +435,7 @@ documentAnalysisRouter.get(
   '/history',
   apiKeyAuth,
   asyncHandler(async (req: Request, res: Response) => {
-    const context = (typeof req.query.context === 'string' && isValidContext(req.query.context)) ? req.query.context : 'work';
+    const context = (typeof req.query.context === 'string' && isValidContext(req.query.context)) ? req.query.context : 'finance';
     const limit = Math.min(parseInt(String(req.query.limit || '20'), 10), 100);
     const offset = Math.max(parseInt(String(req.query.offset || '0'), 10), 0);
 
@@ -554,7 +554,7 @@ documentAnalysisRouter.get(
   '/templates/custom',
   apiKeyAuth,
   asyncHandler(async (req: Request, res: Response) => {
-    const context = (typeof req.query.context === 'string' && isValidContext(req.query.context)) ? req.query.context : 'work';
+    const context = (typeof req.query.context === 'string' && isValidContext(req.query.context)) ? req.query.context : 'finance';
     const templates = await documentAnalysis.getCustomTemplates(context);
 
     res.json({

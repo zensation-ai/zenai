@@ -102,7 +102,7 @@ describe('Maps Routes', () => {
 
   describe('GET /api/:context/maps/status', () => {
     it('should return maps availability status', async () => {
-      const res = await request(app).get('/api/personal/maps/status');
+      const res = await request(app).get('/api/operations/maps/status');
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
       expect(res.body.available).toBe(true);
@@ -117,7 +117,7 @@ describe('Maps Routes', () => {
   describe('POST /api/:context/maps/geocode', () => {
     it('should geocode an address', async () => {
       const res = await request(app)
-        .post('/api/personal/maps/geocode')
+        .post('/api/operations/maps/geocode')
         .send({ address: 'Berlin, Germany' });
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
@@ -128,7 +128,7 @@ describe('Maps Routes', () => {
     it('should return cached result if available', async () => {
       mockGetCachedGeocode.mockResolvedValueOnce({ lat: 52.52, lng: 13.405 });
       const res = await request(app)
-        .post('/api/personal/maps/geocode')
+        .post('/api/operations/maps/geocode')
         .send({ address: 'Berlin' });
       expect(res.status).toBe(200);
       expect(res.body.source).toBe('cache');
@@ -137,7 +137,7 @@ describe('Maps Routes', () => {
 
     it('should return 400 when address is missing', async () => {
       const res = await request(app)
-        .post('/api/personal/maps/geocode')
+        .post('/api/operations/maps/geocode')
         .send({});
       expect(res.status).toBe(400);
     });
@@ -145,7 +145,7 @@ describe('Maps Routes', () => {
     it('should return 404 when address not found', async () => {
       mockGeocode.mockResolvedValueOnce(null);
       const res = await request(app)
-        .post('/api/personal/maps/geocode')
+        .post('/api/operations/maps/geocode')
         .send({ address: 'nonexistent place' });
       expect(res.status).toBe(404);
     });
@@ -161,7 +161,7 @@ describe('Maps Routes', () => {
   describe('POST /api/:context/maps/reverse-geocode', () => {
     it('should reverse geocode coordinates', async () => {
       const res = await request(app)
-        .post('/api/personal/maps/reverse-geocode')
+        .post('/api/operations/maps/reverse-geocode')
         .send({ lat: 52.52, lng: 13.405 });
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
@@ -169,7 +169,7 @@ describe('Maps Routes', () => {
 
     it('should return 400 when coordinates are invalid', async () => {
       const res = await request(app)
-        .post('/api/personal/maps/reverse-geocode')
+        .post('/api/operations/maps/reverse-geocode')
         .send({ lat: 'not-a-number', lng: 13.405 });
       expect(res.status).toBe(400);
     });
@@ -177,7 +177,7 @@ describe('Maps Routes', () => {
     it('should return 404 when location not found', async () => {
       mockReverseGeocode.mockResolvedValueOnce(null);
       const res = await request(app)
-        .post('/api/personal/maps/reverse-geocode')
+        .post('/api/operations/maps/reverse-geocode')
         .send({ lat: 0, lng: 0 });
       expect(res.status).toBe(404);
     });
@@ -189,14 +189,14 @@ describe('Maps Routes', () => {
 
   describe('GET /api/:context/maps/autocomplete', () => {
     it('should return autocomplete suggestions', async () => {
-      const res = await request(app).get('/api/personal/maps/autocomplete?input=Berlin');
+      const res = await request(app).get('/api/operations/maps/autocomplete?input=Berlin');
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
       expect(res.body.data).toHaveLength(1);
     });
 
     it('should return empty array for short input', async () => {
-      const res = await request(app).get('/api/personal/maps/autocomplete?input=B');
+      const res = await request(app).get('/api/operations/maps/autocomplete?input=B');
       expect(res.status).toBe(200);
       expect(res.body.data).toEqual([]);
     });
@@ -208,7 +208,7 @@ describe('Maps Routes', () => {
 
   describe('GET /api/:context/maps/places/:placeId', () => {
     it('should return place details', async () => {
-      const res = await request(app).get('/api/personal/maps/places/ChIJAVkDPzdOqEcRcDteW0YgIQQ');
+      const res = await request(app).get('/api/operations/maps/places/ChIJAVkDPzdOqEcRcDteW0YgIQQ');
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
       expect(res.body.data.name).toBe('Brandenburger Tor');
@@ -216,7 +216,7 @@ describe('Maps Routes', () => {
 
     it('should return 404 for unknown place', async () => {
       mockGetPlaceDetails.mockResolvedValueOnce(null);
-      const res = await request(app).get('/api/personal/maps/places/unknown-id');
+      const res = await request(app).get('/api/operations/maps/places/unknown-id');
       expect(res.status).toBe(404);
     });
   });
@@ -228,7 +228,7 @@ describe('Maps Routes', () => {
   describe('POST /api/:context/maps/directions', () => {
     it('should return directions', async () => {
       const res = await request(app)
-        .post('/api/personal/maps/directions')
+        .post('/api/operations/maps/directions')
         .send({ origin: 'Berlin', destination: 'Hamburg' });
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
@@ -236,7 +236,7 @@ describe('Maps Routes', () => {
 
     it('should return 400 when origin or destination missing', async () => {
       const res = await request(app)
-        .post('/api/personal/maps/directions')
+        .post('/api/operations/maps/directions')
         .send({ origin: 'Berlin' });
       expect(res.status).toBe(400);
     });
@@ -244,7 +244,7 @@ describe('Maps Routes', () => {
     it('should return 404 when no route found', async () => {
       mockGetDirections.mockResolvedValueOnce(null);
       const res = await request(app)
-        .post('/api/personal/maps/directions')
+        .post('/api/operations/maps/directions')
         .send({ origin: 'A', destination: 'B' });
       expect(res.status).toBe(404);
     });
@@ -257,7 +257,7 @@ describe('Maps Routes', () => {
   describe('POST /api/:context/maps/distance-matrix', () => {
     it('should return distance matrix', async () => {
       const res = await request(app)
-        .post('/api/personal/maps/distance-matrix')
+        .post('/api/operations/maps/distance-matrix')
         .send({ origins: ['Berlin'], destinations: ['Hamburg'] });
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
@@ -265,21 +265,21 @@ describe('Maps Routes', () => {
 
     it('should return 400 when origins is not an array', async () => {
       const res = await request(app)
-        .post('/api/personal/maps/distance-matrix')
+        .post('/api/operations/maps/distance-matrix')
         .send({ origins: 'Berlin', destinations: ['Hamburg'] });
       expect(res.status).toBe(400);
     });
 
     it('should return 400 when arrays are empty', async () => {
       const res = await request(app)
-        .post('/api/personal/maps/distance-matrix')
+        .post('/api/operations/maps/distance-matrix')
         .send({ origins: [], destinations: ['Hamburg'] });
       expect(res.status).toBe(400);
     });
 
     it('should return 400 when too many pairs', async () => {
       const res = await request(app)
-        .post('/api/personal/maps/distance-matrix')
+        .post('/api/operations/maps/distance-matrix')
         .send({ origins: Array(6).fill('A'), destinations: Array(6).fill('B') });
       expect(res.status).toBe(400);
     });
@@ -292,7 +292,7 @@ describe('Maps Routes', () => {
   describe('POST /api/:context/maps/nearby', () => {
     it('should search nearby places', async () => {
       const res = await request(app)
-        .post('/api/personal/maps/nearby')
+        .post('/api/operations/maps/nearby')
         .send({ lat: 52.52, lng: 13.405, type: 'cafe' });
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
@@ -301,7 +301,7 @@ describe('Maps Routes', () => {
 
     it('should return 400 when coordinates are missing', async () => {
       const res = await request(app)
-        .post('/api/personal/maps/nearby')
+        .post('/api/operations/maps/nearby')
         .send({ type: 'cafe' });
       expect(res.status).toBe(400);
     });
@@ -313,7 +313,7 @@ describe('Maps Routes', () => {
 
   describe('GET /api/:context/maps/saved-locations', () => {
     it('should list saved locations', async () => {
-      const res = await request(app).get('/api/personal/maps/saved-locations');
+      const res = await request(app).get('/api/operations/maps/saved-locations');
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
       expect(res.body.data).toHaveLength(1);
@@ -323,7 +323,7 @@ describe('Maps Routes', () => {
   describe('POST /api/:context/maps/saved-locations', () => {
     it('should save a new location', async () => {
       const res = await request(app)
-        .post('/api/personal/maps/saved-locations')
+        .post('/api/operations/maps/saved-locations')
         .send({ label: 'Work', address: 'Friedrichstr. 1, Berlin', lat: 52.5, lng: 13.4 });
       expect(res.status).toBe(201);
       expect(res.body.success).toBe(true);
@@ -331,7 +331,7 @@ describe('Maps Routes', () => {
 
     it('should return 400 when required fields are missing', async () => {
       const res = await request(app)
-        .post('/api/personal/maps/saved-locations')
+        .post('/api/operations/maps/saved-locations')
         .send({ label: 'Home' });
       expect(res.status).toBe(400);
     });
@@ -339,7 +339,7 @@ describe('Maps Routes', () => {
     it('should return 500 when save fails', async () => {
       mockSaveSavedLocation.mockResolvedValueOnce(null);
       const res = await request(app)
-        .post('/api/personal/maps/saved-locations')
+        .post('/api/operations/maps/saved-locations')
         .send({ label: 'X', address: 'Y', lat: 0, lng: 0 });
       expect(res.status).toBe(500);
     });
@@ -347,14 +347,14 @@ describe('Maps Routes', () => {
 
   describe('DELETE /api/:context/maps/saved-locations/:id', () => {
     it('should delete a saved location', async () => {
-      const res = await request(app).delete('/api/personal/maps/saved-locations/loc1');
+      const res = await request(app).delete('/api/operations/maps/saved-locations/loc1');
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
     });
 
     it('should return 404 for non-existent location', async () => {
       mockDeleteSavedLocation.mockResolvedValueOnce(false);
-      const res = await request(app).delete('/api/personal/maps/saved-locations/unknown');
+      const res = await request(app).delete('/api/operations/maps/saved-locations/unknown');
       expect(res.status).toBe(404);
     });
   });

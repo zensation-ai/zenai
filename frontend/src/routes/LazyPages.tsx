@@ -28,23 +28,7 @@ export const InsightsDashboard = lazy(() =>
   import('../components/InsightsDashboard').then(m => ({ default: m.InsightsDashboard }))
 );
 
-export const WissenPage = lazy(() =>
-  import('../components/WissenPage/WissenSmartPage').then(m => ({ default: m.WissenSmartPage }))
-);
-
-export const CockpitPage = lazy(() =>
-  import('../components/CockpitPage/CockpitSmartPage').then(m => ({ default: m.CockpitSmartPage }))
-);
-
-export const MeineKIPage = lazy(() =>
-  import('../components/MeineKIPage/MeineKISmartPage').then(m => ({ default: m.MeineKISmartPage }))
-);
-
-export const SystemPage = lazy(() =>
-  import('../components/SystemPage/SystemSmartPage').then(m => ({ default: m.SystemSmartPage }))
-);
-
-// Original full-featured pages (used until Smart Pages are wired up)
+// Full-featured pages
 export const DocumentVaultPage = lazy(() =>
   import('../components/DocumentVaultPage').then(m => ({ default: m.DocumentVaultPage }))
 );
@@ -57,8 +41,20 @@ export const MyAIPage = lazy(() =>
   import('../components/MyAIPage').then(m => ({ default: m.MyAIPage }))
 );
 
-export const SettingsDashboard = lazy(() =>
-  import('../components/SettingsDashboard').then(m => ({ default: m.SettingsDashboard }))
+export const UserSettingsPage = lazy(() =>
+  import('../components/settings/UserSettingsPage').then(m => ({ default: m.UserSettingsPage }))
+);
+
+export const AISettingsPage = lazy(() =>
+  import('../components/settings/AISettingsPage').then(m => ({ default: m.AISettingsPage }))
+);
+
+export const IntegrationsSettingsPage = lazy(() =>
+  import('../components/settings/IntegrationsSettingsPage').then(m => ({ default: m.IntegrationsSettingsPage }))
+);
+
+export const AdminSettingsPage = lazy(() =>
+  import('../components/settings/AdminSettingsPage').then(m => ({ default: m.AdminSettingsPage }))
 );
 
 export const PlannerPage = lazy(() =>
@@ -73,18 +69,6 @@ export const LearningDashboard = lazy(() =>
   import('../components/LearningDashboard').then(m => ({ default: m.LearningDashboard }))
 );
 
-export const NotificationsPage = lazy(() =>
-  import('../components/NotificationsPage').then(m => ({ default: m.NotificationsPage }))
-);
-
-export const MemoryInsightsPage = lazy(() =>
-  import('../components/MemoryInsightsPage/MemoryInsightsPage').then(m => ({ default: m.MemoryInsightsPage }))
-);
-
-export const SystemAdminPage = lazy(() =>
-  import('../components/SystemAdminPage').then(m => ({ default: m.SystemAdminPage }))
-);
-
 export const ChatHub = lazy(() =>
   import('../components/ChatHub/ChatHub').then(m => ({ default: m.ChatHub }))
 );
@@ -95,4 +79,8 @@ export const DemoPage = lazy(() =>
 
 export const PricingPage = lazy(() =>
   import('../components/PricingPage/PricingPage').then(m => ({ default: m.PricingPage }))
+);
+
+export const SocialMediaPage = lazy(() =>
+  import('../components/SocialMediaPage/SocialMediaPage').then(m => ({ default: m.SocialMediaPage }))
 );

@@ -1,5 +1,5 @@
 {
-  "name": "@zenai/cli",
+  "name": "@zensation/cli",
   "version": "0.1.0",
   "description": "ZenAI CLI Agent — Terminal interface with Memory, Knowledge Graph and Agent System",
   "main": "dist/index.js",
@@ -10,10 +10,34 @@
     "build": "tsc",
     "dev": "ts-node src/index.ts",
     "test": "jest --config jest.config.js",
-    "lint": "tsc --noEmit"
+    "lint": "tsc --noEmit",
+    "prepublishOnly": "npm test && npm run build"
   },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/zensation-ai/zenai"
+  },
+  "homepage": "https://github.com/zensation-ai/zenai/tree/main/cli",
+  "bugs": {
+    "url": "https://github.com/zensation-ai/zenai/issues"
+  },
+  "keywords": [
+    "ai",
+    "cli",
+    "agent",
+    "memory",
+    "knowledge-graph",
+    "zenai",
+    "claude"
+  ],
+  "author": "Zensation AI <hello@zensation.ai>",
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.39.0",
+    "@anthropic-ai/sdk": "^0.71.2",
     "chalk": "^4.1.2",
     "glob": "^10.3.0",
     "ora": "^5.4.1"
@@ -29,6 +53,5 @@
   "engines": {
     "node": ">=18"
   },
-  "license": "UNLICENSED",
-  "private": true
+  "license": "Apache-2.0"
 }

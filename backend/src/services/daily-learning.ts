@@ -69,7 +69,7 @@ interface AISuggestion {
  * Sollte einmal täglich (z.B. um 23:00) ausgeführt werden
  */
 export async function runDailyLearning(
-  context: AIContext = 'personal',
+  context: AIContext = 'operations',
   date: Date = new Date()
 ): Promise<DailyLearningResult> {
   const dateStr = date.toISOString().split('T')[0];
@@ -563,7 +563,7 @@ async function generateSuggestionsForTomorrow(
  * Holt die letzten Tages-Zusammenfassungen
  */
 export async function getDailyLearningHistory(
-  context: AIContext = 'personal',
+  context: AIContext = 'operations',
   limit: number = 7
 ): Promise<DailyLearningResult[]> {
   try {
@@ -598,7 +598,7 @@ export async function getDailyLearningHistory(
  * Holt aktive AI-Vorschläge
  */
 export async function getActiveSuggestions(
-  context: AIContext = 'personal',
+  context: AIContext = 'operations',
   limit: number = 5
 ): Promise<AISuggestion[]> {
   try {
@@ -628,7 +628,7 @@ export async function respondToSuggestion(
   suggestionId: string,
   response: 'accepted' | 'dismissed',
   feedback: string | null,
-  context: AIContext = 'personal'
+  context: AIContext = 'operations'
 ): Promise<void> {
   await queryContext(
     context,
@@ -667,7 +667,7 @@ export async function createManualSuggestion(
  * Holt die täglichen Lern-Logs (Alias für getDailyLearningHistory für Konsistenz)
  */
 export async function getDailyLearningLogs(
-  context: AIContext = 'personal',
+  context: AIContext = 'operations',
   limit: number = 7
 ): Promise<Array<{
   id: string;
@@ -708,7 +708,7 @@ export async function getDailyLearningLogs(
  * Holt Statistiken für AI-Vorschläge
  */
 export async function getSuggestionStats(
-  context: AIContext = 'personal'
+  context: AIContext = 'operations'
 ): Promise<{
   total_suggestions: number;
   pending_count: number;

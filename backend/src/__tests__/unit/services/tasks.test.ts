@@ -26,7 +26,7 @@ import {
 jest.mock('../../../utils/database-context', () => ({
   queryContext: jest.fn(),
   isValidContext: (ctx: string) =>
-    ['personal', 'work', 'learning', 'creative'].includes(ctx),
+    ['operations', 'finance', 'people', 'strategy'].includes(ctx),
 }));
 
 jest.mock('../../../utils/logger', () => ({
@@ -64,7 +64,7 @@ const mockTaskRow = {
   estimated_hours: 8,
   actual_hours: null,
   sort_order: 0,
-  context: 'work',
+  context: 'finance',
   labels: '["frontend","urgent"]',
   metadata: '{}',
   created_at: new Date('2026-03-20T10:00:00Z'),
@@ -101,7 +101,7 @@ describe('Tasks Service', () => {
       // insert query
       mockQueryContext.mockResolvedValueOnce({ rows: [mockTaskRow], rowCount: 1 } as any);
 
-      const result = await createTask('work', { title: 'Build feature' });
+      const result = await createTask('finance', { title: 'Build feature' });
 
       expect(result.id).toBe('task-001');
       expect(result.title).toBe('Build feature');
@@ -112,7 +112,7 @@ describe('Tasks Service', () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [{ next_order: '3' }], rowCount: 1 } as any);
       mockQueryContext.mockResolvedValueOnce({ rows: [{ ...mockTaskRow, status: 'in_progress', priority: 'urgent' }], rowCount: 1 } as any);
 
-      const result = await createTask('work', {
+      const result = await createTask('finance', {
         title: 'Urgent task',
         status: 'in_progress',
         priority: 'urgent',
@@ -126,7 +126,7 @@ describe('Tasks Service', () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [{ next_order: '0' }], rowCount: 1 } as any);
       mockQueryContext.mockResolvedValueOnce({ rows: [mockTaskRow], rowCount: 1 } as any);
 
-      await createTask('work', { title: 'User task' }, 'user-abc');
+      await createTask('finance', { title: 'User task' }, 'user-abc');
 
       const firstCallSql = mockQueryContext.mock.calls[0][1] as string;
       expect(firstCallSql).toContain('user_id');
@@ -137,7 +137,7 @@ describe('Tasks Service', () => {
     it('should return tasks excluding cancelled', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [mockTaskRow], rowCount: 1 } as any);
 
-      const result = await getTasks('work');
+      const result = await getTasks('finance');
 
       expect(result).toHaveLength(1);
       const sql = mockQueryContext.mock.calls[0][1] as string;
@@ -147,7 +147,7 @@ describe('Tasks Service', () => {
     it('should filter by project_id', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any);
 
-      await getTasks('work', { project_id: 'proj-001' });
+      await getTasks('finance', { project_id: 'proj-001' });
 
       const sql = mockQueryContext.mock.calls[0][1] as string;
       expect(sql).toContain('t.project_id =');
@@ -156,7 +156,7 @@ describe('Tasks Service', () => {
     it('should filter by due date range', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any);
 
-      await getTasks('work', { due_before: '2026-04-01', due_after: '2026-03-01' });
+      await getTasks('finance', { due_before: '2026-04-01', due_after: '2026-03-01' });
 
       const sql = mockQueryContext.mock.calls[0][1] as string;
       expect(sql).toContain('t.due_date <=');
@@ -166,7 +166,7 @@ describe('Tasks Service', () => {
     it('should respect limit with max cap of 500', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any);
 
-      await getTasks('work', { limit: 1000 });
+      await getTasks('finance', { limit: 1000 });
 
       const params = mockQueryContext.mock.calls[0][2] as number[];
       expect(params[params.length - 2]).toBe(500); // capped limit
@@ -177,7 +177,7 @@ describe('Tasks Service', () => {
     it('should return a task by id', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [mockTaskRow], rowCount: 1 } as any);
 
-      const result = await getTask('work', 'task-001');
+      const result = await getTask('finance', 'task-001');
 
       expect(result).not.toBeNull();
       expect(result!.id).toBe('task-001');
@@ -186,7 +186,7 @@ describe('Tasks Service', () => {
     it('should return null for non-existent task', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any);
 
-      const result = await getTask('work', 'nonexistent');
+      const result = await getTask('finance', 'nonexistent');
 
       expect(result).toBeNull();
     });
@@ -196,7 +196,7 @@ describe('Tasks Service', () => {
     it('should auto-set completed_at when status is done', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [{ ...mockTaskRow, status: 'done' }], rowCount: 1 } as any);
 
-      await updateTask('work', 'task-001', { status: 'done' });
+      await updateTask('finance', 'task-001', { status: 'done' });
 
       const sql = mockQueryContext.mock.calls[0][1] as string;
       expect(sql).toContain('completed_at =');
@@ -205,7 +205,7 @@ describe('Tasks Service', () => {
     it('should clear completed_at when moving away from done', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [{ ...mockTaskRow, status: 'in_progress' }], rowCount: 1 } as any);
 
-      await updateTask('work', 'task-001', { status: 'in_progress' });
+      await updateTask('finance', 'task-001', { status: 'in_progress' });
 
       const sql = mockQueryContext.mock.calls[0][1] as string;
       expect(sql).toContain('completed_at = NULL');
@@ -214,7 +214,7 @@ describe('Tasks Service', () => {
     it('should return null if no task found', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any);
 
-      const result = await updateTask('work', 'nonexistent', { title: 'Updated' });
+      const result = await updateTask('finance', 'nonexistent', { title: 'Updated' });
 
       expect(result).toBeNull();
     });
@@ -224,7 +224,7 @@ describe('Tasks Service', () => {
     it('should mark task as cancelled', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [{ id: 'task-001' }], rowCount: 1 } as any);
 
-      const result = await deleteTask('work', 'task-001');
+      const result = await deleteTask('finance', 'task-001');
 
       expect(result).toBe(true);
       const sql = mockQueryContext.mock.calls[0][1] as string;
@@ -234,7 +234,7 @@ describe('Tasks Service', () => {
     it('should return false if task not found or already cancelled', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any);
 
-      const result = await deleteTask('work', 'nonexistent');
+      const result = await deleteTask('finance', 'nonexistent');
 
       expect(result).toBe(false);
     });
@@ -242,7 +242,7 @@ describe('Tasks Service', () => {
 
   describe('reorderTasks', () => {
     it('should do nothing for empty task list', async () => {
-      await reorderTasks('work', 'todo', []);
+      await reorderTasks('finance', 'todo', []);
 
       expect(mockQueryContext).not.toHaveBeenCalled();
     });
@@ -250,7 +250,7 @@ describe('Tasks Service', () => {
     it('should batch update sort orders', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [], rowCount: 3 } as any);
 
-      await reorderTasks('work', 'todo', ['task-1', 'task-2', 'task-3']);
+      await reorderTasks('finance', 'todo', ['task-1', 'task-2', 'task-3']);
 
       expect(mockQueryContext).toHaveBeenCalledTimes(1);
       const sql = mockQueryContext.mock.calls[0][1] as string;
@@ -267,7 +267,7 @@ describe('Tasks Service', () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [{ '?column?': 1 }], rowCount: 1 } as any);
 
       await expect(
-        addDependency('work', 'task-1', 'task-2', 'finish_to_start', 'user-1')
+        addDependency('finance', 'task-1', 'task-2', 'finish_to_start', 'user-1')
       ).rejects.toThrow('Circular dependency detected');
     });
 
@@ -277,7 +277,7 @@ describe('Tasks Service', () => {
       // Insert
       mockQueryContext.mockResolvedValueOnce({ rows: [mockDependencyRow], rowCount: 1 } as any);
 
-      const result = await addDependency('work', 'task-001', 'task-002');
+      const result = await addDependency('finance', 'task-001', 'task-002');
 
       expect(result.task_id).toBe('task-001');
       expect(result.depends_on_id).toBe('task-002');
@@ -288,7 +288,7 @@ describe('Tasks Service', () => {
     it('should return true when dependency is deleted', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [{ id: 'dep-001' }], rowCount: 1 } as any);
 
-      const result = await removeDependency('work', 'dep-001');
+      const result = await removeDependency('finance', 'dep-001');
 
       expect(result).toBe(true);
     });
@@ -296,7 +296,7 @@ describe('Tasks Service', () => {
     it('should return false when dependency not found', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any);
 
-      const result = await removeDependency('work', 'nonexistent');
+      const result = await removeDependency('finance', 'nonexistent');
 
       expect(result).toBe(false);
     });
@@ -317,7 +317,7 @@ describe('Tasks Service', () => {
         rowCount: 1,
       } as any);
 
-      const result = await convertIdeaToTask('work', 'idea-1');
+      const result = await convertIdeaToTask('finance', 'idea-1');
 
       expect(result.title).toBe('Idea Title');
       expect(result.source_idea_id).toBe('idea-1');
@@ -326,7 +326,7 @@ describe('Tasks Service', () => {
     it('should throw when idea is not found', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any);
 
-      await expect(convertIdeaToTask('work', 'nonexistent')).rejects.toThrow('Idea not found');
+      await expect(convertIdeaToTask('finance', 'nonexistent')).rejects.toThrow('Idea not found');
     });
   });
 });

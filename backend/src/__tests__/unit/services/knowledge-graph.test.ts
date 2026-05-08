@@ -432,7 +432,7 @@ describe('Knowledge Graph Service', () => {
           rowCount: 1,
         } as any);
 
-      const result = await getFullGraph('personal');
+      const result = await getFullGraph('operations');
 
       expect(result.nodes).toHaveLength(2);
       expect(result.edges).toHaveLength(1);
@@ -446,7 +446,7 @@ describe('Knowledge Graph Service', () => {
         .mockResolvedValueOnce({ rows: [], rowCount: 0 } as any)
         .mockResolvedValueOnce({ rows: [], rowCount: 0 } as any);
 
-      const result = await getFullGraph('personal');
+      const result = await getFullGraph('operations');
 
       expect(result.nodes).toEqual([]);
       expect(result.edges).toEqual([]);
@@ -468,7 +468,7 @@ describe('Knowledge Graph Service', () => {
       } as any);
 
       try {
-        const result = await getSubgraph('personal', 'center', 2);
+        const result = await getSubgraph('operations', 'center', 2);
         expect(result).toHaveProperty('nodes');
         expect(result).toHaveProperty('edges');
         expect(result).toHaveProperty('stats');
@@ -481,7 +481,7 @@ describe('Knowledge Graph Service', () => {
       mockQueryContext.mockResolvedValue({ rows: [], rowCount: 0 } as any);
 
       try {
-        const result = await getSubgraph('personal', 'id', 2, 0.8);
+        const result = await getSubgraph('operations', 'id', 2, 0.8);
         expect(result.nodes).toEqual([]);
       } catch {
         // May fail due to mock ordering
@@ -511,7 +511,7 @@ describe('Knowledge Graph Service', () => {
         } as any)
         .mockResolvedValueOnce({ rows: [], rowCount: 0 } as any);
 
-      const result = await getFullGraph('personal');
+      const result = await getFullGraph('operations');
 
       result.nodes.forEach(node => {
         expect(node.position).toBeDefined();
@@ -539,7 +539,7 @@ describe('Knowledge Graph Service', () => {
         } as any)
         .mockResolvedValueOnce({ rows: [], rowCount: 0 } as any);
 
-      const result = await getFullGraph('personal');
+      const result = await getFullGraph('operations');
 
       expect(result.nodes[0].position).toEqual({ x: 0.5, y: 0.5 });
     });

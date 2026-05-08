@@ -71,8 +71,8 @@ export const KPICard: React.FC<KPICardProps> = ({ kpi, onDelete }) => {
         <button
           className="bn-kpi-delete"
           onClick={() => onDelete(kpi.id)}
-          title="KPI loeschen"
-          aria-label="KPI loeschen"
+          title="KPI löschen"
+          aria-label="KPI löschen"
         >
           x
         </button>
@@ -124,7 +124,7 @@ export const KPICard: React.FC<KPICardProps> = ({ kpi, onDelete }) => {
         <svg viewBox="0 0 86 30" width="100%" height="30" preserveAspectRatio="none">
           <polyline
             fill="none"
-            stroke="var(--bn-sparkline-color, #6366f1)"
+            stroke="var(--bn-sparkline-color, #144A56)"
             strokeWidth="2"
             points={sparklinePoints}
           />

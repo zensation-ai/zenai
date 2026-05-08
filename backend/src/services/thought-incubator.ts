@@ -16,10 +16,10 @@ import { logger } from '../utils/logger';
 
 /** Pre-built search_path statements — no string interpolation */
 const SEARCH_PATH_SQL: Record<AIContext, string> = {
-  personal: 'SET search_path TO personal, public',
-  work: 'SET search_path TO work, public',
-  learning: 'SET search_path TO learning, public',
-  creative: 'SET search_path TO creative, public',
+  operations: 'SET search_path TO operations, public',
+  finance: 'SET search_path TO finance, public',
+  people: 'SET search_path TO people, public',
+  strategy: 'SET search_path TO strategy, public',
   demo: 'SET search_path TO demo, public',
 };
 
@@ -203,7 +203,7 @@ export async function addLooseThought(
   source: 'text' | 'voice' | 'quick_jot' = 'text',
   userTags: string[] = [],
   userId: string = 'default',
-  context: AIContext = 'personal'
+  context: AIContext = 'operations'
 ): Promise<LooseThought> {
   const client = await getClient(context);
   const id = uuidv4();
@@ -250,7 +250,7 @@ export async function addLooseThought(
 /**
  * Analyze a single thought and assign to existing or new cluster
  */
-async function analyzeAndAssignCluster(thoughtId: string, context: AIContext = 'personal'): Promise<void> {
+async function analyzeAndAssignCluster(thoughtId: string, context: AIContext = 'operations'): Promise<void> {
   const client = await getClient(context);
   const startTime = Date.now();
 
@@ -425,7 +425,7 @@ export async function getLooseThoughts(
   userId: string = 'default',
   limit: number = 50,
   includeProcessed: boolean = true,
-  context: AIContext = 'personal'
+  context: AIContext = 'operations'
 ): Promise<LooseThought[]> {
   const client = await getClient(context);
 
@@ -449,7 +449,7 @@ export async function getLooseThoughts(
 /**
  * Get clusters ready for presentation
  */
-export async function getReadyClusters(userId: string = 'default', context: AIContext = 'personal'): Promise<ThoughtCluster[]> {
+export async function getReadyClusters(userId: string = 'default', context: AIContext = 'operations'): Promise<ThoughtCluster[]> {
   const client = await getClient(context);
 
   try {
@@ -484,7 +484,7 @@ export async function getReadyClusters(userId: string = 'default', context: AICo
 export async function getAllClusters(
   userId: string = 'default',
   includeThoughts: boolean = true,
-  context: AIContext = 'personal'
+  context: AIContext = 'operations'
 ): Promise<ThoughtCluster[]> {
   const client = await getClient(context);
 
@@ -533,7 +533,7 @@ export async function getAllClusters(
 /**
  * Generate summary for a cluster using LLM
  */
-export async function generateClusterSummary(clusterId: string, context: AIContext = 'personal'): Promise<{
+export async function generateClusterSummary(clusterId: string, context: AIContext = 'operations'): Promise<{
   title: string;
   summary: string;
   suggested_type: string;
@@ -607,7 +607,7 @@ export async function consolidateCluster(
     category?: string;
     priority?: string;
   },
-  context: AIContext = 'personal'
+  context: AIContext = 'operations'
 ): Promise<string> {
   const client = await getClient(context);
 
@@ -706,7 +706,7 @@ export async function consolidateCluster(
 /**
  * Dismiss a cluster (user decides it's not useful)
  */
-export async function dismissCluster(clusterId: string, context: AIContext = 'personal'): Promise<void> {
+export async function dismissCluster(clusterId: string, context: AIContext = 'operations'): Promise<void> {
   const client = await getClient(context);
 
   try {
@@ -722,7 +722,7 @@ export async function dismissCluster(clusterId: string, context: AIContext = 'pe
 /**
  * Mark a cluster as presented to the user
  */
-export async function markClusterPresented(clusterId: string, context: AIContext = 'personal'): Promise<void> {
+export async function markClusterPresented(clusterId: string, context: AIContext = 'operations'): Promise<void> {
   const client = await getClient(context);
 
   try {
@@ -740,7 +740,7 @@ export async function markClusterPresented(clusterId: string, context: AIContext
 /**
  * Run batch pattern detection on all unprocessed thoughts
  */
-export async function runBatchAnalysis(userId: string = 'default', context: AIContext = 'personal'): Promise<{
+export async function runBatchAnalysis(userId: string = 'default', context: AIContext = 'operations'): Promise<{
   thoughts_analyzed: number;
   clusters_created: number;
   clusters_updated: number;
@@ -825,7 +825,7 @@ export async function runBatchAnalysis(userId: string = 'default', context: AICo
 /**
  * Get incubator statistics
  */
-export async function getIncubatorStats(userId: string = 'default', context: AIContext = 'personal'): Promise<{
+export async function getIncubatorStats(userId: string = 'default', context: AIContext = 'operations'): Promise<{
   total_thoughts: number;
   unprocessed_thoughts: number;
   total_clusters: number;
@@ -867,7 +867,7 @@ export async function getIncubatorStats(userId: string = 'default', context: AIC
  */
 export async function backfillEmbeddings(
   userId: string = 'default',
-  context: AIContext = 'personal'
+  context: AIContext = 'operations'
 ): Promise<{ processed: number; failed: number; skipped: number }> {
   const client = await getClient(context);
 

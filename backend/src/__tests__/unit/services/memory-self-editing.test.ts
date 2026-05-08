@@ -62,7 +62,7 @@ const { generateEmbedding } = require('../../../services/ai');
 const { generateClaudeResponse } = require('../../../services/claude/core');
 
 const mockExecContext: ToolExecutionContext = {
-  aiContext: 'personal',
+  aiContext: 'operations',
   sessionId: 'test-session-123',
   userId: 'test-user-123',
 };

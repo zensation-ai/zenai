@@ -41,8 +41,8 @@ beforeEach(() => {
 
 describe('predictNextIntent', () => {
   const temporalPatterns: TemporalPattern[] = [
-    { timeOfDay: 9, dayOfWeek: 1, domain: 'work', intent: 'search', frequency: 10 },
-    { timeOfDay: 14, dayOfWeek: 3, domain: 'personal', intent: 'browse', frequency: 8 },
+    { timeOfDay: 9, dayOfWeek: 1, domain: 'finance', intent: 'search', frequency: 10 },
+    { timeOfDay: 14, dayOfWeek: 3, domain: 'operations', intent: 'browse', frequency: 8 },
     { timeOfDay: 20, dayOfWeek: 5, domain: 'learning', intent: 'study', frequency: 12 },
   ];
 
@@ -55,7 +55,7 @@ describe('predictNextIntent', () => {
   it('uses temporal pattern when it matches current time', () => {
     const result = predictNextIntent(temporalPatterns, [], 9, 1);
     expect(result.predictedIntent).toBe('search');
-    expect(result.predictedDomain).toBe('work');
+    expect(result.predictedDomain).toBe('finance');
     expect(result.basis.some((b) => b.includes('temporal'))).toBe(true);
   });
 
@@ -75,7 +75,7 @@ describe('predictNextIntent', () => {
     const result = predictNextIntent([], [], 3, 4);
     expect(result.confidence).toBeLessThanOrEqual(0.15);
     expect(result.predictedIntent).toBe('general');
-    expect(result.predictedDomain).toBe('personal');
+    expect(result.predictedDomain).toBe('operations');
   });
 
   it('returns generic fallback with no_pattern_match basis when empty', () => {
@@ -90,7 +90,7 @@ describe('predictNextIntent', () => {
 
   it('returns higher confidence for strong temporal match', () => {
     const strongPatterns: TemporalPattern[] = [
-      { timeOfDay: 9, dayOfWeek: 1, domain: 'work', intent: 'search', frequency: 20 },
+      { timeOfDay: 9, dayOfWeek: 1, domain: 'finance', intent: 'search', frequency: 20 },
     ];
     const result = predictNextIntent(strongPatterns, sequentialPatterns, 9, 1, 'search');
     expect(result.confidence).toBeGreaterThan(0.3);
@@ -98,7 +98,7 @@ describe('predictNextIntent', () => {
 
   it('confidence is capped at 1.0', () => {
     const strongPatterns: TemporalPattern[] = [
-      { timeOfDay: 9, dayOfWeek: 1, domain: 'work', intent: 'search', frequency: 100 },
+      { timeOfDay: 9, dayOfWeek: 1, domain: 'finance', intent: 'search', frequency: 100 },
     ];
     const strongSeq: SequentialPattern[] = [
       { fromIntent: 'search', toIntent: 'search', count: 50, probability: 1.0 },
@@ -140,28 +140,28 @@ describe('predictNextIntent', () => {
 describe('computePredictionError', () => {
   const basePrediction: UserPrediction = {
     predictedIntent: 'search',
-    predictedDomain: 'work',
+    predictedDomain: 'finance',
     predictedEntities: [],
     confidence: 0.7,
     basis: ['temporal'],
   };
 
   it('returns 0 error for exact match', () => {
-    const actual: QueryAnalysis = { intent: 'search', domain: 'work', entities: [] };
+    const actual: QueryAnalysis = { intent: 'search', domain: 'finance', entities: [] };
     const error = computePredictionError(basePrediction, actual);
     expect(error.errorMagnitude).toBeCloseTo(0.0);
     expect(error.learningSignal).toBe('correct');
   });
 
   it('returns high error for wrong intent', () => {
-    const actual: QueryAnalysis = { intent: 'create', domain: 'work', entities: [] };
+    const actual: QueryAnalysis = { intent: 'create', domain: 'finance', entities: [] };
     const error = computePredictionError(basePrediction, actual);
     expect(error.errorMagnitude).toBeCloseTo(0.7); // 1.0 * 0.7 + 0.0 * 0.3
     expect(error.learningSignal).toBe('wrong_intent');
   });
 
   it('returns moderate error for wrong domain only', () => {
-    const actual: QueryAnalysis = { intent: 'search', domain: 'personal', entities: [] };
+    const actual: QueryAnalysis = { intent: 'search', domain: 'operations', entities: [] };
     const error = computePredictionError(basePrediction, actual);
     expect(error.errorMagnitude).toBeCloseTo(0.09); // 0.0 * 0.7 + 0.3 * 0.3
     expect(error.learningSignal).toBe('wrong_domain');
@@ -179,33 +179,33 @@ describe('computePredictionError', () => {
       ...basePrediction,
       predictedIntent: 'search',
     };
-    const actual: QueryAnalysis = { intent: 'web_search', domain: 'work', entities: [] };
+    const actual: QueryAnalysis = { intent: 'web_search', domain: 'finance', entities: [] };
     const error = computePredictionError(prediction, actual);
     // 'search' is contained in 'web_search' → partial match (0.5)
     expect(error.errorMagnitude).toBeCloseTo(0.35); // 0.5 * 0.7 + 0.0 * 0.3
   });
 
   it('error magnitude is capped at 1.0', () => {
-    const actual: QueryAnalysis = { intent: 'completely_different', domain: 'creative', entities: [] };
+    const actual: QueryAnalysis = { intent: 'completely_different', domain: 'strategy', entities: [] };
     const error = computePredictionError(basePrediction, actual);
     expect(error.errorMagnitude).toBeLessThanOrEqual(1.0);
   });
 
   it('preserves predicted object in error', () => {
-    const actual: QueryAnalysis = { intent: 'search', domain: 'work', entities: [] };
+    const actual: QueryAnalysis = { intent: 'search', domain: 'finance', entities: [] };
     const error = computePredictionError(basePrediction, actual);
     expect(error.predicted).toBe(basePrediction);
   });
 
   it('stores actual intent and domain', () => {
-    const actual: QueryAnalysis = { intent: 'browse', domain: 'personal', entities: ['react'] };
+    const actual: QueryAnalysis = { intent: 'browse', domain: 'operations', entities: ['react'] };
     const error = computePredictionError(basePrediction, actual);
     expect(error.actualIntent).toBe('browse');
-    expect(error.actualDomain).toBe('personal');
+    expect(error.actualDomain).toBe('operations');
   });
 
   it('returns correct for matching intent even with different entities', () => {
-    const actual: QueryAnalysis = { intent: 'search', domain: 'work', entities: ['typescript'] };
+    const actual: QueryAnalysis = { intent: 'search', domain: 'finance', entities: ['typescript'] };
     const error = computePredictionError(basePrediction, actual);
     expect(error.learningSignal).toBe('correct');
   });
@@ -222,23 +222,23 @@ describe('updateModel', () => {
     const error: PredictionError = {
       predicted: {
         predictedIntent: 'search',
-        predictedDomain: 'work',
+        predictedDomain: 'finance',
         predictedEntities: [],
         confidence: 0.7,
         basis: ['temporal'],
       },
       actualIntent: 'create',
-      actualDomain: 'work',
+      actualDomain: 'finance',
       errorMagnitude: 0.7,
       learningSignal: 'wrong_intent',
     };
 
-    await updateModel('personal', error);
+    await updateModel('operations', error);
     expect(mockQueryContext).toHaveBeenCalledTimes(1);
     expect(mockQueryContext).toHaveBeenCalledWith(
-      'personal',
+      'operations',
       expect.stringContaining('INSERT INTO prediction_log'),
-      expect.arrayContaining(['search', 'work', 'create', 'work']),
+      expect.arrayContaining(['search', 'finance', 'create', 'finance']),
     );
   });
 
@@ -248,18 +248,18 @@ describe('updateModel', () => {
     const error: PredictionError = {
       predicted: {
         predictedIntent: 'search',
-        predictedDomain: 'work',
+        predictedDomain: 'finance',
         predictedEntities: [],
         confidence: 0.5,
         basis: [],
       },
       actualIntent: 'create',
-      actualDomain: 'work',
+      actualDomain: 'finance',
       errorMagnitude: 0.7,
       learningSignal: 'wrong_intent',
     };
 
-    await expect(updateModel('personal', error)).resolves.toBeUndefined();
+    await expect(updateModel('operations', error)).resolves.toBeUndefined();
   });
 
   it('serializes basis as JSON', async () => {
@@ -268,18 +268,18 @@ describe('updateModel', () => {
     const error: PredictionError = {
       predicted: {
         predictedIntent: 'search',
-        predictedDomain: 'work',
+        predictedDomain: 'finance',
         predictedEntities: [],
         confidence: 0.7,
         basis: ['temporal', 'sequential'],
       },
       actualIntent: 'search',
-      actualDomain: 'work',
+      actualDomain: 'finance',
       errorMagnitude: 0.0,
       learningSignal: 'correct',
     };
 
-    await updateModel('personal', error);
+    await updateModel('operations', error);
     const callArgs = mockQueryContext.mock.calls[0][2] as any[];
     expect(callArgs[7]).toBe(JSON.stringify(['temporal', 'sequential']));
   });
@@ -293,14 +293,14 @@ describe('makePrediction', () => {
   it('returns prediction based on activity history', async () => {
     mockQueryContext.mockResolvedValueOnce({
       rows: [
-        { timestamp: '2026-03-23T09:00:00Z', domain: 'work', intent: 'search', entities: '[]' },
-        { timestamp: '2026-03-23T09:30:00Z', domain: 'work', intent: 'search', entities: '[]' },
-        { timestamp: '2026-03-23T10:00:00Z', domain: 'work', intent: 'create', entities: '[]' },
+        { timestamp: '2026-03-23T09:00:00Z', domain: 'finance', intent: 'search', entities: '[]' },
+        { timestamp: '2026-03-23T09:30:00Z', domain: 'finance', intent: 'search', entities: '[]' },
+        { timestamp: '2026-03-23T10:00:00Z', domain: 'finance', intent: 'create', entities: '[]' },
       ],
     } as any);
 
     // Use a Monday at 9am to match the activity data
-    const prediction = await makePrediction('personal', undefined, new Date(2026, 2, 23, 9, 0, 0));
+    const prediction = await makePrediction('operations', undefined, new Date(2026, 2, 23, 9, 0, 0));
     expect(prediction).toHaveProperty('predictedIntent');
     expect(prediction).toHaveProperty('predictedDomain');
     expect(prediction).toHaveProperty('predictedEntities');
@@ -312,9 +312,9 @@ describe('makePrediction', () => {
   it('returns generic prediction when no history exists', async () => {
     mockQueryContext.mockResolvedValueOnce({ rows: [] } as any);
 
-    const prediction = await makePrediction('personal');
+    const prediction = await makePrediction('operations');
     expect(prediction.predictedIntent).toBe('general');
-    expect(prediction.predictedDomain).toBe('personal');
+    expect(prediction.predictedDomain).toBe('operations');
     expect(prediction.confidence).toBe(0.1);
     expect(prediction.basis).toContain('no_history');
   });
@@ -322,9 +322,9 @@ describe('makePrediction', () => {
   it('returns fallback on DB error', async () => {
     mockQueryContext.mockRejectedValueOnce(new Error('DB connection failed'));
 
-    const prediction = await makePrediction('personal');
+    const prediction = await makePrediction('operations');
     expect(prediction.predictedIntent).toBe('general');
-    expect(prediction.predictedDomain).toBe('personal');
+    expect(prediction.predictedDomain).toBe('operations');
     expect(prediction.confidence).toBe(0.1);
     expect(prediction.basis).toContain('error_fallback');
   });
@@ -332,9 +332,9 @@ describe('makePrediction', () => {
   it('passes userId when provided', async () => {
     mockQueryContext.mockResolvedValueOnce({ rows: [] } as any);
 
-    await makePrediction('personal', 'user-123');
+    await makePrediction('operations', 'user-123');
     expect(mockQueryContext).toHaveBeenCalledWith(
-      'personal',
+      'operations',
       expect.stringContaining('user_id'),
       ['user-123'],
     );
@@ -343,7 +343,7 @@ describe('makePrediction', () => {
   it('uses current time when not provided', async () => {
     mockQueryContext.mockResolvedValueOnce({ rows: [] } as any);
 
-    const prediction = await makePrediction('personal');
+    const prediction = await makePrediction('operations');
     // Should not throw and should return a valid prediction
     expect(prediction).toHaveProperty('predictedIntent');
   });
@@ -351,35 +351,35 @@ describe('makePrediction', () => {
   it('parses entities from JSON strings', async () => {
     mockQueryContext.mockResolvedValueOnce({
       rows: [
-        { timestamp: '2026-03-23T09:00:00Z', domain: 'work', intent: 'search', entities: '["typescript","react"]' },
+        { timestamp: '2026-03-23T09:00:00Z', domain: 'finance', intent: 'search', entities: '["typescript","react"]' },
       ],
     } as any);
 
-    const prediction = await makePrediction('personal', undefined, new Date(2026, 2, 23, 9, 0, 0));
+    const prediction = await makePrediction('operations', undefined, new Date(2026, 2, 23, 9, 0, 0));
     expect(prediction).toHaveProperty('predictedIntent');
   });
 
   it('handles null entities gracefully', async () => {
     mockQueryContext.mockResolvedValueOnce({
       rows: [
-        { timestamp: '2026-03-23T09:00:00Z', domain: 'work', intent: 'search', entities: null },
+        { timestamp: '2026-03-23T09:00:00Z', domain: 'finance', intent: 'search', entities: null },
       ],
     } as any);
 
-    const prediction = await makePrediction('personal', undefined, new Date(2026, 2, 23, 9, 0, 0));
+    const prediction = await makePrediction('operations', undefined, new Date(2026, 2, 23, 9, 0, 0));
     expect(prediction).toHaveProperty('predictedIntent');
   });
 
   it('uses last intent from most recent activity for sequential patterns', async () => {
     mockQueryContext.mockResolvedValueOnce({
       rows: [
-        { timestamp: '2026-03-23T10:00:00Z', domain: 'work', intent: 'create', entities: '[]' },
-        { timestamp: '2026-03-23T09:30:00Z', domain: 'work', intent: 'search', entities: '[]' },
-        { timestamp: '2026-03-23T09:00:00Z', domain: 'work', intent: 'search', entities: '[]' },
+        { timestamp: '2026-03-23T10:00:00Z', domain: 'finance', intent: 'create', entities: '[]' },
+        { timestamp: '2026-03-23T09:30:00Z', domain: 'finance', intent: 'search', entities: '[]' },
+        { timestamp: '2026-03-23T09:00:00Z', domain: 'finance', intent: 'search', entities: '[]' },
       ],
     } as any);
 
-    const prediction = await makePrediction('personal', undefined, new Date(2026, 2, 23, 10, 0, 0));
+    const prediction = await makePrediction('operations', undefined, new Date(2026, 2, 23, 10, 0, 0));
     // Last intent should be 'create' (first row = most recent)
     expect(prediction.basis.some((b) => b.includes('recency') && b.includes('create'))).toBe(true);
   });
@@ -393,29 +393,29 @@ describe('recordPredictionResult', () => {
   it('updates prediction log with actual result', async () => {
     mockQueryContext.mockResolvedValueOnce({ rows: [] } as any);
 
-    const actual: QueryAnalysis = { intent: 'search', domain: 'work', entities: [] };
-    await recordPredictionResult('personal', 'pred-123', actual);
+    const actual: QueryAnalysis = { intent: 'search', domain: 'finance', entities: [] };
+    await recordPredictionResult('operations', 'pred-123', actual);
 
     expect(mockQueryContext).toHaveBeenCalledTimes(1);
     expect(mockQueryContext).toHaveBeenCalledWith(
-      'personal',
+      'operations',
       expect.stringContaining('UPDATE prediction_log'),
-      ['search', 'work', 'pred-123'],
+      ['search', 'finance', 'pred-123'],
     );
   });
 
   it('does not throw on DB error', async () => {
     mockQueryContext.mockRejectedValueOnce(new Error('DB update failed'));
 
-    const actual: QueryAnalysis = { intent: 'search', domain: 'work', entities: [] };
-    await expect(recordPredictionResult('personal', 'pred-123', actual)).resolves.toBeUndefined();
+    const actual: QueryAnalysis = { intent: 'search', domain: 'finance', entities: [] };
+    await expect(recordPredictionResult('operations', 'pred-123', actual)).resolves.toBeUndefined();
   });
 
   it('passes correct predictionId', async () => {
     mockQueryContext.mockResolvedValueOnce({ rows: [] } as any);
 
-    const actual: QueryAnalysis = { intent: 'browse', domain: 'personal', entities: [] };
-    await recordPredictionResult('work', 'pred-456', actual);
+    const actual: QueryAnalysis = { intent: 'browse', domain: 'operations', entities: [] };
+    await recordPredictionResult('finance', 'pred-456', actual);
 
     const callArgs = mockQueryContext.mock.calls[0][2] as any[];
     expect(callArgs[2]).toBe('pred-456');

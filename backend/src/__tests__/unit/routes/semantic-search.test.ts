@@ -57,18 +57,18 @@ describe('Semantic Search Routes', () => {
   describe('POST /:context/search/unified', () => {
     it('should perform unified search', async () => {
       mockUnifiedSearch.mockResolvedValue({ totalResults: 3, results: [{}, {}, {}] });
-      const res = await request(app).post('/api/personal/search/unified').send({ query: 'test query' });
+      const res = await request(app).post('/api/operations/search/unified').send({ query: 'test query' });
       expect(res.status).toBe(200);
       expect(res.body.data.totalResults).toBe(3);
     });
 
     it('should reject empty query', async () => {
-      const res = await request(app).post('/api/personal/search/unified').send({ query: '' });
+      const res = await request(app).post('/api/operations/search/unified').send({ query: '' });
       expect(res.status).toBe(400);
     });
 
     it('should reject missing query', async () => {
-      const res = await request(app).post('/api/personal/search/unified').send({});
+      const res = await request(app).post('/api/operations/search/unified').send({});
       expect(res.status).toBe(400);
     });
 
@@ -78,13 +78,13 @@ describe('Semantic Search Routes', () => {
     });
 
     it('should reject invalid type filter', async () => {
-      const res = await request(app).post('/api/personal/search/unified').send({ query: 'test', types: ['invalid_type'] });
+      const res = await request(app).post('/api/operations/search/unified').send({ query: 'test', types: ['invalid_type'] });
       expect(res.status).toBe(400);
     });
 
     it('should handle search failure gracefully', async () => {
       mockUnifiedSearch.mockRejectedValue(new Error('DB error'));
-      const res = await request(app).post('/api/personal/search/unified').send({ query: 'failing query' });
+      const res = await request(app).post('/api/operations/search/unified').send({ query: 'failing query' });
       expect(res.status).toBe(500);
     });
   });
@@ -92,7 +92,7 @@ describe('Semantic Search Routes', () => {
   describe('GET /:context/search/suggestions', () => {
     it('should return search suggestions', async () => {
       mockGetSearchSuggestions.mockResolvedValue(['suggestion 1', 'suggestion 2']);
-      const res = await request(app).get('/api/personal/search/suggestions?q=test');
+      const res = await request(app).get('/api/operations/search/suggestions?q=test');
       expect(res.status).toBe(200);
       expect(res.body.data).toHaveLength(2);
     });
@@ -106,7 +106,7 @@ describe('Semantic Search Routes', () => {
   describe('GET /:context/search/history', () => {
     it('should return search history', async () => {
       mockGetSearchHistory.mockResolvedValue([{ query: 'old search', timestamp: '2026-01-01' }]);
-      const res = await request(app).get('/api/personal/search/history');
+      const res = await request(app).get('/api/operations/search/history');
       expect(res.status).toBe(200);
       expect(res.body.data).toHaveLength(1);
     });
@@ -115,7 +115,7 @@ describe('Semantic Search Routes', () => {
   describe('DELETE /:context/search/history', () => {
     it('should clear search history', async () => {
       mockClearSearchHistory.mockResolvedValue(undefined);
-      const res = await request(app).delete('/api/personal/search/history');
+      const res = await request(app).delete('/api/operations/search/history');
       expect(res.status).toBe(200);
       expect(res.body.message).toBe('Search history cleared');
     });
@@ -129,7 +129,7 @@ describe('Semantic Search Routes', () => {
   describe('GET /:context/search/facets', () => {
     it('should return available facets', async () => {
       mockGetSearchFacets.mockResolvedValue({ types: { idea: 10, document: 5 } });
-      const res = await request(app).get('/api/personal/search/facets');
+      const res = await request(app).get('/api/operations/search/facets');
       expect(res.status).toBe(200);
       expect(res.body.data.types).toHaveProperty('idea', 10);
     });

@@ -20,32 +20,32 @@ const mockIdea = {
 describe('IdeaPanel', () => {
   it('renders nothing when closed', () => {
     const { container } = render(
-      <IdeaPanel open={false} idea={null} onClose={vi.fn()} context="personal" />
+      <IdeaPanel open={false} idea={null} onClose={vi.fn()} context="operations" />
     );
     expect(container.querySelector('.idea-panel--open')).toBeNull();
   });
 
   it('renders idea detail when open with idea', () => {
-    render(<IdeaPanel open={true} idea={mockIdea as any} onClose={vi.fn()} context="personal" />);
+    render(<IdeaPanel open={true} idea={mockIdea as any} onClose={vi.fn()} context="operations" />);
     expect(screen.getByTestId('idea-detail')).toBeInTheDocument();
   });
 
   it('calls onClose when backdrop clicked', () => {
     const onClose = vi.fn();
-    render(<IdeaPanel open={true} idea={mockIdea as any} onClose={onClose} context="personal" />);
+    render(<IdeaPanel open={true} idea={mockIdea as any} onClose={onClose} context="operations" />);
     fireEvent.click(screen.getByTestId('idea-panel-backdrop'));
     expect(onClose).toHaveBeenCalled();
   });
 
   it('calls onClose on Escape key', () => {
     const onClose = vi.fn();
-    render(<IdeaPanel open={true} idea={mockIdea as any} onClose={onClose} context="personal" />);
+    render(<IdeaPanel open={true} idea={mockIdea as any} onClose={onClose} context="operations" />);
     fireEvent.keyDown(document, { key: 'Escape' });
     expect(onClose).toHaveBeenCalled();
   });
 
   it('has aria-label on panel', () => {
-    render(<IdeaPanel open={true} idea={mockIdea as any} onClose={vi.fn()} context="personal" />);
+    render(<IdeaPanel open={true} idea={mockIdea as any} onClose={vi.fn()} context="operations" />);
     expect(screen.getByRole('complementary')).toHaveAttribute('aria-label');
   });
 });

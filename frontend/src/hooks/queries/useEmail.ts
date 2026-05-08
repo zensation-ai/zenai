@@ -19,7 +19,7 @@ export interface Email {
   subject: string | null;
   from_address: string;
   from_name?: string | null;
-  to_address: string;
+  to_addresses: Array<{ email: string; name?: string }>;
   status: string;
   direction: string;
   category?: string;
@@ -125,8 +125,28 @@ export function useSendEmailMutation(context: AIContext) {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (data: { to: string; subject: string; body: string }) => {
-      const response = await axios.post(`/api/${context}/emails/send`, data);
+    mutationFn: async (data: {
+      to: string | string[];
+      subject: string;
+      body: string;
+      cc?: string | string[];
+      bcc?: string | string[];
+      account_id?: string;
+    }) => {
+      const toArray = (v: string | string[] | undefined) =>
+        v === undefined ? undefined
+          : Array.isArray(v) ? v.map(email => ({ email }))
+          : v.split(',').map(s => s.trim()).filter(Boolean).map(email => ({ email }));
+      const payload = {
+        to_addresses: toArray(data.to),
+        cc_addresses: toArray(data.cc),
+        bcc_addresses: toArray(data.bcc),
+        subject: data.subject,
+        body_html: data.body,
+        body_text: data.body.replace(/<[^>]+>/g, ''),
+        account_id: data.account_id,
+      };
+      const response = await axios.post(`/api/${context}/emails/send`, payload);
       return response.data;
     },
     onSuccess: () => {

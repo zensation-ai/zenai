@@ -16,12 +16,12 @@ import { AIContext, isValidContext } from '../utils/database-context';
 import { ValidationError } from '../middleware/errorHandler';
 
 /**
- * Get context from request header or query param, default to 'personal'
+ * Get context from request header or query param, default to 'operations'
  */
 export function getContext(req: Request): AIContext {
-  const context = (req.headers['x-ai-context'] as string) || (req.query.context as string) || 'personal';
+  const context = (req.headers['x-ai-context'] as string) || (req.query.context as string) || 'operations';
   if (!isValidContext(context)) {
-    throw new ValidationError(`Invalid context: ${context}. Must be one of: personal, work, learning, creative`);
+    throw new ValidationError(`Invalid context: ${context}. Must be one of: operations, finance, people, strategy`);
   }
   return context;
 }
@@ -30,6 +30,7 @@ export function getContext(req: Request): AIContext {
 export {
   handleListIdeas,
   handleGetIdea,
+  handleCreateIdea,
   handleUpdateIdea,
   handleDeleteIdea,
   handleStatsSummary,

@@ -17,7 +17,7 @@ import type {
   ConversationMessage,
   SessionWithMessages,
   DecayClass,
-} from './long-term-memory';
+} from './ltm-types';
 
 // ===========================================
 // Internal Types

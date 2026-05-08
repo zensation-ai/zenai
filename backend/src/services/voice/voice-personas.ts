@@ -1,7 +1,7 @@
 /**
  * Phase 90: Voice Persona Service
  *
- * Different voice configurations per context (personal, work, learning, creative).
+ * Different voice configurations per context (operations, finance, people, strategy).
  * Each persona defines a TTS voice, speaking rate, pitch adjustment,
  * and personality traits that influence the system prompt.
  */
@@ -30,7 +30,7 @@ const DEFAULT_PERSONAS: VoicePersona[] = [
   {
     id: 'work-professional',
     name: 'Professional',
-    context: 'work',
+    context: 'finance',
     tts_voice_id: 'de-DE-ConradNeural',
     speaking_rate: 1.0,
     pitch_adjustment: 0,
@@ -39,7 +39,7 @@ const DEFAULT_PERSONAS: VoicePersona[] = [
   {
     id: 'personal-warm',
     name: 'Warm',
-    context: 'personal',
+    context: 'operations',
     tts_voice_id: 'de-DE-KatjaNeural',
     speaking_rate: 0.95,
     pitch_adjustment: 0,
@@ -48,7 +48,7 @@ const DEFAULT_PERSONAS: VoicePersona[] = [
   {
     id: 'learning-patient',
     name: 'Tutor',
-    context: 'learning',
+    context: 'people',
     tts_voice_id: 'de-DE-AmalaNeural',
     speaking_rate: 0.9,
     pitch_adjustment: 0,
@@ -57,7 +57,7 @@ const DEFAULT_PERSONAS: VoicePersona[] = [
   {
     id: 'creative-expressive',
     name: 'Creative',
-    context: 'creative',
+    context: 'strategy',
     tts_voice_id: 'de-DE-KatjaNeural',
     speaking_rate: 1.05,
     pitch_adjustment: 2,

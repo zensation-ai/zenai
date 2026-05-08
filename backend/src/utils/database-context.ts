@@ -10,7 +10,7 @@
 import { Pool, QueryResult } from 'pg';
 import dotenv from 'dotenv';
 import { logger } from './logger';
-import { getCurrentUserId, getCurrentRequestId } from './request-context';
+import { getCurrentUserId, getCurrentRequestId, getCurrentWorkspaceId, getCurrentContextSlug, getCurrentIsAdmin } from './request-context';
 import { CircuitBreaker } from './circuit-breaker';
 import { TIMEOUTS } from '../config/timeouts';
 
@@ -28,10 +28,10 @@ export type { AIContext };
  * only these exact SQL strings can ever be executed.
  */
 const SEARCH_PATH_SQL: Record<AIContext, string> = {
-  personal: 'SET search_path TO personal, public',
-  work: 'SET search_path TO work, public',
-  learning: 'SET search_path TO learning, public',
-  creative: 'SET search_path TO creative, public',
+  operations: 'SET search_path TO operations, public',
+  finance: 'SET search_path TO finance, public',
+  people: 'SET search_path TO people, public',
+  strategy: 'SET search_path TO strategy, public',
   demo: 'SET search_path TO demo, public',
 };
 
@@ -199,19 +199,19 @@ export const dbBreaker = new CircuitBreaker({
 
 // Connection pools for each context - all point to the same shared pool
 const pools: Record<AIContext, Pool> = {
-  personal: sharedPool,
-  work: sharedPool,
-  learning: sharedPool,
-  creative: sharedPool,
+  operations: sharedPool,
+  finance: sharedPool,
+  people: sharedPool,
+  strategy: sharedPool,
   demo: sharedPool,
 };
 
 // Track pool stats for monitoring
 const poolStats: Record<AIContext, { queries: number; errors: number; slowQueries: number }> = {
-  personal: { queries: 0, errors: 0, slowQueries: 0 },
-  work: { queries: 0, errors: 0, slowQueries: 0 },
-  learning: { queries: 0, errors: 0, slowQueries: 0 },
-  creative: { queries: 0, errors: 0, slowQueries: 0 },
+  operations: { queries: 0, errors: 0, slowQueries: 0 },
+  finance: { queries: 0, errors: 0, slowQueries: 0 },
+  people: { queries: 0, errors: 0, slowQueries: 0 },
+  strategy: { queries: 0, errors: 0, slowQueries: 0 },
   demo: { queries: 0, errors: 0, slowQueries: 0 },
 };
 
@@ -278,6 +278,36 @@ export function getPool(context: AIContext): Pool {
   return pools[context];
 }
 
+/**
+ * Sprint 1.3 RLS: Reset session state (GUCs, search_path) before returning the client
+ * to the pool. Without this, session-level set_config() values set by one request
+ * would leak to the next request that receives the recycled pool client —
+ * a Cross-Request-Leak attack vector against RLS policies.
+ *
+ * DISCARD ALL is the PostgreSQL-idiomatic way to clear session state. It resets:
+ *   - All parameters (search_path, custom GUCs)
+ *   - Temporary tables
+ *   - Prepared statements
+ *   - Cursors
+ *   - Advisory locks
+ *
+ * It cannot run inside an active transaction, so we wrap it in try/catch —
+ * if a transaction is somehow still open (shouldn't happen; defensive), we log and
+ * release anyway. The next query on this client will re-establish GUCs explicitly.
+ */
+async function resetSessionStateBeforeRelease(
+  client: { query: (sql: string) => Promise<unknown> }
+): Promise<void> {
+  try {
+    await client.query('DISCARD ALL');
+  } catch (err) {
+    logger.warn('DISCARD ALL failed before client release — GUCs may leak if this recurs', {
+      error: err instanceof Error ? err.message : String(err),
+      operation: 'resetSessionStateBeforeRelease',
+    });
+  }
+}
+
 // Type for SQL query parameters - allows common PostgreSQL parameter types
 type QueryParam = string | number | boolean | Date | null | undefined | Buffer | object;
 
@@ -341,19 +371,31 @@ async function directQuery(
     const client = await pool.connect();
 
     try {
-      // Phase 81: Combined setup query (3 round-trips → 2, or 2 → 1 when no userId)
-      // Merges search_path + user_id config into a single statement.
-      // The actual query runs separately because it has parameterized $1/$2 placeholders
-      // that would conflict with the setup statements.
+      // Sprint 1.3: GUCs must be session-level (is_local=false) so they persist across
+      // separate .query() calls within this request. Autocommit makes each .query() its own
+      // implicit transaction — is_local=true would roll the value back immediately, leaving
+      // the main query with no user_id context for RLS policies. The session-level values
+      // are reset in the finally block via DISCARD ALL before returning the client to the pool.
       const currentUserId = getCurrentUserId();
-      // SECURITY: Separate queries to avoid multi-statement parameter binding ambiguity.
-      // pg driver's $1 binding with multi-statement strings relies on undocumented libpq behavior.
       await client.query(SEARCH_PATH_SQL[effectiveContext]);
       if (currentUserId) {
         await client.query(
-          `SELECT set_config('app.current_user_id', $1, true)`,
+          `SELECT set_config('app.current_user_id', $1, false)`,
           [currentUserId]
         );
+      }
+
+      // Multi-tenancy: set workspace_id and context_slug for RLS policies
+      const workspaceId = getCurrentWorkspaceId();
+      if (workspaceId) {
+        await client.query(`SELECT set_config('app.current_workspace_id', $1, false)`, [workspaceId]);
+      }
+      const contextSlug = getCurrentContextSlug();
+      if (contextSlug) {
+        await client.query(`SELECT set_config('app.current_context_slug', $1, false)`, [contextSlug]);
+      }
+      if (getCurrentIsAdmin()) {
+        await client.query(`SELECT set_config('app.is_admin', 'true', false)`);
       }
 
       // Execute query in correct schema
@@ -382,12 +424,14 @@ async function directQuery(
         });
       }
 
-      // Release client back to pool
+      // Sprint 1.3: Reset session-level GUCs before returning client to pool
+      await resetSessionStateBeforeRelease(client);
       client.release();
 
       return result;
     } catch (error) {
-      // Release client on error
+      // Sprint 1.3: Reset session-level GUCs even on error to prevent leak
+      await resetSessionStateBeforeRelease(client);
       client.release();
 
       lastError = error instanceof Error ? error : new Error(String(error));
@@ -471,6 +515,50 @@ export async function queryContext(
 }
 
 /**
+ * Execute a callback within a single database transaction.
+ * Ensures BEGIN/COMMIT/ROLLBACK all run on the same client with correct search_path.
+ */
+export async function withTransaction<T>(
+  context: AIContext,
+  fn: (query: (text: string, params?: QueryParam[]) => Promise<QueryResult>) => Promise<T>
+): Promise<T> {
+  if (!isValidContext(context)) {
+    throw new Error(`Invalid context: ${context}. Must be one of: ${VALID_CONTEXTS.join(', ')}.`);
+  }
+  const client = await sharedPool.connect();
+  try {
+    await client.query(SEARCH_PATH_SQL[context]);
+    // Sprint 1.3: Set GUCs session-level so they're visible inside the BEGIN/COMMIT
+    const userId = getCurrentUserId();
+    if (userId) {
+      await client.query(`SELECT set_config('app.current_user_id', $1, false)`, [userId]);
+    }
+    const wsId = getCurrentWorkspaceId();
+    if (wsId) {
+      await client.query(`SELECT set_config('app.current_workspace_id', $1, false)`, [wsId]);
+    }
+    const slug = getCurrentContextSlug();
+    if (slug) {
+      await client.query(`SELECT set_config('app.current_context_slug', $1, false)`, [slug]);
+    }
+    if (getCurrentIsAdmin()) {
+      await client.query(`SELECT set_config('app.is_admin', 'true', false)`);
+    }
+    await client.query('BEGIN');
+    const result = await fn((text, params) => client.query(text, params as unknown[]));
+    await client.query('COMMIT');
+    return result;
+  } catch (err) {
+    await client.query('ROLLBACK').catch(() => {});
+    throw err;
+  } finally {
+    // Sprint 1.3: Reset GUCs before returning client to pool to prevent leak
+    await resetSessionStateBeforeRelease(client);
+    client.release();
+  }
+}
+
+/**
  * Validate that a context string is valid
  */
 export function isValidContext(context: string): context is AIContext {
@@ -500,7 +588,14 @@ export function setupGracefulShutdown(): void {
   // to coordinate shutdown of all subsystems (workers, schedulers, DB pools).
   // This function only registers crash handlers for uncaught exceptions.
 
-  process.once('uncaughtException', async (error) => {
+  process.on('uncaughtException', async (error) => {
+    // Non-fatal stream errors: client disconnected mid-SSE — log and continue
+    const code = (error as NodeJS.ErrnoException).code;
+    if (code === 'ERR_STREAM_WRITE_AFTER_END' || code === 'ERR_STREAM_DESTROYED' || code === 'EPIPE') {
+      logger.warn('Non-fatal stream error (client disconnect)', { code, message: error.message });
+      return;
+    }
+
     logger.error('Uncaught Exception', error, { operation: 'uncaughtException' });
     await closeAllPools().catch((cleanupErr) => { logger.warn('Pool cleanup failed during uncaughtException', { error: cleanupErr instanceof Error ? cleanupErr.message : String(cleanupErr) }); });
     process.exit(1);
@@ -522,10 +617,10 @@ export function setupGracefulShutdown(): void {
  */
 /** Pre-built CREATE SCHEMA statements — no interpolation */
 const CREATE_SCHEMA_SQL: Record<AIContext, string> = {
-  personal: 'CREATE SCHEMA IF NOT EXISTS personal',
-  work: 'CREATE SCHEMA IF NOT EXISTS work',
-  learning: 'CREATE SCHEMA IF NOT EXISTS learning',
-  creative: 'CREATE SCHEMA IF NOT EXISTS creative',
+  operations: 'CREATE SCHEMA IF NOT EXISTS operations',
+  finance: 'CREATE SCHEMA IF NOT EXISTS finance',
+  people: 'CREATE SCHEMA IF NOT EXISTS people',
+  strategy: 'CREATE SCHEMA IF NOT EXISTS strategy',
   demo: 'CREATE SCHEMA IF NOT EXISTS demo',
 };
 
@@ -547,14 +642,14 @@ export async function ensureSchemas(): Promise<void> {
 }
 
 /**
- * Test all database connections (personal, work, learning, creative)
+ * Test all database connections (operations, finance, people, strategy)
  */
 export async function testConnections(): Promise<Record<AIContext, boolean>> {
   const results: Record<AIContext, boolean> = {
-    personal: false,
-    work: false,
-    learning: false,
-    creative: false,
+    operations: false,
+    finance: false,
+    people: false,
+    strategy: false,
     demo: false,
   };
 
@@ -743,7 +838,7 @@ export async function validateRequiredExtensions(): Promise<{
 }> {
   try {
     const result = await queryContext(
-      'personal',
+      'operations',
       `SELECT extname FROM pg_extension WHERE extname = ANY($1)`,
       [REQUIRED_EXTENSIONS]
     );
@@ -815,10 +910,10 @@ export const pool = sharedPool;
 
 /**
  * @deprecated Use queryPublic() for public-schema queries or queryContext() for schema-isolated queries.
- * This function hard-codes the 'personal' context. Prefer queryContext() with an explicit context.
+ * This function hard-codes the 'operations' context. Prefer queryContext() with an explicit context.
  */
 export async function query(text: string, params?: QueryParam[]): Promise<QueryResult> {
-  return queryContext('personal', text, params);
+  return queryContext('operations', text, params);
 }
 
 /**
@@ -839,10 +934,27 @@ export async function queryPublic(text: string, params?: QueryParam[]): Promise<
       const client = await sharedPool.connect();
       try {
         await client.query('SET search_path TO public');
+        // Sprint 1.3: Set GUCs session-level so RLS policies on public.* tables
+        // see the current user_id / workspace_id / admin flag.
+        const userId = getCurrentUserId();
+        if (userId) {
+          await client.query(`SELECT set_config('app.current_user_id', $1, false)`, [userId]);
+        }
+        const wsId = getCurrentWorkspaceId();
+        if (wsId) {
+          await client.query(`SELECT set_config('app.current_workspace_id', $1, false)`, [wsId]);
+        }
+        if (getCurrentIsAdmin()) {
+          await client.query(`SELECT set_config('app.is_admin', 'true', false)`);
+        }
         const result = await client.query(text, params);
+        // Sprint 1.3: Clear session state before returning client to pool
+        await resetSessionStateBeforeRelease(client);
         client.release();
         return result;
       } catch (error) {
+        // Sprint 1.3: Clear session state even on error to prevent leak
+        await resetSessionStateBeforeRelease(client);
         client.release();
         lastError = error instanceof Error ? error : new Error(String(error));
 

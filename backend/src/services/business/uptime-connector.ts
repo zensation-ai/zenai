@@ -6,7 +6,7 @@
  * @module services/business/uptime-connector
  */
 
-import axios from 'axios';
+import { checkedAxiosPost } from '../../utils/checked-http';
 import { logger } from '../../utils/logger';
 import type { BusinessConnector, UptimeStatus, UptimeMonitor, UptimeIncident } from '../../types/business';
 
@@ -34,12 +34,16 @@ class UptimeConnector implements BusinessConnector {
       return { success: false, message: 'UptimeRobot not configured. Set UPTIMEROBOT_API_KEY.' };
     }
     try {
-      const response = await axios.post(`${UPTIMEROBOT_API}/getAccountDetails`, {
+      const response = await checkedAxiosPost<{
+        stat: string;
+        account?: { email: string };
+        error?: { message?: string };
+      }>(`${UPTIMEROBOT_API}/getAccountDetails`, {
         api_key: this.apiKey,
         format: 'json',
       });
       if (response.data.stat === 'ok') {
-        return { success: true, message: `Connected to UptimeRobot: ${response.data.account.email}` };
+        return { success: true, message: `Connected to UptimeRobot: ${response.data.account?.email}` };
       }
       return { success: false, message: `UptimeRobot API error: ${response.data.error?.message ?? 'Unknown'}` };
     } catch (error) {
@@ -60,7 +64,11 @@ class UptimeConnector implements BusinessConnector {
   async getUptimeStatus(): Promise<UptimeStatus> {
     if (!this.apiKey) { throw new Error('UptimeRobot not initialized'); }
 
-    const response = await axios.post(`${UPTIMEROBOT_API}/getMonitors`, {
+    const response = await checkedAxiosPost<{
+      stat: string;
+      monitors?: Array<Record<string, unknown>>;
+      error?: { message?: string };
+    }>(`${UPTIMEROBOT_API}/getMonitors`, {
       api_key: this.apiKey,
       format: 'json',
       response_times: 1,

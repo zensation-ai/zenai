@@ -8,7 +8,7 @@
 var mockQueryContext = jest.fn();
 jest.mock('../../../utils/database-context', () => ({
   queryContext: (...args: any[]) => mockQueryContext(...args),
-  isValidContext: jest.fn((ctx: string) => ['personal', 'work', 'learning', 'creative'].includes(ctx)),
+  isValidContext: jest.fn((ctx: string) => ['operations', 'finance', 'people', 'strategy'].includes(ctx)),
   AIContext: {},
 }));
 
@@ -74,7 +74,7 @@ describe('Calendar AI Service', () => {
     participants: [],
     status: 'confirmed',
     color: null,
-    context: 'work',
+    context: 'finance',
     ...overrides,
   });
 
@@ -88,7 +88,7 @@ describe('Calendar AI Service', () => {
       // Cache insert
       mockQueryContext.mockResolvedValueOnce({ rows: [] });
 
-      const briefing = await generateDailyBriefing('personal' as any);
+      const briefing = await generateDailyBriefing('operations' as any);
 
       expect(briefing).toBeDefined();
       expect(briefing.event_count).toBe(0);
@@ -108,7 +108,7 @@ describe('Calendar AI Service', () => {
       // Cache insert
       mockQueryContext.mockResolvedValueOnce({ rows: [] });
 
-      const briefing = await generateDailyBriefing('work' as any, '2026-03-08');
+      const briefing = await generateDailyBriefing('finance' as any, '2026-03-08');
 
       expect(briefing.event_count).toBe(2);
       expect(briefing.busy_hours).toBe(2); // 2 one-hour events
@@ -126,7 +126,7 @@ describe('Calendar AI Service', () => {
 
       mockQueryContext.mockResolvedValueOnce({ rows: [] });
 
-      const briefing = await generateDailyBriefing('work' as any, '2026-03-08');
+      const briefing = await generateDailyBriefing('finance' as any, '2026-03-08');
 
       // Should have free slots between 10:00-12:00 and 13:00-18:00
       expect(briefing.free_slots.length).toBeGreaterThanOrEqual(1);
@@ -139,7 +139,7 @@ describe('Calendar AI Service', () => {
       mockCreate.mockRejectedValueOnce(new Error('API Error'));
       mockQueryContext.mockResolvedValueOnce({ rows: [] }); // cache
 
-      const briefing = await generateDailyBriefing('personal' as any);
+      const briefing = await generateDailyBriefing('operations' as any);
 
       // Should fall back to basic briefing
       expect(briefing.summary).toContain('1 Termine heute');
@@ -150,7 +150,7 @@ describe('Calendar AI Service', () => {
       mockGetCalendarEvents.mockResolvedValue([]);
       mockQueryContext.mockResolvedValueOnce({ rows: [] });
 
-      await generateDailyBriefing('personal' as any);
+      await generateDailyBriefing('operations' as any);
 
       expect(mockQueryContext).toHaveBeenCalledTimes(1);
       const [, query] = mockQueryContext.mock.calls[0];
@@ -170,7 +170,7 @@ describe('Calendar AI Service', () => {
       // Pattern events (last 30 days)
       mockGetCalendarEvents.mockResolvedValueOnce([]);
 
-      const suggestions = await suggestTimeSlots('personal' as any, {
+      const suggestions = await suggestTimeSlots('operations' as any, {
         title: 'Focus Time',
         duration_minutes: 60,
       });
@@ -191,7 +191,7 @@ describe('Calendar AI Service', () => {
     it('boosts morning slots when preferred_time is morning', async () => {
       mockGetCalendarEvents.mockResolvedValue([]);
 
-      const suggestions = await suggestTimeSlots('personal' as any, {
+      const suggestions = await suggestTimeSlots('operations' as any, {
         title: 'Morning Run',
         duration_minutes: 30,
         preferred_time: 'morning',
@@ -210,7 +210,7 @@ describe('Calendar AI Service', () => {
     it('skips weekends for work context', async () => {
       mockGetCalendarEvents.mockResolvedValue([]);
 
-      const suggestions = await suggestTimeSlots('work' as any, {
+      const suggestions = await suggestTimeSlots('finance' as any, {
         title: 'Review',
         duration_minutes: 60,
         earliest_date: '2026-03-07', // Saturday
@@ -241,7 +241,7 @@ describe('Calendar AI Service', () => {
         .mockResolvedValueOnce(existingEvents) // current range
         .mockResolvedValueOnce([]); // patterns
 
-      const suggestions = await suggestTimeSlots('personal' as any, {
+      const suggestions = await suggestTimeSlots('operations' as any, {
         title: 'New Meeting',
         duration_minutes: 60,
         earliest_date: '2026-03-09',
@@ -265,7 +265,7 @@ describe('Calendar AI Service', () => {
     it('returns sorted by score descending', async () => {
       mockGetCalendarEvents.mockResolvedValue([]);
 
-      const suggestions = await suggestTimeSlots('personal' as any, {
+      const suggestions = await suggestTimeSlots('operations' as any, {
         title: 'Meeting',
         duration_minutes: 30,
       });
@@ -278,7 +278,7 @@ describe('Calendar AI Service', () => {
     it('respects maximum of 5 suggestions', async () => {
       mockGetCalendarEvents.mockResolvedValue([]);
 
-      const suggestions = await suggestTimeSlots('personal' as any, {
+      const suggestions = await suggestTimeSlots('operations' as any, {
         title: 'Short Chat',
         duration_minutes: 15,
         latest_date: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
@@ -296,7 +296,7 @@ describe('Calendar AI Service', () => {
     it('returns empty array when no events', async () => {
       mockGetCalendarEvents.mockResolvedValueOnce([]);
 
-      const conflicts = await detectConflicts('personal' as any);
+      const conflicts = await detectConflicts('operations' as any);
       expect(conflicts).toEqual([]);
     });
 
@@ -314,7 +314,7 @@ describe('Calendar AI Service', () => {
         }),
       ]);
 
-      const conflicts = await detectConflicts('work' as any);
+      const conflicts = await detectConflicts('finance' as any);
 
       const overlaps = conflicts.filter(c => c.type === 'overlap');
       expect(overlaps.length).toBe(1);
@@ -337,7 +337,7 @@ describe('Calendar AI Service', () => {
         }),
       ]);
 
-      const conflicts = await detectConflicts('work' as any);
+      const conflicts = await detectConflicts('finance' as any);
 
       const backToBack = conflicts.filter(c => c.type === 'back_to_back');
       expect(backToBack.length).toBe(1);
@@ -360,7 +360,7 @@ describe('Calendar AI Service', () => {
         }),
       ]);
 
-      const conflicts = await detectConflicts('work' as any);
+      const conflicts = await detectConflicts('finance' as any);
 
       const travelConflicts = conflicts.filter(c => c.type === 'travel_conflict');
       expect(travelConflicts.length).toBe(1);
@@ -384,7 +384,7 @@ describe('Calendar AI Service', () => {
         }),
       ]);
 
-      const conflicts = await detectConflicts('work' as any);
+      const conflicts = await detectConflicts('finance' as any);
 
       const travelConflicts = conflicts.filter(c => c.type === 'travel_conflict');
       expect(travelConflicts.length).toBe(0);
@@ -403,7 +403,7 @@ describe('Calendar AI Service', () => {
 
       mockGetCalendarEvents.mockResolvedValueOnce(events);
 
-      const conflicts = await detectConflicts('work' as any);
+      const conflicts = await detectConflicts('finance' as any);
 
       const overbooked = conflicts.filter(c => c.type === 'overbooked_day');
       expect(overbooked.length).toBe(1);
@@ -424,7 +424,7 @@ describe('Calendar AI Service', () => {
         }),
       ]);
 
-      const conflicts = await detectConflicts('work' as any);
+      const conflicts = await detectConflicts('finance' as any);
 
       const overbooked = conflicts.filter(c => c.type === 'overbooked_day');
       expect(overbooked.length).toBe(0);
@@ -444,7 +444,7 @@ describe('Calendar AI Service', () => {
         }),
       ]);
 
-      const conflicts = await detectConflicts('work' as any);
+      const conflicts = await detectConflicts('finance' as any);
       const overlap = conflicts.find(c => c.type === 'overlap');
       expect(overlap?.suggestion).toBeDefined();
       expect(overlap?.suggestion).toContain('Verschiebe');
@@ -465,7 +465,7 @@ describe('Calendar AI Service', () => {
       ]);
 
       const conflicts = await checkEventConflicts(
-        'work' as any,
+        'finance' as any,
         '2026-03-08T10:00:00.000Z',
         '2026-03-08T11:00:00.000Z'
       );
@@ -484,7 +484,7 @@ describe('Calendar AI Service', () => {
       ]);
 
       const conflicts = await checkEventConflicts(
-        'work' as any,
+        'finance' as any,
         '2026-03-08T10:30:00.000Z',
         '2026-03-08T11:30:00.000Z'
       );
@@ -505,7 +505,7 @@ describe('Calendar AI Service', () => {
       ]);
 
       const conflicts = await checkEventConflicts(
-        'work' as any,
+        'finance' as any,
         '2026-03-08T10:00:00.000Z',
         '2026-03-08T11:00:00.000Z',
         'event-self' // exclude self
@@ -518,7 +518,7 @@ describe('Calendar AI Service', () => {
       mockGetCalendarEvents.mockResolvedValueOnce([]);
 
       await checkEventConflicts(
-        'work' as any,
+        'finance' as any,
         '2026-03-08T10:00:00.000Z',
         '2026-03-08T11:00:00.000Z'
       );

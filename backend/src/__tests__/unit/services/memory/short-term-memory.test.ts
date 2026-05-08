@@ -59,24 +59,24 @@ describe('Short-Term Memory Service', () => {
 
   describe('getOrCreateMemory', () => {
     it('should create a new memory session', async () => {
-      const session = await memory.getOrCreateMemory('session-1', 'personal');
+      const session = await memory.getOrCreateMemory('session-1', 'operations');
 
       expect(session).toBeDefined();
       expect(session.sessionId).toBe('session-1');
-      expect(session.context).toBe('personal');
+      expect(session.context).toBe('operations');
       expect(session.recentInteractions).toEqual([]);
     });
 
     it('should return existing session if already created', async () => {
-      const session1 = await memory.getOrCreateMemory('session-1', 'personal');
-      const session2 = await memory.getOrCreateMemory('session-1', 'personal');
+      const session1 = await memory.getOrCreateMemory('session-1', 'operations');
+      const session2 = await memory.getOrCreateMemory('session-1', 'operations');
 
       expect(session1).toBe(session2);
     });
 
     it('should create separate sessions for different IDs', async () => {
-      const session1 = await memory.getOrCreateMemory('session-1', 'personal');
-      const session2 = await memory.getOrCreateMemory('session-2', 'personal');
+      const session1 = await memory.getOrCreateMemory('session-1', 'operations');
+      const session2 = await memory.getOrCreateMemory('session-2', 'operations');
 
       expect(session1).not.toBe(session2);
       expect(session1.sessionId).toBe('session-1');
@@ -90,7 +90,7 @@ describe('Short-Term Memory Service', () => {
 
   describe('addInteraction', () => {
     it('should add an interaction to the session', async () => {
-      await memory.getOrCreateMemory('session-1', 'personal');
+      await memory.getOrCreateMemory('session-1', 'operations');
 
       await memory.addInteraction('session-1', {
         role: 'user',
@@ -104,7 +104,7 @@ describe('Short-Term Memory Service', () => {
     });
 
     it('should add timestamp to interaction', async () => {
-      await memory.getOrCreateMemory('session-1', 'personal');
+      await memory.getOrCreateMemory('session-1', 'operations');
 
       await memory.addInteraction('session-1', {
         role: 'assistant',
@@ -116,7 +116,7 @@ describe('Short-Term Memory Service', () => {
     });
 
     it('should add metadata to interaction', async () => {
-      await memory.getOrCreateMemory('session-1', 'personal');
+      await memory.getOrCreateMemory('session-1', 'operations');
 
       await memory.addInteraction('session-1', {
         role: 'user',
@@ -131,7 +131,7 @@ describe('Short-Term Memory Service', () => {
     it('should trigger compression when threshold is reached', async () => {
       mockGenerateClaudeResponse.mockResolvedValue('Summary of conversation');
 
-      await memory.getOrCreateMemory('session-1', 'personal');
+      await memory.getOrCreateMemory('session-1', 'operations');
 
       // Add interactions up to compression threshold (MAX_INTERACTIONS = 20)
       for (let i = 0; i < 20; i++) {
@@ -164,7 +164,7 @@ describe('Short-Term Memory Service', () => {
     it('should compress interactions to summary', async () => {
       mockGenerateClaudeResponse.mockResolvedValue('User discussed project planning and deadlines.');
 
-      await memory.getOrCreateMemory('session-1', 'personal');
+      await memory.getOrCreateMemory('session-1', 'operations');
 
       // Add 20 interactions to trigger compression (MAX_INTERACTIONS = 20)
       for (let i = 0; i < 20; i++) {
@@ -183,7 +183,7 @@ describe('Short-Term Memory Service', () => {
     it('should keep recent interactions after compression', async () => {
       mockGenerateClaudeResponse.mockResolvedValue('Summary');
 
-      await memory.getOrCreateMemory('session-1', 'personal');
+      await memory.getOrCreateMemory('session-1', 'operations');
 
       // Add 20 interactions to trigger compression
       for (let i = 0; i < 20; i++) {
@@ -217,7 +217,7 @@ describe('Short-Term Memory Service', () => {
 
       mockGenerateEmbedding.mockResolvedValue([0.1, 0.2, 0.3]);
 
-      await memory.getOrCreateMemory('session-1', 'personal');
+      await memory.getOrCreateMemory('session-1', 'operations');
 
       await memory.addInteraction('session-1', {
         role: 'user',
@@ -237,7 +237,7 @@ describe('Short-Term Memory Service', () => {
 
   describe('getEnrichedContext', () => {
     it('should return enriched context for a session', async () => {
-      await memory.getOrCreateMemory('session-1', 'personal');
+      await memory.getOrCreateMemory('session-1', 'operations');
 
       await memory.addInteraction('session-1', {
         role: 'user',
@@ -262,7 +262,7 @@ describe('Short-Term Memory Service', () => {
         rowCount: 1,
       } as any);
 
-      await memory.getOrCreateMemory('session-1', 'personal');
+      await memory.getOrCreateMemory('session-1', 'operations');
       await memory.addInteraction('session-1', { role: 'user', content: 'Test query' });
 
       const context = await memory.getEnrichedContext('session-1');
@@ -271,7 +271,7 @@ describe('Short-Term Memory Service', () => {
     });
 
     it('should include contextual hints', async () => {
-      await memory.getOrCreateMemory('session-1', 'personal');
+      await memory.getOrCreateMemory('session-1', 'operations');
 
       // Add interactions to generate hints
       await memory.addInteraction('session-1', { role: 'user', content: 'What about my tasks?' });
@@ -283,7 +283,7 @@ describe('Short-Term Memory Service', () => {
     });
 
     it('should include suggested follow-ups', async () => {
-      await memory.getOrCreateMemory('session-1', 'personal');
+      await memory.getOrCreateMemory('session-1', 'operations');
       await memory.addInteraction('session-1', { role: 'user', content: 'Test' });
 
       const context = await memory.getEnrichedContext('session-1');
@@ -306,7 +306,7 @@ describe('Short-Term Memory Service', () => {
 
   describe('clearMemory', () => {
     it('should remove a session', async () => {
-      await memory.getOrCreateMemory('session-1', 'personal');
+      await memory.getOrCreateMemory('session-1', 'operations');
       memory.clearMemory('session-1');
 
       expect(memory.getMemory('session-1')).toBeNull();
@@ -319,8 +319,8 @@ describe('Short-Term Memory Service', () => {
 
   describe('getStats', () => {
     it('should return statistics about memory usage', async () => {
-      await memory.getOrCreateMemory('session-1', 'personal');
-      await memory.getOrCreateMemory('session-2', 'work');
+      await memory.getOrCreateMemory('session-1', 'operations');
+      await memory.getOrCreateMemory('session-2', 'finance');
 
       const stats = memory.getStats();
 

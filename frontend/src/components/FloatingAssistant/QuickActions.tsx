@@ -45,7 +45,7 @@ const PAGE_ACTIONS: Partial<Record<Page, QuickAction[]>> = {
     { icon: '\u{1F4CA}', label: 'Statistik', prompt: 'Wie viele Ideen habe ich insgesamt?' },
   ],
   workshop: [
-    { icon: '\u{2728}', label: 'Vorschlaege', prompt: 'Was schlaegst du vor?' },
+    { icon: '\u{2728}', label: 'Vorschläge', prompt: 'Was schlägst du vor?' },
     { icon: '\u{1F916}', label: 'Agent', prompt: 'Starte einen Agent-Task: ' },
     { icon: '\u{1F517}', label: 'Verbinden', prompt: 'Welche meiner Ideen passen zusammen?' },
   ],
@@ -75,16 +75,16 @@ const PAGE_ACTIONS: Partial<Record<Page, QuickAction[]>> = {
   ],
   learning: [
     { icon: '\u{1F4DA}', label: 'Lernziel', prompt: 'Neues Lernziel: ' },
-    { icon: '\u{2753}', label: 'Erklaerung', prompt: 'Erklaere mir einfach: ' },
+    { icon: '\u{2753}', label: 'Erklärung', prompt: 'Erkläre mir einfach: ' },
     { icon: '\u{1F9E9}', label: 'Quiz', prompt: 'Erstelle ein Quiz zu: ' },
   ],
   'my-ai': [
-    { icon: '\u{1F9E0}', label: 'KI-Wissen', prompt: 'Was weisst du ueber mich?' },
+    { icon: '\u{1F9E0}', label: 'KI-Wissen', prompt: 'Was weißt du über mich?' },
     { icon: '\u{2699}', label: 'Anpassen', prompt: 'Wie kann ich dich besser anpassen?' },
   ],
-  settings: [
+  'settings-user': [
     { icon: '\u{2753}', label: 'Hilfe', prompt: 'Welche Einstellungen gibt es?' },
-    { icon: '\u{1F50D}', label: 'Suche', prompt: 'Wo finde ich die Einstellung fuer ' },
+    { icon: '\u{1F50D}', label: 'Suche', prompt: 'Wo finde ich die Einstellung für ' },
   ],
   contacts: [
     { icon: '\u{1F464}', label: 'Kontakt', prompt: 'Suche nach Kontakt ' },

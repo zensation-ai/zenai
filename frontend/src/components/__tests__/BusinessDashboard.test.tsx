@@ -95,7 +95,7 @@ vi.mock('../SkeletonLoader', () => ({
 import { BusinessDashboard } from '../BusinessDashboard';
 
 const defaultProps = {
-  context: 'personal' as const,
+  context: 'operations' as const,
   onBack: vi.fn(),
   initialTab: 'overview' as const,
 };
@@ -113,7 +113,7 @@ describe('BusinessDashboard Component', () => {
 
   it('shows page title and subtitle', () => {
     render(<BusinessDashboard {...defaultProps} />);
-    expect(screen.getByText('Business Manager')).toBeInTheDocument();
+    expect(screen.getByText('Geschäftscockpit')).toBeInTheDocument();
     expect(screen.getByText('AI-gesteuerte Geschäftsanalysen')).toBeInTheDocument();
   });
 
@@ -163,6 +163,6 @@ describe('BusinessDashboard Component', () => {
 
   it('has ARIA label for accessibility', () => {
     render(<BusinessDashboard {...defaultProps} />);
-    expect(screen.getByTestId('hub-page')).toHaveAttribute('aria-label', 'Business Navigation');
+    expect(screen.getByTestId('hub-page')).toHaveAttribute('aria-label', 'Geschäftscockpit Navigation');
   });
 });

@@ -1,6 +1,7 @@
 import type { Express } from 'express';
 import type { Module } from '../../core/module';
 import { securityRouter } from '../../routes/security';
+import { moderationRouter } from '../../routes/moderation';
 
 export class SecurityModule implements Module {
   name = 'security';
@@ -8,6 +9,8 @@ export class SecurityModule implements Module {
   registerRoutes(app: Express): void {
     // Phase 62: Enterprise Security
     app.use('/api/security', securityRouter);
+    // Sprint 1.2: Moderation Appeals (public token endpoint + admin review)
+    app.use('/api/moderation', moderationRouter);
   }
 
   async onStartup(): Promise<void> {

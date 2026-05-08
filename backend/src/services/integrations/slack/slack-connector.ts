@@ -33,7 +33,7 @@ export class SlackConnector implements Connector {
     ],
     webhookSupported: true,
     syncSupported: true,
-    defaultContext: 'work',
+    defaultContext: 'finance',
     icon: 'MessageSquare',
     description: 'Bidirectional Slack integration with proactive channel presence and autonomous workflows.',
   };
@@ -107,7 +107,7 @@ export class SlackConnector implements Connector {
         try {
           // In real implementation: call Slack API conversations.history
           // For now, sync logic is a placeholder that subclasses/callers extend
-          const targetContext = (channel.target_context || 'work') as AIContext;
+          const targetContext = (channel.target_context || 'finance') as AIContext;
           logger.debug('Syncing channel', { channelId: channel.channel_id, targetContext });
         } catch (err) {
           errors++;

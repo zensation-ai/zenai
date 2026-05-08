@@ -136,12 +136,12 @@ export function PersonaSelector({ context, selectedPersona, onPersonaChange }: P
 }
 
 // Valid personas per context - must match backend config/personas.ts CONTEXT_PERSONAS
-// learning and creative contexts reuse PERSONAL_PERSONAS on the backend
+// people and strategy contexts reuse OPERATIONS_PERSONAS on the backend
 const VALID_PERSONAS: Record<AIContext, string[]> = {
-  personal: ['companion', 'coach', 'creative'],
-  work: ['coordinator', 'analyst', 'strategist'],
-  learning: ['companion', 'coach', 'creative'],
-  creative: ['companion', 'coach', 'creative'],
+  operations: ['companion', 'coach', 'creative'],
+  finance: ['coordinator', 'analyst', 'strategist'],
+  people: ['companion', 'coach', 'creative'],
+  strategy: ['companion', 'coach', 'creative'],
 };
 
 // Hook for managing persona state per context

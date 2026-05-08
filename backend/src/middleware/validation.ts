@@ -15,7 +15,7 @@ import { z, ZodError, ZodSchema } from 'zod';
 /**
  * Valid AI context values
  */
-export const contextSchema = z.enum(['personal', 'work', 'learning', 'creative']);
+export const contextSchema = z.enum(['operations', 'finance', 'people', 'strategy']);
 export type AIContextType = z.infer<typeof contextSchema>;
 
 /**
@@ -245,7 +245,7 @@ export function validateContext(req: Request, res: Response, next: NextFunction)
         message: 'Invalid context parameter',
         details: {
           received: req.params.context,
-          expected: ['personal', 'work', 'learning', 'creative'],
+          expected: ['operations', 'finance', 'people', 'strategy'],
         },
       },
     });

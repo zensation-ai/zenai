@@ -5,11 +5,13 @@
  * dependency arrows, and drag-to-reschedule.
  */
 
-import { useState, useMemo, useCallback, useRef } from 'react';
+import { useState, useMemo, useCallback, useRef, type CSSProperties } from 'react';
 import type { Task, Project } from './types';
 import { PRIORITY_COLORS } from './types';
 import type { AIContext } from '../ContextSwitcher';
-import './GanttChart.css';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { cn } from '@/lib/utils';
 
 interface GanttChartProps {
   tasks: Task[];
@@ -24,7 +26,6 @@ type ZoomLevel = 'day' | 'week' | 'month';
 
 const ROW_HEIGHT = 36;
 const HEADER_HEIGHT = 50;
-const LEFT_PANEL_WIDTH = 260;
 const DAY_WIDTH_MAP: Record<ZoomLevel, number> = { day: 60, week: 24, month: 8 };
 
 function addDays(date: Date, n: number): Date {
@@ -173,45 +174,50 @@ export function GanttChart({
   }, [newProjectName, onCreateProject]);
 
   if (loading) {
-    return <div className="gantt-loading">Lade Gantt-Daten...</div>;
+    return <div data-testid="gantt-loading" className="flex items-center justify-center h-[200px] text-text-secondary text-[0.9rem]">Lade Gantt-Daten...</div>;
   }
 
   return (
-    <div className="gantt-chart">
+    <div data-testid="gantt-chart" className="flex flex-col h-full">
       {/* Toolbar */}
-      <div className="gantt-toolbar">
-        <div className="gantt-toolbar__left">
-          <button
-            type="button"
-            className="gantt-btn"
+      <div className="flex items-center justify-between gap-3 mb-3 flex-wrap max-md:flex-col max-md:items-stretch">
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
             onClick={() => setShowProjectForm(!showProjectForm)}
           >
             + Neues Projekt
-          </button>
+          </Button>
 
           {showProjectForm && (
-            <div className="gantt-project-form">
-              <input
+            <div className="flex items-center gap-1.5 max-[480px]:flex-wrap">
+              <Input
                 type="text"
                 placeholder="Projektname..."
                 value={newProjectName}
                 onChange={e => setNewProjectName(e.target.value)}
                 onKeyDown={e => e.key === 'Enter' && handleCreateProject()}
                 autoFocus
+                className="w-[180px] h-8 text-[0.813rem] max-md:w-[140px] max-[480px]:w-full max-[480px]:min-w-0"
               />
-              <button type="button" onClick={handleCreateProject}>Erstellen</button>
-              <button type="button" onClick={() => setShowProjectForm(false)}>Abbrechen</button>
+              <Button size="sm" onClick={handleCreateProject}>Erstellen</Button>
+              <Button variant="ghost" size="sm" onClick={() => setShowProjectForm(false)}>Abbrechen</Button>
             </div>
           )}
         </div>
 
-        <div className="gantt-toolbar__right">
-          <div className="gantt-zoom" role="group" aria-label="Zoom">
+        <div>
+          <div className="flex border border-glass-border rounded-md overflow-hidden" role="group" aria-label="Zoom">
             {(['day', 'week', 'month'] as ZoomLevel[]).map(z => (
               <button
                 type="button"
                 key={z}
-                className={`gantt-zoom__btn ${zoom === z ? 'gantt-zoom__btn--active' : ''}`}
+                className={cn(
+                  'px-3 py-1 border-none bg-surface text-text-secondary text-xs cursor-pointer transition-colors hover:bg-surface-hover hover:text-text focus-visible:outline-2 focus-visible:outline-primary focus-visible:-outline-offset-2 max-[480px]:px-2 max-[480px]:py-1 max-[480px]:text-[12px]',
+                  z !== 'month' && 'border-r border-glass-border',
+                  zoom === z && 'bg-primary/10 text-primary font-medium hover:bg-primary/15 hover:text-primary'
+                )}
                 onClick={() => setZoom(z)}
               >
                 {z === 'day' ? 'Tag' : z === 'week' ? 'Woche' : 'Monat'}
@@ -222,52 +228,57 @@ export function GanttChart({
       </div>
 
       {/* Chart */}
-      <div className="gantt-container">
+      <div data-testid="gantt-container" className="flex flex-1 overflow-hidden border border-glass-border rounded-md bg-surface">
         {/* Left panel - labels */}
-        <div className="gantt-left" style={{ width: LEFT_PANEL_WIDTH }}>
-          <div className="gantt-left__header" style={{ height: HEADER_HEIGHT }}>
+        <div className="w-[260px] shrink-0 border-r border-glass-border overflow-y-auto max-md:!w-[160px] max-[480px]:!w-[120px]">
+          <div
+            className="h-[50px] flex items-center px-3 font-medium text-[0.813rem] text-text border-b border-glass-border bg-bg-secondary"
+          >
             Aufgaben
           </div>
           {rows.map((row, i) => (
             <div
               key={i}
-              className={`gantt-left__row gantt-left__row--${row.type}`}
-              style={{ height: ROW_HEIGHT }}
+              className={cn(
+                'h-9 flex items-center px-3 border-b border-glass-border/50 text-[0.813rem] text-text',
+                row.type === 'project' && 'bg-bg-secondary font-medium'
+              )}
             >
               {row.type === 'project' ? (
-                <div className="gantt-left__project">
+                <div data-testid="gantt-project-name" className="flex items-center gap-1.5 w-full overflow-hidden">
                   {row.project ? (
                     <>
                       <button
-                        className="gantt-left__toggle"
+                        className="border-none bg-transparent cursor-pointer text-[0.625rem] p-0.5 text-text-secondary transition-colors hover:text-text"
                         onClick={() => toggleProject(row.project!.id)}
                         aria-label={collapsedProjects.has(row.project.id) ? 'Aufklappen' : 'Zuklappen'}
                       >
                         {collapsedProjects.has(row.project.id) ? '\u25B6' : '\u25BC'}
                       </button>
                       <span
-                        className="gantt-left__dot"
-                        style={{ backgroundColor: row.project.color }}
+                        className="w-2 h-2 rounded-full shrink-0 bg-[var(--pc)]"
+                        style={{ '--pc': row.project.color } as CSSProperties}
                       />
-                      <span className="gantt-left__name">{row.project.icon} {row.project.name}</span>
+                      <span className="whitespace-nowrap overflow-hidden text-ellipsis">{row.project.icon} {row.project.name}</span>
                     </>
                   ) : (
-                    <span className="gantt-left__name">Ohne Projekt</span>
+                    <span className="whitespace-nowrap overflow-hidden text-ellipsis">Ohne Projekt</span>
                   )}
                 </div>
               ) : (
                 <div
-                  className="gantt-left__task"
+                  data-testid="gantt-task"
+                  className="flex items-center gap-1.5 pl-5 cursor-pointer w-full overflow-hidden transition-colors hover:text-primary"
                   onClick={() => row.task && onEditTask(row.task)}
                   role="button"
                   tabIndex={0}
                   onKeyDown={e => e.key === 'Enter' && row.task && onEditTask(row.task)}
                 >
                   <span
-                    className="gantt-left__priority"
-                    style={{ backgroundColor: row.task ? PRIORITY_COLORS[row.task.priority] : undefined }}
+                    className={cn('w-1.5 h-1.5 rounded-full shrink-0', row.task && 'bg-[var(--pc)]')}
+                    style={row.task ? { '--pc': PRIORITY_COLORS[row.task.priority] } as CSSProperties : undefined}
                   />
-                  <span className="gantt-left__task-title">{row.task?.title}</span>
+                  <span data-testid="gantt-task-title" className="whitespace-nowrap overflow-hidden text-ellipsis">{row.task?.title}</span>
                 </div>
               )}
             </div>
@@ -275,12 +286,13 @@ export function GanttChart({
         </div>
 
         {/* Right panel - SVG chart */}
-        <div className="gantt-right" style={{ overflow: 'auto' }}>
+        <div className="flex-1 overflow-auto">
           <svg
             ref={svgRef}
             width={totalWidth}
             height={totalHeight}
-            className="gantt-svg"
+            data-testid="gantt-svg"
+            className="block"
           >
             {/* Date headers */}
             {Array.from({ length: totalDays }, (_, i) => {
@@ -302,7 +314,7 @@ export function GanttChart({
                   {showLabel && (
                     <text
                       x={x + 4} y={HEADER_HEIGHT - 10}
-                      className="gantt-header-text"
+                      className="fill-text-secondary select-none"
                       fontSize={zoom === 'day' ? 11 : 10}
                     >
                       {zoom === 'month'
@@ -354,9 +366,8 @@ export function GanttChart({
               return (
                 <g
                   key={task.id}
-                  className="gantt-bar"
+                  className="cursor-pointer [&:hover_rect]:brightness-110 focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-1"
                   onClick={() => onEditTask(task)}
-                  style={{ cursor: 'pointer' }}
                 >
                   <rect
                     x={barX} y={barY}
@@ -380,7 +391,7 @@ export function GanttChart({
                       fill="white"
                       fontSize={11}
                       fontWeight={500}
-                      className="gantt-bar__text"
+                      className="pointer-events-none select-none"
                     >
                       {task.title.length > Math.floor(barW / 7) ? task.title.slice(0, Math.floor(barW / 7)) + '...' : task.title}
                     </text>
@@ -393,10 +404,10 @@ export function GanttChart({
       </div>
 
       {/* Project legend */}
-      <div className="gantt-legend">
+      <div className="flex flex-wrap gap-3 py-2 mt-2 text-xs text-text-secondary">
         {projects.filter(p => p.status !== 'archived').map(p => (
-          <span key={p.id} className="gantt-legend__item">
-            <span className="gantt-legend__dot" style={{ backgroundColor: p.color }} />
+          <span key={p.id} className="flex items-center gap-1">
+            <span className="w-2 h-2 rounded-full bg-[var(--pc)]" style={{ '--pc': p.color } as CSSProperties} />
             {p.icon} {p.name}
           </span>
         ))}

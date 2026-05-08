@@ -19,8 +19,6 @@ import type { AIContext } from './ContextSwitcher';
 import { SkeletonLoader } from './SkeletonLoader';
 import { showToast } from './Toast';
 import { logError } from '../utils/errors';
-import './MemoryGovernance.css';
-
 // ============================================
 // Types
 // ============================================
@@ -61,10 +59,10 @@ const MEMORY_LAYERS = [
 ] as const;
 
 const CONTEXT_LABELS: Record<AIContext, string> = {
-  personal: 'Privat',
-  work: 'Arbeit',
-  learning: 'Lernen',
-  creative: 'Kreativ',
+  operations: 'Operativ',
+  finance: 'Finanzen',
+  people: 'Team',
+  strategy: 'Strategie',
 };
 
 // ============================================

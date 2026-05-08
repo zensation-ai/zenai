@@ -50,7 +50,7 @@ const TEMPORAL_WEIGHT = 0.4;
 const SEQUENTIAL_WEIGHT = 0.4;
 const RECENCY_WEIGHT = 0.2;
 const DEFAULT_INTENT = 'general';
-const DEFAULT_DOMAIN = 'personal';
+const DEFAULT_DOMAIN = 'operations';
 
 // ---------------------------------------------------------------------------
 // predictNextIntent

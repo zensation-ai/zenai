@@ -1,0 +1,70 @@
+% Auto-generated for LongMemEval Full-500 (unified-nomic).
+% Sources: docs/papers/results/g5-full500-nomic/longmemeval-baseline-*.json
+%          + docs/papers/results/g5-full500-nomic/longmemeval-judge-*-{sonnet,opus,gpt4o}-seed{42,123,456}.json
+%          + docs/papers/results/g5-full500-nomic/longmemeval-full500-significance.json
+% Retrieval: zenbrain has 3 deterministic retrieval seeds (42/123/456);
+% a-mem / mem0 / letta have seed=42 only (paths are effectively deterministic).
+% letta n=441: 59/500 tasks returned HTTP 500 InternalServerError from the Letta
+% Docker server and were excluded from retrieval aggregation (per-query P@5 etc.)
+% but included with score=0 in judge aggregation (matches the pre-registered
+% ``no facts retrieved'' prompt).
+% mem0 n=496: 4/500 tasks hit a transient embedder HTTP-400 during ingest and
+% were excluded from retrieval aggregation.
+\begin{table}[t]
+\centering
+\caption{LongMemEval-S Full-500 cross-benchmark replication under a \emph{unified}
+\texttt{nomic-embed-text} (768-dim) embedding backbone for all four systems.
+Per-question isolation: \texttt{reset()} $\to$ \texttt{ingest($\sim$494 turns)}
+$\to$ \texttt{query(k=5)}. Retrieval metrics (P@5, R@5, MRR, NDCG@5, F1) are
+averaged over each system's successfully-completed queries
+(\textbf{zenbrain}/\texttt{a-mem}: $n$$=$$500$; \texttt{mem0}: $n$$=$$496$;
+\texttt{letta}: $n$$=$$441$, see $^\dagger$). Judge columns are LLM-as-Judge
+normalized means over all 500 queries (letta's 59 InternalServerError cases and
+mem0's 4 embedder-400 cases appear as empty retrievals and are scored by the judge
+as~$0$/$5$). \textbf{zenbrain} uses three retrieval seeds (42, 123, 456) with
+identical deterministic outputs; \texttt{a-mem}, \texttt{mem0}, and \texttt{letta}
+use seed=42. Bold = best per column; intersect-subgroup numbers on the
+$n{=}441$ tasks all four systems serve are discussed in the text
+(\S\ref{sec:longmemeval-pilot}). Under Bonferroni correction
+($\alpha{=}0.05/18{=}2.78{\times}10^{-3}$, 18 primary tests =
+6 pair-wise comparisons $\times$ 3 judges), all three ZenBrain-vs-competitor
+gaps clear significance on all three judges
+(min $p{=}6.20{\times}10^{-31}$, max $p{=}2.81{\times}10^{-6}$; full table in
+Appendix~\ref{app:g5-longmemeval-scaffold}).}
+\label{tab:longmemeval-pilot}
+\small
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{lcccccccc}
+\toprule
+System & P@5 & R@5 & MRR & NDCG@5 & F1 & J(S-4.5, 3$\times$) & J(O-4.6, 3$\times$) & J(G-4o, 3$\times$) \\
+\midrule
+\textbf{zenbrain} & 0.674 & 0.197 & 0.831 & 0.706 & 0.283 & \textbf{0.504} & \textbf{0.575} & \textbf{0.555} \\
+a-mem & 0.519 & 0.144 & 0.640 & 0.543 & 0.211 & 0.389 & 0.436 & 0.416 \\
+mem0 & 0.156 & 0.060 & 0.304 & 0.171 & 0.078 & 0.370 & 0.414 & 0.398 \\
+letta$^\dagger$ & \textbf{0.683} & \textbf{0.201} & \textbf{0.834} & \textbf{0.715} & \textbf{0.287} & 0.450 & 0.513 & 0.492 \\
+\bottomrule
+\end{tabular}%
+}
+\vspace{0.3em}
+\noindent\footnotesize $^\dagger$\texttt{letta} failed 59 of 500 queries with
+HTTP~500 \texttt{InternalServerError} from the local Letta Docker server (11.8\,\%:
+15 multi-session, 14 temporal-reasoning, 11 knowledge-update, 8 single-session-assistant,
+6 single-session-user, 5 single-session-preference), which is a substantial
+improvement over the pilot's $33\,\%$ rate (confirming the higher rate was a
+pilot-scale transient, not a systemic Docker-harness property) but still
+precludes full head-to-head coverage. Retrieval metrics are averaged over the
+441 successful queries, so letta's headline retrieval numbers still compare an
+easier subset to the other three systems' larger pools. On the $n{=}441$ intersect
+where all four systems serve, \textbf{letta retains narrow leads on P@5 ($0.683$ vs
+zenbrain $0.664$), R@5 ($0.201$ vs $0.195$), MRR ($0.834$ vs $0.824$), and NDCG@5
+($0.715$ vs $0.697$)}, while ZenBrain wins every judge column at the full-500 level
+by wide, Bonferroni-clearing margins. Judge columns are \emph{not} restricted to
+successful queries --- all 500 enter the aggregate, so the judge numbers are
+directly comparable across systems. \texttt{mem0}'s $P@5$ drops from
+$0.393$ in the stratified-30 pilot to $0.156$ at full scale: the pilot's 5-questions-per-category
+sampling happened to over-select queries on which mem0's flat-$3900$-char truncation
+still retrieved the relevant fact (28\,\% zero-$P@5$), whereas at full scale the
+true rate of truncated queries hitting zero is $60\,\%$. This is a selection artifact
+of the pilot, not a regression, and confirms the pilot-to-full methodological
+warning in \S\ref{sec:longmemeval-pilot}.
+\end{table}

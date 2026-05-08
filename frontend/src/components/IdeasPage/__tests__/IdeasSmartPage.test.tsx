@@ -5,6 +5,7 @@ import { IdeasSmartPage } from '../IdeasSmartPage';
 vi.mock('../../../hooks/queries/useIdeas', () => ({
   useIdeasQuery: () => ({ data: [], isLoading: false, error: null }),
   useArchivedIdeasQuery: () => ({ data: { ideas: [], total: 0 } }),
+  useCreateIdeaMutation: () => ({ mutate: vi.fn(), isPending: false }),
   useDeleteIdeaMutation: () => ({ mutate: vi.fn() }),
   useArchiveIdeaMutation: () => ({ mutate: vi.fn() }),
   useRestoreIdeaMutation: () => ({ mutate: vi.fn() }),
@@ -22,28 +23,28 @@ function renderWithProviders(ui: React.ReactElement) {
 
 describe('IdeasSmartPage', () => {
   it('renders filter chip bar', () => {
-    renderWithProviders(<IdeasSmartPage context="personal" />);
+    renderWithProviders(<IdeasSmartPage context="operations" />);
     // FilterChipBar renders with role="toolbar"
     expect(screen.getByRole('toolbar', { name: /chip/i })).toBeInTheDocument();
   });
 
   it('renders search in toolbar', () => {
-    renderWithProviders(<IdeasSmartPage context="personal" />);
+    renderWithProviders(<IdeasSmartPage context="operations" />);
     expect(screen.getByPlaceholderText(/suchen/i)).toBeInTheDocument();
   });
 
   it('renders view toggle', () => {
-    renderWithProviders(<IdeasSmartPage context="personal" />);
+    renderWithProviders(<IdeasSmartPage context="operations" />);
     expect(screen.getByRole('group', { name: /ansicht/i })).toBeInTheDocument();
   });
 
   it('renders empty state when no ideas', () => {
-    renderWithProviders(<IdeasSmartPage context="personal" />);
+    renderWithProviders(<IdeasSmartPage context="operations" />);
     expect(screen.queryByRole('button', { name: /test/i })).not.toBeInTheDocument();
   });
 
   it('accepts initialTab prop for filter preset', () => {
-    renderWithProviders(<IdeasSmartPage context="personal" initialTab="archive" />);
+    renderWithProviders(<IdeasSmartPage context="operations" initialTab="archive" />);
     const archiveChip = screen.getByText('Archiv').closest('button');
     expect(archiveChip).toHaveAttribute('aria-pressed', 'true');
   });

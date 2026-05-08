@@ -18,6 +18,7 @@ interface ContactFormProps {
 
 export function ContactForm({ contact, organizations, onSubmit, onCancel }: ContactFormProps) {
   useEscapeKey(onCancel);
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const [displayName, setDisplayName] = useState(contact?.display_name || '');
   const [firstName, setFirstName] = useState(contact?.first_name || '');
   const [lastName, setLastName] = useState(contact?.last_name || '');
@@ -31,7 +32,10 @@ export function ContactForm({ contact, organizations, onSubmit, onCancel }: Cont
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!displayName.trim()) return;
+    const newErrors: Record<string, string> = {};
+    if (!displayName.trim()) newErrors.displayName = 'Anzeigename ist erforderlich';
+    setErrors(newErrors);
+    if (Object.keys(newErrors).length > 0) return;
 
     onSubmit({
       display_name: displayName.trim(),
@@ -63,11 +67,18 @@ export function ContactForm({ contact, organizations, onSubmit, onCancel }: Cont
                 id="cf-displayName"
                 type="text"
                 value={displayName}
-                onChange={e => setDisplayName(e.target.value)}
+                onChange={e => { setDisplayName(e.target.value); if (errors.displayName) setErrors(prev => ({ ...prev, displayName: '' })); }}
                 placeholder="Max Mustermann"
+                aria-invalid={!!errors.displayName}
+                aria-describedby={errors.displayName ? 'cf-displayName-error' : undefined}
                 required
                 autoFocus
               />
+              {errors.displayName && (
+                <span id="cf-displayName-error" className="contact-form-field-error" role="alert">
+                  {errors.displayName}
+                </span>
+              )}
             </div>
           </div>
 
@@ -138,7 +149,7 @@ export function ContactForm({ contact, organizations, onSubmit, onCancel }: Cont
                 type="text"
                 value={role}
                 onChange={e => setRole(e.target.value)}
-                placeholder="Geschaeftsfuehrer"
+                placeholder="Geschäftsführer"
               />
             </div>
           </div>
@@ -183,7 +194,7 @@ export function ContactForm({ contact, organizations, onSubmit, onCancel }: Cont
 
           <div className="contact-form-actions">
             <button type="button" className="btn-secondary" onClick={onCancel}>Abbrechen</button>
-            <button type="submit" className="btn-primary" disabled={!displayName.trim()}>
+            <button type="submit" className="btn-primary active:scale-[0.97] transition-transform duration-100" disabled={!displayName.trim()}>
               {contact ? 'Speichern' : 'Erstellen'}
             </button>
           </div>

@@ -105,7 +105,7 @@ describe('Email AI Service', () => {
       // UPDATE email
       mockQueryContext.mockResolvedValueOnce({ rows: [] } as any);
 
-      await processEmailWithAI('personal', 'email-001');
+      await processEmailWithAI('operations', 'email-001');
 
       // Should update email with AI analysis
       expect(mockQueryContext).toHaveBeenCalledTimes(2);
@@ -120,7 +120,7 @@ describe('Email AI Service', () => {
     it('should return early when email not found', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [] } as any);
 
-      await processEmailWithAI('personal', 'nonexistent');
+      await processEmailWithAI('operations', 'nonexistent');
 
       expect(mockClaudeCreate).not.toHaveBeenCalled();
     });
@@ -130,7 +130,7 @@ describe('Email AI Service', () => {
         rows: [makeEmailRow({ body_text: 'Hi', body_html: null })],
       } as any);
 
-      await processEmailWithAI('personal', 'email-001');
+      await processEmailWithAI('operations', 'email-001');
 
       expect(mockClaudeCreate).not.toHaveBeenCalled();
     });
@@ -153,7 +153,7 @@ describe('Email AI Service', () => {
       mockClaudeCreate.mockResolvedValueOnce(makeClaudeResponse(JSON.stringify(analysis)));
       mockQueryContext.mockResolvedValueOnce({ rows: [] } as any);
 
-      await processEmailWithAI('personal', 'email-001');
+      await processEmailWithAI('operations', 'email-001');
 
       expect(mockExecuteWithProtection).toHaveBeenCalled();
     });
@@ -165,7 +165,7 @@ describe('Email AI Service', () => {
       mockClaudeCreate.mockResolvedValueOnce(makeClaudeResponse(wrappedResponse));
       mockQueryContext.mockResolvedValueOnce({ rows: [] } as any);
 
-      await processEmailWithAI('personal', 'email-001');
+      await processEmailWithAI('operations', 'email-001');
 
       const updateParams = mockQueryContext.mock.calls[1][2];
       expect(updateParams[1]).toBe('Test'); // summary parsed correctly
@@ -184,7 +184,7 @@ describe('Email AI Service', () => {
       mockClaudeCreate.mockResolvedValueOnce(makeClaudeResponse(JSON.stringify(analysis)));
       mockQueryContext.mockResolvedValueOnce({ rows: [] } as any);
 
-      await processEmailWithAI('personal', 'email-001');
+      await processEmailWithAI('operations', 'email-001');
 
       const updateParams = mockQueryContext.mock.calls[1][2];
       expect(updateParams[2]).toBeNull(); // invalid category -> null
@@ -206,7 +206,7 @@ describe('Email AI Service', () => {
       mockClaudeCreate.mockResolvedValueOnce(makeClaudeResponse(JSON.stringify(analysis)));
       mockQueryContext.mockResolvedValueOnce({ rows: [] } as any);
 
-      await processEmailWithAI('personal', 'email-001');
+      await processEmailWithAI('operations', 'email-001');
 
       // The AI prompt should contain truncated text
       expect(mockExecuteWithProtection).toHaveBeenCalled();
@@ -225,13 +225,13 @@ describe('Email AI Service', () => {
       mockClaudeCreate.mockResolvedValueOnce(makeClaudeResponse(JSON.stringify(analysis)));
       mockQueryContext.mockResolvedValueOnce({ rows: [] } as any);
 
-      await processEmailWithAI('personal', 'email-001');
+      await processEmailWithAI('operations', 'email-001');
 
       expect(episodicMemory.store).toHaveBeenCalledWith(
         expect.stringContaining('Max Mustermann'),
         'Email summary',
         'email-email-001',
-        'personal'
+        'operations'
       );
     });
 
@@ -248,10 +248,10 @@ describe('Email AI Service', () => {
       mockClaudeCreate.mockResolvedValueOnce(makeClaudeResponse(JSON.stringify(analysis)));
       mockQueryContext.mockResolvedValueOnce({ rows: [] } as any);
 
-      await processEmailWithAI('personal', 'email-001');
+      await processEmailWithAI('operations', 'email-001');
 
       expect(sendNotification).toHaveBeenCalledWith(
-        'personal',
+        'operations',
         expect.objectContaining({
           type: 'custom',
           title: expect.stringContaining('Wichtig'),
@@ -272,10 +272,10 @@ describe('Email AI Service', () => {
       mockClaudeCreate.mockResolvedValueOnce(makeClaudeResponse(JSON.stringify(analysis)));
       mockQueryContext.mockResolvedValueOnce({ rows: [] } as any);
 
-      await processEmailWithAI('personal', 'email-001');
+      await processEmailWithAI('operations', 'email-001');
 
       expect(sendNotification).toHaveBeenCalledWith(
-        'personal',
+        'operations',
         expect.objectContaining({
           title: expect.stringContaining('Dringend'),
         })
@@ -289,7 +289,7 @@ describe('Email AI Service', () => {
       // UPDATE with ai_parse_error
       mockQueryContext.mockResolvedValueOnce({ rows: [] } as any);
 
-      await processEmailWithAI('personal', 'email-001');
+      await processEmailWithAI('operations', 'email-001');
 
       const updateSql = mockQueryContext.mock.calls[1][1] as string;
       expect(updateSql).toContain('ai_parse_error');
@@ -300,7 +300,7 @@ describe('Email AI Service', () => {
       mockExecuteWithProtection.mockRejectedValueOnce(new Error('API rate limit'));
 
       // Should not throw
-      await processEmailWithAI('personal', 'email-001');
+      await processEmailWithAI('operations', 'email-001');
     });
 
     it('should truncate summary to 500 chars', async () => {
@@ -316,7 +316,7 @@ describe('Email AI Service', () => {
       mockClaudeCreate.mockResolvedValueOnce(makeClaudeResponse(JSON.stringify(analysis)));
       mockQueryContext.mockResolvedValueOnce({ rows: [] } as any);
 
-      await processEmailWithAI('personal', 'email-001');
+      await processEmailWithAI('operations', 'email-001');
 
       const updateParams = mockQueryContext.mock.calls[1][2];
       expect(updateParams[1].length).toBe(500);
@@ -335,7 +335,7 @@ describe('Email AI Service', () => {
       mockClaudeCreate.mockResolvedValueOnce(makeClaudeResponse(JSON.stringify(analysis)));
       mockQueryContext.mockResolvedValueOnce({ rows: [] } as any);
 
-      await processEmailWithAI('personal', 'email-001');
+      await processEmailWithAI('operations', 'email-001');
 
       const updateParams = mockQueryContext.mock.calls[1][2];
       const actionItems = JSON.parse(updateParams[5]);
@@ -360,7 +360,7 @@ describe('Email AI Service', () => {
       // Cache in DB
       mockQueryContext.mockResolvedValueOnce({ rows: [] } as any);
 
-      const result = await generateReplySuggestions('personal', 'email-001');
+      const result = await generateReplySuggestions('operations', 'email-001');
 
       expect(result).toHaveLength(3);
       expect(result[0].tone).toBe('formell');
@@ -371,7 +371,7 @@ describe('Email AI Service', () => {
     it('should return empty array when email not found', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [] } as any);
 
-      const result = await generateReplySuggestions('personal', 'nonexistent');
+      const result = await generateReplySuggestions('operations', 'nonexistent');
 
       expect(result).toEqual([]);
       expect(mockClaudeCreate).not.toHaveBeenCalled();
@@ -381,7 +381,7 @@ describe('Email AI Service', () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [makeEmailRow()] } as any);
       mockClaudeCreate.mockResolvedValueOnce(makeClaudeResponse('Not JSON'));
 
-      const result = await generateReplySuggestions('personal', 'email-001');
+      const result = await generateReplySuggestions('operations', 'email-001');
 
       expect(result).toEqual([]);
     });
@@ -390,7 +390,7 @@ describe('Email AI Service', () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [makeEmailRow()] } as any);
       mockClaudeCreate.mockResolvedValueOnce({ content: [] });
 
-      const result = await generateReplySuggestions('personal', 'email-001');
+      const result = await generateReplySuggestions('operations', 'email-001');
 
       expect(result).toEqual([]);
     });
@@ -413,7 +413,7 @@ describe('Email AI Service', () => {
         'Der Thread behandelt ein Projektupdate. Sender fragt nach dem Status.'
       ));
 
-      const summary = await summarizeThread('personal', 'thread-001');
+      const summary = await summarizeThread('operations', 'thread-001');
 
       expect(summary).toContain('Projektupdate');
       expect(mockExecuteWithProtection).toHaveBeenCalled();
@@ -422,7 +422,7 @@ describe('Email AI Service', () => {
     it('should return default message when thread not found', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [] } as any);
 
-      const summary = await summarizeThread('personal', 'nonexistent');
+      const summary = await summarizeThread('operations', 'nonexistent');
 
       expect(summary).toBe('Kein Thread gefunden.');
     });
@@ -433,7 +433,7 @@ describe('Email AI Service', () => {
       } as any);
       mockClaudeCreate.mockResolvedValueOnce({ content: [] });
 
-      const summary = await summarizeThread('personal', 'thread-001');
+      const summary = await summarizeThread('operations', 'thread-001');
 
       expect(summary).toBe('Zusammenfassung nicht verfuegbar.');
     });

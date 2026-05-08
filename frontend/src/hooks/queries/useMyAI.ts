@@ -19,7 +19,7 @@ export function useAIMemoryQuery(context: AIContext, enabled = true) {
     queryKey: queryKeys.myAI.memory(context),
     queryFn: async ({ signal }) => {
       try {
-        const response = await axios.get(`/api/${context}/memory/facts`, { signal });
+        const response = await axios.get(`/api/memory/facts/${context}`, { signal });
         return response.data?.data ?? response.data?.facts ?? [];
       } catch (error) {
         logError('useAIMemoryQuery', error);

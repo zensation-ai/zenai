@@ -36,7 +36,7 @@ export const topicEnhancementRouter = Router();
  */
 function validateContext(context: unknown): AIContext {
   if (typeof context !== 'string' || !isValidContext(context)) {
-    throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
+    throw new ValidationError('Invalid context. Use "operations", "finance", "people", or "strategy".');
   }
   return context as AIContext;
 }
@@ -49,7 +49,7 @@ function validateContext(context: unknown): AIContext {
  * Get all topics with extracted keywords
  *
  * Query params:
- * - context: 'personal' | 'work' (required)
+ * - context: 'operations' | 'finance' (required)
  */
 topicEnhancementRouter.get(
   '/topics/enhanced',
@@ -79,7 +79,7 @@ topicEnhancementRouter.get(
  * Get quality metrics for all topics
  *
  * Query params:
- * - context: 'personal' | 'work' (required)
+ * - context: 'operations' | 'finance' (required)
  */
 topicEnhancementRouter.get(
   '/topics/quality',
@@ -129,7 +129,7 @@ topicEnhancementRouter.get(
  * Get quality metrics for a single topic
  *
  * Query params:
- * - context: 'personal' | 'work' (required)
+ * - context: 'operations' | 'finance' (required)
  */
 topicEnhancementRouter.get(
   '/topics/:id/quality',
@@ -215,7 +215,7 @@ function getQualityRecommendations(quality: {
  * Find similar topics that could be merged
  *
  * Query params:
- * - context: 'personal' | 'work' (required)
+ * - context: 'operations' | 'finance' (required)
  * - threshold: number (optional, default 0.75)
  */
 topicEnhancementRouter.get(
@@ -251,7 +251,7 @@ topicEnhancementRouter.get(
  * Smart topic assignment for an idea
  *
  * Body:
- * - context: 'personal' | 'work' (required)
+ * - context: 'operations' | 'finance' (required)
  * - minConfidence: number (optional, default 0.5)
  * - autoApply: boolean (optional, default false)
  */
@@ -320,7 +320,7 @@ topicEnhancementRouter.post(
  *
  * Body:
  * - message: string (required)
- * - context: 'personal' | 'work' (required)
+ * - context: 'operations' | 'finance' (required)
  * - maxTopics: number (optional, default 3)
  * - format: 'json' | 'prompt' (optional, default 'json')
  */
@@ -371,7 +371,7 @@ topicEnhancementRouter.post(
  * Get ideas without topic assignments (orphans)
  *
  * Query params:
- * - context: 'personal' | 'work' (required)
+ * - context: 'operations' | 'finance' (required)
  * - limit: number (optional, default 50)
  */
 topicEnhancementRouter.get(

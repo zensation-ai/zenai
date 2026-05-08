@@ -16,10 +16,10 @@ jest.mock('../../utils/database-context', () => ({
   queryContext: jest.fn().mockResolvedValue({ rows: [{ '?column?': 1 }] }),
   getPoolStats: jest.fn().mockReturnValue({
     contexts: {
-      personal: { queries: 100, errors: 0, slowQueries: 0 },
-      work: { queries: 50, errors: 0, slowQueries: 0 },
-      learning: { queries: 30, errors: 0, slowQueries: 0 },
-      creative: { queries: 20, errors: 0, slowQueries: 0 },
+      operations: { queries: 100, errors: 0, slowQueries: 0 },
+      finance: { queries: 50, errors: 0, slowQueries: 0 },
+      people: { queries: 30, errors: 0, slowQueries: 0 },
+      strategy: { queries: 20, errors: 0, slowQueries: 0 },
     },
     pool: { totalCount: 5, idleCount: 3, activeCount: 2, waitingCount: 0, maxSize: 8 },
     events: { connects: 10, acquires: 200, removes: 0, errors: 0 },
@@ -123,8 +123,8 @@ describe('Health API Integration Tests', () => {
         .expect(200);
 
       expect(response.body.services).toBeDefined();
-      expect(response.body.services.databases.personal.status).toBe('connected');
-      expect(response.body.services.databases.work.status).toBe('connected');
+      expect(response.body.services.databases.operations.status).toBe('connected');
+      expect(response.body.services.databases.finance.status).toBe('connected');
     });
 
     it('should include message about detailed endpoint', async () => {
@@ -154,7 +154,7 @@ describe('Health API Integration Tests', () => {
 
   describe('GET /health/detailed', () => {
     it('should return healthy status when all services are up', async () => {
-      mockTestConnections.mockResolvedValue({ personal: true, work: true, learning: true, creative: true });
+      mockTestConnections.mockResolvedValue({ operations: true, finance: true, people: true, strategy: true });
       mockCheckOllamaHealth.mockResolvedValue({ available: true, models: ['mistral', 'nomic-embed-text'] });
 
       const response = await request(app)
@@ -164,12 +164,12 @@ describe('Health API Integration Tests', () => {
       expect(response.body.status).toBe('healthy');
       expect(response.body.timestamp).toBeDefined();
       expect(response.body.responseTime).toBeDefined();
-      expect(response.body.services.databases.personal.status).toBe('connected');
-      expect(response.body.services.databases.work.status).toBe('connected');
+      expect(response.body.services.databases.operations.status).toBe('connected');
+      expect(response.body.services.databases.finance.status).toBe('connected');
     });
 
     it('should return degraded status when one database is down', async () => {
-      mockTestConnections.mockResolvedValue({ personal: true, work: false, learning: true, creative: true });
+      mockTestConnections.mockResolvedValue({ operations: true, finance: false, people: true, strategy: true });
       mockCheckOllamaHealth.mockResolvedValue({ available: true, models: ['mistral'] });
 
       const response = await request(app)
@@ -177,12 +177,12 @@ describe('Health API Integration Tests', () => {
         .expect(200);
 
       expect(response.body.status).toBe('degraded');
-      expect(response.body.services.databases.personal.status).toBe('connected');
-      expect(response.body.services.databases.work.status).toBe('disconnected');
+      expect(response.body.services.databases.operations.status).toBe('connected');
+      expect(response.body.services.databases.finance.status).toBe('disconnected');
     });
 
     it('should return healthy status when Ollama is down but Claude is available', async () => {
-      mockTestConnections.mockResolvedValue({ personal: true, work: true, learning: true, creative: true });
+      mockTestConnections.mockResolvedValue({ operations: true, finance: true, people: true, strategy: true });
       mockCheckOllamaHealth.mockResolvedValue({ available: false, models: [] });
 
       const response = await request(app)
@@ -194,7 +194,7 @@ describe('Health API Integration Tests', () => {
     });
 
     it('should return unhealthy status when all databases are down', async () => {
-      mockTestConnections.mockResolvedValue({ personal: false, work: false, learning: false, creative: false });
+      mockTestConnections.mockResolvedValue({ operations: false, finance: false, people: false, strategy: false });
       mockCheckOllamaHealth.mockResolvedValue({ available: true, models: ['mistral'] });
 
       const response = await request(app)
@@ -202,12 +202,12 @@ describe('Health API Integration Tests', () => {
         .expect(503);
 
       expect(response.body.status).toBe('unhealthy');
-      expect(response.body.services.databases.personal.status).toBe('disconnected');
-      expect(response.body.services.databases.work.status).toBe('disconnected');
+      expect(response.body.services.databases.operations.status).toBe('disconnected');
+      expect(response.body.services.databases.finance.status).toBe('disconnected');
     });
 
     it('should return unhealthy status when all services are down', async () => {
-      mockTestConnections.mockResolvedValue({ personal: false, work: false, learning: false, creative: false });
+      mockTestConnections.mockResolvedValue({ operations: false, finance: false, people: false, strategy: false });
       mockCheckOllamaHealth.mockResolvedValue({ available: false, models: [] });
 
       const response = await request(app)
@@ -229,7 +229,7 @@ describe('Health API Integration Tests', () => {
     });
 
     it('should include response time', async () => {
-      mockTestConnections.mockResolvedValue({ personal: true, work: true, learning: true, creative: true });
+      mockTestConnections.mockResolvedValue({ operations: true, finance: true, people: true, strategy: true });
       mockCheckOllamaHealth.mockResolvedValue({ available: true, models: [] });
 
       const response = await request(app)
@@ -241,7 +241,7 @@ describe('Health API Integration Tests', () => {
     });
 
     it('should include timestamp in ISO format', async () => {
-      mockTestConnections.mockResolvedValue({ personal: true, work: true, learning: true, creative: true });
+      mockTestConnections.mockResolvedValue({ operations: true, finance: true, people: true, strategy: true });
       mockCheckOllamaHealth.mockResolvedValue({ available: true, models: [] });
 
       const response = await request(app)
@@ -252,19 +252,19 @@ describe('Health API Integration Tests', () => {
     });
 
     it('should include pool statistics', async () => {
-      mockTestConnections.mockResolvedValue({ personal: true, work: true, learning: true, creative: true });
+      mockTestConnections.mockResolvedValue({ operations: true, finance: true, people: true, strategy: true });
       mockCheckOllamaHealth.mockResolvedValue({ available: true, models: [] });
 
       const response = await request(app)
         .get('/health/detailed')
         .expect(200);
 
-      expect(response.body.services.databases.personal.pool).toBeDefined();
-      expect(response.body.services.databases.work.pool).toBeDefined();
+      expect(response.body.services.databases.operations.pool).toBeDefined();
+      expect(response.body.services.databases.finance.pool).toBeDefined();
     });
 
     it('should include AI service info', async () => {
-      mockTestConnections.mockResolvedValue({ personal: true, work: true, learning: true, creative: true });
+      mockTestConnections.mockResolvedValue({ operations: true, finance: true, people: true, strategy: true });
       mockCheckOllamaHealth.mockResolvedValue({ available: true, models: ['mistral:latest'] });
 
       const response = await request(app)
@@ -277,7 +277,7 @@ describe('Health API Integration Tests', () => {
     });
 
     it('should list available Ollama models', async () => {
-      mockTestConnections.mockResolvedValue({ personal: true, work: true, learning: true, creative: true });
+      mockTestConnections.mockResolvedValue({ operations: true, finance: true, people: true, strategy: true });
       mockCheckOllamaHealth.mockResolvedValue({
         available: true,
         models: ['mistral:latest', 'nomic-embed-text:latest', 'llama2:7b'],
@@ -313,7 +313,7 @@ describe('Health API Integration Tests', () => {
 
   describe('GET /health/ready', () => {
     it('should return ready when at least one database is connected', async () => {
-      mockTestConnections.mockResolvedValue({ personal: true, work: false, learning: true, creative: true });
+      mockTestConnections.mockResolvedValue({ operations: true, finance: false, people: true, strategy: true });
 
       const response = await request(app)
         .get('/health/ready')
@@ -323,7 +323,7 @@ describe('Health API Integration Tests', () => {
     });
 
     it('should return not_ready when no databases are connected', async () => {
-      mockTestConnections.mockResolvedValue({ personal: false, work: false, learning: false, creative: false });
+      mockTestConnections.mockResolvedValue({ operations: false, finance: false, people: false, strategy: false });
 
       const response = await request(app)
         .get('/health/ready')
@@ -339,7 +339,7 @@ describe('Health API Integration Tests', () => {
 
   describe('Phase 7.3: DB Latency & Dependency Status', () => {
     it('should include database latency in detailed response', async () => {
-      mockTestConnections.mockResolvedValue({ personal: true, work: true, learning: true, creative: true });
+      mockTestConnections.mockResolvedValue({ operations: true, finance: true, people: true, strategy: true });
       mockCheckOllamaHealth.mockResolvedValue({ available: true, models: [] });
 
       const response = await request(app)
@@ -347,13 +347,13 @@ describe('Health API Integration Tests', () => {
         .expect(200);
 
       // Phase 7.3: DB latency should be present
-      expect(response.body.services.databases.personal.latencyMs).toBeDefined();
-      expect(typeof response.body.services.databases.personal.latencyMs).toBe('number');
-      expect(response.body.services.databases.work.latencyMs).toBeDefined();
+      expect(response.body.services.databases.operations.latencyMs).toBeDefined();
+      expect(typeof response.body.services.databases.operations.latencyMs).toBe('number');
+      expect(response.body.services.databases.finance.latencyMs).toBeDefined();
     });
 
     it('should include dependency status in detailed response', async () => {
-      mockTestConnections.mockResolvedValue({ personal: true, work: true, learning: true, creative: true });
+      mockTestConnections.mockResolvedValue({ operations: true, finance: true, people: true, strategy: true });
       mockCheckOllamaHealth.mockResolvedValue({ available: true, models: [] });
 
       const response = await request(app)
@@ -371,7 +371,7 @@ describe('Health API Integration Tests', () => {
     });
 
     it('should report code execution provider info', async () => {
-      mockTestConnections.mockResolvedValue({ personal: true, work: true, learning: true, creative: true });
+      mockTestConnections.mockResolvedValue({ operations: true, finance: true, people: true, strategy: true });
       mockCheckOllamaHealth.mockResolvedValue({ available: true, models: [] });
 
       const response = await request(app)
@@ -392,7 +392,7 @@ describe('Health API Integration Tests', () => {
 
   describe('Edge Cases', () => {
     it('should handle partial database connectivity', async () => {
-      mockTestConnections.mockResolvedValue({ personal: true, work: false, learning: true, creative: true });
+      mockTestConnections.mockResolvedValue({ operations: true, finance: false, people: true, strategy: true });
       mockCheckOllamaHealth.mockResolvedValue({ available: false, models: [] });
 
       const response = await request(app)
@@ -410,7 +410,7 @@ describe('Health API Integration Tests', () => {
       mockTestConnections.mockImplementation(async () => {
         dbCallTime = Date.now();
         await new Promise(resolve => setTimeout(resolve, 50));
-        return { personal: true, work: true, learning: true, creative: true };
+        return { operations: true, finance: true, people: true, strategy: true };
       });
 
       mockCheckOllamaHealth.mockImplementation(async () => {

@@ -43,7 +43,7 @@ describe('Parallel Agent Execution', () => {
         return `Result from ${role}`;
       };
 
-      const result = await graph.execute('test task', 'personal', agentExecutor);
+      const result = await graph.execute('test task', 'operations', agentExecutor);
 
       expect(result.success).toBe(true);
       // Both branches should have started before either ended (concurrent)
@@ -93,7 +93,7 @@ describe('Parallel Agent Execution', () => {
         return 'Fast result';
       };
 
-      const result = await graph.execute('test', 'personal', agentExecutor);
+      const result = await graph.execute('test', 'operations', agentExecutor);
       expect(result.success).toBe(true);
       // The first result (fast) should win
       expect(result.finalOutput).toBe('Fast result');
@@ -128,7 +128,7 @@ describe('Parallel Agent Execution', () => {
         return 'Quick result';
       };
 
-      const result = await graph.execute('test', 'personal', agentExecutor);
+      const result = await graph.execute('test', 'operations', agentExecutor);
       // Should complete with partial results rather than failing
       expect(result.success).toBe(true);
       const parallelResults = result.state.variables['parallel_results'] as string[];
@@ -157,7 +157,7 @@ describe('Parallel Agent Execution', () => {
       graph.setStart('par');
       graph.setProgressCallback((e) => events.push(e.type));
 
-      await graph.execute('test', 'personal', async () => 'ok');
+      await graph.execute('test', 'operations', async () => 'ok');
 
       expect(events).toContain('node_start');
       expect(events).toContain('node_complete');

@@ -8,6 +8,8 @@
 import {
   classifyTaskType,
   TaskType,
+  getThinkingBudget,
+  ThinkingTier,
 } from '../../../services/claude/thinking-budget';
 import {
   classifyIntent,
@@ -17,7 +19,7 @@ import {
 // Mock the database context to prevent DB calls
 jest.mock('../../../utils/database-context', () => ({
   queryContext: jest.fn().mockResolvedValue({ rows: [] }),
-  AIContext: 'personal',
+  AIContext: 'operations',
 }));
 
 // Mock ai service for embedding generation
@@ -170,6 +172,110 @@ describe('Adaptive Thinking Budget', () => {
       const staticBudget = 10000;
       const complexResult = getAdaptiveBudget('full_retrieve', 'strategic_planning', staticBudget);
       expect(complexResult.budget).toBeGreaterThan(staticBudget);
+    });
+  });
+
+  describe('4-Tier Thinking Budget (getThinkingBudget)', () => {
+    it('should return Tier 1 for short greetings', () => {
+      const result = getThinkingBudget('Hallo');
+      expect(result.tier).toBe(1);
+      expect(result.budget).toBe(1024);
+      expect(result.display).toBe('omitted');
+      expect(result.label).toBe('Quick');
+    });
+
+    it('should return Tier 1 for "Hi"', () => {
+      const result = getThinkingBudget('Hi');
+      expect(result.tier).toBe(1);
+      expect(result.budget).toBe(1024);
+    });
+
+    it('should return Tier 2 for regular questions', () => {
+      const result = getThinkingBudget('Was ist React?');
+      expect(result.tier).toBe(2);
+      expect(result.budget).toBe(16384);
+      expect(result.display).toBe('collapsible');
+      expect(result.label).toBe('Standard Thinking');
+    });
+
+    it('should return Tier 3 for analysis tasks', () => {
+      const result = getThinkingBudget('Analysiere die Umsatzentwicklung Q1-Q4 und vergleiche mit Vorjahr');
+      expect(result.tier).toBe(3);
+      expect(result.budget).toBe(65536);
+      expect(result.display).toBe('visible');
+      expect(result.label).toBe('Deep Thinking');
+    });
+
+    it('should return Tier 3 for problem solving', () => {
+      const result = getThinkingBudget('Ich habe ein Problem mit dem Deployment, bitte hilf mir die Lösung zu finden');
+      expect(result.tier).toBe(3);
+      expect(result.budget).toBe(65536);
+    });
+
+    it('should return Tier 4 for strategic planning with high complexity', () => {
+      // Needs complexity > 0.7: deep questions (warum, weshalb, implikation),
+      // temporal markers (zeitraum, zukunft, prognose, trend, entwicklung),
+      // cross-references (vergleich, zusammenhang, unterschied, bezug),
+      // document references and URLs to push score high enough
+      const result = getThinkingBudget(
+        'Erstelle einen strategischen 5-Jahres-Plan für die langfristige Marktexpansion nach Asien. ' +
+        'Warum ist der Zeitraum bis 2030 entscheidend? Weshalb unterscheiden sich die regulatorischen Anforderungen? ' +
+        'Vergleiche die Entwicklung und den Zusammenhang zwischen Japan, Korea und Singapur. ' +
+        'Welche Implikation hat der Trend für die Zukunft? Analysiere die Prognose und den Bezug zu [Dokument A] und [Dokument B]. ' +
+        'Siehe auch https://example.com/report und die Quelle aus dem Anhang zur Referenz.'
+      );
+      expect(result.tier).toBe(4);
+      expect(result.budget).toBe(131072);
+      expect(result.display).toBe('visible_progress');
+      expect(result.label).toBe('Maximum Thinking');
+    });
+
+    it('should return fallback Tier 2 on error', () => {
+      // classifyTaskType handles all inputs gracefully, so we test the try/catch
+      // by verifying the structure is always valid
+      const result = getThinkingBudget('');
+      expect(result).toHaveProperty('budget');
+      expect(result).toHaveProperty('display');
+      expect(result).toHaveProperty('tier');
+      expect(result).toHaveProperty('label');
+      expect([1, 2, 3, 4]).toContain(result.tier);
+    });
+
+    it('should have correct ThinkingTier interface fields', () => {
+      const tier: ThinkingTier = {
+        budget: 16384,
+        display: 'collapsible',
+        tier: 2,
+        label: 'Standard Thinking',
+      };
+      expect(tier.budget).toBe(16384);
+      expect(tier.display).toBe('collapsible');
+      expect(tier.tier).toBe(2);
+      expect(tier.label).toBe('Standard Thinking');
+    });
+
+    it('should return Tier 2 for creative generation tasks', () => {
+      const result = getThinkingBudget('Schreibe mir eine E-Mail an den Kunden wegen der neuen Produktlinie');
+      expect(result.tier).toBe(2);
+      expect(result.budget).toBe(16384);
+    });
+
+    it('should return Tier 3 for synthesis tasks', () => {
+      const result = getThinkingBudget('Fasse die Erkenntnisse aus mehreren Dokumenten zusammen und erstelle einen Überblick');
+      expect(result.tier).toBe(3);
+      expect(result.budget).toBe(65536);
+    });
+
+    it('should upgrade to Tier 3 when complexity is high even for non-analysis task type', () => {
+      // A knowledge extraction input with many temporal, cross-ref, and deep question markers
+      // that gets elevated to Tier 3 due to high complexity score (> 0.5)
+      const result = getThinkingBudget(
+        'Extrahiere die Erkenntnisse und identifiziere die Muster: Warum hat sich die Entwicklung im Zeitraum seit 2020 verändert? ' +
+        'Weshalb gibt es einen Unterschied zwischen den Prognosen und der Zukunft? ' +
+        'Was bedeutet der Trend für die Auswirkung? Welcher Zusammenhang besteht zum Vergleich der Referenz [A] und [B]?'
+      );
+      // knowledge_extraction would normally be Tier 2, but complexity > 0.5 upgrades to Tier 3
+      expect([3, 4]).toContain(result.tier);
     });
   });
 

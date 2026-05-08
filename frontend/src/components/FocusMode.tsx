@@ -8,8 +8,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import type { AIContext } from './ContextSwitcher';
-import './FocusMode.css';
-
 interface FocusSession {
   id: string;
   started_at: string;

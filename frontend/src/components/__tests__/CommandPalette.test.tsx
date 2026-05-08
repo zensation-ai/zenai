@@ -99,7 +99,7 @@ describe('CommandPalette Component', () => {
 
   it('shows search input with placeholder', () => {
     render(<CommandPalette {...defaultProps} />);
-    const input = screen.getByPlaceholderText('Seite, Aktion oder Befehl suchen...');
+    const input = screen.getByPlaceholderText('Suchen... (/ Seiten, > Befehle, @ Kontakte, # Tags)');
     expect(input).toBeInTheDocument();
   });
 
@@ -114,14 +114,14 @@ describe('CommandPalette Component', () => {
 
   it('filters commands when typing in search', () => {
     render(<CommandPalette {...defaultProps} />);
-    const input = screen.getByPlaceholderText('Seite, Aktion oder Befehl suchen...');
+    const input = screen.getByPlaceholderText('Suchen... (/ Seiten, > Befehle, @ Kontakte, # Tags)');
     fireEvent.change(input, { target: { value: 'Dashboard' } });
     expect(screen.getByText('Dashboard')).toBeInTheDocument();
   });
 
   it('calls onClose when Escape key is pressed', () => {
     render(<CommandPalette {...defaultProps} />);
-    const input = screen.getByPlaceholderText('Seite, Aktion oder Befehl suchen...');
+    const input = screen.getByPlaceholderText('Suchen... (/ Seiten, > Befehle, @ Kontakte, # Tags)');
     fireEvent.keyDown(input, { key: 'Escape' });
     expect(defaultProps.onClose).toHaveBeenCalled();
   });
@@ -150,7 +150,7 @@ describe('CommandPalette Component', () => {
   it('shows footer navigation hints', () => {
     render(<CommandPalette {...defaultProps} />);
     expect(screen.getByText('navigieren')).toBeInTheDocument();
-    expect(screen.getByText('auswaehlen')).toBeInTheDocument();
-    expect(screen.getByText('schliessen')).toBeInTheDocument();
+    expect(screen.getByText('auswählen')).toBeInTheDocument();
+    expect(screen.getByText('schließen')).toBeInTheDocument();
   });
 });

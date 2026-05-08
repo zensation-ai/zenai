@@ -45,7 +45,7 @@ import {
 
 const makeSnapshotRow = (overrides: Record<string, unknown> = {}) => ({
   id: 'snap-001',
-  context: 'personal',
+  context: 'operations',
   snapshot_date: new Date('2026-03-20'),
   total_ideas: '42',
   total_corrections: '5',
@@ -70,7 +70,7 @@ const makeSnapshotRow = (overrides: Record<string, unknown> = {}) => ({
 
 const makeEventRow = (overrides: Record<string, unknown> = {}) => ({
   id: 'evt-001',
-  context: 'personal',
+  context: 'operations',
   event_type: 'pattern_learned',
   title: 'Learned a new pattern',
   description: 'Description of event',
@@ -86,7 +86,7 @@ const makeEventRow = (overrides: Record<string, unknown> = {}) => ({
 
 const makeMilestoneRow = (overrides: Record<string, unknown> = {}) => ({
   id: 'ms-001',
-  context: 'personal',
+  context: 'operations',
   milestone_type: 'ideas_count',
   milestone_level: '1',
   title: 'Erster Gedanke',
@@ -133,7 +133,7 @@ describe('Evolution Analytics Service', () => {
       // Fetch created snapshot
       mockQueryContext.mockResolvedValueOnce({ rows: [makeSnapshotRow()] } as any);
 
-      const snapshot = await createDailySnapshot('personal');
+      const snapshot = await createDailySnapshot('operations');
 
       expect(snapshot).not.toBeNull();
       expect(snapshot?.total_ideas).toBe(42);
@@ -144,7 +144,7 @@ describe('Evolution Analytics Service', () => {
     it('should return null on error', async () => {
       mockQueryContext.mockRejectedValue(new Error('DB error'));
 
-      const snapshot = await createDailySnapshot('personal');
+      const snapshot = await createDailySnapshot('operations');
 
       expect(snapshot).toBeNull();
     });
@@ -163,7 +163,7 @@ describe('Evolution Analytics Service', () => {
         ],
       } as any);
 
-      const snapshots = await getSnapshots('personal', 7);
+      const snapshots = await getSnapshots('operations', 7);
 
       expect(snapshots).toHaveLength(2);
       expect(snapshots[0].id).toBe('s1');
@@ -172,7 +172,7 @@ describe('Evolution Analytics Service', () => {
     it('should return empty array on error', async () => {
       mockQueryContext.mockRejectedValueOnce(new Error('Query failed'));
 
-      const snapshots = await getSnapshots('personal');
+      const snapshots = await getSnapshots('operations');
 
       expect(snapshots).toEqual([]);
     });
@@ -188,7 +188,7 @@ describe('Evolution Analytics Service', () => {
         rows: [makeSnapshotRow()],
       } as any);
 
-      const snapshot = await getLatestSnapshot('personal');
+      const snapshot = await getLatestSnapshot('operations');
 
       expect(snapshot).not.toBeNull();
       expect(snapshot?.id).toBe('snap-001');
@@ -197,7 +197,7 @@ describe('Evolution Analytics Service', () => {
     it('should return null when no snapshots exist', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [] } as any);
 
-      const snapshot = await getLatestSnapshot('personal');
+      const snapshot = await getLatestSnapshot('operations');
 
       expect(snapshot).toBeNull();
     });
@@ -205,7 +205,7 @@ describe('Evolution Analytics Service', () => {
     it('should return null on error', async () => {
       mockQueryContext.mockRejectedValueOnce(new Error('Connection lost'));
 
-      const snapshot = await getLatestSnapshot('personal');
+      const snapshot = await getLatestSnapshot('operations');
 
       expect(snapshot).toBeNull();
     });
@@ -219,20 +219,20 @@ describe('Evolution Analytics Service', () => {
     it('should record event and return ID', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [] } as any);
 
-      const id = await recordLearningEvent('personal', 'pattern_learned', 'New pattern found');
+      const id = await recordLearningEvent('operations', 'pattern_learned', 'New pattern found');
 
       expect(id).toBe('test-uuid-001');
       expect(mockQueryContext).toHaveBeenCalledWith(
-        'personal',
+        'operations',
         expect.stringContaining('INSERT INTO learning_events'),
-        expect.arrayContaining(['test-uuid-001', 'personal', 'pattern_learned', 'New pattern found'])
+        expect.arrayContaining(['test-uuid-001', 'operations', 'pattern_learned', 'New pattern found'])
       );
     });
 
     it('should use default icon and color based on event type', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [] } as any);
 
-      await recordLearningEvent('personal', 'milestone_reached', 'Milestone!');
+      await recordLearningEvent('operations', 'milestone_reached', 'Milestone!');
 
       const params = mockQueryContext.mock.calls[0][2];
       expect(params[9]).toBe('🏆'); // icon
@@ -242,7 +242,7 @@ describe('Evolution Analytics Service', () => {
     it('should accept custom options', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [] } as any);
 
-      await recordLearningEvent('personal', 'pattern_learned', 'Custom event', {
+      await recordLearningEvent('operations', 'pattern_learned', 'Custom event', {
         description: 'Custom desc',
         impact_score: 0.9,
         icon: '⭐',
@@ -260,7 +260,7 @@ describe('Evolution Analytics Service', () => {
     it('should return empty string on error', async () => {
       mockQueryContext.mockRejectedValueOnce(new Error('Insert failed'));
 
-      const id = await recordLearningEvent('personal', 'pattern_learned', 'Test');
+      const id = await recordLearningEvent('operations', 'pattern_learned', 'Test');
 
       expect(id).toBe('');
     });
@@ -279,7 +279,7 @@ describe('Evolution Analytics Service', () => {
         ],
       } as any);
 
-      const timeline = await getLearningTimeline('personal', 10, 0);
+      const timeline = await getLearningTimeline('operations', 10, 0);
 
       expect(timeline).toHaveLength(2);
       expect(timeline[0].id).toBe('e1');
@@ -289,7 +289,7 @@ describe('Evolution Analytics Service', () => {
     it('should return empty array on error', async () => {
       mockQueryContext.mockRejectedValueOnce(new Error('Query failed'));
 
-      const timeline = await getLearningTimeline('personal');
+      const timeline = await getLearningTimeline('operations');
 
       expect(timeline).toEqual([]);
     });
@@ -305,7 +305,7 @@ describe('Evolution Analytics Service', () => {
         rows: [makeEventRow({ event_type: 'milestone_reached' })],
       } as any);
 
-      const events = await getEventsByType('personal', 'milestone_reached');
+      const events = await getEventsByType('operations', 'milestone_reached');
 
       expect(events).toHaveLength(1);
       expect(events[0].event_type).toBe('milestone_reached');
@@ -314,7 +314,7 @@ describe('Evolution Analytics Service', () => {
     it('should return empty array on error', async () => {
       mockQueryContext.mockRejectedValueOnce(new Error('DB error'));
 
-      const events = await getEventsByType('personal', 'pattern_learned');
+      const events = await getEventsByType('operations', 'pattern_learned');
 
       expect(events).toEqual([]);
     });
@@ -334,7 +334,7 @@ describe('Evolution Analytics Service', () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [] } as any);
 
       await recordAccuracyPeriod(
-        'personal',
+        'operations',
         'category',
         new Date('2026-03-10'),
         new Date('2026-03-17'),
@@ -353,7 +353,7 @@ describe('Evolution Analytics Service', () => {
       } as any);
       mockQueryContext.mockResolvedValueOnce({ rows: [] } as any);
 
-      await recordAccuracyPeriod('personal', 'title', new Date('2026-03-10'), new Date('2026-03-17'), 100, 80);
+      await recordAccuracyPeriod('operations', 'title', new Date('2026-03-10'), new Date('2026-03-17'), 100, 80);
 
       const params = mockQueryContext.mock.calls[1][2];
       expect(params[9]).toBe('declining'); // 80 - 90 = -10 < -2
@@ -365,7 +365,7 @@ describe('Evolution Analytics Service', () => {
       } as any);
       mockQueryContext.mockResolvedValueOnce({ rows: [] } as any);
 
-      await recordAccuracyPeriod('personal', 'title', new Date('2026-03-10'), new Date('2026-03-17'), 100, 85);
+      await recordAccuracyPeriod('operations', 'title', new Date('2026-03-10'), new Date('2026-03-17'), 100, 85);
 
       const params = mockQueryContext.mock.calls[1][2];
       expect(params[9]).toBe('stable'); // 85 - 84 = 1 (between -2 and 2)
@@ -375,7 +375,7 @@ describe('Evolution Analytics Service', () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [] } as any);
       mockQueryContext.mockResolvedValueOnce({ rows: [] } as any);
 
-      await recordAccuracyPeriod('personal', 'title', new Date(), new Date(), 0, 0);
+      await recordAccuracyPeriod('operations', 'title', new Date(), new Date(), 0, 0);
 
       const params = mockQueryContext.mock.calls[1][2];
       expect(params[8]).toBe(0); // accuracy_score
@@ -385,7 +385,7 @@ describe('Evolution Analytics Service', () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [] } as any); // no previous
       mockQueryContext.mockResolvedValueOnce({ rows: [] } as any);
 
-      await recordAccuracyPeriod('personal', 'title', new Date(), new Date(), 100, 80);
+      await recordAccuracyPeriod('operations', 'title', new Date(), new Date(), 100, 80);
 
       const params = mockQueryContext.mock.calls[1][2];
       expect(params[9]).toBe('stable');
@@ -409,7 +409,7 @@ describe('Evolution Analytics Service', () => {
         }],
       } as any);
 
-      const trends = await getAccuracyTrends('personal', 12);
+      const trends = await getAccuracyTrends('operations', 12);
 
       expect(trends).toHaveLength(1);
       expect(trends[0].field_name).toBe('category');
@@ -420,7 +420,7 @@ describe('Evolution Analytics Service', () => {
     it('should return empty array on error', async () => {
       mockQueryContext.mockRejectedValueOnce(new Error('DB error'));
 
-      const trends = await getAccuracyTrends('personal');
+      const trends = await getAccuracyTrends('operations');
 
       expect(trends).toEqual([]);
     });
@@ -441,7 +441,7 @@ describe('Evolution Analytics Service', () => {
       // recordLearningEvent (for newly achieved)
       mockQueryContext.mockResolvedValueOnce({ rows: [] } as any);
 
-      const milestones = await updateMilestoneProgress('personal', 'ideas_count', 15);
+      const milestones = await updateMilestoneProgress('operations', 'ideas_count', 15);
 
       expect(milestones).toHaveLength(1);
       expect(milestones[0].achieved).toBe(true);
@@ -455,7 +455,7 @@ describe('Evolution Analytics Service', () => {
       } as any);
       mockQueryContext.mockResolvedValueOnce({ rows: [] } as any); // UPDATE
 
-      const milestones = await updateMilestoneProgress('personal', 'ideas_count', 15);
+      const milestones = await updateMilestoneProgress('operations', 'ideas_count', 15);
 
       expect(milestones[0].achieved).toBe(true);
       // recordLearningEvent should NOT be called
@@ -465,7 +465,7 @@ describe('Evolution Analytics Service', () => {
     it('should return empty array on error', async () => {
       mockQueryContext.mockRejectedValueOnce(new Error('DB error'));
 
-      const milestones = await updateMilestoneProgress('personal', 'ideas_count', 10);
+      const milestones = await updateMilestoneProgress('operations', 'ideas_count', 10);
 
       expect(milestones).toEqual([]);
     });
@@ -485,7 +485,7 @@ describe('Evolution Analytics Service', () => {
         ],
       } as any);
 
-      const result = await getMilestones('personal');
+      const result = await getMilestones('operations');
 
       expect(result.achieved).toHaveLength(1);
       expect(result.upcoming).toHaveLength(1); // only ms-2 (>= 25%)
@@ -504,7 +504,7 @@ describe('Evolution Analytics Service', () => {
         rows: [makeMilestoneRow()],
       } as any);
 
-      const result = await getMilestones('personal');
+      const result = await getMilestones('operations');
 
       expect(result.all.length).toBeGreaterThanOrEqual(1);
     });
@@ -512,7 +512,7 @@ describe('Evolution Analytics Service', () => {
     it('should return empty on error', async () => {
       mockQueryContext.mockRejectedValueOnce(new Error('DB error'));
 
-      const result = await getMilestones('personal');
+      const result = await getMilestones('operations');
 
       expect(result.achieved).toEqual([]);
       expect(result.upcoming).toEqual([]);
@@ -528,7 +528,7 @@ describe('Evolution Analytics Service', () => {
     it('should return empty dashboard on total failure', async () => {
       mockQueryContext.mockRejectedValue(new Error('Total failure'));
 
-      const dashboard = await getEvolutionDashboard('personal');
+      const dashboard = await getEvolutionDashboard('operations');
 
       expect(dashboard).toBeDefined();
       expect(dashboard.current_snapshot).toBeNull();

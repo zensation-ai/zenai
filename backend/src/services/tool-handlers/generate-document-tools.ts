@@ -44,6 +44,8 @@
 
 import { logger } from '../../utils/logger';
 import { generateDocument, type DocumentType } from '../documents/document-generator';
+import { documentStore } from '../documents/document-store';
+import type { ToolExecutionContext } from '../claude/tool-types';
 
 const VALID_TYPES: DocumentType[] = ['pptx', 'xlsx', 'pdf', 'docx'];
 
@@ -62,7 +64,8 @@ const TYPE_LABELS: Record<DocumentType, string> = {
  * returned here — the caller should persist the DocumentResult separately.
  */
 export async function handleCreateDocument(
-  args: Record<string, unknown>
+  args: Record<string, unknown>,
+  _ctx: ToolExecutionContext
 ): Promise<string> {
   const { type, title, content, style } = args;
 
@@ -94,12 +97,16 @@ export async function handleCreateDocument(
     const typeLabel = TYPE_LABELS[result.type];
     const kb = (result.fileSize / 1024).toFixed(1);
 
+    // Store buffer for download endpoint
+    documentStore.set(result.id, result);
+
     return [
       `Dokument erstellt: **${result.title}**`,
       `Typ: ${typeLabel} (.${result.extension})`,
       `Seiten: ${result.pageCount}`,
       `Größe: ${kb} KB`,
       `ID: ${result.id}`,
+      `[[DOCUMENT_DOWNLOAD:${result.id}:${result.title}.${result.extension}:${result.mimeType}]]`,
     ].join('\n');
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);

@@ -44,7 +44,7 @@ jest.mock('../../../services/memory', () => ({
 jest.mock('../../../services/personal-facts-bridge', () => ({
   invalidatePersonalFactsCache: jest.fn(),
   CATEGORY_LABELS: {},
-  VALID_CATEGORIES: ['identity', 'preferences', 'work', 'goals'],
+  VALID_CATEGORIES: ['identity', 'preferences', 'finance', 'goals'],
 }));
 
 jest.mock('../../../utils/logger', () => ({
@@ -65,7 +65,7 @@ const { generateClaudeResponse } = require('../../../services/claude/core');
 const { longTermMemory } = require('../../../services/memory');
 
 const mockExecContext: ToolExecutionContext = {
-  aiContext: 'personal',
+  aiContext: 'operations',
   sessionId: 'test-session-rethink',
   userId: 'test-user-rethink',
 };

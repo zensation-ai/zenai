@@ -25,6 +25,10 @@ jest.mock('../../middleware/auth', () => ({
   requireScope: jest.fn(() => (_req: unknown, _res: unknown, next: () => void) => next()),
 }));
 
+jest.mock('../../middleware/plan-gate', () => ({
+  requirePlan: () => jest.fn((_req: unknown, _res: unknown, next: () => void) => next()),
+}));
+
 jest.mock('../../middleware/validate-params', () => ({
   requireUUID: jest.fn(() => (_req: unknown, _res: unknown, next: () => void) => next()),
 }));
@@ -42,7 +46,7 @@ const mockQueryContext = jest.fn();
 
 jest.mock('../../utils/database-context', () => ({
   queryContext: (...args: unknown[]) => mockQueryContext(...args),
-  isValidContext: jest.fn((ctx: string) => ['personal', 'work', 'learning', 'creative'].includes(ctx)),
+  isValidContext: jest.fn((ctx: string) => ['operations', 'finance', 'people', 'strategy'].includes(ctx)),
   AIContext: {},
 }));
 

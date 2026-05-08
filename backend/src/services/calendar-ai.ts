@@ -252,7 +252,7 @@ export async function suggestTimeSlots(
   while (currentDate <= latest && suggestions.length < 5) {
     // Skip weekends for work context
     const dow = currentDate.getDay();
-    if (context === 'work' && (dow === 0 || dow === 6)) {
+    if (context === 'finance' && (dow === 0 || dow === 6)) {
       currentDate.setDate(currentDate.getDate() + 1);
       continue;
     }
@@ -262,8 +262,8 @@ export async function suggestTimeSlots(
     const dayEnd = new Date(currentDate);
     dayEnd.setHours(23, 59, 59, 999);
 
-    const workStart = context === 'work' ? 9 : 8;
-    const workEnd = context === 'work' ? 17 : 20;
+    const workStart = context === 'finance' ? 9 : 8;
+    const workEnd = context === 'finance' ? 17 : 20;
 
     const dayEvents = events.filter(e => {
       const eDate = new Date(e.start_time);

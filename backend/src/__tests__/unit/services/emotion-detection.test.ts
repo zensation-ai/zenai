@@ -302,26 +302,26 @@ describe('Voice Personas', () => {
   });
 
   it('should return work persona for work context', () => {
-    const persona = getPersona('work');
+    const persona = getPersona('finance');
     expect(persona.id).toBe('work-professional');
-    expect(persona.context).toBe('work');
+    expect(persona.context).toBe('finance');
     expect(persona.personality_traits).toContain('formal');
   });
 
   it('should return personal persona for personal context', () => {
-    const persona = getPersona('personal');
+    const persona = getPersona('operations');
     expect(persona.id).toBe('personal-warm');
     expect(persona.personality_traits).toContain('friendly');
   });
 
   it('should return learning persona for learning context', () => {
-    const persona = getPersona('learning');
+    const persona = getPersona('people');
     expect(persona.id).toBe('learning-patient');
     expect(persona.speaking_rate).toBe(0.9);
   });
 
   it('should return creative persona for creative context', () => {
-    const persona = getPersona('creative');
+    const persona = getPersona('strategy');
     expect(persona.id).toBe('creative-expressive');
     expect(persona.personality_traits).toContain('playful');
   });
@@ -343,14 +343,14 @@ describe('Voice Personas', () => {
   });
 
   it('should generate prompt addendum from traits', () => {
-    const persona = getPersona('work');
+    const persona = getPersona('finance');
     const addendum = getPersonaPromptAddendum(persona);
     expect(addendum).toContain('Professional');
     expect(addendum).toContain('formelle');
   });
 
   it('should return empty string for persona with no matching traits', () => {
-    const persona = { ...getPersona('work'), personality_traits: [] };
+    const persona = { ...getPersona('finance'), personality_traits: [] };
     const addendum = getPersonaPromptAddendum(persona);
     expect(addendum).toBe('');
   });

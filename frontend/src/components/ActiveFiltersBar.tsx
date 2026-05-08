@@ -8,8 +8,6 @@
  */
 
 import { memo } from 'react';
-import './ActiveFiltersBar.css';
-
 interface ActiveFiltersBarProps {
   filters: {
     types: Set<string>;

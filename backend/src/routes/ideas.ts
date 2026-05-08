@@ -20,6 +20,7 @@ import {
   handleArchivedList,
   handleArchiveIdea,
   handleRestoreIdea,
+  handleCreateIdea,
   handleDeleteIdea,
   handleStatsSummary,
   handleStatsSummaryContext,
@@ -163,12 +164,26 @@ ideasContextRouter.get('/:context/ideas', apiKeyAuth, asyncHandler(async (req, r
   await handleListIdeas(validateContextParam(req.params.context), req, res);
 }));
 
+ideasContextRouter.post('/:context/ideas', apiKeyAuth, requireScope('write'), asyncHandler(async (req, res) => {
+  await handleCreateIdea(validateContextParam(req.params.context), req, res);
+}));
+
 ideasContextRouter.get('/:context/ideas/archived', apiKeyAuth, asyncHandler(async (req, res) => {
   await handleArchivedList(validateContextParam(req.params.context), req, res);
 }));
 
 ideasContextRouter.delete('/:context/ideas/:id', apiKeyAuth, requireScope('write'), asyncHandler(async (req, res) => {
   await handleDeleteIdea(validateContextParam(req.params.context), req, res);
+}));
+
+ideasContextRouter.get('/:context/ideas/:id', apiKeyAuth, asyncHandler(async (req, res) => {
+  if (!isValidUUID(req.params.id)) {throw new ValidationError('Invalid ID format. Must be a valid UUID.');}
+  await handleGetIdea(validateContextParam(req.params.context), req, res);
+}));
+
+ideasContextRouter.put('/:context/ideas/:id', apiKeyAuth, requireScope('write'), asyncHandler(async (req, res) => {
+  if (!isValidUUID(req.params.id)) {throw new ValidationError('Invalid ID format. Must be a valid UUID.');}
+  await handleUpdateIdea(validateContextParam(req.params.context), req, res);
 }));
 
 ideasContextRouter.post('/:context/ideas/:id/move', apiKeyAuth, requireScope('write'), asyncHandler(async (req, res) => {

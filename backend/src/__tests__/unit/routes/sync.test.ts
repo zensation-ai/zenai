@@ -22,7 +22,7 @@ jest.mock('../../../utils/logger', () => ({
 const mockQueryContext = jest.fn();
 jest.mock('../../../utils/database-context', () => ({
   queryContext: (...args: unknown[]) => mockQueryContext(...args),
-  isValidContext: jest.fn((ctx: string) => ['personal', 'work', 'learning', 'creative'].includes(ctx)),
+  isValidContext: jest.fn((ctx: string) => ['operations', 'finance', 'people', 'strategy'].includes(ctx)),
   isValidUUID: jest.fn((id: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)),
   AIContext: {},
 }));
@@ -52,7 +52,7 @@ describe('Sync Routes', () => {
       mockQueryContext.mockResolvedValue({ rows: [], rowCount: 1 });
 
       const res = await request(app)
-        .post('/api/personal/sync/swipe-actions')
+        .post('/api/operations/sync/swipe-actions')
         .send({
           actions: [
             { ideaId: '550e8400-e29b-41d4-a716-446655440000', action: 'archive', timestamp: '2026-03-21T00:00:00Z' },
@@ -74,7 +74,7 @@ describe('Sync Routes', () => {
 
     it('should return 400 for empty actions array', async () => {
       const res = await request(app)
-        .post('/api/personal/sync/swipe-actions')
+        .post('/api/operations/sync/swipe-actions')
         .send({ actions: [] });
 
       expect(res.status).toBe(400);
@@ -82,7 +82,7 @@ describe('Sync Routes', () => {
 
     it('should return 400 for missing actions', async () => {
       const res = await request(app)
-        .post('/api/personal/sync/swipe-actions')
+        .post('/api/operations/sync/swipe-actions')
         .send({});
 
       expect(res.status).toBe(400);
@@ -92,7 +92,7 @@ describe('Sync Routes', () => {
       mockQueryContext.mockRejectedValue(new Error('DB error'));
 
       const res = await request(app)
-        .post('/api/personal/sync/swipe-actions')
+        .post('/api/operations/sync/swipe-actions')
         .send({
           actions: [
             { ideaId: '550e8400-e29b-41d4-a716-446655440000', action: 'archive', timestamp: '2026-03-21T00:00:00Z' },
@@ -111,7 +111,7 @@ describe('Sync Routes', () => {
       }));
 
       const res = await request(app)
-        .post('/api/personal/sync/swipe-actions')
+        .post('/api/operations/sync/swipe-actions')
         .send({ actions });
 
       expect(res.status).toBe(400);
@@ -125,7 +125,7 @@ describe('Sync Routes', () => {
       mockQueryContext.mockResolvedValue({ rows: [{ id: 'new-id' }], rowCount: 1 });
 
       const res = await request(app)
-        .post('/api/personal/sync/batch')
+        .post('/api/operations/sync/batch')
         .send({
           voiceMemos: [
             { clientId: 'c1', text: 'Test memo', timestamp: '2026-03-21T00:00:00Z' },
@@ -154,7 +154,7 @@ describe('Sync Routes', () => {
         .mockResolvedValueOnce({ rows: [{ count: '3' }] }) // pending count
         .mockResolvedValueOnce({ rows: [] }); // devices
 
-      const res = await request(app).get('/api/personal/sync/status');
+      const res = await request(app).get('/api/operations/sync/status');
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
@@ -179,7 +179,7 @@ describe('Sync Routes', () => {
         ],
       });
 
-      const res = await request(app).get('/api/personal/sync/pending');
+      const res = await request(app).get('/api/operations/sync/pending');
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);

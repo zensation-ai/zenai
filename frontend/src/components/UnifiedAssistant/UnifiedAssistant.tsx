@@ -13,8 +13,6 @@ import {
   type AssistantAction,
   type ContextSuggestion,
 } from '../../hooks/useUnifiedAssistant';
-import './UnifiedAssistant.css';
-
 // ===========================================
 // Types
 // ===========================================
@@ -209,7 +207,7 @@ export const UnifiedAssistant = memo(function UnifiedAssistant({
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Was moechtest du tun?"
+            placeholder="Was möchtest du tun?"
             autoComplete="off"
             spellCheck={false}
           />
@@ -233,7 +231,7 @@ export const UnifiedAssistant = memo(function UnifiedAssistant({
           )}
 
           {!results && query.trim().length < 2 && suggestions.length > 0 && (
-            <p className="ua-section-label">Vorschlaege</p>
+            <p className="ua-section-label">Vorschläge</p>
           )}
 
           {/* Items */}
@@ -289,7 +287,7 @@ export const UnifiedAssistant = memo(function UnifiedAssistant({
               <kbd>↵</kbd> Auswahl
             </span>
             <span className="ua-footer-key">
-              <kbd>esc</kbd> Schliessen
+              <kbd>esc</kbd> Schließen
             </span>
           </div>
           <span>ZenAI Assistent</span>

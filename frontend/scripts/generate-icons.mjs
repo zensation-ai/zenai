@@ -12,7 +12,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const projectRoot = join(__dirname, '..');
 
 const sizes = [72, 96, 128, 144, 152, 192, 384, 512];
-const svgPath = join(projectRoot, 'public', 'zenai-brain.svg');
+const svgPath = join(projectRoot, 'public', 'zenai-spark.svg');
 const outputDir = join(projectRoot, 'public', 'icons');
 
 // Ensure output directory exists

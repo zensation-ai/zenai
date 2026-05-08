@@ -23,7 +23,7 @@ export class MCPModule implements Module {
     // Initialize MCP Connection Manager
     try {
       const { mcpConnectionManager } = await import('../../services/mcp-connections');
-      const contexts = ['personal', 'work', 'learning', 'creative'] as const;
+      const contexts = ['operations', 'finance', 'people', 'strategy'] as const;
       for (const ctx of contexts) {
         await mcpConnectionManager.initialize(ctx);
       }

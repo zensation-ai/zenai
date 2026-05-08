@@ -50,7 +50,7 @@ mcpRouter.use(apiKeyAuth);
 let internalServer: ReturnType<typeof createMCPServer> | null = null;
 function getInternalServer() {
   if (!internalServer) {
-    internalServer = createMCPServer({ defaultContext: 'personal' });
+    internalServer = createMCPServer({ defaultContext: 'operations' });
   }
   return internalServer;
 }
@@ -62,7 +62,7 @@ mcpRouter.get('/status', (_req: Request, res: Response) => {
   res.json({
     success: true,
     data: {
-      name: 'zenai-brain',
+      name: 'zenai-spark',
       version: '1.0.0',
       protocol: 'MCP 2026',
       transports: ['http', 'stdio'],

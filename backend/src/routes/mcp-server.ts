@@ -35,8 +35,8 @@ mcpServerRouter.post(
       return;
     }
 
-    // Context from query param or default to 'personal'
-    const context = (req.query.context as string) || 'personal';
+    // Context from query param or default to 'operations'
+    const context = (req.query.context as string) || 'operations';
     if (!isValidContext(context)) {
       res.status(400).json({
         jsonrpc: '2.0',

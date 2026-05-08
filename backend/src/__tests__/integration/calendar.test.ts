@@ -20,7 +20,7 @@ jest.mock('../../middleware/auth', () => ({
 
 // Mock database context
 jest.mock('../../utils/database-context', () => ({
-  isValidContext: jest.fn((ctx: string) => ['personal', 'work', 'learning', 'creative'].includes(ctx)),
+  isValidContext: jest.fn((ctx: string) => ['operations', 'finance', 'people', 'strategy'].includes(ctx)),
   AIContext: {},
 }));
 
@@ -57,10 +57,10 @@ jest.mock('../../services/calendar', () => ({
 jest.mock('../../utils/validation', () => ({
   isValidUUID: jest.fn((id: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)),
   validateContextParam: jest.fn((context: string) => {
-    const valid = ['personal', 'work', 'learning', 'creative'];
+    const valid = ['operations', 'finance', 'people', 'strategy'];
     if (!valid.includes(context)) {
       const { ValidationError } = jest.requireActual('../../middleware/errorHandler');
-      throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
+      throw new ValidationError('Invalid context. Use "operations", "finance", "people", or "strategy".');
     }
     return context;
   }),
@@ -97,7 +97,7 @@ var mockEvent = {
   location: 'Office',
   participants: ['Alice'],
   status: 'confirmed' as const,
-  context: 'personal',
+  context: 'operations',
   reminder_minutes: [15],
   metadata: {},
   ai_generated: false,
@@ -111,7 +111,7 @@ describe('Calendar Routes', () => {
       mockCreateEvent.mockResolvedValue(mockEvent);
 
       const res = await request(app)
-        .post('/api/personal/calendar/events')
+        .post('/api/operations/calendar/events')
         .send({
           title: 'Test Event',
           start_time: '2026-02-15T10:00:00Z',
@@ -121,14 +121,14 @@ describe('Calendar Routes', () => {
       expect(res.status).toBe(201);
       expect(res.body.success).toBe(true);
       expect(res.body.data.title).toBe('Test Event');
-      expect(mockCreateEvent).toHaveBeenCalledWith('personal', expect.objectContaining({
+      expect(mockCreateEvent).toHaveBeenCalledWith('operations', expect.objectContaining({
         title: 'Test Event',
       }), '00000000-0000-0000-0000-000000000001');
     });
 
     it('should reject missing title', async () => {
       const res = await request(app)
-        .post('/api/personal/calendar/events')
+        .post('/api/operations/calendar/events')
         .send({
           start_time: '2026-02-15T10:00:00Z',
         });
@@ -138,7 +138,7 @@ describe('Calendar Routes', () => {
 
     it('should reject missing start_time', async () => {
       const res = await request(app)
-        .post('/api/personal/calendar/events')
+        .post('/api/operations/calendar/events')
         .send({
           title: 'Test Event',
         });
@@ -160,7 +160,7 @@ describe('Calendar Routes', () => {
     it('should work with all 4 contexts', async () => {
       mockCreateEvent.mockResolvedValue(mockEvent);
 
-      for (const ctx of ['personal', 'work', 'learning', 'creative']) {
+      for (const ctx of ['operations', 'finance', 'people', 'strategy']) {
         const res = await request(app)
           .post(`/api/${ctx}/calendar/events`)
           .send({
@@ -178,7 +178,7 @@ describe('Calendar Routes', () => {
       mockGetEvents.mockResolvedValue([mockEvent]);
 
       const res = await request(app)
-        .get('/api/personal/calendar/events')
+        .get('/api/operations/calendar/events')
         .query({ start: '2026-02-01', end: '2026-02-28' });
 
       expect(res.status).toBe(200);
@@ -191,7 +191,7 @@ describe('Calendar Routes', () => {
       mockGetEvents.mockResolvedValue([]);
 
       const res = await request(app)
-        .get('/api/personal/calendar/events');
+        .get('/api/operations/calendar/events');
 
       expect(res.status).toBe(200);
       expect(res.body.data).toHaveLength(0);
@@ -199,7 +199,7 @@ describe('Calendar Routes', () => {
 
     it('should reject invalid date format', async () => {
       const res = await request(app)
-        .get('/api/personal/calendar/events')
+        .get('/api/operations/calendar/events')
         .query({ start: 'not-a-date' });
 
       expect(res.status).toBe(400);
@@ -211,7 +211,7 @@ describe('Calendar Routes', () => {
       mockGetEvent.mockResolvedValue(mockEvent);
 
       const res = await request(app)
-        .get('/api/personal/calendar/events/11111111-1111-1111-1111-111111111111');
+        .get('/api/operations/calendar/events/11111111-1111-1111-1111-111111111111');
 
       expect(res.status).toBe(200);
       expect(res.body.data.id).toBe(mockEvent.id);
@@ -221,14 +221,14 @@ describe('Calendar Routes', () => {
       mockGetEvent.mockResolvedValue(null);
 
       const res = await request(app)
-        .get('/api/personal/calendar/events/22222222-2222-2222-2222-222222222222');
+        .get('/api/operations/calendar/events/22222222-2222-2222-2222-222222222222');
 
       expect(res.status).toBe(404);
     });
 
     it('should reject invalid UUID', async () => {
       const res = await request(app)
-        .get('/api/personal/calendar/events/not-a-uuid');
+        .get('/api/operations/calendar/events/not-a-uuid');
 
       expect(res.status).toBe(400);
     });
@@ -239,7 +239,7 @@ describe('Calendar Routes', () => {
       mockUpdateEvent.mockResolvedValue({ ...mockEvent, title: 'Updated' });
 
       const res = await request(app)
-        .put('/api/personal/calendar/events/11111111-1111-1111-1111-111111111111')
+        .put('/api/operations/calendar/events/11111111-1111-1111-1111-111111111111')
         .send({ title: 'Updated' });
 
       expect(res.status).toBe(200);
@@ -250,7 +250,7 @@ describe('Calendar Routes', () => {
       mockUpdateEvent.mockResolvedValue(null);
 
       const res = await request(app)
-        .put('/api/personal/calendar/events/22222222-2222-2222-2222-222222222222')
+        .put('/api/operations/calendar/events/22222222-2222-2222-2222-222222222222')
         .send({ title: 'Updated' });
 
       expect(res.status).toBe(404);
@@ -262,7 +262,7 @@ describe('Calendar Routes', () => {
       mockDeleteEvent.mockResolvedValue(true);
 
       const res = await request(app)
-        .delete('/api/personal/calendar/events/11111111-1111-1111-1111-111111111111');
+        .delete('/api/operations/calendar/events/11111111-1111-1111-1111-111111111111');
 
       expect(res.status).toBe(200);
       expect(res.body.message).toBe('Event cancelled');
@@ -272,7 +272,7 @@ describe('Calendar Routes', () => {
       mockDeleteEvent.mockResolvedValue(false);
 
       const res = await request(app)
-        .delete('/api/personal/calendar/events/22222222-2222-2222-2222-222222222222');
+        .delete('/api/operations/calendar/events/22222222-2222-2222-2222-222222222222');
 
       expect(res.status).toBe(404);
     });
@@ -283,7 +283,7 @@ describe('Calendar Routes', () => {
       mockGetUpcoming.mockResolvedValue([mockEvent]);
 
       const res = await request(app)
-        .get('/api/personal/calendar/upcoming');
+        .get('/api/operations/calendar/upcoming');
 
       expect(res.status).toBe(200);
       expect(res.body.data).toHaveLength(1);
@@ -293,21 +293,21 @@ describe('Calendar Routes', () => {
       mockGetUpcoming.mockResolvedValue([]);
 
       const res = await request(app)
-        .get('/api/personal/calendar/upcoming')
+        .get('/api/operations/calendar/upcoming')
         .query({ hours: 48 });
 
       expect(res.status).toBe(200);
-      expect(mockGetUpcoming).toHaveBeenCalledWith('personal', 48, 10, '00000000-0000-0000-0000-000000000001');
+      expect(mockGetUpcoming).toHaveBeenCalledWith('operations', 48, 10, '00000000-0000-0000-0000-000000000001');
     });
 
     it('should cap hours at 168', async () => {
       mockGetUpcoming.mockResolvedValue([]);
 
       await request(app)
-        .get('/api/personal/calendar/upcoming')
+        .get('/api/operations/calendar/upcoming')
         .query({ hours: 500 });
 
-      expect(mockGetUpcoming).toHaveBeenCalledWith('personal', 168, 10, '00000000-0000-0000-0000-000000000001');
+      expect(mockGetUpcoming).toHaveBeenCalledWith('operations', 168, 10, '00000000-0000-0000-0000-000000000001');
     });
   });
 
@@ -316,7 +316,7 @@ describe('Calendar Routes', () => {
       mockSearchEvents.mockResolvedValue([mockEvent]);
 
       const res = await request(app)
-        .post('/api/personal/calendar/events/search')
+        .post('/api/operations/calendar/events/search')
         .send({ query: 'meeting' });
 
       expect(res.status).toBe(200);
@@ -325,7 +325,7 @@ describe('Calendar Routes', () => {
 
     it('should reject empty query', async () => {
       const res = await request(app)
-        .post('/api/personal/calendar/events/search')
+        .post('/api/operations/calendar/events/search')
         .send({});
 
       expect(res.status).toBe(400);

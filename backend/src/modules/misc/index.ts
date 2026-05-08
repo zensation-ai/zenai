@@ -4,7 +4,8 @@ import { a2aRouter } from '../../routes/a2a';
 import { unifiedAssistantRouter } from '../../routes/unified-assistant';
 import { digitalTwinRouter } from '../../routes/digital-twin';
 import { onDeviceAIRouter } from '../../routes/on-device-ai';
-
+import { appFeedbackRouter } from '../../routes/app-feedback';
+import { demoRouter } from '../../routes/demo';
 export class MiscModule implements Module {
   name = 'misc';
 
@@ -17,5 +18,10 @@ export class MiscModule implements Module {
     app.use('/api', digitalTwinRouter);
     // Phase 94: On-Device AI
     app.use('/api', onDeviceAIRouter);
+    // Task 6: In-App Feedback
+    app.use('/api', appFeedbackRouter);
+    // Demo onboarding (Alex Chen persona)
+    app.use('/api', demoRouter);
+    // Note: contextMeetingsRouter is registered in CoreRoutesModule
   }
 }

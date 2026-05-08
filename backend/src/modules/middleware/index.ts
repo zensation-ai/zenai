@@ -122,16 +122,15 @@ export class MiddlewareModule implements Module {
     // Request-level timeout enforcement (before routes, after CORS)
     app.use(requestTimeoutMiddleware);
 
-    // Request tracking & compression
+    // Request tracking & compression (gzip + deflate)
     app.use(requestIdMiddleware);
     app.use(tracingMiddleware);
     app.use(requestLogger);
     app.use(compression({
       level: 6,
       threshold: 512,
-      memLevel: 8,
-      filter: (req, res) => {
-        // Skip compression for SSE streams (Server-Sent Events)
+      filter: (req: any, res: any) => {
+        // Skip SSE streams
         if (res.getHeader('Content-Type')?.toString().includes('text/event-stream')) {
           return false;
         }

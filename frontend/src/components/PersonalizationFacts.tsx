@@ -1,3 +1,4 @@
+import { type CSSProperties } from 'react';
 import { AI_AVATAR, AI_PERSONALITY, EMPTY_STATE_MESSAGES } from '../utils/aiPersonality';
 
 interface LearnedFact {
@@ -64,7 +65,7 @@ export function PersonalizationFacts({ facts, deletingFact, categoryLabels, onDe
                 <div className="fact-content">
                   <p>{fact.fact}</p>
                   <div className="fact-meta">
-                    <span className="confidence-badge" style={{ background: getConfidenceColor(fact.confidence) }}>
+                    <span className="confidence-badge bg-[var(--bg)]" style={{ '--bg': getConfidenceColor(fact.confidence) } as CSSProperties}>
                       {Math.round(fact.confidence * 100)}%
                     </span>
                     <span className="fact-date">{formatDate(fact.created_at)}</span>

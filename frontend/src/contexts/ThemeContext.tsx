@@ -21,20 +21,20 @@ interface ThemeContextType {
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
-const STORAGE_KEY = 'mybrain-theme';
+const STORAGE_KEY = 'zenai-theme';
 
 function getSystemTheme(): 'light' | 'dark' {
-  if (typeof window === 'undefined') return 'light';
+  if (typeof window === 'undefined') return 'dark';
   return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
 }
 
 function getStoredTheme(): Theme {
-  if (typeof window === 'undefined') return 'system';
+  if (typeof window === 'undefined') return 'dark';
   const stored = safeLocalStorage('get', STORAGE_KEY);
   if (stored === 'light' || stored === 'dark' || stored === 'system') {
     return stored;
   }
-  return 'system';
+  return 'dark';
 }
 
 interface ThemeProviderProps {
@@ -56,14 +56,10 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
     // Remove both classes first
     root.classList.remove('light-mode', 'dark-mode');
 
-    if (theme === 'system') {
-      // Let prefers-color-scheme handle it
-      root.removeAttribute('data-theme');
-    } else {
-      // Manual override via data-theme attribute (matches CSS selectors)
-      root.setAttribute('data-theme', resolved);
-      root.classList.add(`${resolved}-mode`);
-    }
+    // Always set data-theme so CSS [data-theme="dark"] selectors work
+    // regardless of whether the user chose manually or via system preference.
+    root.setAttribute('data-theme', resolved);
+    root.classList.add(`${resolved}-mode`);
 
     // Update meta theme-color for mobile browser chrome
     const metaThemeColor = document.querySelector('meta[name="theme-color"]');
@@ -72,13 +68,18 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
     }
   }, [theme]);
 
-  // Listen for system theme changes
+  // Listen for system theme changes and keep data-theme in sync
   useEffect(() => {
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
 
     const handleChange = () => {
       if (theme === 'system') {
-        setResolvedTheme(getSystemTheme());
+        const resolved = getSystemTheme();
+        setResolvedTheme(resolved);
+        const root = document.documentElement;
+        root.classList.remove('light-mode', 'dark-mode');
+        root.setAttribute('data-theme', resolved);
+        root.classList.add(`${resolved}-mode`);
       }
     };
 

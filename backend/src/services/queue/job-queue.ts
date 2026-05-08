@@ -46,6 +46,8 @@ const QUEUE_NAMES = [
   'persistent-agent',
   'gmail-sync',
   'integration-sync',
+  // Sprint 1.1 (2026-04-16): DSAR export jobs (DSGVO Art. 20).
+  'data-export',
 ] as const;
 
 export type QueueName = (typeof QUEUE_NAMES)[number];

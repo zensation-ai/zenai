@@ -12,7 +12,7 @@ import { MemoryBM25 } from '../../../services/memory/memory-bm25';
 jest.mock('../../../utils/database-context', () => ({
   queryContext: jest.fn(),
   isValidContext: (ctx: string) =>
-    ['personal', 'work', 'learning', 'creative'].includes(ctx),
+    ['operations', 'finance', 'people', 'strategy'].includes(ctx),
 }));
 
 jest.mock('../../../utils/logger', () => ({
@@ -71,7 +71,7 @@ describe('MemoryBM25', () => {
         rowCount: 2,
       } as any);
 
-      const results = await memoryBM25.search('TypeScript', 'personal');
+      const results = await memoryBM25.search('TypeScript', 'operations');
 
       expect(results).toHaveLength(2);
       expect(results[0].id).toBe('fact-001');
@@ -81,14 +81,14 @@ describe('MemoryBM25', () => {
     });
 
     it('should return empty array for empty query', async () => {
-      const results = await memoryBM25.search('', 'personal');
+      const results = await memoryBM25.search('', 'operations');
 
       expect(results).toEqual([]);
       expect(mockQueryContext).not.toHaveBeenCalled();
     });
 
     it('should return empty array for whitespace-only query', async () => {
-      const results = await memoryBM25.search('   ', 'personal');
+      const results = await memoryBM25.search('   ', 'operations');
 
       expect(results).toEqual([]);
     });
@@ -96,7 +96,7 @@ describe('MemoryBM25', () => {
     it('should use German and English text search configs', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any);
 
-      await memoryBM25.search('Programmierung', 'personal');
+      await memoryBM25.search('Programmierung', 'operations');
 
       const sql = mockQueryContext.mock.calls[0][1];
       expect(sql).toContain("'german'");
@@ -106,10 +106,10 @@ describe('MemoryBM25', () => {
     it('should respect the limit parameter', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any);
 
-      await memoryBM25.search('test', 'work', 5);
+      await memoryBM25.search('test', 'finance', 5);
 
       expect(mockQueryContext).toHaveBeenCalledWith(
-        'work',
+        'finance',
         expect.any(String),
         expect.arrayContaining([5])
       );
@@ -118,7 +118,7 @@ describe('MemoryBM25', () => {
     it('should handle no results gracefully', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any);
 
-      const results = await memoryBM25.search('nonexistent topic xyz', 'personal');
+      const results = await memoryBM25.search('nonexistent topic xyz', 'operations');
 
       expect(results).toEqual([]);
     });
@@ -129,7 +129,7 @@ describe('MemoryBM25', () => {
         rowCount: 1,
       } as any);
 
-      const results = await memoryBM25.search('TypeScript', 'personal');
+      const results = await memoryBM25.search('TypeScript', 'operations');
 
       expect(results[0]).toEqual({
         id: 'fact-001',
@@ -155,7 +155,7 @@ describe('MemoryBM25', () => {
         rowCount: 2,
       } as any);
 
-      const results = await memoryBM25.hybridSearch('TypeScript', 'personal');
+      const results = await memoryBM25.hybridSearch('TypeScript', 'operations');
 
       expect(results.length).toBeGreaterThan(0);
       // fact-001 appears in both lists, should have highest RRF score
@@ -165,7 +165,7 @@ describe('MemoryBM25', () => {
     });
 
     it('should return empty array for empty query', async () => {
-      const results = await memoryBM25.hybridSearch('', 'personal');
+      const results = await memoryBM25.hybridSearch('', 'operations');
 
       expect(results).toEqual([]);
       expect(mockQueryContext).not.toHaveBeenCalled();
@@ -180,7 +180,7 @@ describe('MemoryBM25', () => {
       // Semantic results (empty)
       mockQueryContext.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any);
 
-      const results = await memoryBM25.hybridSearch('test', 'personal');
+      const results = await memoryBM25.hybridSearch('test', 'operations');
 
       expect(results).toHaveLength(1);
       expect(results[0].source).toBe('bm25');
@@ -195,7 +195,7 @@ describe('MemoryBM25', () => {
         rowCount: 1,
       } as any);
 
-      const results = await memoryBM25.hybridSearch('test', 'personal');
+      const results = await memoryBM25.hybridSearch('test', 'operations');
 
       expect(results).toHaveLength(1);
       expect(results[0].source).toBe('semantic');
@@ -210,7 +210,7 @@ describe('MemoryBM25', () => {
       mockQueryContext.mockResolvedValueOnce({ rows: manyRows, rowCount: 10 } as any);
       mockQueryContext.mockResolvedValueOnce({ rows: manyRows, rowCount: 10 } as any);
 
-      const results = await memoryBM25.hybridSearch('test', 'personal', 3);
+      const results = await memoryBM25.hybridSearch('test', 'operations', 3);
 
       expect(results.length).toBeLessThanOrEqual(3);
     });
@@ -225,7 +225,7 @@ describe('MemoryBM25', () => {
         rowCount: 1,
       } as any);
 
-      const results = await memoryBM25.hybridSearch('TypeScript', 'personal');
+      const results = await memoryBM25.hybridSearch('TypeScript', 'operations');
 
       // RRF score for rank 1 in both: 1/(60+1) + 1/(60+1) = ~0.0328
       expect(results[0].rrfScore).toBeGreaterThan(0);
@@ -242,7 +242,7 @@ describe('MemoryBM25', () => {
         rowCount: 1,
       } as any);
 
-      const results = await memoryBM25.hybridSearch('test', 'personal');
+      const results = await memoryBM25.hybridSearch('test', 'operations');
 
       // Should still return BM25 results even when semantic fails
       expect(results.length).toBeGreaterThanOrEqual(0);

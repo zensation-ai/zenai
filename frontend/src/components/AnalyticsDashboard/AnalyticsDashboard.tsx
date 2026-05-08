@@ -13,7 +13,46 @@ import { AIUsagePanel } from './AIUsagePanel';
 import { MemoryHealthPanel, type MemoryHealthData } from './MemoryHealthPanel';
 import { ExportPanel } from './ExportPanel';
 import { logError } from '../../utils/errors';
-import './AnalyticsDashboard.css';
+/**
+ * Local error boundary for recharts components.
+ * recharts v3 can crash with "Cannot read properties of undefined (reading 'allowDataOverflow')"
+ * when ResponsiveContainer renders before the parent has non-zero dimensions (lazy load race).
+ */
+class ChartErrorBoundary extends React.Component<
+  { children: React.ReactNode; fallbackMessage?: string },
+  { hasError: boolean }
+> {
+  constructor(props: { children: React.ReactNode; fallbackMessage?: string }) {
+    super(props);
+    this.state = { hasError: false };
+  }
+
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+
+  componentDidCatch(error: Error) {
+    logError('ChartErrorBoundary', error);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="av2-chart-error">
+          <p>{this.props.fallbackMessage ?? 'Diagramm konnte nicht geladen werden.'}</p>
+          <button
+            type="button"
+            className="av2-chart-retry"
+            onClick={() => this.setState({ hasError: false })}
+          >
+            Erneut versuchen
+          </button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
 
 type Tab = 'overview' | 'productivity' | 'ai-usage' | 'memory-health' | 'export';
 
@@ -67,11 +106,11 @@ interface DailyUsage {
 }
 
 const TABS: { id: Tab; label: string }[] = [
-  { id: 'overview', label: 'Uebersicht' },
-  { id: 'productivity', label: 'Produktivitaet' },
+  { id: 'overview', label: 'Übersicht' },
+  { id: 'productivity', label: 'Produktivität' },
   { id: 'ai-usage', label: 'KI-Nutzung' },
-  { id: 'memory-health', label: 'Memory Health' },
-  { id: 'export', label: 'Export' },
+  { id: 'memory-health', label: 'Gedächtniszustand' },
+  { id: 'export', label: 'Exportieren' },
 ];
 
 function getDefaultRange(): DateRange {
@@ -239,12 +278,14 @@ export const AnalyticsDashboardV2: React.FC<AnalyticsDashboardV2Props> = ({ cont
 
         {/* Inline trend charts in overview */}
         {trends && (trends.ideas.length > 0 || trends.tasks.length > 0) && (
-          <ProductivityCharts
-            ideasTrend={trends.ideas}
-            tasksTrend={trends.tasks}
-            chatsTrend={trends.chats}
-            productivity={null}
-          />
+          <ChartErrorBoundary>
+            <ProductivityCharts
+              ideasTrend={trends.ideas}
+              tasksTrend={trends.tasks}
+              chatsTrend={trends.chats}
+              productivity={null}
+            />
+          </ChartErrorBoundary>
         )}
       </div>
     );
@@ -254,10 +295,10 @@ export const AnalyticsDashboardV2: React.FC<AnalyticsDashboardV2Props> = ({ cont
     <div className="av2-dashboard">
       <header className="av2-header">
         <div className="av2-header-left">
-          <button type="button" className="av2-back-btn" onClick={onBack} aria-label="Zurueck">
+          <button type="button" className="av2-back-btn" onClick={onBack} aria-label="Zurück">
             &larr;
           </button>
-          <h1 className="av2-title">Analytics V2</h1>
+          <h1 className="av2-title">Analyse</h1>
         </div>
         <DateRangePicker value={dateRange} onChange={setDateRange} />
       </header>
@@ -287,25 +328,29 @@ export const AnalyticsDashboardV2: React.FC<AnalyticsDashboardV2Props> = ({ cont
         {activeTab === 'overview' && renderOverview()}
         {activeTab === 'productivity' && (
           loading ? <TabLoader /> : (
-            <ProductivityCharts
-              ideasTrend={trends?.ideas ?? []}
-              tasksTrend={trends?.tasks ?? []}
-              chatsTrend={trends?.chats ?? []}
-              productivity={productivity}
-            />
+            <ChartErrorBoundary>
+              <ProductivityCharts
+                ideasTrend={trends?.ideas ?? []}
+                tasksTrend={trends?.tasks ?? []}
+                chatsTrend={trends?.chats ?? []}
+                productivity={productivity}
+              />
+            </ChartErrorBoundary>
           )
         )}
         {activeTab === 'ai-usage' && (
           aiUsageLoading ? <TabLoader /> : aiUsageError ? (
             <div className="av2-error" role="alert">{aiUsageError}</div>
           ) : aiUsage ? (
-            <AIUsagePanel
-              dailyUsage={dailyUsage}
-              byModel={aiUsage.byModel}
-              byFeature={aiUsage.byFeature}
-              totalTokens={aiUsage.totalTokens}
-              totalCost={aiUsage.totalCost}
-            />
+            <ChartErrorBoundary>
+              <AIUsagePanel
+                dailyUsage={dailyUsage}
+                byModel={aiUsage.byModel}
+                byFeature={aiUsage.byFeature}
+                totalTokens={aiUsage.totalTokens}
+                totalCost={aiUsage.totalCost}
+              />
+            </ChartErrorBoundary>
           ) : (
             <p className="av2-empty">Keine KI-Nutzungsdaten vorhanden.</p>
           )

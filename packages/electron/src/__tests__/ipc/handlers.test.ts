@@ -12,6 +12,7 @@ function makeDeps() {
     getBackendUrl: jest.fn().mockReturnValue('http://localhost:3000'),
     hideSpotlight: jest.fn(),
     resizeSpotlight: jest.fn(),
+    setTrayStatus: jest.fn(),
   };
 }
 
@@ -80,14 +81,32 @@ describe('registerIpcHandlers', () => {
     expect(channels).toContain('backend:getUrl');
   });
 
-  // 7. Registers spotlight handlers via ipcMain.on
-  it('registers spotlight:close and spotlight:resize via ipcMain.on', () => {
+  // 7. Registers spotlight handlers via ipcMain.on and ipcMain.handle
+  it('registers spotlight:close, spotlight:resize, and spotlight:openInMain via ipcMain.on', () => {
     const deps = makeDeps();
     registerIpcHandlers(deps);
 
     const channels = (ipcMain.on as jest.Mock).mock.calls.map(([ch]) => ch as string);
     expect(channels).toContain('spotlight:close');
     expect(channels).toContain('spotlight:resize');
+    expect(channels).toContain('spotlight:openInMain');
+  });
+
+  it('registers spotlight:query via ipcMain.handle', () => {
+    const deps = makeDeps();
+    registerIpcHandlers(deps);
+
+    const channels = (ipcMain.handle as jest.Mock).mock.calls.map(([ch]) => ch as string);
+    expect(channels).toContain('spotlight:query');
+  });
+
+  // 7b. Registers tray:setStatus handler via ipcMain.on
+  it('registers tray:setStatus via ipcMain.on', () => {
+    const deps = makeDeps();
+    registerIpcHandlers(deps);
+
+    const channels = (ipcMain.on as jest.Mock).mock.calls.map(([ch]) => ch as string);
+    expect(channels).toContain('tray:setStatus');
   });
 
   // 8. Registers shell:openExternal handler via ipcMain.handle
@@ -125,6 +144,8 @@ describe('registerIpcHandlers', () => {
       'window:close',
       'spotlight:close',
       'spotlight:resize',
+      'spotlight:openInMain',
+      'tray:setStatus',
       // ipcMain.handle
       'dialog:openFile',
       'dialog:saveFile',
@@ -134,6 +155,8 @@ describe('registerIpcHandlers', () => {
       'config:set',
       'backend:getStatus',
       'backend:getUrl',
+      'spotlight:query',
+      'app:getPath',
     ];
 
     for (const channel of expectedChannels) {

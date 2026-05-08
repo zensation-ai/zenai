@@ -48,15 +48,15 @@ async function fixSchema() {
     await client.query(`
       CREATE TABLE rate_limits (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-        identifier VARCHAR(255) NOT NULL,
+        key VARCHAR(255) NOT NULL,
         window_start TIMESTAMP WITH TIME ZONE NOT NULL,
         request_count INTEGER DEFAULT 1,
         created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
         updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-        UNIQUE(identifier, window_start)
+        UNIQUE(key, window_start)
       )
     `);
-    await client.query(`CREATE INDEX idx_rate_limits_identifier ON rate_limits(identifier)`);
+    await client.query(`CREATE INDEX idx_rate_limits_key ON rate_limits(key, window_start)`);
     await client.query(`CREATE INDEX idx_rate_limits_window ON rate_limits(window_start)`);
     console.log('   ✅ rate_limits fixed\n');
 

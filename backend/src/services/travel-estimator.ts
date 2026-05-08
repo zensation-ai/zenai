@@ -6,7 +6,7 @@
  * Fallback: Haversine formula with road-distance heuristic
  */
 
-import axios from 'axios';
+import { checkedAxiosGet, checkedAxiosPost } from '../utils/checked-http';
 import { logger } from '../utils/logger';
 
 // ============================================================
@@ -113,7 +113,9 @@ async function estimateWithORS(
 
   // Step 2: Get route
   const profile = ORS_PROFILES[mode] || 'driving-car';
-  const response = await axios.post(
+  const response = await checkedAxiosPost<{
+    routes?: Array<{ summary: { duration: number; distance: number } }>;
+  }>(
     `${ORS_BASE_URL}/v2/directions/${profile}`,
     {
       coordinates: [
@@ -149,7 +151,12 @@ async function estimateWithORS(
 }
 
 async function geocodeORS(address: string): Promise<GeocodingResult> {
-  const response = await axios.get(`${ORS_BASE_URL}/geocode/search`, {
+  const response = await checkedAxiosGet<{
+    features?: Array<{
+      geometry: { coordinates: [number, number] };
+      properties: { label?: string };
+    }>;
+  }>(`${ORS_BASE_URL}/geocode/search`, {
     params: {
       api_key: ORS_API_KEY,
       text: address,
@@ -210,7 +217,11 @@ async function estimateWithFallback(
 }
 
 async function geocodeNominatim(address: string): Promise<GeocodingResult> {
-  const response = await axios.get('https://nominatim.openstreetmap.org/search', {
+  const response = await checkedAxiosGet<Array<{
+    lat: string;
+    lon: string;
+    display_name?: string;
+  }>>('https://nominatim.openstreetmap.org/search', {
     params: {
       q: address,
       format: 'json',

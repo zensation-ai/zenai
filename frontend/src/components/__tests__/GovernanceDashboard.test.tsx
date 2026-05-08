@@ -22,7 +22,7 @@ global.fetch = mockFetch;
 import { GovernanceDashboard } from '../GovernanceDashboard';
 
 const defaultProps = {
-  context: 'personal' as const,
+  context: 'operations' as const,
 };
 
 describe('GovernanceDashboard', () => {

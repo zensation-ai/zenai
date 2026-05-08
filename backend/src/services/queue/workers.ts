@@ -16,6 +16,9 @@
 import { logger } from '../../utils/logger';
 import { recordQueueJob } from '../observability/metrics';
 import { processTokenRefresh } from './workers/token-refresh-worker';
+import { processSelfImprovement } from './workers/self-improvement-worker';
+import { processWeeklyReflection } from './workers/reflection-worker';
+import { processSocialPublishJob } from './workers/social-publish-worker';
 
 // Worker references for shutdown
 type BullWorker = {
@@ -110,7 +113,7 @@ export function getWorkerHealth(): WorkerHealthReport {
  */
 async function processMemoryConsolidation(job: BullJob): Promise<Record<string, unknown>> {
   const data = job.data;
-  const context = (data.context as 'personal' | 'work' | 'learning' | 'creative' | 'demo') || 'personal';
+  const context = (data.context as 'operations' | 'finance' | 'people' | 'strategy' | 'demo') || 'operations';
   logger.info('Processing memory consolidation job', {
     operation: 'worker',
     queue: 'memory-consolidation',
@@ -144,7 +147,7 @@ async function processMemoryConsolidation(job: BullJob): Promise<Record<string, 
  */
 async function processRagIndexing(job: BullJob): Promise<Record<string, unknown>> {
   const data = job.data;
-  const context = (data.context as 'personal' | 'work' | 'learning' | 'creative' | 'demo') || 'personal';
+  const context = (data.context as 'operations' | 'finance' | 'people' | 'strategy' | 'demo') || 'operations';
   const ideaId = data.ideaId as string | undefined;
   logger.info('Processing RAG indexing job', {
     operation: 'worker',
@@ -200,7 +203,7 @@ async function processRagIndexing(job: BullJob): Promise<Record<string, unknown>
 async function processEmailProcessing(job: BullJob): Promise<Record<string, unknown>> {
   const data = job.data;
   const emailId = data.emailId as string | undefined;
-  const context = (data.context as 'personal' | 'work' | 'learning' | 'creative' | 'demo') || 'work';
+  const context = (data.context as 'operations' | 'finance' | 'people' | 'strategy' | 'demo') || 'finance';
   logger.info('Processing email analysis job', {
     operation: 'worker',
     queue: 'email-processing',
@@ -243,7 +246,7 @@ async function processEmailProcessing(job: BullJob): Promise<Record<string, unkn
  */
 async function processGraphIndexing(job: BullJob): Promise<Record<string, unknown>> {
   const data = job.data;
-  const context = (data.context as 'personal' | 'work' | 'learning' | 'creative' | 'demo') || 'personal';
+  const context = (data.context as 'operations' | 'finance' | 'people' | 'strategy' | 'demo') || 'operations';
   logger.info('Processing graph indexing job', {
     operation: 'worker',
     queue: 'graph-indexing',
@@ -311,7 +314,7 @@ async function processEmbeddingDrift(job: BullJob): Promise<Record<string, unkno
   try {
     await job.updateProgress(10);
     const { runDriftCheck } = await import('../embedding-drift');
-    const contexts = ['personal', 'work', 'learning', 'creative'] as const;
+    const contexts = ['operations', 'finance', 'people', 'strategy'] as const;
     const results = [];
 
     for (let i = 0; i < contexts.length; i++) {
@@ -341,7 +344,7 @@ async function processEmbeddingDrift(job: BullJob): Promise<Record<string, unkno
  * and propagate updated confidence scores through the knowledge graph.
  */
 async function processHebbianDecay(job: BullJob): Promise<Record<string, unknown>> {
-  const contexts = ['personal', 'work', 'learning', 'creative'] as const;
+  const contexts = ['operations', 'finance', 'people', 'strategy'] as const;
   const results: Record<string, unknown> = {};
 
   try {
@@ -392,7 +395,7 @@ async function processHebbianDecay(job: BullJob): Promise<Record<string, unknown
  */
 async function processPersistentAgent(job: BullJob): Promise<Record<string, unknown>> {
   const taskId = job.data.taskId as string | undefined;
-  const context = (job.data.context as 'personal' | 'work' | 'learning' | 'creative' | 'demo') || 'personal';
+  const context = (job.data.context as 'operations' | 'finance' | 'people' | 'strategy' | 'demo') || 'operations';
   logger.info('Persistent agent job received', { taskId, context });
   await job.updateProgress(100);
   return { taskId, status: 'processed' };
@@ -444,6 +447,25 @@ async function processIntegrationSync(job: BullJob): Promise<Record<string, unkn
   return processTokenRefresh(job);
 }
 
+/**
+ * Sprint 1.1 (2026-04-16): DSAR data-export worker.
+ * Job data: { exportId: string, userId: string }.
+ */
+async function processDataExport(job: BullJob): Promise<Record<string, unknown>> {
+  const exportId = job.data.exportId as string | undefined;
+  if (!exportId) {
+    throw new Error('data-export job missing exportId');
+  }
+  const { runDataExport } = await import('../auth/data-export-service');
+  await job.updateProgress(10);
+  const row = await runDataExport(exportId);
+  await job.updateProgress(100);
+  return {
+    status: row.status,
+    fileSize: row.file_size ?? 0,
+  };
+}
+
 // Worker processor map — now receives the full BullJob for progress reporting
 const processors: Record<string, (job: BullJob) => Promise<Record<string, unknown>>> = {
   'memory-consolidation': processMemoryConsolidation,
@@ -456,6 +478,8 @@ const processors: Record<string, (job: BullJob) => Promise<Record<string, unknow
   'persistent-agent': processPersistentAgent,
   'gmail-sync': processGmailSync,
   'integration-sync': processIntegrationSync,
+  'social-publish': (job: BullJob) => processSocialPublishJob(job as unknown as Parameters<typeof processSocialPublishJob>[0]),
+  'data-export': processDataExport,
 };
 
 // --- Dead Letter Queue helper ---
@@ -516,6 +540,9 @@ export async function startWorkers(): Promise<boolean> {
       'persistent-agent': 2,
       'gmail-sync': 3,
       'integration-sync': 1,
+      'social-publish': 2,
+      // Sprint 1.1 (2026-04-16): DSAR exports are CPU-bound for ZIP/JSON build → keep at 1.
+      'data-export': 1,
     };
 
     for (const [queueName, processor] of Object.entries(processors)) {
@@ -605,6 +632,128 @@ export async function startWorkers(): Promise<boolean> {
       });
 
       workers.set(queueName, worker as unknown as BullWorker);
+    }
+
+    // --- Scheduled Workers (fire-and-forget setup) ---
+
+    // Graph event pruning worker (daily at 3 AM)
+    try {
+      const pruneWorker = new Worker(
+        'graph-event-pruning',
+        async (_job: BullJob) => {
+          const { pruneOldEvents } = await import('../knowledge-graph/event-subgraph');
+          const contexts = ['operations', 'finance', 'people', 'strategy'] as const;
+          let totalDeleted = 0;
+          for (const ctx of contexts) {
+            const deleted = await pruneOldEvents(ctx, 90);
+            totalDeleted += deleted;
+          }
+          logger.info('Graph event pruning complete', { totalDeleted });
+        },
+        { connection, concurrency: 1 }
+      );
+      pruneWorker.on('failed', (_job: unknown, err: unknown) => {
+        logger.warn('Graph event pruning job failed', { error: err instanceof Error ? err.message : String(err) });
+      });
+      workers.set('graph-event-pruning', pruneWorker as unknown as BullWorker);
+
+      // Schedule daily graph pruning
+      const { Queue } = require('bullmq');
+      const pruneQueue = new Queue('graph-event-pruning', { connection });
+      await pruneQueue.add('daily-prune', {}, {
+        repeat: { pattern: '0 3 * * *' },
+        removeOnComplete: true,
+        removeOnFail: 5,
+      });
+    } catch (err) {
+      logger.debug('Graph pruning worker/schedule setup skipped', { error: (err as Error).message });
+    }
+
+    // HyperAgent meta-observation worker (weekly Sunday at 2 AM)
+    try {
+      const metaWorker = new Worker(
+        'hyperagent-meta-observation',
+        async (_job: BullJob) => {
+          const { checkAutoRollback, getStatus } = await import('../hyperagents/meta-improver');
+
+          // Check for quality regressions and auto-rollback
+          const rolledBack = checkAutoRollback();
+          if (rolledBack.length > 0) {
+            logger.warn('HyperAgent auto-rollback triggered', { count: rolledBack.length, ids: rolledBack });
+          }
+
+          const status = getStatus();
+          logger.info('HyperAgent weekly observation', {
+            configSize: Object.keys(status.config).length,
+            actionsToday: status.actionsToday,
+            metrics: status.metaMetrics,
+          });
+        },
+        { connection, concurrency: 1 }
+      );
+      metaWorker.on('failed', (_job: unknown, err: unknown) => {
+        logger.warn('HyperAgent meta-observation job failed', { error: err instanceof Error ? err.message : String(err) });
+      });
+      workers.set('hyperagent-meta-observation', metaWorker as unknown as BullWorker);
+
+      // Schedule weekly meta-observation
+      const { Queue: MetaQueue } = require('bullmq');
+      const metaQueue = new MetaQueue('hyperagent-meta-observation', { connection });
+      await metaQueue.add('weekly-meta', {}, {
+        repeat: { pattern: '0 2 * * 0' },
+        removeOnComplete: true,
+        removeOnFail: 5,
+      });
+    } catch (err) {
+      logger.debug('HyperAgent meta-observation worker/schedule setup skipped', { error: (err as Error).message });
+    }
+
+    // Self-Improvement Daily Worker (8 AM)
+    try {
+      const improvementWorker = new Worker(
+        'self-improvement',
+        async (job: BullJob) => processSelfImprovement(job as unknown as Parameters<typeof processSelfImprovement>[0]),
+        { connection, concurrency: 1 }
+      );
+      improvementWorker.on('failed', (_job: unknown, err: unknown) => {
+        logger.warn('Self-improvement job failed', { error: err instanceof Error ? err.message : String(err) });
+      });
+      workers.set('self-improvement', improvementWorker as unknown as BullWorker);
+
+      // Schedule daily self-improvement
+      const { Queue: ImprovementQueue } = require('bullmq');
+      const improvementQueue = new ImprovementQueue('self-improvement', { connection });
+      await improvementQueue.add('daily-cycle', {}, {
+        repeat: { pattern: '0 8 * * *' },  // 8 AM daily
+        removeOnComplete: true,
+        removeOnFail: 5,
+      });
+    } catch (err) {
+      logger.debug('Self-improvement worker/schedule setup skipped', { error: (err as Error).message });
+    }
+
+    // --- Weekly Reflection Worker (Sunday 19:00) ---
+    try {
+      const reflectionWorker = new Worker(
+        'weekly-reflection',
+        async (job: BullJob) => processWeeklyReflection(job as unknown as Parameters<typeof processWeeklyReflection>[0]),
+        { connection, concurrency: 1 }
+      );
+      reflectionWorker.on('failed', (_job: unknown, err: unknown) => {
+        logger.warn('Weekly reflection job failed', { error: err instanceof Error ? err.message : String(err) });
+      });
+      workers.set('weekly-reflection', reflectionWorker as unknown as BullWorker);
+
+      // Schedule weekly reflection
+      const { Queue: ReflectionQueue } = require('bullmq');
+      const reflectionQueue = new ReflectionQueue('weekly-reflection', { connection });
+      await reflectionQueue.add('weekly-cycle', {}, {
+        repeat: { pattern: '0 19 * * 0' },  // Sunday 19:00
+        removeOnComplete: true,
+        removeOnFail: 5,
+      });
+    } catch (err) {
+      logger.debug('Weekly reflection worker/schedule setup skipped', { error: (err as Error).message });
     }
 
     workersStarted = true;

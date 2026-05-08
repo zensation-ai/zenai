@@ -1,7 +1,7 @@
 import { queryContext, AIContext } from '../../utils/database-context';
 import { logger } from '../../utils/logger';
 
-const CONTEXTS: AIContext[] = ['personal', 'work', 'learning', 'creative'];
+const CONTEXTS: AIContext[] = ['operations', 'finance', 'people', 'strategy'];
 
 export async function seedEmailWorkflowConfig(): Promise<void> {
   for (const context of CONTEXTS) {

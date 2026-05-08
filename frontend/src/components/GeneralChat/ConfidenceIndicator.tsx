@@ -11,7 +11,7 @@
  * - < 0.45: red  "Geringe Sicherheit"
  */
 
-import './ConfidenceIndicator.css';
+import { cn } from '@/lib/utils';
 
 export interface ConfidenceIndicatorProps {
   confidence?: number;
@@ -32,6 +32,12 @@ const LEVEL_LABELS: Record<Level, string> = {
   low: 'Geringe Sicherheit',
 };
 
+const DOT_COLORS: Record<Level, string> = {
+  high: 'bg-green-500',
+  medium: 'bg-amber-500',
+  low: 'bg-red-500',
+};
+
 export function ConfidenceIndicator({ confidence, sources }: ConfidenceIndicatorProps) {
   if (confidence == null) return null;
 
@@ -40,18 +46,18 @@ export function ConfidenceIndicator({ confidence, sources }: ConfidenceIndicator
 
   return (
     <span
-      className="confidence-indicator"
+      className="inline-flex items-center gap-1.5 text-[11px] text-text-muted py-0.5 leading-snug"
       role="status"
       aria-label={`${LEVEL_LABELS[level]} (${percent}%)${sources != null ? `, ${sources} Quellen` : ''}`}
     >
-      <span className={`confidence-indicator-dot ${level}`} aria-hidden="true" />
-      <span className="confidence-indicator-text">
+      <span className={cn('size-1.5 rounded-full shrink-0', DOT_COLORS[level])} aria-hidden="true" />
+      <span className="text-text-muted">
         Konfidenz: {percent}%
       </span>
       {sources != null && sources > 0 && (
         <>
-          <span className="confidence-indicator-separator" aria-hidden="true">{'\u{00B7}'}</span>
-          <span className="confidence-indicator-sources">
+          <span className="text-glass-border select-none" aria-hidden="true">{'\u{00B7}'}</span>
+          <span className="text-text-muted">
             {sources} {sources === 1 ? 'Quelle' : 'Quellen'}
           </span>
         </>

@@ -1,3 +1,4 @@
+import { type CSSProperties } from 'react';
 import { DomainFocus, FocusStats } from './types';
 import { EMPTY_STATE_MESSAGES } from '../../utils/aiPersonality';
 
@@ -90,7 +91,7 @@ export function FocusTab({
           </div>
         ) : (
           activeAreas.slice(0, 7).map((focus, index) => (
-            <div key={focus.id} className={`focus-card liquid-glass neuro-hover-lift neuro-stagger-item ${!focus.is_active ? 'inactive' : ''}`} style={{ animationDelay: `${index * 50}ms` }}>
+            <div key={focus.id} className={`focus-card liquid-glass neuro-hover-lift neuro-stagger-item [animation-delay:var(--delay)] ${!focus.is_active ? 'inactive' : ''}`} style={{ '--delay': `${index * 50}ms` } as CSSProperties}>
               <div className="focus-header">
                 <h3>{focus.name}</h3>
                 <div className="focus-priority">Priorität: {focus.priority}</div>

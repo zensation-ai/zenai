@@ -99,7 +99,7 @@ describe('Security Routes', () => {
 
       expect(res.status).toBe(200);
       expect(mockQueryContext).toHaveBeenCalledWith(
-        'personal',
+        'operations',
         expect.stringContaining('event_type = $1'),
         expect.any(Array)
       );
@@ -111,11 +111,11 @@ describe('Security Routes', () => {
         .mockResolvedValueOnce({ rows: [{ total: '0' }], rowCount: 1 } as any);
 
       const res = await request(app)
-        .get('/api/security/audit-log?context=work');
+        .get('/api/security/audit-log?context=finance');
 
       expect(res.status).toBe(200);
       expect(mockQueryContext).toHaveBeenCalledWith(
-        'work',
+        'finance',
         expect.any(String),
         expect.any(Array)
       );

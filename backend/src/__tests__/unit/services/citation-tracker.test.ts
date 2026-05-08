@@ -18,7 +18,7 @@ import { EnhancedResult } from '../../../services/enhanced-rag';
 
 jest.mock('../../../utils/database-context', () => ({
   queryContext: jest.fn(),
-  isValidContext: jest.fn((ctx: string) => ['personal', 'work', 'learning', 'creative'].includes(ctx)),
+  isValidContext: jest.fn((ctx: string) => ['operations', 'finance', 'people', 'strategy'].includes(ctx)),
 }));
 
 jest.mock('../../../utils/logger', () => ({
@@ -198,16 +198,16 @@ describe('saveCitations', () => {
       { index: 2, id: 'src-2', title: 'Source 2', type: 'document', snippet: 'Test 2', relevanceScore: 0.8 },
     ];
 
-    await saveCitations('msg-123', citations, 'personal');
+    await saveCitations('msg-123', citations, 'operations');
     expect(mockQueryContext).toHaveBeenCalledWith(
-      'personal',
+      'operations',
       expect.stringContaining('INSERT INTO message_citations'),
       expect.any(Array),
     );
   });
 
   test('skips save for empty citations', async () => {
-    await saveCitations('msg-123', [], 'personal');
+    await saveCitations('msg-123', [], 'operations');
     expect(mockQueryContext).not.toHaveBeenCalled();
   });
 
@@ -219,7 +219,7 @@ describe('saveCitations', () => {
     ];
 
     // Should not throw
-    await expect(saveCitations('msg-123', citations, 'personal')).resolves.toBeUndefined();
+    await expect(saveCitations('msg-123', citations, 'operations')).resolves.toBeUndefined();
   });
 });
 
@@ -240,7 +240,7 @@ describe('getCitations', () => {
       ],
     });
 
-    const citations = await getCitations('msg-123', 'personal');
+    const citations = await getCitations('msg-123', 'operations');
     expect(citations).toHaveLength(2);
     expect(citations[0].index).toBe(1);
     expect(citations[0].id).toBe('src-1');
@@ -250,7 +250,7 @@ describe('getCitations', () => {
 
   test('returns empty array on error', async () => {
     mockQueryContext.mockRejectedValueOnce(new Error('DB error'));
-    const citations = await getCitations('msg-123', 'personal');
+    const citations = await getCitations('msg-123', 'operations');
     expect(citations).toEqual([]);
   });
 });

@@ -35,7 +35,7 @@ jest.mock('../../../services/rag/citation-tracker', () => ({
 // Mock database-context
 const mockQueryContext = jest.fn();
 jest.mock('../../../utils/database-context', () => ({
-  isValidContext: jest.fn((ctx: string) => ['personal', 'work', 'learning', 'creative'].includes(ctx)),
+  isValidContext: jest.fn((ctx: string) => ['operations', 'finance', 'people', 'strategy'].includes(ctx)),
   queryContext: (...args: unknown[]) => mockQueryContext(...args),
 }));
 
@@ -78,7 +78,7 @@ describe('RAG v2 Routes', () => {
   describe('POST /api/:context/rag/v2/retrieve', () => {
     it('should perform adaptive retrieval', async () => {
       const res = await request(app)
-        .post('/api/personal/rag/v2/retrieve')
+        .post('/api/operations/rag/v2/retrieve')
         .send({ query: 'What is machine learning?' });
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
@@ -88,36 +88,36 @@ describe('RAG v2 Routes', () => {
 
     it('should accept a specific strategy', async () => {
       await request(app)
-        .post('/api/personal/rag/v2/retrieve')
+        .post('/api/operations/rag/v2/retrieve')
         .send({ query: 'test query', strategy: 'dense' });
       expect(mockRetrieve).toHaveBeenCalledWith(
         'test query',
-        'personal',
+        'operations',
         expect.objectContaining({ forceStrategy: 'dense' })
       );
     });
 
     it('should treat "auto" as no forced strategy', async () => {
       await request(app)
-        .post('/api/personal/rag/v2/retrieve')
+        .post('/api/operations/rag/v2/retrieve')
         .send({ query: 'test query', strategy: 'auto' });
       expect(mockRetrieve).toHaveBeenCalledWith(
         'test query',
-        'personal',
+        'operations',
         expect.objectContaining({ forceStrategy: undefined })
       );
     });
 
     it('should return 400 when query is missing', async () => {
       const res = await request(app)
-        .post('/api/personal/rag/v2/retrieve')
+        .post('/api/operations/rag/v2/retrieve')
         .send({});
       expect(res.status).toBe(400);
     });
 
     it('should return 400 for invalid strategy', async () => {
       const res = await request(app)
-        .post('/api/personal/rag/v2/retrieve')
+        .post('/api/operations/rag/v2/retrieve')
         .send({ query: 'test', strategy: 'invalid' });
       expect(res.status).toBe(400);
     });
@@ -140,7 +140,7 @@ describe('RAG v2 Routes', () => {
   describe('GET /api/:context/rag/v2/citations/:messageId', () => {
     it('should return citations for a message', async () => {
       const res = await request(app)
-        .get('/api/personal/rag/v2/citations/a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11');
+        .get('/api/operations/rag/v2/citations/a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11');
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
       expect(res.body.data.citations).toHaveLength(1);
@@ -154,7 +154,7 @@ describe('RAG v2 Routes', () => {
   describe('POST /api/:context/rag/v2/source-feedback', () => {
     it('should record source feedback', async () => {
       const res = await request(app)
-        .post('/api/personal/rag/v2/source-feedback')
+        .post('/api/operations/rag/v2/source-feedback')
         .send({ sourceId: 's1', helpful: true, queryType: 'dense' });
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
@@ -163,14 +163,14 @@ describe('RAG v2 Routes', () => {
 
     it('should return 400 when sourceId is missing', async () => {
       const res = await request(app)
-        .post('/api/personal/rag/v2/source-feedback')
+        .post('/api/operations/rag/v2/source-feedback')
         .send({ helpful: true });
       expect(res.status).toBe(400);
     });
 
     it('should return 400 when helpful is not a boolean', async () => {
       const res = await request(app)
-        .post('/api/personal/rag/v2/source-feedback')
+        .post('/api/operations/rag/v2/source-feedback')
         .send({ sourceId: 's1', helpful: 'yes' });
       expect(res.status).toBe(400);
     });
@@ -189,7 +189,7 @@ describe('RAG v2 Routes', () => {
         ],
       });
 
-      const res = await request(app).get('/api/personal/rag/v2/strategy-stats');
+      const res = await request(app).get('/api/operations/rag/v2/strategy-stats');
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
       expect(res.body.data.strategies).toHaveProperty('dense');
@@ -198,26 +198,26 @@ describe('RAG v2 Routes', () => {
     });
 
     it('should use default days parameter', async () => {
-      await request(app).get('/api/personal/rag/v2/strategy-stats');
+      await request(app).get('/api/operations/rag/v2/strategy-stats');
       expect(mockQueryContext).toHaveBeenCalledWith(
-        'personal',
+        'operations',
         expect.any(String),
-        expect.arrayContaining(['personal', 30])
+        expect.arrayContaining(['operations', 30])
       );
     });
 
     it('should accept custom days parameter', async () => {
-      await request(app).get('/api/personal/rag/v2/strategy-stats?days=7');
+      await request(app).get('/api/operations/rag/v2/strategy-stats?days=7');
       expect(mockQueryContext).toHaveBeenCalledWith(
-        'personal',
+        'operations',
         expect.any(String),
-        expect.arrayContaining(['personal', 7])
+        expect.arrayContaining(['operations', 7])
       );
     });
 
     it('should return defaults when query fails', async () => {
       mockQueryContext.mockRejectedValueOnce(new Error('Table not found'));
-      const res = await request(app).get('/api/personal/rag/v2/strategy-stats');
+      const res = await request(app).get('/api/operations/rag/v2/strategy-stats');
       expect(res.status).toBe(200);
       expect(res.body.data.strategies.dense.total).toBe(0);
     });

@@ -22,14 +22,14 @@ describe('GmailSyncWorker', () => {
     it('should find eligible Gmail accounts', async () => {
       mockPoolQuery.mockResolvedValue({
         rows: [
-          { id: 'acc-1', google_token_id: 'tok-1', context: 'personal' },
-          { id: 'acc-2', google_token_id: 'tok-2', context: 'work' },
+          { id: 'acc-1', google_token_id: 'tok-1', context: 'operations' },
+          { id: 'acc-2', google_token_id: 'tok-2', context: 'finance' },
         ],
       });
 
       const jobs = await scheduleGmailSyncJobs();
       expect(jobs).toHaveLength(2);
-      expect(jobs[0]).toEqual({ accountId: 'acc-1', context: 'personal', googleTokenId: 'tok-1' });
+      expect(jobs[0]).toEqual({ accountId: 'acc-1', context: 'operations', googleTokenId: 'tok-1' });
     });
 
     it('should return empty when no Gmail accounts', async () => {
@@ -42,7 +42,7 @@ describe('GmailSyncWorker', () => {
   describe('processGmailSyncJob', () => {
     it('should call syncIncremental', async () => {
       const result = await processGmailSyncJob({
-        accountId: 'acc-1', context: 'personal', googleTokenId: 'tok-1',
+        accountId: 'acc-1', context: 'operations', googleTokenId: 'tok-1',
       });
       expect(result.newMessages).toBe(2);
     });

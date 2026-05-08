@@ -97,7 +97,7 @@ describe('QueryErrorState', () => {
   it('renders AlertTriangle icon', () => {
     render(<QueryErrorState error={new Error('test')} />);
     // The EmptyState renders the icon with aria-hidden
-    const icon = document.querySelector('.ds-empty-state__icon');
+    const icon = document.querySelector('[aria-hidden="true"]');
     expect(icon).not.toBeNull();
   });
 });

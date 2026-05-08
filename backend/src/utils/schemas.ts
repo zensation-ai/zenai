@@ -22,8 +22,8 @@ export const UUIDSchema = z.string().uuid('Invalid UUID format');
 /**
  * Context schema (personal/work)
  */
-export const ContextSchema = z.enum(['personal', 'work', 'learning', 'creative'], {
-  message: 'Context must be "personal", "work", "learning", or "creative"'
+export const ContextSchema = z.enum(['operations', 'finance', 'people', 'strategy'], {
+  message: 'Context must be "operations", "finance", "people", or "strategy"'
 });
 
 /**
@@ -359,7 +359,7 @@ export function validateParams<T>(schema: ZodSchema<T>) {
  * Chat session creation schema
  */
 export const CreateChatSessionSchema = z.object({
-  context: ContextSchema.default('personal'),
+  context: ContextSchema.default('operations'),
   type: z.enum(['general', 'assistant']).optional(),
 });
 

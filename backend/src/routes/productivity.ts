@@ -36,7 +36,7 @@ export const productivityRouter = Router();
 productivityRouter.get('/:context/productivity/dashboard', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
   const { context } = req.params;
   if (!isValidContext(context)) {
-    throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
+    throw new ValidationError('Invalid context. Use "operations", "finance", "people", or "strategy".');
   }
 
   const dashboard = await getProductivityDashboard(context);
@@ -54,7 +54,7 @@ productivityRouter.get('/:context/productivity/dashboard', apiKeyAuth, asyncHand
 productivityRouter.get('/:context/productivity/time-saved', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
   const { context } = req.params;
   if (!isValidContext(context)) {
-    throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
+    throw new ValidationError('Invalid context. Use "operations", "finance", "people", or "strategy".');
   }
 
   const timeSaved = await getTimeSavedMetrics(context);
@@ -72,7 +72,7 @@ productivityRouter.get('/:context/productivity/time-saved', apiKeyAuth, asyncHan
 productivityRouter.get('/:context/productivity/heatmap', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
   const { context } = req.params;
   if (!isValidContext(context)) {
-    throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
+    throw new ValidationError('Invalid context. Use "operations", "finance", "people", or "strategy".');
   }
 
   const heatmap = await getActivityHeatmap(context);
@@ -90,7 +90,7 @@ productivityRouter.get('/:context/productivity/heatmap', apiKeyAuth, asyncHandle
 productivityRouter.get('/:context/productivity/knowledge-growth', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
   const { context } = req.params;
   if (!isValidContext(context)) {
-    throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
+    throw new ValidationError('Invalid context. Use "operations", "finance", "people", or "strategy".');
   }
 
   const growth = await getKnowledgeGrowth(context);
@@ -108,7 +108,7 @@ productivityRouter.get('/:context/productivity/knowledge-growth', apiKeyAuth, as
 productivityRouter.get('/:context/productivity/streak', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
   const { context } = req.params;
   if (!isValidContext(context)) {
-    throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
+    throw new ValidationError('Invalid context. Use "operations", "finance", "people", or "strategy".');
   }
 
   const streak = await getStreakInfo(context);
@@ -126,7 +126,7 @@ productivityRouter.get('/:context/productivity/streak', apiKeyAuth, asyncHandler
 productivityRouter.get('/:context/productivity/weekly-report', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
   const { context } = req.params;
   if (!isValidContext(context)) {
-    throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
+    throw new ValidationError('Invalid context. Use "operations", "finance", "people", or "strategy".');
   }
 
   const report = await getWeeklyReport(context);

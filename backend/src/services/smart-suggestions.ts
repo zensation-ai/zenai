@@ -5,7 +5,7 @@
  * Phase 115: Scoring algorithm, personalized timing, dedup + merge.
  */
 
-import { AIContext, queryContext } from '../utils/database-context';
+import { AIContext, queryContext, withTransaction } from '../utils/database-context';
 import { logger } from '../utils/logger';
 
 // ===========================================
@@ -32,7 +32,12 @@ export type SuggestionType =
   | 'hypothesis'
   | 'email_reply'
   | 'email_task'
-  | 'email_calendar';
+  | 'email_calendar'
+  | 'metacognitive_bias_alert'       // PMA: bias asymmetry > 0.3
+  | 'metacognitive_efficiency_badge' // PMA: weekly efficiency improvement
+  | 'business_anomaly'               // Business: MRR drop, traffic anomaly, uptime alert
+  | 'knowledge_crossing'             // Sleep: 2-hop KG neighbors suggest hidden connection
+  | 'weekly_reflection';            // L10: AI-generated weekly activity summary
 
 export type SuggestionStatus = 'active' | 'dismissed' | 'snoozed' | 'accepted';
 
@@ -73,6 +78,11 @@ export const TYPE_WEIGHTS: Record<SuggestionType, number> = {
   email_reply: 60,
   email_task: 60,
   email_calendar: 60,
+  metacognitive_bias_alert: 80,
+  metacognitive_efficiency_badge: 60,
+  business_anomaly: 85,
+  knowledge_crossing: 70,
+  weekly_reflection: 70,
 };
 
 /** Max active suggestions per user before auto-cleanup */
@@ -193,10 +203,37 @@ export function computeRelevanceScore(
   suggestion: SmartSuggestion,
   context: AIContext,
   userId: string,
-  now?: Date
+  now?: Date,
+  priorityScorer?: {
+    score: (input: {
+      saliency: number;
+      emotionalValence: number;
+      rewardRelevance: number;
+      goalAlignment: number;
+    }) => { composite: number };
+  },
 ): number {
   const currentTime = now ?? new Date();
 
+  if (priorityScorer) {
+    // PMA: Use 4-dimensional PriorityMap scoring
+    const meta = (suggestion.metadata as Record<string, number>) ?? {};
+    const pmScore = priorityScorer.score({
+      saliency: meta.novelty ?? 0.5,
+      emotionalValence: meta.emotionalValence ?? 0,
+      rewardRelevance: meta.taskRelevance ?? 0.5,
+      goalAlignment: meta.contextRelevance ?? 0.5,
+    });
+
+    // Apply recency and interaction multipliers on top of PriorityMap score
+    const ageMs = currentTime.getTime() - new Date(suggestion.createdAt).getTime();
+    const recencyMultiplier = computeRecencyDecay(ageMs);
+    const interactionMultiplier = computeInteractionBoost(context, userId, suggestion.type);
+    const rawScore = Math.round(pmScore.composite * 100) * recencyMultiplier * interactionMultiplier;
+    return Math.max(0, Math.min(100, Math.round(rawScore)));
+  }
+
+  // Fallback: existing TYPE_WEIGHTS logic
   // 1. Type weight (0-100 scale)
   const typeWeight = TYPE_WEIGHTS[suggestion.type] ?? 50;
 
@@ -388,10 +425,16 @@ export async function dismissSuggestion(
       `UPDATE smart_suggestions
        SET status = 'dismissed', dismissed_at = NOW(), updated_at = NOW()
        WHERE id = $1 AND user_id = $2
-       RETURNING id`,
+       RETURNING id, type, title, metadata`,
       [id, userId]
     );
-    return (result.rowCount ?? 0) > 0;
+    if ((result.rowCount ?? 0) === 0) return false;
+
+    // Feedback-Schleife: emit negative feedback for memory weakening
+    const row = result.rows[0];
+    emitSuggestionFeedback(context, 'dismissed', row?.type, row?.title, row?.metadata).catch(() => {});
+
+    return true;
   } catch (error) {
     logger.error('Failed to dismiss suggestion', error instanceof Error ? error : undefined);
     return false;
@@ -438,10 +481,16 @@ export async function acceptSuggestion(
       `UPDATE smart_suggestions
        SET status = 'accepted', updated_at = NOW()
        WHERE id = $1 AND user_id = $2
-       RETURNING id`,
+       RETURNING id, type, title, metadata`,
       [id, userId]
     );
-    return (result.rowCount ?? 0) > 0;
+    if ((result.rowCount ?? 0) === 0) return false;
+
+    // Feedback-Schleife: emit positive feedback for memory reinforcement
+    const row = result.rows[0];
+    emitSuggestionFeedback(context, 'accepted', row?.type, row?.title, row?.metadata).catch(() => {});
+
+    return true;
   } catch (error) {
     logger.error('Failed to accept suggestion', error instanceof Error ? error : undefined);
     return false;
@@ -601,11 +650,8 @@ export async function mergeRelatedSuggestions(
             ? `${suggestions[i].description} (auch: ${suggestions[j].title})`
             : `${suggestions[i].title} (zusammengefuehrt mit: ${suggestions[j].title})`;
 
-          try {
-            await queryContext(context, 'BEGIN', []);
-
-            await queryContext(
-              context,
+          await withTransaction(context, async (txQuery) => {
+            await txQuery(
               `UPDATE smart_suggestions
                SET description = $3, priority = GREATEST(priority, $4), updated_at = NOW()
                WHERE id = $1 AND user_id = $2`,
@@ -617,19 +663,13 @@ export async function mergeRelatedSuggestions(
               ]
             );
 
-            await queryContext(
-              context,
+            await txQuery(
               `UPDATE smart_suggestions
                SET status = 'dismissed', dismissed_at = NOW(), updated_at = NOW()
                WHERE id = $1 AND user_id = $2`,
               [suggestions[j].id, userId]
             );
-
-            await queryContext(context, 'COMMIT', []);
-          } catch (txErr) {
-            await queryContext(context, 'ROLLBACK', []).catch((err) => logger.debug('Rollback failed during suggestion merge', { error: err }));
-            throw txErr;
-          }
+          });
 
           merged.add(suggestions[j].id);
           mergeCount++;
@@ -690,6 +730,76 @@ export async function enforceMaxActiveSuggestions(
 // Helpers
 // ===========================================
 
+// ===========================================
+// PMA: MetacognitiveMonitor suggestion generator
+// ===========================================
+
+/** Bias distribution metrics from the MetacognitiveMonitor. */
+interface BiasMetrics {
+  /** Asymmetry ratio between positive and critical feedback acceptance (0-1). */
+  asymmetry: number;
+  /** Fraction of suggestions of the dominant type that were accepted (0-1). */
+  acceptanceRate: number;
+  /** Whether the user skews toward accepting positive or critical suggestions. */
+  dominantType: 'positive' | 'critical';
+}
+
+/** A single efficiency measurement over time. */
+interface EfficiencyPoint {
+  /** Efficiency score (0-1). */
+  score: number;
+  /** ISO 8601 date string. */
+  date: string;
+}
+
+/**
+ * Generate SmartSurface suggestions from MetacognitiveMonitor data.
+ * Called during periodic suggestion refresh or sleep-compute.
+ * German strings per spec 4.6.1 — ZenAI UI language is German.
+ *
+ * @param context   - Active AIContext (operations / finance / people / strategy).
+ * @param userId    - Authenticated user ID.
+ * @param biasMetrics      - Optional bias distribution snapshot from MetacognitiveMonitor.
+ * @param efficiencyTrend  - Optional time-ordered efficiency data points (oldest first).
+ */
+export async function generateMetacognitiveSuggestions(
+  context: AIContext,
+  userId: string,
+  biasMetrics?: BiasMetrics,
+  efficiencyTrend?: EfficiencyPoint[],
+): Promise<void> {
+  // Bias alert: when asymmetry exceeds 30%
+  if (biasMetrics && biasMetrics.asymmetry > 0.3) {
+    const pct = (biasMetrics.acceptanceRate * 100).toFixed(0);
+    const typeLabel = biasMetrics.dominantType === 'positive' ? 'positiven' : 'kritischen';
+    await createSuggestion(context, {
+      userId,
+      type: 'metacognitive_bias_alert',
+      title: `Bestätigungstendenz erkannt (${(biasMetrics.asymmetry * 100).toFixed(0)}%)`,
+      description: `In den letzten 30 Tagen hast du ${pct}% der ${typeLabel} Vorschläge akzeptiert. Möchtest du eine ausgewogenere Perspektive einbeziehen?`,
+      priority: 80,
+      metadata: { asymmetry: biasMetrics.asymmetry, dominantType: biasMetrics.dominantType },
+    });
+  }
+
+  // Efficiency badge: when improvement > 10% over the provided trend window
+  if (efficiencyTrend && efficiencyTrend.length >= 2) {
+    const first = efficiencyTrend[0].score;
+    const last = efficiencyTrend[efficiencyTrend.length - 1].score;
+    if (first > 0 && last > first * 1.1) {
+      const pctImproved = ((last / first - 1) * 100).toFixed(0);
+      await createSuggestion(context, {
+        userId,
+        type: 'metacognitive_efficiency_badge',
+        title: 'Gedächtniseffizienz verbessert',
+        description: `Dein ZenAI arbeitet ${pctImproved}% effizienter als letzte Woche`,
+        priority: 60,
+        metadata: { improvementPct: parseFloat(pctImproved) },
+      });
+    }
+  }
+}
+
 function computeSnoozeInterval(duration: SnoozeDuration): string {
   switch (duration) {
     case '1h':
@@ -698,6 +808,51 @@ function computeSnoozeInterval(duration: SnoozeDuration): string {
       return '4 hours';
     case 'tomorrow':
       return '16 hours';
+  }
+}
+
+// ===========================================
+// Feedback-Schleife: Suggestion → Memory reinforcement/weakening
+// ===========================================
+
+/**
+ * Emit feedback when a suggestion is accepted or dismissed.
+ * - Accepted: positive feedback (+1) → memory reinforcement in sleep cycle
+ * - Dismissed: negative feedback (-1) → memory weakening in sleep cycle
+ * Fire-and-forget: never blocks the caller.
+ */
+async function emitSuggestionFeedback(
+  context: AIContext,
+  action: 'accepted' | 'dismissed',
+  suggestionType?: string,
+  title?: string,
+  metadata?: unknown,
+): Promise<void> {
+  try {
+    const { createFeedbackEvent, recordFeedback } = await import('./feedback/feedback-bus');
+    const value = action === 'accepted' ? 1 : -1;
+    const event = createFeedbackEvent(
+      'suggestion_action',
+      'smart-suggestions',
+      suggestionType ?? 'unknown',
+      value,
+      { title, action, metadata: metadata ?? {} },
+    );
+    await recordFeedback(context, event);
+
+    // Also emit system event for other listeners (e.g. episodic memory)
+    import('./event-system').then(({ emitSystemEvent }) => {
+      emitSystemEvent({
+        context,
+        eventType: action === 'accepted' ? 'memory.fact_reinforced' : 'memory.fact_weakened',
+        eventSource: 'suggestion-feedback',
+        payload: { suggestionType, title, action },
+      });
+    }).catch(() => {});
+  } catch (err) {
+    logger.debug('emitSuggestionFeedback failed (non-critical)', {
+      error: err instanceof Error ? err.message : String(err),
+    });
   }
 }
 

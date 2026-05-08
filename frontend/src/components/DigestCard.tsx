@@ -1,3 +1,4 @@
+import { type CSSProperties } from 'react';
 import { DigestEntry, categoryLabels, formatDigestDate, formatDateRange, getProductivityColor } from './DigestTypes';
 
 interface DigestCardProps {
@@ -9,7 +10,7 @@ interface DigestCardProps {
 export function DigestCard({ digest, variant, index = 0 }: DigestCardProps) {
   if (variant === 'compact') {
     return (
-      <div className="digest-card compact liquid-glass neuro-hover-lift neuro-stagger-item" style={{ animationDelay: `${index * 50}ms` }}>
+      <div className="digest-card compact liquid-glass neuro-hover-lift neuro-stagger-item [animation-delay:var(--delay)]" style={{ '--delay': `${index * 50}ms` } as CSSProperties}>
         <div className="digest-card-header">
           <span className={`digest-type ${digest.type}`}>
             {digest.type === 'daily' ? '📅' : '📆'}
@@ -19,7 +20,7 @@ export function DigestCard({ digest, variant, index = 0 }: DigestCardProps) {
               ? formatDigestDate(digest.period_start)
               : formatDateRange(digest.period_start, digest.period_end)}
           </span>
-          <div className="mini-score" style={{ background: getProductivityColor(digest.stats.productivity_score) }}>
+          <div className="mini-score bg-[var(--bg)]" style={{ '--bg': getProductivityColor(digest.stats.productivity_score) } as CSSProperties}>
             {digest.stats.productivity_score}
           </div>
         </div>
@@ -47,8 +48,8 @@ export function DigestCard({ digest, variant, index = 0 }: DigestCardProps) {
       </div>
 
       <div className="productivity-score-section">
-        <div className="score-circle neuro-breathing" style={{ borderColor: getProductivityColor(digest.stats.productivity_score) }}>
-          <span className="score-value" style={{ color: getProductivityColor(digest.stats.productivity_score) }}>
+        <div className="score-circle neuro-breathing [border-color:var(--bc)]" style={{ '--bc': getProductivityColor(digest.stats.productivity_score) } as CSSProperties}>
+          <span className="score-value text-[var(--c)]" style={{ '--c': getProductivityColor(digest.stats.productivity_score) } as CSSProperties}>
             {digest.stats.productivity_score}
           </span>
           <span className="score-label">Produktivität</span>
@@ -97,10 +98,8 @@ export function DigestCard({ digest, variant, index = 0 }: DigestCardProps) {
                 <span className="category-name">{categoryLabels[cat] || cat}</span>
                 <div className="category-bar-container">
                   <div
-                    className="category-bar-fill"
-                    style={{
-                      width: `${(count / Math.max(...digest.stats.top_categories.map(([, c]) => c))) * 100}%`
-                    }}
+                    className="category-bar-fill w-[var(--bar)]"
+                    style={{ '--bar': `${(count / Math.max(...digest.stats.top_categories.map(([, c]) => c))) * 100}%` } as CSSProperties}
                   />
                 </div>
                 <span className="category-count">{count}</span>

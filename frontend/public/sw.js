@@ -403,7 +403,7 @@ self.addEventListener('push', (event) => {
   const data = event.data.json();
   const options = {
     body: data.body || 'Neue Benachrichtigung',
-    icon: '/zenai-brain.svg',
+    icon: '/zenai-spark.svg',
     badge: '/icons/badge-72x72.png',
     vibrate: [100, 50, 100],
     data: {

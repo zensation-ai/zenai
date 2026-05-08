@@ -156,7 +156,7 @@ describe('Personalization Chat Routes', () => {
 
       expect(res.status).toBe(200);
       expect(mockQueryContext).toHaveBeenCalledWith(
-        'personal',
+        'operations',
         expect.stringContaining('WHERE category = $1'),
         ['personality']
       );

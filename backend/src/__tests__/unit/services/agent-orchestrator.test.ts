@@ -46,7 +46,7 @@ jest.mock('../../../services/claude/tool-use', () => ({
 // Mock database context
 jest.mock('../../../utils/database-context', () => ({
   queryContext: jest.fn().mockResolvedValue({ rows: [] }),
-  AIContext: 'personal',
+  AIContext: 'operations',
 }));
 
 // Mock logger
@@ -265,7 +265,7 @@ describe('Agent Orchestrator', () => {
     it('should execute a team task and return results', async () => {
       const result = await executeTeamTask({
         description: 'Analysiere und erstelle einen Bericht über KI',
-        aiContext: 'personal',
+        aiContext: 'operations',
         strategy: 'research_write_review',
       });
 
@@ -280,7 +280,7 @@ describe('Agent Orchestrator', () => {
     it('should track token usage across all agents', async () => {
       const result = await executeTeamTask({
         description: 'Test task',
-        aiContext: 'personal',
+        aiContext: 'operations',
         strategy: 'research_write_review',
       });
 
@@ -291,7 +291,7 @@ describe('Agent Orchestrator', () => {
     it('should clean up shared memory after execution', async () => {
       const result = await executeTeamTask({
         description: 'Test task',
-        aiContext: 'personal',
+        aiContext: 'operations',
         strategy: 'research_only',
       });
 
@@ -302,7 +302,7 @@ describe('Agent Orchestrator', () => {
     it('should use auto-classified strategy when none provided', async () => {
       const result = await executeTeamTask({
         description: 'Recherchiere zum Thema React Hooks',
-        aiContext: 'personal',
+        aiContext: 'operations',
       });
 
       expect(result.strategy).toBe('research_only');
@@ -334,7 +334,7 @@ describe('Agent Orchestrator', () => {
 
       const result = await executeTeamTask({
         description: 'Test task',
-        aiContext: 'personal',
+        aiContext: 'operations',
         strategy: 'research_only',
       });
 
@@ -348,7 +348,7 @@ describe('Agent Orchestrator', () => {
     it('should respect skipReview option', async () => {
       const result = await executeTeamTask({
         description: 'Analysiere und schreibe etwas',
-        aiContext: 'personal',
+        aiContext: 'operations',
         strategy: 'research_write_review',
         skipReview: true,
       });
@@ -362,7 +362,7 @@ describe('Agent Orchestrator', () => {
       const result = await executeTeamTask({
         description: 'Test task',
         context: 'Important context information',
-        aiContext: 'work',
+        aiContext: 'finance',
         strategy: 'research_only',
       });
 
@@ -376,7 +376,7 @@ describe('Agent Orchestrator', () => {
       await executeTeamTask(
         {
           description: 'Test with progress',
-          aiContext: 'personal',
+          aiContext: 'operations',
           strategy: 'research_only',
         },
         (event) => events.push(event)
@@ -394,7 +394,7 @@ describe('Agent Orchestrator', () => {
       await executeTeamTask(
         {
           description: 'Test pipeline info',
-          aiContext: 'personal',
+          aiContext: 'operations',
           strategy: 'research_write_review',
         },
         (event) => events.push(event)
@@ -432,7 +432,7 @@ describe('Agent Orchestrator', () => {
 
       const result = await executeTeamTask({
         description: 'Implementiere einen Sortieralgorithmus',
-        aiContext: 'personal',
+        aiContext: 'operations',
         strategy: 'code_solve',
       });
 

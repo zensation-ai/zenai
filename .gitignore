@@ -112,3 +112,8 @@ backend/DEPLOY_TRIGGER.md
 SECURITY.md
 supabase-add-recommendations-function.sql
 test-audio.txt
+
+# Added from KI-AB sync (2026-05-08)
+package-lock.json
+**/package-lock.json
+archive/

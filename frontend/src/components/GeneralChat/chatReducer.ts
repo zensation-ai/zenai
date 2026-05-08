@@ -8,6 +8,7 @@
  */
 
 import type { ChatMessage } from './types';
+import type { ThinkingTierInfo } from '../../hooks/useStreamingChat';
 
 // ============================================
 // Types
@@ -17,6 +18,16 @@ export interface ToolCall {
   name: string;
   duration_ms: number;
   status: 'success' | 'error';
+  /** Raw tool result string (for inline display, present on live tool calls) */
+  result?: string;
+  /** Whether the tool succeeded (present on live tool calls) */
+  success?: boolean;
+}
+
+/** ToolCall with required result/success fields (live tool results during streaming) */
+export interface LiveToolResult extends ToolCall {
+  result: string;
+  success: boolean;
 }
 
 export type ChatPhase = 'idle' | 'loadingSession' | 'ready' | 'streaming' | 'error';
@@ -36,14 +47,16 @@ export interface ChatState {
   streamingContent: string;
   /** Accumulated thinking content */
   thinkingContent: string;
+  /** Thinking tier info from adaptive thinking */
+  thinkingTier: ThinkingTierInfo | null;
   /** Whether session is loading */
   loading: boolean;
   /** Inline error message (also used as errorMessage for phase-based compat) */
   inlineError: string | null;
   /** Name of the currently executing tool */
   activeToolName: string | null;
-  /** Completed tool calls with metadata */
-  completedTools: ToolCall[];
+  /** Completed tool calls with metadata (live tool results during streaming) */
+  completedTools: LiveToolResult[];
   /** Active tool names (tools currently running) */
   activeTools: string[];
   /** Selected images for vision upload */
@@ -65,11 +78,14 @@ export type ChatAction =
   | { type: 'SET_STREAMING'; isStreaming: boolean }
   | { type: 'SET_STREAMING_CONTENT'; content: string }
   | { type: 'SET_THINKING_CONTENT'; content: string }
+  | { type: 'SET_THINKING_TIER'; tier: ThinkingTierInfo | null }
   | { type: 'APPEND_THINKING_CONTENT'; delta: string }
   | { type: 'SET_LOADING'; loading: boolean }
   | { type: 'SET_INLINE_ERROR'; error: string | null }
   | { type: 'SET_SELECTED_IMAGES'; images: File[] }
-  | { type: 'SET_TOOL_ACTIVITY'; activeToolName: string | null; completedTool?: ToolCall }
+  | { type: 'SET_TOOL_ACTIVITY'; activeToolName: string | null; completedTool?: LiveToolResult }
+  | { type: 'ADD_TOOL_RESULT'; result: LiveToolResult }
+  | { type: 'SET_TOOL_RESULTS'; results: LiveToolResult[] }
   | { type: 'RESET_TOOL_STATE' }
   | { type: 'EDIT_MESSAGE'; messageId: string; newContent: string }
   | { type: 'REGENERATE_MESSAGE'; messageId: string }
@@ -103,6 +119,7 @@ export const initialChatState: ChatState = {
   isStreaming: false,
   streamingContent: '',
   thinkingContent: '',
+  thinkingTier: null,
   loading: false,
   inlineError: null,
   activeToolName: null,
@@ -149,6 +166,9 @@ export function chatReducer(state: ChatState, action: ChatAction): ChatState {
     case 'SET_THINKING_CONTENT':
       return { ...state, thinkingContent: action.content };
 
+    case 'SET_THINKING_TIER':
+      return { ...state, thinkingTier: action.tier };
+
     case 'APPEND_THINKING_CONTENT':
       return { ...state, thinkingContent: state.thinkingContent + action.delta };
 
@@ -177,6 +197,14 @@ export function chatReducer(state: ChatState, action: ChatAction): ChatState {
         completedTools: newCompletedTools,
       };
     }
+
+    case 'ADD_TOOL_RESULT': {
+      const newResults = [...state.completedTools, action.result].slice(-MAX_COMPLETED_TOOLS);
+      return { ...state, completedTools: newResults };
+    }
+
+    case 'SET_TOOL_RESULTS':
+      return { ...state, completedTools: action.results };
 
     case 'RESET_TOOL_STATE':
       return {
@@ -245,6 +273,7 @@ export function chatReducer(state: ChatState, action: ChatAction): ChatState {
         isStreaming: false,
         streamingContent: '',
         thinkingContent: '',
+        thinkingTier: null,
         activeToolName: null,
         activeTools: [],
       };

@@ -35,7 +35,7 @@ describe('Memory Health Service', () => {
       .mockResolvedValueOnce({ rows: [{ count: '8', expiring_count: '2', avg_relevance: '0.6' }] })
       .mockResolvedValueOnce({ rows: [{ count: '20', avg_strength: '0.8', consolidated_count: '15' }] });
 
-    const result = await getMemoryHealth('personal');
+    const result = await getMemoryHealth('operations');
 
     expect(result.overall.healthScore).toBe(100);
     expect(result.overall.totalMemories).toBe(43);
@@ -70,7 +70,7 @@ describe('Memory Health Service', () => {
       }],
     });
 
-    const result = await getMemoryHealth('work');
+    const result = await getMemoryHealth('finance');
 
     expect(result.overall.healthScore).toBe(0);
     expect(result.overall.totalMemories).toBe(0);
@@ -87,7 +87,7 @@ describe('Memory Health Service', () => {
       .mockResolvedValueOnce({ rows: [{ count: '5', expiring_count: '0', avg_relevance: '0.5' }] })
       .mockResolvedValueOnce({ rows: [{ count: '0', avg_strength: '0', consolidated_count: '0' }] });
 
-    const result = await getMemoryHealth('personal');
+    const result = await getMemoryHealth('operations');
 
     expect(result.overall.healthScore).toBe(50); // 2 of 4 layers
     expect(result.overall.totalMemories).toBe(8);
@@ -100,7 +100,7 @@ describe('Memory Health Service', () => {
   test('handles query errors gracefully', async () => {
     mockQueryContext.mockRejectedValue(new Error('Table not found'));
 
-    const result = await getMemoryHealth('learning');
+    const result = await getMemoryHealth('people');
 
     expect(result.overall.healthScore).toBe(0);
     expect(result.overall.totalMemories).toBe(0);
@@ -117,7 +117,7 @@ describe('Memory Health Service', () => {
       .mockResolvedValueOnce({ rows: [{ count: '7', expiring_count: '1', avg_relevance: '0.8' }] })
       .mockRejectedValueOnce(new Error('long_term_memory does not exist'));
 
-    const result = await getMemoryHealth('creative');
+    const result = await getMemoryHealth('strategy');
 
     expect(result.overall.healthScore).toBe(50); // 2 of 4 layers
     expect(result.overall.totalMemories).toBe(17);
@@ -132,19 +132,19 @@ describe('Memory Health Service', () => {
       rows: [{ count: '0', active_count: '0', recent_count: '0', expiring_count: '0', avg_age: '0', avg_importance: '0', avg_relevance: '0', avg_strength: '0', consolidated_count: '0' }],
     });
 
-    await getMemoryHealth('creative');
+    await getMemoryHealth('strategy');
 
-    // All 4 queries should use the 'creative' context
+    // All 4 queries should use the 'strategy' context
     expect(mockQueryContext).toHaveBeenCalledTimes(4);
     for (let i = 0; i < 4; i++) {
-      expect(mockQueryContext.mock.calls[i][0]).toBe('creative');
+      expect(mockQueryContext.mock.calls[i][0]).toBe('strategy');
     }
   });
 
   test('handles empty rows gracefully', async () => {
     mockQueryContext.mockResolvedValue({ rows: [] });
 
-    const result = await getMemoryHealth('personal');
+    const result = await getMemoryHealth('operations');
 
     expect(result.overall.healthScore).toBe(0);
     expect(result.overall.totalMemories).toBe(0);

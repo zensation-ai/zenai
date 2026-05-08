@@ -9,7 +9,7 @@
 const mockQueryContext = jest.fn();
 jest.mock('../../../utils/database-context', () => ({
   queryContext: (...args: unknown[]) => mockQueryContext(...args),
-  isValidContext: (c: string) => ['personal', 'work', 'learning', 'creative'].includes(c),
+  isValidContext: (c: string) => ['operations', 'finance', 'people', 'strategy'].includes(c),
 }));
 
 jest.mock('../../../utils/logger', () => ({
@@ -50,14 +50,14 @@ describe('Contacts Service', () => {
       };
       mockQueryContext.mockResolvedValueOnce({ rows: [mockContact] });
 
-      const result = await createContact('personal', {
+      const result = await createContact('operations', {
         display_name: 'John Doe',
         email: ['john@example.com'],
       });
 
       expect(result).toEqual(mockContact);
       expect(mockQueryContext).toHaveBeenCalledWith(
-        'personal',
+        'operations',
         expect.stringContaining('INSERT INTO contacts'),
         expect.arrayContaining(['John Doe'])
       );
@@ -66,7 +66,7 @@ describe('Contacts Service', () => {
     it('should default relationship_type to other', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [{ id: 'c-2', relationship_type: 'other' }] });
 
-      await createContact('work', { display_name: 'Jane' });
+      await createContact('finance', { display_name: 'Jane' });
 
       const callArgs = mockQueryContext.mock.calls[0][2] as unknown[];
       // relationship_type is the 8th param
@@ -76,7 +76,7 @@ describe('Contacts Service', () => {
     it('should pass userId when provided', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [{ id: 'c-3' }] });
 
-      await createContact('personal', { display_name: 'Test' }, 'user-123');
+      await createContact('operations', { display_name: 'Test' }, 'user-123');
 
       const callArgs = mockQueryContext.mock.calls[0][2] as unknown[];
       expect(callArgs[callArgs.length - 1]).toBe('user-123');
@@ -90,7 +90,7 @@ describe('Contacts Service', () => {
         .mockResolvedValueOnce({ rows: contacts })
         .mockResolvedValueOnce({ rows: [{ total: '1' }] });
 
-      const result = await getContacts('personal');
+      const result = await getContacts('operations');
 
       expect(result.contacts).toEqual(contacts);
       expect(result.total).toBe(1);
@@ -101,7 +101,7 @@ describe('Contacts Service', () => {
         .mockResolvedValueOnce({ rows: [] })
         .mockResolvedValueOnce({ rows: [{ total: '0' }] });
 
-      await getContacts('personal', { search: 'john' });
+      await getContacts('operations', { search: 'john' });
 
       const sql = mockQueryContext.mock.calls[0][1] as string;
       expect(sql).toContain('ILIKE');
@@ -112,7 +112,7 @@ describe('Contacts Service', () => {
         .mockResolvedValueOnce({ rows: [] })
         .mockResolvedValueOnce({ rows: [{ total: '0' }] });
 
-      await getContacts('work', { relationship_type: 'client' });
+      await getContacts('finance', { relationship_type: 'client' });
 
       const params = mockQueryContext.mock.calls[0][2] as unknown[];
       expect(params).toContain('client');
@@ -123,7 +123,7 @@ describe('Contacts Service', () => {
         .mockResolvedValueOnce({ rows: [] })
         .mockResolvedValueOnce({ rows: [{ total: '0' }] });
 
-      await getContacts('personal', { limit: 500 });
+      await getContacts('operations', { limit: 500 });
 
       const params = mockQueryContext.mock.calls[0][2] as unknown[];
       expect(params).toContain(200);
@@ -135,7 +135,7 @@ describe('Contacts Service', () => {
       const contact = { id: 'c-1', display_name: 'Bob', organization_name: 'Acme' };
       mockQueryContext.mockResolvedValueOnce({ rows: [contact] });
 
-      const result = await getContact('personal', 'c-1');
+      const result = await getContact('operations', 'c-1');
 
       expect(result).toEqual(contact);
     });
@@ -143,7 +143,7 @@ describe('Contacts Service', () => {
     it('should return null if not found', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [] });
 
-      const result = await getContact('personal', 'nonexistent');
+      const result = await getContact('operations', 'nonexistent');
 
       expect(result).toBeNull();
     });
@@ -154,7 +154,7 @@ describe('Contacts Service', () => {
       const updated = { id: 'c-1', display_name: 'Updated Name' };
       mockQueryContext.mockResolvedValueOnce({ rows: [updated] });
 
-      const result = await updateContact('personal', 'c-1', { display_name: 'Updated Name' });
+      const result = await updateContact('operations', 'c-1', { display_name: 'Updated Name' });
 
       expect(result).toEqual(updated);
       const sql = mockQueryContext.mock.calls[0][1] as string;
@@ -165,7 +165,7 @@ describe('Contacts Service', () => {
       const existing = { id: 'c-1', display_name: 'Existing' };
       mockQueryContext.mockResolvedValueOnce({ rows: [existing] });
 
-      const result = await updateContact('personal', 'c-1', {});
+      const result = await updateContact('operations', 'c-1', {});
 
       expect(result).toEqual(existing);
       // Should call getContact (SELECT), not UPDATE
@@ -178,7 +178,7 @@ describe('Contacts Service', () => {
     it('should return true on successful delete', async () => {
       mockQueryContext.mockResolvedValueOnce({ rowCount: 1 });
 
-      const result = await deleteContact('personal', 'c-1');
+      const result = await deleteContact('operations', 'c-1');
 
       expect(result).toBe(true);
     });
@@ -186,7 +186,7 @@ describe('Contacts Service', () => {
     it('should return false when contact not found', async () => {
       mockQueryContext.mockResolvedValueOnce({ rowCount: 0 });
 
-      const result = await deleteContact('personal', 'nonexistent');
+      const result = await deleteContact('operations', 'nonexistent');
 
       expect(result).toBe(false);
     });
@@ -201,11 +201,11 @@ describe('Contacts Service', () => {
       const org = { id: 'org-1', name: 'Acme Corp', industry: 'Tech' };
       mockQueryContext.mockResolvedValueOnce({ rows: [org] });
 
-      const result = await createOrganization('work', { name: 'Acme Corp', industry: 'Tech' });
+      const result = await createOrganization('finance', { name: 'Acme Corp', industry: 'Tech' });
 
       expect(result).toEqual(org);
       expect(mockQueryContext).toHaveBeenCalledWith(
-        'work',
+        'finance',
         expect.stringContaining('INSERT INTO organizations'),
         expect.arrayContaining(['Acme Corp', 'Tech'])
       );
@@ -218,7 +218,7 @@ describe('Contacts Service', () => {
         .mockResolvedValueOnce({ rows: [{ id: 'org-1', name: 'Acme', contact_count: '5' }] })
         .mockResolvedValueOnce({ rows: [{ total: '1' }] });
 
-      const result = await getOrganizations('work');
+      const result = await getOrganizations('finance');
 
       expect(result.organizations[0].contact_count).toBe(5);
       expect(result.total).toBe(1);
@@ -229,7 +229,7 @@ describe('Contacts Service', () => {
         .mockResolvedValueOnce({ rows: [] })
         .mockResolvedValueOnce({ rows: [{ total: '0' }] });
 
-      await getOrganizations('work', { industry: 'Tech' });
+      await getOrganizations('finance', { industry: 'Tech' });
 
       const params = mockQueryContext.mock.calls[0][2] as unknown[];
       expect(params).toContain('Tech');
@@ -242,7 +242,7 @@ describe('Contacts Service', () => {
         rows: [{ id: 'org-1', name: 'Acme', contact_count: '3' }],
       });
 
-      const result = await getOrganization('work', 'org-1');
+      const result = await getOrganization('finance', 'org-1');
 
       expect(result).not.toBeNull();
       expect(result!.contact_count).toBe(3);
@@ -251,7 +251,7 @@ describe('Contacts Service', () => {
     it('should return null when not found', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [] });
 
-      const result = await getOrganization('work', 'nonexistent');
+      const result = await getOrganization('finance', 'nonexistent');
 
       expect(result).toBeNull();
     });

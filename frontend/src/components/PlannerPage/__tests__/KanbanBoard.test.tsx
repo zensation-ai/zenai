@@ -16,7 +16,7 @@ const mockProject: Project = {
   color: '#4A90D9',
   icon: '📋',
   status: 'active',
-  context: 'work',
+  context: 'finance',
   sort_order: 0,
   metadata: {},
   created_at: '2026-01-01T00:00:00Z',
@@ -32,7 +32,7 @@ function makeTask(overrides: Partial<Task> = {}): Task {
     status: 'todo',
     priority: 'medium',
     sort_order: 0,
-    context: 'work',
+    context: 'finance',
     labels: [],
     metadata: {},
     created_at: '2026-01-01T00:00:00Z',
@@ -67,8 +67,8 @@ describe('KanbanBoard', () => {
   });
 
   it('should show loading state', () => {
-    const { container } = render(<KanbanBoard {...defaultProps} loading={true} />);
-    expect(container.querySelector('.kanban-loading')).toBeTruthy();
+    render(<KanbanBoard {...defaultProps} loading={true} />);
+    expect(screen.getByTestId('kanban-loading')).toBeTruthy();
   });
 
   it('should render tasks in correct columns', () => {
@@ -94,10 +94,10 @@ describe('KanbanBoard', () => {
       makeTask({ id: 't3', status: 'done', sort_order: 0 }),
     ];
 
-    const { container } = render(<KanbanBoard {...defaultProps} tasks={tasks} />);
+    render(<KanbanBoard {...defaultProps} tasks={tasks} />);
 
-    const counts = container.querySelectorAll('.kanban-column__count');
-    const countValues = Array.from(counts).map(el => el.textContent);
+    const counts = screen.getAllByTestId('kanban-column-count');
+    const countValues = counts.map(el => el.textContent);
 
     // 2 in "Zu erledigen", 1 in "Erledigt", rest 0
     expect(countValues).toContain('2');
@@ -137,9 +137,9 @@ describe('KanbanBoard', () => {
       due_date: '2020-01-01T00:00:00Z',
     });
 
-    const { container } = render(<KanbanBoard {...defaultProps} tasks={[task]} />);
+    render(<KanbanBoard {...defaultProps} tasks={[task]} />);
 
-    const overdueEl = container.querySelector('.kanban-card__due--overdue');
+    const overdueEl = screen.getByTestId('kanban-due-overdue');
     expect(overdueEl).toBeTruthy();
   });
 
@@ -151,9 +151,9 @@ describe('KanbanBoard', () => {
       due_date: '2020-01-01T00:00:00Z',
     });
 
-    const { container } = render(<KanbanBoard {...defaultProps} tasks={[task]} />);
+    render(<KanbanBoard {...defaultProps} tasks={[task]} />);
 
-    const overdueEl = container.querySelector('.kanban-card__due--overdue');
+    const overdueEl = screen.queryByTestId('kanban-due-overdue');
     expect(overdueEl).toBeFalsy();
   });
 
@@ -164,11 +164,11 @@ describe('KanbanBoard', () => {
       project_id: 'proj-1',
     });
 
-    const { container } = render(<KanbanBoard {...defaultProps} tasks={[task]} />);
+    render(<KanbanBoard {...defaultProps} tasks={[task]} />);
 
-    const badge = container.querySelector('.kanban-card__project');
+    const badge = screen.getByTestId('kanban-card-project');
     expect(badge).toBeTruthy();
-    expect(badge!.textContent).toContain('Test Project');
+    expect(badge.textContent).toContain('Test Project');
   });
 
   it('should filter by project', () => {
@@ -195,10 +195,11 @@ describe('KanbanBoard', () => {
       makeTask({ id: 't2', title: 'Task B', status: 'todo', sort_order: 1 }),
     ];
 
-    const { container } = render(<KanbanBoard {...defaultProps} tasks={tasks} />);
+    render(<KanbanBoard {...defaultProps} tasks={tasks} />);
 
-    const cards = container.querySelectorAll('.kanban-card');
-    const todoColumn = container.querySelectorAll('.kanban-column')[1]; // "Zu erledigen" is 2nd column
+    const cards = screen.getAllByTestId('kanban-card');
+    const columns = screen.getAllByTestId('kanban-column');
+    const todoColumn = columns[1]; // "Zu erledigen" is 2nd column
 
     // Simulate drag start on first card
     fireEvent.dragStart(cards[0], {
@@ -217,7 +218,7 @@ describe('KanbanBoard', () => {
     const task = makeTask({ id: 't1', title: 'KB Task' });
     render(<KanbanBoard {...defaultProps} tasks={[task]} />);
 
-    const card = screen.getByText('KB Task').closest('.kanban-card')!;
+    const card = screen.getByTestId('kanban-card');
     fireEvent.keyDown(card, { key: 'Enter' });
 
     expect(defaultProps.onEditTask).toHaveBeenCalledWith(task);

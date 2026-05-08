@@ -9,6 +9,7 @@
 
 import { Router } from 'express';
 import { asyncHandler } from '../middleware/errorHandler';
+import { apiKeyAuth } from '../middleware/auth';
 import { logger } from '../utils/logger';
 import { queryContext } from '../utils/database-context';
 import type { AIContext } from '../types/context';
@@ -17,10 +18,14 @@ import {
   checkBudget,
   recordImprovementAction,
   getImprovementHistory,
+  executeWithHyperAgent,
 } from '../services/integration/self-improvement';
 import type { IdentifyParams, GapInput, ProcedureInput, CalibrationInput, TeamStrategyInput } from '../services/integration/self-improvement';
 
 const router = Router();
+
+// Sprint 1.5 Item 4 — blanket auth for all self-improvement routes.
+router.use(apiKeyAuth);
 
 // ─── Opportunities ───────────────────────────────────────────────────────────
 
@@ -120,8 +125,17 @@ router.post('/:context/self-improvement/:id/execute', asyncHandler(async (req, r
       basis: req.body.basis || [],
     };
 
-    await recordImprovementAction(context as AIContext, action);
-    res.json({ success: true, data: { id, status: 'executed' } });
+    // Route through HyperAgent Level 0 for safety bounds checking
+    const result = await executeWithHyperAgent(context as AIContext as string, action);
+    res.json({
+      success: result.success,
+      data: {
+        id,
+        status: result.success ? 'executed' : 'blocked',
+        reason: result.reason,
+        governanceRequired: result.governanceRequired,
+      },
+    });
   } catch (error) {
     logger.error('Failed to execute improvement', error instanceof Error ? error : new Error(String(error)));
     res.json({ success: false, error: 'Failed to execute improvement' });

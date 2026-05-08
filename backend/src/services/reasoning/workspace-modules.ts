@@ -19,6 +19,7 @@ import type {
   SalienceResult,
   ModuleContext,
 } from './global-workspace';
+import type { AIContext } from '../../utils/database-context';
 
 // ─── Helper ───────────────────────────────────────────────────────────────────
 
@@ -129,7 +130,7 @@ export class WorkingMemoryModule implements WorkspaceModule {
  *   0.9  if intent is 'recall' (user explicitly asks about past facts)
  *   0.7  if domain matches a known context domain
  */
-const KNOWN_FACT_DOMAINS = new Set(['personal', 'work', 'learning', 'creative']);
+const KNOWN_FACT_DOMAINS = new Set(['operations', 'finance', 'people', 'strategy']);
 
 export class LongTermFactsModule implements WorkspaceModule {
   readonly id = 'long-term-facts';
@@ -340,7 +341,7 @@ export class KnowledgeGraphModule implements WorkspaceModule {
  * Salience:
  *   0.1  base (calendar is rarely relevant)
  *   +0.6 if temporalReference === 'future'
- *   +0.4 if domain === 'personal' AND there's a temporal reference
+ *   +0.4 if domain === 'operations' AND there's a temporal reference
  *   +0.3 if query mentions meeting/termin/kalender/calendar/schedule
  */
 const CALENDAR_KEYWORDS_RE = /\b(meeting|termin|kalender|calendar|schedule|besprechung|treffen)\b/i;
@@ -363,7 +364,7 @@ export class CalendarContextModule implements WorkspaceModule {
       reasons.push('+0.6 future temporal');
     }
 
-    if (analysis.domain === 'personal' && analysis.temporalReference !== null) {
+    if (analysis.domain === 'operations' && analysis.temporalReference !== null) {
       score += 0.4;
       reasons.push('+0.4 personal domain + temporal reference');
     }
@@ -440,6 +441,190 @@ export class ProceduralMemoryModule implements WorkspaceModule {
   }
 }
 
+// ─── 9. BusinessSpecialistModule (Stufe 9.1) ────────────────────────────────
+
+const BUSINESS_KEYWORDS_RE = /\b(revenue|mrr|arr|churn|kpi|business|umsatz|traffic|seo|performance|anomal|metric)/i;
+
+/**
+ * Business specialist — delivers current KPIs and recent anomalies.
+ */
+export class BusinessSpecialistModule implements WorkspaceModule {
+  readonly id = 'business';
+  readonly name = 'Business-Intelligence';
+  readonly alwaysInclude = false;
+
+  async computeSalience(
+    query: string,
+    analysis: QueryAnalysis,
+    _context: ModuleContext,
+  ): Promise<SalienceResult> {
+    let score = 0.1;
+    const reasons: string[] = ['base=0.1'];
+
+    if (analysis.domain === 'finance') {
+      score += 0.5;
+      reasons.push('+0.5 finance domain');
+    }
+
+    if (BUSINESS_KEYWORDS_RE.test(query)) {
+      score += 0.4;
+      reasons.push('+0.4 business keyword');
+    }
+
+    if (analysis.intent === 'question' && analysis.domain !== 'code') {
+      score += 0.1;
+      reasons.push('+0.1 question intent');
+    }
+
+    return { score: clamp01(score), reasoning: reasons.join(', '), estimatedTokens: 400 };
+  }
+
+  async generateContent(
+    _query: string,
+    _tokenBudget: number,
+    context: ModuleContext,
+  ): Promise<string> {
+    try {
+      const { handleGetBusinessKPIs } = await import('../tool-handlers/business-intelligence-tools');
+      return await handleGetBusinessKPIs({}, { aiContext: context.aiContext } as any);
+    } catch {
+      return '[Business: KPIs nicht verfügbar]';
+    }
+  }
+}
+
+// ─── 10. EmailSpecialistModule (Stufe 9.1) ──────────────────────────────────
+
+const EMAIL_KEYWORDS_RE = /\b(email|mail|inbox|nachricht|antwort|reply|forward|weiterleiten|ungelesen|unread)/i;
+
+/**
+ * Email specialist — surfaces unread/important emails.
+ */
+export class EmailSpecialistModule implements WorkspaceModule {
+  readonly id = 'email';
+  readonly name = 'Email-Kontext';
+  readonly alwaysInclude = false;
+
+  async computeSalience(
+    query: string,
+    analysis: QueryAnalysis,
+    _context: ModuleContext,
+  ): Promise<SalienceResult> {
+    let score = 0.05;
+    const reasons: string[] = ['base=0.05'];
+
+    if (analysis.domain === 'email') {
+      score += 0.7;
+      reasons.push('+0.7 email domain');
+    }
+
+    if (EMAIL_KEYWORDS_RE.test(query)) {
+      score += 0.5;
+      reasons.push('+0.5 email keyword');
+    }
+
+    return { score: clamp01(score), reasoning: reasons.join(', '), estimatedTokens: 350 };
+  }
+
+  async generateContent(
+    _query: string,
+    tokenBudget: number,
+    context: ModuleContext,
+  ): Promise<string> {
+    try {
+      const { queryContext } = await import('../../utils/database-context');
+      const limit = Math.min(5, Math.floor(tokenBudget / 80));
+      const result = await queryContext(context.aiContext as AIContext, `
+        SELECT subject, sender, status, created_at
+        FROM emails
+        WHERE status = 'unread'
+        ORDER BY created_at DESC
+        LIMIT $1
+      `, [limit]);
+
+      if (result.rows.length === 0) return '';
+
+      const lines = result.rows.map((r: Record<string, unknown>) =>
+        `- ${r.subject} (von ${r.sender}, ${new Date(String(r.created_at)).toLocaleDateString('de-DE')})`
+      );
+      return `**Ungelesene Emails (${result.rows.length}):**\n${lines.join('\n')}`;
+    } catch {
+      return '';
+    }
+  }
+}
+
+// ─── 11. TaskSpecialistModule (Stufe 9.1) ───────────────────────────────────
+
+const TASK_KEYWORDS_RE = /\b(task|aufgabe|todo|deadline|fällig|overdue|überfällig|projekt|project|kanban|gantt)/i;
+
+/**
+ * Task specialist — surfaces overdue/high-priority tasks.
+ */
+export class TaskSpecialistModule implements WorkspaceModule {
+  readonly id = 'tasks';
+  readonly name = 'Aufgaben-Kontext';
+  readonly alwaysInclude = false;
+
+  async computeSalience(
+    query: string,
+    analysis: QueryAnalysis,
+    _context: ModuleContext,
+  ): Promise<SalienceResult> {
+    let score = 0.15;
+    const reasons: string[] = ['base=0.15'];
+
+    if (analysis.intent === 'task') {
+      score += 0.5;
+      reasons.push('+0.5 task intent');
+    }
+
+    if (TASK_KEYWORDS_RE.test(query)) {
+      score += 0.4;
+      reasons.push('+0.4 task keyword');
+    }
+
+    if (analysis.temporalReference === 'future') {
+      score += 0.2;
+      reasons.push('+0.2 future temporal');
+    }
+
+    return { score: clamp01(score), reasoning: reasons.join(', '), estimatedTokens: 350 };
+  }
+
+  async generateContent(
+    _query: string,
+    tokenBudget: number,
+    context: ModuleContext,
+  ): Promise<string> {
+    try {
+      const { queryContext } = await import('../../utils/database-context');
+      const limit = Math.min(5, Math.floor(tokenBudget / 80));
+      const result = await queryContext(context.aiContext as AIContext, `
+        SELECT title, status, priority, due_date
+        FROM tasks
+        WHERE status NOT IN ('done', 'cancelled')
+        ORDER BY
+          CASE WHEN due_date < NOW() THEN 0 ELSE 1 END,
+          priority DESC,
+          due_date ASC NULLS LAST
+        LIMIT $1
+      `, [limit]);
+
+      if (result.rows.length === 0) return '';
+
+      const lines = result.rows.map((r: Record<string, unknown>) => {
+        const due = r.due_date ? new Date(String(r.due_date)).toLocaleDateString('de-DE') : 'kein Datum';
+        const overdue = r.due_date && new Date(String(r.due_date)) < new Date() ? ' ⚠️ ÜBERFÄLLIG' : '';
+        return `- [${r.priority}] ${r.title} (${due}${overdue})`;
+      });
+      return `**Aktuelle Aufgaben (${result.rows.length}):**\n${lines.join('\n')}`;
+    } catch {
+      return '';
+    }
+  }
+}
+
 // ─── Module registry ──────────────────────────────────────────────────────────
 
 /**
@@ -458,4 +643,7 @@ export const ALL_WORKSPACE_MODULES: WorkspaceModule[] = [
   new KnowledgeGraphModule(),
   new CalendarContextModule(),
   new ProceduralMemoryModule(),
+  new BusinessSpecialistModule(),
+  new EmailSpecialistModule(),
+  new TaskSpecialistModule(),
 ];

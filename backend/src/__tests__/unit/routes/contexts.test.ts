@@ -22,7 +22,7 @@ jest.mock('../../../utils/logger', () => ({
 const mockQueryContext = jest.fn();
 jest.mock('../../../utils/database-context', () => ({
   queryContext: (...args: unknown[]) => mockQueryContext(...args),
-  isValidContext: jest.fn((ctx: string) => ['personal', 'work', 'learning', 'creative'].includes(ctx)),
+  isValidContext: jest.fn((ctx: string) => ['operations', 'finance', 'people', 'strategy'].includes(ctx)),
   AIContext: {},
 }));
 
@@ -72,17 +72,17 @@ describe('Contexts Routes', () => {
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
       expect(res.body.contexts).toHaveLength(4);
-      expect(res.body.default).toBe('personal');
+      expect(res.body.default).toBe('operations');
     });
 
     it('should include correct context IDs', async () => {
       const res = await request(app).get('/api/contexts');
 
       const ids = res.body.contexts.map((c: { id: string }) => c.id);
-      expect(ids).toContain('personal');
-      expect(ids).toContain('work');
-      expect(ids).toContain('learning');
-      expect(ids).toContain('creative');
+      expect(ids).toContain('operations');
+      expect(ids).toContain('finance');
+      expect(ids).toContain('people');
+      expect(ids).toContain('strategy');
     });
 
     it('should include descriptions for each context', async () => {
@@ -105,13 +105,13 @@ describe('Contexts Routes', () => {
         })
         .mockResolvedValueOnce({ rows: [{ count: '1' }] });
 
-      const res = await request(app).get('/api/personal/ideas');
+      const res = await request(app).get('/api/operations/ideas');
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
       expect(res.body.ideas).toHaveLength(1);
       expect(res.body.pagination.total).toBe(1);
-      expect(res.body.context).toBe('personal');
+      expect(res.body.context).toBe('operations');
     });
 
     it('should return 400 for invalid context', async () => {
@@ -125,7 +125,7 @@ describe('Contexts Routes', () => {
         .mockResolvedValueOnce({ rows: [] })
         .mockResolvedValueOnce({ rows: [{ count: '50' }] });
 
-      const res = await request(app).get('/api/work/ideas?limit=10&offset=20');
+      const res = await request(app).get('/api/finance/ideas?limit=10&offset=20');
 
       expect(res.status).toBe(200);
       expect(res.body.pagination.limit).toBe(10);
@@ -137,12 +137,12 @@ describe('Contexts Routes', () => {
         .mockResolvedValueOnce({ rows: [] })
         .mockResolvedValueOnce({ rows: [{ count: '0' }] });
 
-      const res = await request(app).get('/api/personal/ideas?type=task');
+      const res = await request(app).get('/api/operations/ideas?type=task');
 
       expect(res.status).toBe(200);
       // Verify the query included the type filter
       expect(mockQueryContext).toHaveBeenCalledWith(
-        'personal',
+        'operations',
         expect.stringContaining('type'),
         expect.arrayContaining(['task'])
       );
@@ -153,7 +153,7 @@ describe('Contexts Routes', () => {
         .mockResolvedValueOnce({ rows: [] })
         .mockResolvedValueOnce({ rows: [{ count: '0' }] });
 
-      const res = await request(app).get('/api/learning/ideas');
+      const res = await request(app).get('/api/people/ideas');
 
       expect(res.status).toBe(200);
       expect(res.body.ideas).toHaveLength(0);
@@ -171,7 +171,7 @@ describe('Contexts Routes', () => {
         })
         .mockResolvedValueOnce({ rows: [{ count: '1' }] });
 
-      const res = await request(app).get('/api/personal/ideas/archived');
+      const res = await request(app).get('/api/operations/ideas/archived');
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);

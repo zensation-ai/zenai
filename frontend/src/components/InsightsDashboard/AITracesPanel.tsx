@@ -6,14 +6,12 @@
  * and span-level detail for individual traces.
  */
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, type CSSProperties } from 'react';
 import axios from 'axios';
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Cell,
 } from 'recharts';
 import type { AIContext } from '../ContextSwitcher';
-import './AITracesPanel.css';
-
 // --- Types ---
 
 interface AITrace {
@@ -66,7 +64,7 @@ interface AITracesPanelProps {
 // --- Helpers ---
 
 const MODEL_COLORS: Record<string, string> = {
-  'claude-opus-4-20250514': '#8b5cf6',
+  'claude-opus-4-20250514': '#1a6b7a',
   'claude-sonnet-4-20250514': '#3b82f6',
   'claude-haiku-3-20250307': '#10b981',
 };
@@ -259,10 +257,10 @@ export function AITracesPanel({ context: _context }: AITracesPanelProps) {
             {stats.by_model.map(m => (
               <div
                 key={m.model}
-                className="ait-model-card"
-                style={{ borderColor: getModelColor(m.model) }}
+                className="ait-model-card [border-color:var(--mc)]"
+                style={{ '--mc': getModelColor(m.model) } as CSSProperties}
               >
-                <div className="ait-model-badge" style={{ background: getModelColor(m.model) }}>
+                <div className="ait-model-badge bg-[var(--mc)]">
                   {getModelShort(m.model)}
                 </div>
                 <div className="ait-model-stats">
@@ -369,7 +367,7 @@ export function AITracesPanel({ context: _context }: AITracesPanelProps) {
         {traces.length === 0 ? (
           <div className="ait-empty">
             <span>Keine Traces gefunden</span>
-            <span className="ait-empty-sub">Aendere die Filter oder den Zeitraum.</span>
+            <span className="ait-empty-sub">Ändere die Filter oder den Zeitraum.</span>
           </div>
         ) : (
           <div className="ait-trace-list">
@@ -385,8 +383,8 @@ export function AITracesPanel({ context: _context }: AITracesPanelProps) {
                   </div>
                   <div className="ait-trace-meta">
                     <span
-                      className="ait-trace-model"
-                      style={{ background: `${getModelColor(trace.model)}22`, color: getModelColor(trace.model) }}
+                      className="ait-trace-model bg-[var(--bg)] text-[var(--c)]"
+                      style={{ '--bg': `${getModelColor(trace.model)}22`, '--c': getModelColor(trace.model) } as CSSProperties}
                     >
                       {getModelShort(trace.model)}
                     </span>
@@ -435,13 +433,13 @@ export function AITracesPanel({ context: _context }: AITracesPanelProps) {
                                 <div className="ait-span-name">{span.name}</div>
                                 <div className="ait-span-bar-container">
                                   <div
-                                    className="ait-span-bar"
+                                    className="ait-span-bar w-[var(--w)] bg-[var(--bg)]"
                                     style={{
-                                      width: `${widthPct}%`,
-                                      background: span.type === 'generation'
+                                      '--w': `${widthPct}%`,
+                                      '--bg': span.type === 'generation'
                                         ? 'rgba(139,92,246,0.6)'
                                         : 'rgba(59,130,246,0.5)',
-                                    }}
+                                    } as CSSProperties}
                                   />
                                 </div>
                                 <div className="ait-span-duration">{formatDuration(span.duration_ms)}</div>

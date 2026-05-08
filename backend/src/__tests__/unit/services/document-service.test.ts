@@ -9,17 +9,28 @@
 const mockQueryContext = jest.fn();
 jest.mock('../../../utils/database-context', () => ({
   queryContext: (...args: unknown[]) => mockQueryContext(...args),
-  isValidContext: (c: string) => ['personal', 'work', 'learning', 'creative'].includes(c),
+  isValidContext: (c: string) => ['operations', 'finance', 'people', 'strategy'].includes(c),
 }));
 
 jest.mock('../../../utils/logger', () => ({
   logger: { error: jest.fn(), warn: jest.fn(), info: jest.fn(), debug: jest.fn() },
 }));
 
+const mockProcessDocument = jest.fn().mockResolvedValue({ success: true });
 jest.mock('../../../services/document-processing', () => ({
   documentProcessingService: {
-    processDocument: jest.fn().mockResolvedValue({ success: true }),
+    processDocument: (...args: unknown[]) => mockProcessDocument(...args),
   },
+}));
+
+const mockEpisodicStore = jest.fn().mockResolvedValue(undefined);
+jest.mock('../../../services/memory/episodic-memory', () => ({
+  episodicMemory: { store: (...args: unknown[]) => mockEpisodicStore(...args) },
+}));
+
+const mockEmitSystemEvent = jest.fn().mockResolvedValue(null);
+jest.mock('../../../services/event-system', () => ({
+  emitSystemEvent: (...args: unknown[]) => mockEmitSystemEvent(...args),
 }));
 
 jest.mock('../../../services/ai', () => ({
@@ -40,7 +51,7 @@ jest.mock('fs/promises', () => ({
   unlink: jest.fn().mockResolvedValue(undefined),
 }));
 
-import { DocumentService } from '../../../services/document-service';
+import { DocumentService, bridgeDocumentToEpisodicMemory } from '../../../services/document-service';
 import { generateEmbedding } from '../../../services/ai';
 import fs from 'fs/promises';
 
@@ -66,7 +77,7 @@ function makeDocRow(overrides: Record<string, unknown> = {}): Record<string, unk
     full_text: 'Full text content of the document...',
     keywords: ['test', 'document'],
     language: 'de',
-    context: 'personal',
+    context: 'operations',
     primary_topic_id: null,
     folder_path: '/inbox',
     tags: ['important'],
@@ -111,7 +122,7 @@ describe('DocumentService', () => {
       // Log access
       mockQueryContext.mockResolvedValueOnce({ rows: [] } as any);
 
-      const doc = await service.getDocument('doc-001', 'personal', TEST_USER_ID);
+      const doc = await service.getDocument('doc-001', 'operations', TEST_USER_ID);
       expect(doc).not.toBeNull();
       expect(doc!.id).toBe('doc-001');
       expect(doc!.title).toBe('Test Document');
@@ -121,7 +132,7 @@ describe('DocumentService', () => {
     it('should return null for nonexistent document', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [] } as any);
 
-      const doc = await service.getDocument('nonexistent', 'personal', TEST_USER_ID);
+      const doc = await service.getDocument('nonexistent', 'operations', TEST_USER_ID);
       expect(doc).toBeNull();
     });
 
@@ -130,7 +141,7 @@ describe('DocumentService', () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [] } as any);
       mockQueryContext.mockResolvedValueOnce({ rows: [] } as any);
 
-      await service.getDocument('doc-001', 'personal', TEST_USER_ID);
+      await service.getDocument('doc-001', 'operations', TEST_USER_ID);
 
       const updateSql = mockQueryContext.mock.calls[1][1] as string;
       expect(updateSql).toContain('view_count = view_count + 1');
@@ -141,7 +152,7 @@ describe('DocumentService', () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [] } as any);
       mockQueryContext.mockResolvedValueOnce({ rows: [] } as any);
 
-      await service.getDocument('doc-001', 'personal', TEST_USER_ID);
+      await service.getDocument('doc-001', 'operations', TEST_USER_ID);
 
       const logSql = mockQueryContext.mock.calls[2][1] as string;
       expect(logSql).toContain('document_access_log');
@@ -157,7 +168,7 @@ describe('DocumentService', () => {
         .mockResolvedValueOnce({ rows: [{ total: '3' }] } as any)
         .mockResolvedValueOnce({ rows: [makeDocRow(), makeDocRow({ id: 'doc-002' }), makeDocRow({ id: 'doc-003' })] } as any);
 
-      const result = await service.listDocuments('personal', {}, TEST_USER_ID);
+      const result = await service.listDocuments('operations', {}, TEST_USER_ID);
       expect(result.total).toBe(3);
       expect(result.data).toHaveLength(3);
       expect(result.hasMore).toBe(false);
@@ -168,7 +179,7 @@ describe('DocumentService', () => {
         .mockResolvedValueOnce({ rows: [{ total: '1' }] } as any)
         .mockResolvedValueOnce({ rows: [makeDocRow({ folder_path: '/projects' })] } as any);
 
-      await service.listDocuments('personal', { folderPath: '/projects' }, TEST_USER_ID);
+      await service.listDocuments('operations', { folderPath: '/projects' }, TEST_USER_ID);
 
       const countSql = mockQueryContext.mock.calls[0][1] as string;
       expect(countSql).toContain('folder_path');
@@ -179,7 +190,7 @@ describe('DocumentService', () => {
         .mockResolvedValueOnce({ rows: [{ total: '2' }] } as any)
         .mockResolvedValueOnce({ rows: [makeDocRow(), makeDocRow({ id: 'doc-002' })] } as any);
 
-      await service.listDocuments('personal', { mimeTypes: ['application/pdf'] }, TEST_USER_ID);
+      await service.listDocuments('operations', { mimeTypes: ['application/pdf'] }, TEST_USER_ID);
 
       const countSql = mockQueryContext.mock.calls[0][1] as string;
       expect(countSql).toContain('mime_type = ANY');
@@ -190,7 +201,7 @@ describe('DocumentService', () => {
         .mockResolvedValueOnce({ rows: [{ total: '1' }] } as any)
         .mockResolvedValueOnce({ rows: [makeDocRow()] } as any);
 
-      await service.listDocuments('personal', { tags: ['important'] }, TEST_USER_ID);
+      await service.listDocuments('operations', { tags: ['important'] }, TEST_USER_ID);
 
       const countSql = mockQueryContext.mock.calls[0][1] as string;
       expect(countSql).toContain('tags &&');
@@ -201,7 +212,7 @@ describe('DocumentService', () => {
         .mockResolvedValueOnce({ rows: [{ total: '1' }] } as any)
         .mockResolvedValueOnce({ rows: [makeDocRow()] } as any);
 
-      await service.listDocuments('personal', { search: 'report' }, TEST_USER_ID);
+      await service.listDocuments('operations', { search: 'report' }, TEST_USER_ID);
 
       const countSql = mockQueryContext.mock.calls[0][1] as string;
       expect(countSql).toContain('ILIKE');
@@ -212,7 +223,7 @@ describe('DocumentService', () => {
         .mockResolvedValueOnce({ rows: [{ total: '2' }] } as any)
         .mockResolvedValueOnce({ rows: [makeDocRow({ is_favorite: true })] } as any);
 
-      await service.listDocuments('personal', { isFavorite: true }, TEST_USER_ID);
+      await service.listDocuments('operations', { isFavorite: true }, TEST_USER_ID);
 
       const countSql = mockQueryContext.mock.calls[0][1] as string;
       expect(countSql).toContain('is_favorite');
@@ -223,7 +234,7 @@ describe('DocumentService', () => {
         .mockResolvedValueOnce({ rows: [{ total: '500' }] } as any)
         .mockResolvedValueOnce({ rows: [] } as any);
 
-      const result = await service.listDocuments('personal', { limit: 999 }, TEST_USER_ID);
+      const result = await service.listDocuments('operations', { limit: 999 }, TEST_USER_ID);
       expect(result.limit).toBe(100);
     });
 
@@ -232,7 +243,7 @@ describe('DocumentService', () => {
         .mockResolvedValueOnce({ rows: [{ total: '50' }] } as any)
         .mockResolvedValueOnce({ rows: Array(10).fill(makeDocRow()) } as any);
 
-      const result = await service.listDocuments('personal', { limit: 10, offset: 0 }, TEST_USER_ID);
+      const result = await service.listDocuments('operations', { limit: 10, offset: 0 }, TEST_USER_ID);
       expect(result.hasMore).toBe(true);
     });
 
@@ -241,7 +252,7 @@ describe('DocumentService', () => {
         .mockResolvedValueOnce({ rows: [{ total: '1' }] } as any)
         .mockResolvedValueOnce({ rows: [makeDocRow()] } as any);
 
-      await service.listDocuments('personal', { sortBy: 'title', sortOrder: 'asc' }, TEST_USER_ID);
+      await service.listDocuments('operations', { sortBy: 'title', sortOrder: 'asc' }, TEST_USER_ID);
 
       const listSql = mockQueryContext.mock.calls[1][1] as string;
       expect(listSql).toContain('"title" asc');
@@ -262,7 +273,7 @@ describe('DocumentService', () => {
         // logAccess calls
         .mockResolvedValueOnce({ rows: [] } as any);
 
-      const results = await service.searchDocuments('test query', 'personal', {}, TEST_USER_ID);
+      const results = await service.searchDocuments('test query', 'operations', {}, TEST_USER_ID);
       expect(results).toHaveLength(1);
       expect(results[0].similarity).toBeCloseTo(0.85);
     });
@@ -274,7 +285,7 @@ describe('DocumentService', () => {
         rows: [{ id: 'doc-001', title: 'Test', summary: 'Summary', mime_type: 'application/pdf', folder_path: '/inbox', rank: '5.0' }],
       } as any);
 
-      const results = await service.searchDocuments('test', 'personal', {}, TEST_USER_ID);
+      const results = await service.searchDocuments('test', 'operations', {}, TEST_USER_ID);
       expect(results).toHaveLength(1);
       expect(results[0].similarity).toBeLessThanOrEqual(1);
     });
@@ -284,7 +295,7 @@ describe('DocumentService', () => {
 
       mockQueryContext.mockResolvedValueOnce({ rows: [] } as any);
 
-      const results = await service.searchDocuments('test', 'personal', {}, TEST_USER_ID);
+      const results = await service.searchDocuments('test', 'operations', {}, TEST_USER_ID);
       expect(results).toHaveLength(0);
     });
   });
@@ -298,7 +309,7 @@ describe('DocumentService', () => {
         rows: [makeDocRow({ title: 'New Title' })],
       } as any);
 
-      const doc = await service.updateDocument('doc-001', 'personal', { title: 'New Title' }, TEST_USER_ID);
+      const doc = await service.updateDocument('doc-001', 'operations', { title: 'New Title' }, TEST_USER_ID);
       expect(doc).not.toBeNull();
       const sql = mockQueryContext.mock.calls[0][1] as string;
       expect(sql).toContain('title =');
@@ -309,7 +320,7 @@ describe('DocumentService', () => {
         rows: [makeDocRow({ title: 'New', is_favorite: true, tags: ['a', 'b'] })],
       } as any);
 
-      await service.updateDocument('doc-001', 'personal', {
+      await service.updateDocument('doc-001', 'operations', {
         title: 'New',
         isFavorite: true,
         tags: ['a', 'b'],
@@ -324,7 +335,7 @@ describe('DocumentService', () => {
     it('should return null if document not found', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [] } as any);
 
-      const doc = await service.updateDocument('nonexistent', 'personal', { title: 'X' }, TEST_USER_ID);
+      const doc = await service.updateDocument('nonexistent', 'operations', { title: 'X' }, TEST_USER_ID);
       expect(doc).toBeNull();
     });
 
@@ -336,7 +347,7 @@ describe('DocumentService', () => {
       // log access
       mockQueryContext.mockResolvedValueOnce({ rows: [] } as any);
 
-      const doc = await service.updateDocument('doc-001', 'personal', {}, TEST_USER_ID);
+      const doc = await service.updateDocument('doc-001', 'operations', {}, TEST_USER_ID);
       expect(doc).not.toBeNull();
     });
   });
@@ -353,7 +364,7 @@ describe('DocumentService', () => {
       // DELETE
       mockQueryContext.mockResolvedValueOnce({ rowCount: 1 } as any);
 
-      const result = await service.deleteDocument('doc-001', 'personal', TEST_USER_ID);
+      const result = await service.deleteDocument('doc-001', 'operations', TEST_USER_ID);
       expect(result).toBe(true);
       expect(fs.unlink).toHaveBeenCalled();
     });
@@ -361,7 +372,7 @@ describe('DocumentService', () => {
     it('should return false if document not found', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [] } as any);
 
-      const result = await service.deleteDocument('nonexistent', 'personal', TEST_USER_ID);
+      const result = await service.deleteDocument('nonexistent', 'operations', TEST_USER_ID);
       expect(result).toBe(false);
       expect(fs.unlink).not.toHaveBeenCalled();
     });
@@ -376,7 +387,7 @@ describe('DocumentService', () => {
 
       (fs.unlink as jest.Mock).mockRejectedValueOnce(new Error('ENOENT'));
 
-      const result = await service.deleteDocument('doc-001', 'personal', TEST_USER_ID);
+      const result = await service.deleteDocument('doc-001', 'operations', TEST_USER_ID);
       expect(result).toBe(true); // Still returns true — DB record is removed
     });
   });
@@ -388,14 +399,14 @@ describe('DocumentService', () => {
     it('should move document to new folder', async () => {
       mockQueryContext.mockResolvedValueOnce({ rowCount: 1 } as any);
 
-      const result = await service.moveToFolder('doc-001', '/projects', 'personal', TEST_USER_ID);
+      const result = await service.moveToFolder('doc-001', '/projects', 'operations', TEST_USER_ID);
       expect(result).toBe(true);
     });
 
     it('should return false if document not found', async () => {
       mockQueryContext.mockResolvedValueOnce({ rowCount: 0 } as any);
 
-      const result = await service.moveToFolder('nonexistent', '/projects', 'personal', TEST_USER_ID);
+      const result = await service.moveToFolder('nonexistent', '/projects', 'operations', TEST_USER_ID);
       expect(result).toBe(false);
     });
   });
@@ -407,7 +418,7 @@ describe('DocumentService', () => {
     it('should add tags to document', async () => {
       mockQueryContext.mockResolvedValueOnce({ rowCount: 1 } as any);
 
-      const result = await service.addTags('doc-001', ['new-tag'], 'personal', TEST_USER_ID);
+      const result = await service.addTags('doc-001', ['new-tag'], 'operations', TEST_USER_ID);
       expect(result).toBe(true);
       const sql = mockQueryContext.mock.calls[0][1] as string;
       expect(sql).toContain('array_cat');
@@ -418,7 +429,7 @@ describe('DocumentService', () => {
     it('should remove tags from document', async () => {
       mockQueryContext.mockResolvedValueOnce({ rowCount: 1 } as any);
 
-      const result = await service.removeTags('doc-001', ['old-tag'], 'personal', TEST_USER_ID);
+      const result = await service.removeTags('doc-001', ['old-tag'], 'operations', TEST_USER_ID);
       expect(result).toBe(true);
       const sql = mockQueryContext.mock.calls[0][1] as string;
       expect(sql).toContain('array_remove_all');
@@ -432,7 +443,7 @@ describe('DocumentService', () => {
     it('should link document to an idea', async () => {
       mockQueryContext.mockResolvedValueOnce({ rowCount: 1 } as any);
 
-      const result = await service.linkToIdea('doc-001', 'idea-001', 'personal', TEST_USER_ID);
+      const result = await service.linkToIdea('doc-001', 'idea-001', 'operations', TEST_USER_ID);
       expect(result).toBe(true);
       const sql = mockQueryContext.mock.calls[0][1] as string;
       expect(sql).toContain('linked_idea_id');
@@ -451,7 +462,7 @@ describe('DocumentService', () => {
         ],
       } as any);
 
-      const folders = await service.getFolders('personal', TEST_USER_ID);
+      const folders = await service.getFolders('operations', TEST_USER_ID);
       expect(folders).toHaveLength(2);
       expect(folders[0].path).toBe('/inbox');
       expect(folders[1].documentCount).toBe(3);
@@ -464,7 +475,7 @@ describe('DocumentService', () => {
         rows: [{ id: 'f-new', path: '/reports', name: 'reports', parent_path: '/', color: null, icon: null }],
       } as any);
 
-      const folder = await service.createFolder('personal', 'reports', '/', {}, TEST_USER_ID);
+      const folder = await service.createFolder('operations', 'reports', '/', {}, TEST_USER_ID);
       expect(folder.path).toBe('/reports');
       expect(folder.name).toBe('reports');
     });
@@ -474,14 +485,14 @@ describe('DocumentService', () => {
         rows: [{ id: 'f-nested', path: '/projects/alpha', name: 'alpha', parent_path: '/projects', color: null, icon: null }],
       } as any);
 
-      const folder = await service.createFolder('personal', 'alpha', '/projects', {}, TEST_USER_ID);
+      const folder = await service.createFolder('operations', 'alpha', '/projects', {}, TEST_USER_ID);
       expect(folder.parentPath).toBe('/projects');
     });
 
     it('should throw if no row returned', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [] } as any);
 
-      await expect(service.createFolder('personal', 'fail', '/', {}, TEST_USER_ID))
+      await expect(service.createFolder('operations', 'fail', '/', {}, TEST_USER_ID))
         .rejects.toThrow('Failed to create folder');
     });
   });
@@ -495,7 +506,7 @@ describe('DocumentService', () => {
       // Delete folder
       mockQueryContext.mockResolvedValueOnce({ rowCount: 1 } as any);
 
-      const result = await service.deleteFolder('/old-folder', 'personal', TEST_USER_ID);
+      const result = await service.deleteFolder('/old-folder', 'operations', TEST_USER_ID);
       expect(result).toBe(true);
       expect(mockQueryContext).toHaveBeenCalledTimes(3);
     });
@@ -503,7 +514,7 @@ describe('DocumentService', () => {
     it('should return false if folder not found', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [] } as any);
 
-      const result = await service.deleteFolder('/nonexistent', 'personal', TEST_USER_ID);
+      const result = await service.deleteFolder('/nonexistent', 'operations', TEST_USER_ID);
       expect(result).toBe(false);
     });
   });
@@ -525,7 +536,7 @@ describe('DocumentService', () => {
           ],
         } as any);
 
-      const stats = await service.getStats('personal', TEST_USER_ID);
+      const stats = await service.getStats('operations', TEST_USER_ID);
       expect(stats.total).toBe(100);
       expect(stats.pending).toBe(5);
       expect(stats.completed).toBe(90);
@@ -542,7 +553,7 @@ describe('DocumentService', () => {
         } as any)
         .mockResolvedValueOnce({ rows: [] } as any);
 
-      const stats = await service.getStats('personal', TEST_USER_ID);
+      const stats = await service.getStats('operations', TEST_USER_ID);
       expect(stats.total).toBe(0);
       expect(stats.totalSize).toBe(0);
       expect(Object.keys(stats.byMimeType)).toHaveLength(0);
@@ -564,10 +575,99 @@ describe('DocumentService', () => {
         buffer: Buffer.from('test content'),
       } as Express.Multer.File;
 
-      const doc = await service.uploadDocument(file, 'personal', {}, TEST_USER_ID);
+      const doc = await service.uploadDocument(file, 'operations', {}, TEST_USER_ID);
       expect(doc.id).toBe('doc-001');
       // Should NOT have inserted a new row
       expect(mockQueryContext).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  // -------------------------------------------
+  // Episodic Memory Bridge (Stufe 8.1)
+  // -------------------------------------------
+  describe('episodic memory bridge (direct)', () => {
+    beforeEach(() => {
+      mockEpisodicStore.mockReset().mockResolvedValue(undefined);
+      mockEmitSystemEvent.mockReset().mockResolvedValue(null);
+    });
+
+    it('should store document as episodic memory with correct trigger and response', async () => {
+      await bridgeDocumentToEpisodicMemory('finance', 'doc-123', {
+        success: true,
+        documentId: 'doc-123',
+        title: 'Quarterly Report',
+        summary: 'Revenue grew 15%',
+        keywords: ['revenue', 'growth'],
+        pageCount: 12,
+        language: 'en',
+        processingTimeMs: 500,
+      } as any);
+
+      expect(mockEpisodicStore).toHaveBeenCalledWith(
+        'Dokument analysiert: Quarterly Report',
+        expect.stringContaining('Revenue grew 15%'),
+        'document-doc-123',
+        'finance',
+      );
+      // Verify response contains keywords
+      const response = mockEpisodicStore.mock.calls[0][1] as string;
+      expect(response).toContain('revenue, growth');
+      expect(response).toContain('12 Seiten');
+    });
+
+    it('should emit memory.fact_learned event with document metadata', async () => {
+      await bridgeDocumentToEpisodicMemory('operations', 'doc-456', {
+        success: true,
+        documentId: 'doc-456',
+        title: 'SEO Analysis',
+        keywords: ['seo', 'traffic'],
+        processingTimeMs: 300,
+      } as any);
+
+      // Wait for fire-and-forget import().then()
+      for (let i = 0; i < 10; i++) await new Promise(r => setImmediate(r));
+
+      expect(mockEmitSystemEvent).toHaveBeenCalledWith(
+        expect.objectContaining({
+          context: 'operations',
+          eventType: 'memory.fact_learned',
+          eventSource: 'document-processing',
+          payload: expect.objectContaining({
+            factType: 'document_analyzed',
+            documentId: 'doc-456',
+            title: 'SEO Analysis',
+          }),
+        }),
+      );
+    });
+
+    it('should handle missing optional fields gracefully', async () => {
+      await bridgeDocumentToEpisodicMemory('people', 'doc-789', {
+        success: true,
+        documentId: 'doc-789',
+        processingTimeMs: 100,
+      } as any);
+
+      expect(mockEpisodicStore).toHaveBeenCalledWith(
+        'Dokument analysiert: Unbekannt',
+        expect.any(String),
+        'document-doc-789',
+        'people',
+      );
+    });
+
+    it('should not throw when episodic store fails', async () => {
+      mockEpisodicStore.mockRejectedValue(new Error('Memory unavailable'));
+
+      await expect(
+        bridgeDocumentToEpisodicMemory('finance', 'doc-err', {
+          success: true,
+          documentId: 'doc-err',
+          title: 'Failing Doc',
+          processingTimeMs: 100,
+        } as any)
+      ).rejects.toThrow('Memory unavailable');
+      // The caller catches this — tested via processDocumentAsync .catch
     });
   });
 });

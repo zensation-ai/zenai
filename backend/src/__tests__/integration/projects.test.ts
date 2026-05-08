@@ -20,7 +20,7 @@ jest.mock('../../services/projects', () => ({
 
 jest.mock('../../utils/database-context', () => ({
   queryContext: jest.fn(),
-  isValidContext: jest.fn((ctx: string) => ['personal', 'work', 'learning', 'creative'].includes(ctx)),
+  isValidContext: jest.fn((ctx: string) => ['operations', 'finance', 'people', 'strategy'].includes(ctx)),
   AIContext: {},
 }));
 
@@ -60,7 +60,7 @@ const sampleProject = {
   color: '#4A90D9',
   icon: '📋',
   status: 'active' as const,
-  context: 'work',
+  context: 'finance',
   sort_order: 0,
   metadata: {},
   created_at: new Date().toISOString(),
@@ -90,7 +90,7 @@ describe('Projects API Integration Tests', () => {
     it('should return list of projects', async () => {
       mockGetProjects.mockResolvedValueOnce([sampleProject] as any);
 
-      const res = await request(app).get('/api/work/projects');
+      const res = await request(app).get('/api/finance/projects');
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
@@ -102,9 +102,9 @@ describe('Projects API Integration Tests', () => {
     it('should pass query filters', async () => {
       mockGetProjects.mockResolvedValueOnce([] as any);
 
-      await request(app).get('/api/personal/projects').query({ status: 'active', limit: '50', offset: '5' });
+      await request(app).get('/api/operations/projects').query({ status: 'active', limit: '50', offset: '5' });
 
-      expect(mockGetProjects).toHaveBeenCalledWith('personal', expect.objectContaining({
+      expect(mockGetProjects).toHaveBeenCalledWith('operations', expect.objectContaining({
         status: 'active',
         limit: 50,
         offset: 5,
@@ -114,9 +114,9 @@ describe('Projects API Integration Tests', () => {
     it('should cap limit at 500', async () => {
       mockGetProjects.mockResolvedValueOnce([] as any);
 
-      await request(app).get('/api/work/projects').query({ limit: '9999' });
+      await request(app).get('/api/finance/projects').query({ limit: '9999' });
 
-      expect(mockGetProjects).toHaveBeenCalledWith('work', expect.objectContaining({ limit: 500 }), '00000000-0000-0000-0000-000000000001');
+      expect(mockGetProjects).toHaveBeenCalledWith('finance', expect.objectContaining({ limit: 500 }), '00000000-0000-0000-0000-000000000001');
     });
 
     it('should reject invalid context', async () => {
@@ -127,7 +127,7 @@ describe('Projects API Integration Tests', () => {
     it('should return empty array when no projects', async () => {
       mockGetProjects.mockResolvedValueOnce([] as any);
 
-      const res = await request(app).get('/api/creative/projects');
+      const res = await request(app).get('/api/strategy/projects');
 
       expect(res.status).toBe(200);
       expect(res.body.data).toHaveLength(0);
@@ -142,7 +142,7 @@ describe('Projects API Integration Tests', () => {
     it('should return a single project', async () => {
       mockGetProject.mockResolvedValueOnce(sampleProject as any);
 
-      const res = await request(app).get(`/api/work/projects/${UUID_1}`);
+      const res = await request(app).get(`/api/finance/projects/${UUID_1}`);
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
@@ -152,13 +152,13 @@ describe('Projects API Integration Tests', () => {
     it('should return 404 when project not found', async () => {
       mockGetProject.mockResolvedValueOnce(null as any);
 
-      const res = await request(app).get(`/api/work/projects/${UUID_1}`);
+      const res = await request(app).get(`/api/finance/projects/${UUID_1}`);
 
       expect(res.status).toBe(404);
     });
 
     it('should reject invalid UUID', async () => {
-      const res = await request(app).get('/api/work/projects/not-a-uuid');
+      const res = await request(app).get('/api/finance/projects/not-a-uuid');
       expect(res.status).toBe(400);
     });
   });
@@ -172,7 +172,7 @@ describe('Projects API Integration Tests', () => {
       mockCreateProject.mockResolvedValueOnce(sampleProject as any);
 
       const res = await request(app)
-        .post('/api/work/projects')
+        .post('/api/finance/projects')
         .send({ name: 'Phase 37 Planner', description: 'Full planner' });
 
       expect(res.status).toBe(201);
@@ -182,7 +182,7 @@ describe('Projects API Integration Tests', () => {
 
     it('should require name', async () => {
       const res = await request(app)
-        .post('/api/work/projects')
+        .post('/api/finance/projects')
         .send({ description: 'No name' });
 
       expect(res.status).toBe(400);
@@ -190,7 +190,7 @@ describe('Projects API Integration Tests', () => {
 
     it('should reject empty name', async () => {
       const res = await request(app)
-        .post('/api/work/projects')
+        .post('/api/finance/projects')
         .send({ name: '   ' });
 
       expect(res.status).toBe(400);
@@ -200,10 +200,10 @@ describe('Projects API Integration Tests', () => {
       mockCreateProject.mockResolvedValueOnce(sampleProject as any);
 
       await request(app)
-        .post('/api/personal/projects')
+        .post('/api/operations/projects')
         .send({ name: '  My Project  ' });
 
-      expect(mockCreateProject).toHaveBeenCalledWith('personal', expect.objectContaining({
+      expect(mockCreateProject).toHaveBeenCalledWith('operations', expect.objectContaining({
         name: 'My Project',
       }), '00000000-0000-0000-0000-000000000001');
     });
@@ -212,7 +212,7 @@ describe('Projects API Integration Tests', () => {
       mockCreateProject.mockResolvedValueOnce(sampleProject as any);
 
       await request(app)
-        .post('/api/work/projects')
+        .post('/api/finance/projects')
         .send({
           name: 'Full project',
           description: 'Desc',
@@ -223,7 +223,7 @@ describe('Projects API Integration Tests', () => {
           metadata: { sprint: 1 },
         });
 
-      expect(mockCreateProject).toHaveBeenCalledWith('work', expect.objectContaining({
+      expect(mockCreateProject).toHaveBeenCalledWith('finance', expect.objectContaining({
         name: 'Full project',
         color: '#FF0000',
         icon: '🚀',
@@ -243,7 +243,7 @@ describe('Projects API Integration Tests', () => {
       mockUpdateProject.mockResolvedValueOnce(updated as any);
 
       const res = await request(app)
-        .put(`/api/work/projects/${UUID_1}`)
+        .put(`/api/finance/projects/${UUID_1}`)
         .send({ name: 'Updated' });
 
       expect(res.status).toBe(200);
@@ -255,7 +255,7 @@ describe('Projects API Integration Tests', () => {
       mockUpdateProject.mockResolvedValueOnce(null as any);
 
       const res = await request(app)
-        .put(`/api/work/projects/${UUID_1}`)
+        .put(`/api/finance/projects/${UUID_1}`)
         .send({ name: 'Updated' });
 
       expect(res.status).toBe(404);
@@ -263,7 +263,7 @@ describe('Projects API Integration Tests', () => {
 
     it('should reject invalid UUID', async () => {
       const res = await request(app)
-        .put('/api/work/projects/bad-id')
+        .put('/api/finance/projects/bad-id')
         .send({ name: 'Updated' });
 
       expect(res.status).toBe(400);
@@ -278,7 +278,7 @@ describe('Projects API Integration Tests', () => {
     it('should archive a project', async () => {
       mockDeleteProject.mockResolvedValueOnce(true as any);
 
-      const res = await request(app).delete(`/api/work/projects/${UUID_1}`);
+      const res = await request(app).delete(`/api/finance/projects/${UUID_1}`);
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
@@ -288,13 +288,13 @@ describe('Projects API Integration Tests', () => {
     it('should return 404 for non-existent project', async () => {
       mockDeleteProject.mockResolvedValueOnce(false as any);
 
-      const res = await request(app).delete(`/api/work/projects/${UUID_1}`);
+      const res = await request(app).delete(`/api/finance/projects/${UUID_1}`);
 
       expect(res.status).toBe(404);
     });
 
     it('should reject invalid UUID', async () => {
-      const res = await request(app).delete('/api/work/projects/bad');
+      const res = await request(app).delete('/api/finance/projects/bad');
       expect(res.status).toBe(400);
     });
   });
@@ -304,7 +304,7 @@ describe('Projects API Integration Tests', () => {
   // ===========================================
 
   describe('Context validation', () => {
-    it.each(['personal', 'work', 'learning', 'creative'])('should accept context "%s"', async (ctx) => {
+    it.each(['operations', 'finance', 'people', 'strategy'])('should accept context "%s"', async (ctx) => {
       mockGetProjects.mockResolvedValueOnce([] as any);
 
       const res = await request(app).get(`/api/${ctx}/projects`);

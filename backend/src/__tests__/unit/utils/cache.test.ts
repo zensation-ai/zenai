@@ -71,45 +71,45 @@ describe('Cache Service', () => {
 
     describe('idea', () => {
       it('should generate correct key format', () => {
-        const key = cacheKeys.idea('personal', '123');
-        expect(key).toBe('idea:personal:123');
+        const key = cacheKeys.idea('operations', '123');
+        expect(key).toBe('idea:operations:123');
       });
 
       it('should work with different contexts', () => {
-        const personalKey = cacheKeys.idea('personal', '456');
-        const workKey = cacheKeys.idea('work', '456');
-        expect(personalKey).toBe('idea:personal:456');
-        expect(workKey).toBe('idea:work:456');
+        const operationsKey = cacheKeys.idea('operations', '456');
+        const financeKey = cacheKeys.idea('finance', '456');
+        expect(operationsKey).toBe('idea:operations:456');
+        expect(financeKey).toBe('idea:finance:456');
       });
     });
 
     describe('ideaList', () => {
       it('should generate correct key format', () => {
-        const key = cacheKeys.ideaList('personal', 1, 20);
-        expect(key).toBe('ideas:personal:1:20');
+        const key = cacheKeys.ideaList('operations', 1, 20);
+        expect(key).toBe('ideas:operations:1:20');
       });
     });
 
     describe('stats', () => {
       it('should generate correct key format', () => {
-        const key = cacheKeys.stats('work');
-        expect(key).toBe('stats:work');
+        const key = cacheKeys.stats('finance');
+        expect(key).toBe('stats:finance');
       });
     });
 
     describe('search', () => {
       it('should generate consistent keys for same query', () => {
-        const key1 = cacheKeys.search('personal', 'find ideas');
-        const key2 = cacheKeys.search('personal', 'find ideas');
+        const key1 = cacheKeys.search('operations', 'find ideas');
+        const key2 = cacheKeys.search('operations', 'find ideas');
         expect(key1).toBe(key2);
-        expect(key1).toMatch(/^search:personal:/);
+        expect(key1).toMatch(/^search:operations:/);
       });
     });
 
     describe('analytics', () => {
       it('should generate correct key format', () => {
-        const key = cacheKeys.analytics('work', 'daily');
-        expect(key).toBe('analytics:work:daily');
+        const key = cacheKeys.analytics('finance', 'daily');
+        expect(key).toBe('analytics:finance:daily');
       });
     });
   });
@@ -233,17 +233,17 @@ describe('Cache Service', () => {
 
   describe('invalidateIdeaCaches', () => {
     it('should not throw when Redis unavailable', async () => {
-      await expect(invalidateIdeaCaches('personal')).resolves.not.toThrow();
+      await expect(invalidateIdeaCaches('operations')).resolves.not.toThrow();
     });
 
     it('should not throw when invalidating specific idea', async () => {
-      await expect(invalidateIdeaCaches('personal', 'idea-123')).resolves.not.toThrow();
+      await expect(invalidateIdeaCaches('operations', 'idea-123')).resolves.not.toThrow();
     });
   });
 
   describe('invalidateSearchCaches', () => {
     it('should not throw when Redis unavailable', async () => {
-      await expect(invalidateSearchCaches('work')).resolves.not.toThrow();
+      await expect(invalidateSearchCaches('finance')).resolves.not.toThrow();
     });
   });
 
@@ -381,8 +381,8 @@ describe('Cache Service', () => {
       await expect(
         getCachedEmbedding('text', async () => [0.1, 0.2, 0.3])
       ).resolves.not.toThrow();
-      await expect(invalidateIdeaCaches('personal')).resolves.not.toThrow();
-      await expect(invalidateSearchCaches('work')).resolves.not.toThrow();
+      await expect(invalidateIdeaCaches('operations')).resolves.not.toThrow();
+      await expect(invalidateSearchCaches('finance')).resolves.not.toThrow();
       await expect(getCacheStats()).resolves.not.toThrow();
     });
   });

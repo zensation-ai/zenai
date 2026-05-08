@@ -113,7 +113,7 @@ describe('cognitive-hooks', () => {
 
   describe('runPostResponseHooks with minimal params', () => {
     const minimal: PostResponseHookParams = {
-      context: 'personal',
+      context: 'operations',
       query: 'Was ist TypeScript?',
       response: 'TypeScript ist eine typisierte Programmiersprache.',
     };
@@ -132,7 +132,7 @@ describe('cognitive-hooks', () => {
     it('should call recordInformationGain', async () => {
       await runPostResponseHooks(minimal);
       expect(mockRecordInformationGain).toHaveBeenCalledWith(
-        'personal',
+        'operations',
         expect.objectContaining({
           queryText: expect.any(String),
           surprise: expect.any(Number),
@@ -180,7 +180,7 @@ describe('cognitive-hooks', () => {
 
   describe('runPostResponseHooks with full params', () => {
     const full: PostResponseHookParams = {
-      context: 'work',
+      context: 'finance',
       userId: 'user-123',
       query: 'Explain machine learning algorithms',
       response: 'Machine learning algorithms are computational methods that learn from data.',
@@ -196,12 +196,12 @@ describe('cognitive-hooks', () => {
 
     it('should call recordCalibrationData when confidence is provided', async () => {
       await runPostResponseHooks(full);
-      expect(mockRecordCalibrationData).toHaveBeenCalledWith('work', 0.85, true);
+      expect(mockRecordCalibrationData).toHaveBeenCalledWith('finance', 0.85, true);
     });
 
     it('should call recordInteraction when domain is provided', async () => {
       await runPostResponseHooks(full);
-      expect(mockRecordInteraction).toHaveBeenCalledWith('work', 'technology', true);
+      expect(mockRecordInteraction).toHaveBeenCalledWith('finance', 'technology', true);
     });
 
     it('should handle userId param without error', async () => {
@@ -230,7 +230,7 @@ describe('cognitive-hooks', () => {
     it('should not throw when Hebbian service throws', async () => {
       mockRecordCoactivation.mockRejectedValueOnce(new Error('DB down'));
       await expect(runPostResponseHooks({
-        context: 'personal',
+        context: 'operations',
         query: 'hello world testing',
         response: 'response text with enough words',
       })).resolves.toBeUndefined();
@@ -239,7 +239,7 @@ describe('cognitive-hooks', () => {
     it('should not throw when information gain throws', async () => {
       mockRecordInformationGain.mockRejectedValueOnce(new Error('fail'));
       await expect(runPostResponseHooks({
-        context: 'personal',
+        context: 'operations',
         query: 'test query here',
         response: 'test response text',
       })).resolves.toBeUndefined();
@@ -248,7 +248,7 @@ describe('cognitive-hooks', () => {
     it('should not throw when calibration throws', async () => {
       mockRecordCalibrationData.mockRejectedValueOnce(new Error('fail'));
       await expect(runPostResponseHooks({
-        context: 'personal',
+        context: 'operations',
         query: 'test query here',
         response: 'test response text',
         confidence: 0.9,
@@ -258,7 +258,7 @@ describe('cognitive-hooks', () => {
     it('should not throw when capability model throws', async () => {
       mockRecordInteraction.mockRejectedValueOnce(new Error('fail'));
       await expect(runPostResponseHooks({
-        context: 'personal',
+        context: 'operations',
         query: 'test query here',
         response: 'test response text',
         domain: 'tech',
@@ -268,7 +268,7 @@ describe('cognitive-hooks', () => {
     it('should not throw when feedback bus throws', async () => {
       mockRecordFeedback.mockRejectedValueOnce(new Error('fail'));
       await expect(runPostResponseHooks({
-        context: 'personal',
+        context: 'operations',
         query: 'test query here',
         response: 'test response text',
       })).resolves.toBeUndefined();
@@ -277,7 +277,7 @@ describe('cognitive-hooks', () => {
     it('should still call other hooks when one fails', async () => {
       mockRecordCoactivation.mockRejectedValueOnce(new Error('fail'));
       await runPostResponseHooks({
-        context: 'personal',
+        context: 'operations',
         query: 'hello world testing',
         response: 'response text testing here',
         confidence: 0.8,
@@ -299,7 +299,7 @@ describe('cognitive-hooks', () => {
   describe('edge cases', () => {
     it('should handle empty query gracefully', async () => {
       await expect(runPostResponseHooks({
-        context: 'personal',
+        context: 'operations',
         query: '',
         response: 'some response text here',
       })).resolves.toBeUndefined();
@@ -307,7 +307,7 @@ describe('cognitive-hooks', () => {
 
     it('should handle empty response gracefully', async () => {
       await expect(runPostResponseHooks({
-        context: 'personal',
+        context: 'operations',
         query: 'some query text here',
         response: '',
       })).resolves.toBeUndefined();
@@ -315,7 +315,7 @@ describe('cognitive-hooks', () => {
 
     it('should skip Hebbian when fewer than 2 entities extracted', async () => {
       await runPostResponseHooks({
-        context: 'personal',
+        context: 'operations',
         query: 'hi',
         response: 'hey',
       });
@@ -326,7 +326,7 @@ describe('cognitive-hooks', () => {
     it('should truncate query for information gain to 500 chars', async () => {
       const longQuery = 'a'.repeat(1000);
       await runPostResponseHooks({
-        context: 'personal',
+        context: 'operations',
         query: longQuery,
         response: 'response text here testing',
       });

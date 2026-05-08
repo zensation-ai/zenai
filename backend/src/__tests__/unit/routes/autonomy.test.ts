@@ -40,7 +40,7 @@ jest.mock('../../../services/event-system', () => ({
 }));
 
 jest.mock('../../../utils/database-context', () => ({
-  isValidContext: (ctx: string) => ['personal', 'work', 'learning', 'creative'].includes(ctx),
+  isValidContext: (ctx: string) => ['operations', 'finance', 'people', 'strategy'].includes(ctx),
   queryContext: jest.fn(),
 }));
 
@@ -64,7 +64,7 @@ describe('Autonomy Routes', () => {
       take_action: 'ask',
     });
 
-    const res = await request(app).get('/api/personal/autonomy/levels');
+    const res = await request(app).get('/api/operations/autonomy/levels');
 
     expect(res.status).toBe(200);
     expect(res.body.success).toBe(true);
@@ -82,7 +82,7 @@ describe('Autonomy Routes', () => {
     mockGetAutonomyLevel.mockReturnValue('act');
 
     const res = await request(app)
-      .put('/api/personal/autonomy/levels')
+      .put('/api/operations/autonomy/levels')
       .send({ actionType: 'take_action', level: 'act' });
 
     expect(res.status).toBe(200);
@@ -91,7 +91,7 @@ describe('Autonomy Routes', () => {
 
   it('PUT /:context/autonomy/levels — rejects invalid actionType', async () => {
     const res = await request(app)
-      .put('/api/personal/autonomy/levels')
+      .put('/api/operations/autonomy/levels')
       .send({ actionType: 'invalid_type', level: 'suggest' });
 
     expect(res.status).toBe(400);
@@ -99,7 +99,7 @@ describe('Autonomy Routes', () => {
 
   it('PUT /:context/autonomy/levels — rejects invalid level', async () => {
     const res = await request(app)
-      .put('/api/personal/autonomy/levels')
+      .put('/api/operations/autonomy/levels')
       .send({ actionType: 'notify', level: 'invalid' });
 
     expect(res.status).toBe(400);
@@ -107,7 +107,7 @@ describe('Autonomy Routes', () => {
 
   it('PUT /:context/autonomy/levels — rejects missing actionType', async () => {
     const res = await request(app)
-      .put('/api/personal/autonomy/levels')
+      .put('/api/operations/autonomy/levels')
       .send({ level: 'suggest' });
 
     expect(res.status).toBe(400);
@@ -121,7 +121,7 @@ describe('Autonomy Routes', () => {
       ],
     });
 
-    const res = await request(app).get('/api/personal/autonomy/history');
+    const res = await request(app).get('/api/operations/autonomy/history');
 
     expect(res.status).toBe(200);
     // Filters to proactive events only when no eventType specified
@@ -133,7 +133,7 @@ describe('Autonomy Routes', () => {
       events: [{ eventType: 'user.login' }],
     });
 
-    const res = await request(app).get('/api/personal/autonomy/history?eventType=user.login');
+    const res = await request(app).get('/api/operations/autonomy/history?eventType=user.login');
 
     expect(res.status).toBe(200);
     expect(res.body.data).toHaveLength(1);

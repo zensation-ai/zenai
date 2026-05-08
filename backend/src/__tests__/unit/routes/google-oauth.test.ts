@@ -65,7 +65,7 @@ describe('Google OAuth Routes', () => {
 
       const res = await request(app)
         .post('/api/auth/oauth/google/connect')
-        .send({ context: 'personal' });
+        .send({ context: 'operations' });
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
@@ -79,7 +79,7 @@ describe('Google OAuth Routes', () => {
 
       const res = await request(app)
         .post('/api/auth/oauth/google/connect')
-        .send({ context: 'personal' });
+        .send({ context: 'operations' });
 
       expect(res.status).toBe(503);
       process.env.GOOGLE_CLIENT_ID = origId;

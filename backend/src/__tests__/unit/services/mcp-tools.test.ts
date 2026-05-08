@@ -40,7 +40,7 @@ jest.mock('../../../services/mcp-connections', () => ({
 
 describe('MCP Tool Handlers', () => {
   const execContext: ToolExecutionContext = {
-    aiContext: 'work',
+    aiContext: 'finance',
     sessionId: 'test-session',
   };
 

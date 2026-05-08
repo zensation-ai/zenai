@@ -11,8 +11,6 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import { Mic, MicOff, Loader } from 'lucide-react';
 import { AIContext } from '../ContextSwitcher';
 import axios from 'axios';
-import './VoiceInputButton.css';
-
 interface VoiceInputButtonProps {
   /** Called when transcription completes */
   onTranscript: (text: string) => void;
@@ -30,7 +28,7 @@ export function VoiceInputButton({
   onTranscript,
   size = 'sm',
   className = '',
-  context = 'personal',
+  context = 'operations',
   disabled = false,
 }: VoiceInputButtonProps) {
   const [recording, setRecording] = useState(false);

@@ -9,7 +9,7 @@ import { KIABMCPServer, createMCPServer } from '../../../mcp/server';
 // Mock dependencies
 jest.mock('../../../utils/database-context', () => ({
   queryContext: jest.fn(),
-  AIContext: 'personal',
+  AIContext: 'operations',
 }));
 
 jest.mock('../../../utils/logger', () => ({
@@ -142,23 +142,23 @@ describe('MCP Server', () => {
     it('should create server with default config', () => {
       const config = server.getConfig();
 
-      expect(config.name).toBe('zenai-brain');
+      expect(config.name).toBe('zenai-spark');
       expect(config.version).toBe('1.0.0');
-      expect(config.defaultContext).toBe('personal');
+      expect(config.defaultContext).toBe('operations');
     });
 
     it('should create server with custom config', () => {
       const customServer = new KIABMCPServer({
         name: 'custom-server',
         version: '2.0.0',
-        defaultContext: 'work',
+        defaultContext: 'finance',
       });
 
       const config = customServer.getConfig();
 
       expect(config.name).toBe('custom-server');
       expect(config.version).toBe('2.0.0');
-      expect(config.defaultContext).toBe('work');
+      expect(config.defaultContext).toBe('finance');
     });
 
     it('should expose createMCPServer factory', () => {
@@ -341,12 +341,12 @@ describe('MCP Server', () => {
           name: 'create_idea',
           arguments: {
             transcript: 'Work related task',
-            context: 'work',
+            context: 'finance',
           },
         },
       });
 
-      expect(mockStructureWithClaude).toHaveBeenCalledWith('Work related task', 'work');
+      expect(mockStructureWithClaude).toHaveBeenCalledWith('Work related task', 'finance');
     });
   });
 

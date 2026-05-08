@@ -72,7 +72,7 @@ describe('AI Evolution Analytics Service', () => {
         rowCount: 2,
       } as any);
 
-      const metrics = await aiEvolutionAnalytics.getEvolutionMetrics('personal', 30);
+      const metrics = await aiEvolutionAnalytics.getEvolutionMetrics('operations', 30);
 
       expect(metrics).toBeDefined();
       expect(metrics.learningCurve).toBeDefined();
@@ -86,7 +86,7 @@ describe('AI Evolution Analytics Service', () => {
       // All queries will fail
       mockQueryContext.mockRejectedValue(new Error('Database error'));
 
-      const metrics = await aiEvolutionAnalytics.getEvolutionMetrics('personal', 30);
+      const metrics = await aiEvolutionAnalytics.getEvolutionMetrics('operations', 30);
 
       // Should return fallback/default values on errors
       expect(metrics).toBeDefined();
@@ -110,7 +110,7 @@ describe('AI Evolution Analytics Service', () => {
         rowCount: 3,
       } as any);
 
-      const curve = await aiEvolutionAnalytics.calculateLearningCurve('personal', 30);
+      const curve = await aiEvolutionAnalytics.calculateLearningCurve('operations', 30);
 
       expect(curve).toHaveLength(3);
       expect(curve[0].accuracyScore).toBeCloseTo(0.8, 2);
@@ -126,7 +126,7 @@ describe('AI Evolution Analytics Service', () => {
         rowCount: 2,
       } as any);
 
-      const curve = await aiEvolutionAnalytics.calculateLearningCurve('personal', 30);
+      const curve = await aiEvolutionAnalytics.calculateLearningCurve('operations', 30);
 
       // Later data should show higher accuracy
       expect(curve[curve.length - 1].accuracyScore).toBeGreaterThan(curve[0].accuracyScore);
@@ -135,7 +135,7 @@ describe('AI Evolution Analytics Service', () => {
     it('should return fallback for empty data', async () => {
       mockQueryContext.mockResolvedValue({ rows: [], rowCount: 0 } as any);
 
-      const curve = await aiEvolutionAnalytics.calculateLearningCurve('personal', 7);
+      const curve = await aiEvolutionAnalytics.calculateLearningCurve('operations', 7);
 
       // Should return fallback data
       expect(curve).toBeDefined();
@@ -145,7 +145,7 @@ describe('AI Evolution Analytics Service', () => {
     it('should handle database errors', async () => {
       mockQueryContext.mockRejectedValue(new Error('Connection failed'));
 
-      const curve = await aiEvolutionAnalytics.calculateLearningCurve('personal', 30);
+      const curve = await aiEvolutionAnalytics.calculateLearningCurve('operations', 30);
 
       expect(curve).toBeDefined();
       expect(Array.isArray(curve)).toBe(true);
@@ -175,7 +175,7 @@ describe('AI Evolution Analytics Service', () => {
         rowCount: 2,
       } as any);
 
-      const strengths = await aiEvolutionAnalytics.analyzeDomainStrengths('personal');
+      const strengths = await aiEvolutionAnalytics.analyzeDomainStrengths('operations');
 
       expect(strengths).toBeDefined();
       expect(strengths.length).toBeGreaterThan(0);
@@ -197,7 +197,7 @@ describe('AI Evolution Analytics Service', () => {
 
       mockQueryContext.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any);
 
-      const strengths = await aiEvolutionAnalytics.analyzeDomainStrengths('personal');
+      const strengths = await aiEvolutionAnalytics.analyzeDomainStrengths('operations');
 
       expect(strengths).toHaveLength(3);
       expect(strengths[0].strength).toBeGreaterThan(0);
@@ -213,7 +213,7 @@ describe('AI Evolution Analytics Service', () => {
 
       mockQueryContext.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any);
 
-      const strengths = await aiEvolutionAnalytics.analyzeDomainStrengths('personal');
+      const strengths = await aiEvolutionAnalytics.analyzeDomainStrengths('operations');
 
       expect(strengths[0].improvementTrend).toBe('improving');
     });
@@ -221,7 +221,7 @@ describe('AI Evolution Analytics Service', () => {
     it('should return defaults for empty data', async () => {
       mockQueryContext.mockResolvedValue({ rows: [], rowCount: 0 } as any);
 
-      const strengths = await aiEvolutionAnalytics.analyzeDomainStrengths('personal');
+      const strengths = await aiEvolutionAnalytics.analyzeDomainStrengths('operations');
 
       expect(strengths).toBeDefined();
       expect(Array.isArray(strengths)).toBe(true);
@@ -243,7 +243,7 @@ describe('AI Evolution Analytics Service', () => {
         rowCount: 3,
       } as any);
 
-      const trend = await aiEvolutionAnalytics.getSatisfactionTrend('personal', 30);
+      const trend = await aiEvolutionAnalytics.getSatisfactionTrend('operations', 30);
 
       expect(trend).toHaveLength(3);
       expect(trend[0].avgRating).toBe(4.0);
@@ -253,7 +253,7 @@ describe('AI Evolution Analytics Service', () => {
     it('should handle missing feedback data', async () => {
       mockQueryContext.mockResolvedValue({ rows: [], rowCount: 0 } as any);
 
-      const trend = await aiEvolutionAnalytics.getSatisfactionTrend('personal', 30);
+      const trend = await aiEvolutionAnalytics.getSatisfactionTrend('operations', 30);
 
       expect(trend).toEqual([]);
     });
@@ -274,7 +274,7 @@ describe('AI Evolution Analytics Service', () => {
         rowCount: 3,
       } as any);
 
-      const effectiveness = await aiEvolutionAnalytics.analyzeProactiveEffectiveness('personal', 30);
+      const effectiveness = await aiEvolutionAnalytics.analyzeProactiveEffectiveness('operations', 30);
 
       expect(effectiveness).toHaveLength(3);
       expect(effectiveness[0].suggestionType).toBe('routine');
@@ -289,7 +289,7 @@ describe('AI Evolution Analytics Service', () => {
         rowCount: 1,
       } as any);
 
-      const effectiveness = await aiEvolutionAnalytics.analyzeProactiveEffectiveness('personal', 30);
+      const effectiveness = await aiEvolutionAnalytics.analyzeProactiveEffectiveness('operations', 30);
 
       expect(effectiveness[0].acceptanceRate).toBe(0.75);
     });
@@ -297,7 +297,7 @@ describe('AI Evolution Analytics Service', () => {
     it('should return defaults for empty data', async () => {
       mockQueryContext.mockResolvedValue({ rows: [], rowCount: 0 } as any);
 
-      const effectiveness = await aiEvolutionAnalytics.analyzeProactiveEffectiveness('personal', 30);
+      const effectiveness = await aiEvolutionAnalytics.analyzeProactiveEffectiveness('operations', 30);
 
       expect(effectiveness).toBeDefined();
       expect(Array.isArray(effectiveness)).toBe(true);
@@ -318,7 +318,7 @@ describe('AI Evolution Analytics Service', () => {
         rowCount: 2,
       } as any);
 
-      const performance = await aiEvolutionAnalytics.getCategoryPerformance('personal');
+      const performance = await aiEvolutionAnalytics.getCategoryPerformance('operations');
 
       expect(performance).toHaveLength(2);
       expect(performance[0].category).toBe('Tech');
@@ -328,7 +328,7 @@ describe('AI Evolution Analytics Service', () => {
     it('should handle empty results', async () => {
       mockQueryContext.mockResolvedValue({ rows: [], rowCount: 0 } as any);
 
-      const performance = await aiEvolutionAnalytics.getCategoryPerformance('personal');
+      const performance = await aiEvolutionAnalytics.getCategoryPerformance('operations');
 
       expect(performance).toEqual([]);
     });
@@ -349,7 +349,7 @@ describe('AI Evolution Analytics Service', () => {
         rowCount: 3,
       } as any);
 
-      const data = await aiEvolutionAnalytics.getTimeSeriesMetric('personal', 'accuracy', 30);
+      const data = await aiEvolutionAnalytics.getTimeSeriesMetric('operations', 'accuracy', 30);
 
       expect(data).toHaveLength(3);
       expect(data[0].date).toBe('2026-01-15');
@@ -365,7 +365,7 @@ describe('AI Evolution Analytics Service', () => {
         rowCount: 2,
       } as any);
 
-      const data = await aiEvolutionAnalytics.getTimeSeriesMetric('personal', 'volume', 30);
+      const data = await aiEvolutionAnalytics.getTimeSeriesMetric('operations', 'volume', 30);
 
       expect(data).toHaveLength(2);
     });
@@ -379,7 +379,7 @@ describe('AI Evolution Analytics Service', () => {
         rowCount: 2,
       } as any);
 
-      const data = await aiEvolutionAnalytics.getTimeSeriesMetric('personal', 'corrections', 30);
+      const data = await aiEvolutionAnalytics.getTimeSeriesMetric('operations', 'corrections', 30);
 
       expect(data).toHaveLength(2);
     });
@@ -399,7 +399,7 @@ describe('AI Evolution Analytics Service', () => {
         rowCount: 1,
       } as any);
 
-      const insights = await aiEvolutionAnalytics.getInsights('personal');
+      const insights = await aiEvolutionAnalytics.getInsights('operations');
 
       expect(insights).toBeDefined();
       expect(Array.isArray(insights)).toBe(true);
@@ -414,7 +414,7 @@ describe('AI Evolution Analytics Service', () => {
         rowCount: 1,
       } as any);
 
-      const insights = await aiEvolutionAnalytics.getInsights('personal');
+      const insights = await aiEvolutionAnalytics.getInsights('operations');
 
       // Should mention excellent accuracy
       const hasAccuracyInsight = insights.some(i => i.toLowerCase().includes('genauigkeit') || i.toLowerCase().includes('accuracy'));
@@ -424,7 +424,7 @@ describe('AI Evolution Analytics Service', () => {
     it('should return default insight on error', async () => {
       mockQueryContext.mockRejectedValue(new Error('DB error'));
 
-      const insights = await aiEvolutionAnalytics.getInsights('personal');
+      const insights = await aiEvolutionAnalytics.getInsights('operations');
 
       expect(insights).toBeDefined();
       expect(insights.length).toBeGreaterThan(0);
@@ -449,7 +449,7 @@ describe('AI Evolution Analytics Service', () => {
       // Other mocks
       mockQueryContext.mockResolvedValue({ rows: [], rowCount: 0 } as any);
 
-      const metrics = await aiEvolutionAnalytics.getEvolutionMetrics('personal', 30);
+      const metrics = await aiEvolutionAnalytics.getEvolutionMetrics('operations', 30);
 
       // Average of last 7 days (or available data)
       expect(metrics.summary.overallAccuracy).toBeGreaterThan(0);
@@ -475,7 +475,7 @@ describe('AI Evolution Analytics Service', () => {
       // Other mocks
       mockQueryContext.mockResolvedValue({ rows: [], rowCount: 0 } as any);
 
-      const metrics = await aiEvolutionAnalytics.getEvolutionMetrics('personal', 30);
+      const metrics = await aiEvolutionAnalytics.getEvolutionMetrics('operations', 30);
 
       expect(metrics.summary.strongestDomain).toBe('Strong');
       expect(metrics.summary.weakestDomain).toBe('Weak');
@@ -509,7 +509,7 @@ describe('AI Evolution Analytics Service', () => {
 
       mockQueryContext.mockResolvedValue({ rows: [], rowCount: 0 } as any);
 
-      const metrics = await aiEvolutionAnalytics.getEvolutionMetrics('personal', 30);
+      const metrics = await aiEvolutionAnalytics.getEvolutionMetrics('operations', 30);
 
       // Should show positive improvement (lastWeek avg ~0.86 - firstWeek avg ~0.64 = ~0.22)
       expect(metrics.summary.improvementRate).toBeGreaterThan(0);
@@ -527,7 +527,7 @@ describe('AI Evolution Analytics Service', () => {
 
       mockQueryContext.mockResolvedValue({ rows: [], rowCount: 0 } as any);
 
-      const metrics = await aiEvolutionAnalytics.getEvolutionMetrics('personal', 30);
+      const metrics = await aiEvolutionAnalytics.getEvolutionMetrics('operations', 30);
 
       expect(metrics.summary.totalInteractions).toBe(45);
     });

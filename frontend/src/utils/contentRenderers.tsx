@@ -7,6 +7,7 @@
  * Phase 33 Sprint 4 - Feature 10
  */
 
+import { type CSSProperties } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { SyntaxHighlighter, oneDark } from './syntaxHighlighter';
@@ -85,13 +86,8 @@ export function renderHtmlContent(
         srcDoc={content}
         sandbox=""
         title={title}
-        style={{
-          width: '100%',
-          height: options?.maxHeight || '60vh',
-          border: 'none',
-          borderRadius: '8px',
-          backgroundColor: '#fff',
-        }}
+        className="w-full border-none rounded-[8px] bg-white h-[var(--ih)]"
+        style={{ '--ih': options?.maxHeight || '60vh' } as CSSProperties}
       />
     </div>
   );

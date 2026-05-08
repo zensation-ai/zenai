@@ -10,7 +10,7 @@ import { asyncHandler } from '../middleware/errorHandler';
 import { requireJwt } from '../middleware/jwt-auth';
 import { getUserId } from '../utils/user-context';
 import { queryPublic } from '../utils/database-context';
-const VALID_CONTEXTS = ['personal', 'work', 'learning', 'creative'];
+const VALID_CONTEXTS = ['operations', 'finance', 'people', 'strategy'];
 
 export function createSlackRouter(): Router {
   const router = Router();

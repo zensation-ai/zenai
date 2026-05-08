@@ -16,7 +16,7 @@ const createTask = (overrides: Partial<Task> = {}): Task => ({
   status: 'todo' as TaskStatus,
   priority: 'medium',
   sort_order: 0,
-  context: 'work',
+  context: 'finance',
   labels: [],
   metadata: {},
   created_at: '2026-01-01T00:00:00Z',
@@ -26,7 +26,7 @@ const createTask = (overrides: Partial<Task> = {}): Task => ({
 
 const sampleProjects: Project[] = [
   {
-    id: 'p1', name: 'Project Alpha', status: 'active', context: 'work',
+    id: 'p1', name: 'Project Alpha', status: 'active', context: 'finance',
     sort_order: 0, metadata: {}, created_at: '2026-01-01', updated_at: '2026-01-01',
     color: '#FF0000', icon: '📋',
   },
@@ -68,7 +68,7 @@ describe('KanbanBoard Component', () => {
       createTask({ status: 'in_progress' }),
     ];
     render(<KanbanBoard {...defaultProps} tasks={tasks} />);
-    const countElements = document.querySelectorAll('.kanban-column__count');
+    const countElements = screen.getAllByTestId('kanban-column-count');
     expect(countElements.length).toBe(4);
   });
 
@@ -103,9 +103,9 @@ describe('KanbanBoard Component', () => {
       createTask({ project_id: 'p1' }),
     ];
     render(<KanbanBoard {...defaultProps} tasks={tasks} />);
-    const projectTag = document.querySelector('.kanban-card__project');
+    const projectTag = screen.getByTestId('kanban-card-project');
     expect(projectTag).toBeTruthy();
-    expect(projectTag?.textContent).toContain('Project Alpha');
+    expect(projectTag.textContent).toContain('Project Alpha');
   });
 
   it('should mark overdue due dates', () => {
@@ -119,7 +119,7 @@ describe('KanbanBoard Component', () => {
       }),
     ];
     render(<KanbanBoard {...defaultProps} tasks={tasks} />);
-    const overdueSpan = document.querySelector('.kanban-card__due--overdue');
+    const overdueSpan = screen.getByTestId('kanban-due-overdue');
     expect(overdueSpan).toBeTruthy();
   });
 
@@ -160,8 +160,7 @@ describe('KanbanBoard Component', () => {
 
   it('should show loading skeleton when loading', () => {
     render(<KanbanBoard {...defaultProps} loading={true} />);
-    const loadingDiv = document.querySelector('.kanban-loading');
-    expect(loadingDiv).toBeTruthy();
+    expect(screen.getByTestId('kanban-loading')).toBeTruthy();
   });
 
   // =====================
@@ -171,14 +170,14 @@ describe('KanbanBoard Component', () => {
   it('should set draggable attribute on task cards', () => {
     const task = createTask({ title: 'Draggable' });
     render(<KanbanBoard {...defaultProps} tasks={[task]} />);
-    const card = screen.getByText('Draggable').closest('.kanban-card');
+    const card = screen.getByTestId('kanban-card');
     expect(card).toHaveAttribute('draggable', 'true');
   });
 
   it('should handle drag start event', () => {
     const task = createTask({ title: 'Drag Me' });
     render(<KanbanBoard {...defaultProps} tasks={[task]} />);
-    const card = screen.getByText('Drag Me').closest('.kanban-card')!;
+    const card = screen.getByTestId('kanban-card');
     fireEvent.dragStart(card, {
       dataTransfer: { setData: vi.fn(), effectAllowed: '' },
     });
@@ -196,7 +195,7 @@ describe('KanbanBoard Component', () => {
 
   it('should show empty state in columns', () => {
     render(<KanbanBoard {...defaultProps} tasks={[]} />);
-    const emptyDivs = document.querySelectorAll('.kanban-column__empty');
+    const emptyDivs = screen.getAllByTestId('kanban-column-empty');
     expect(emptyDivs.length).toBe(4);
   });
 });

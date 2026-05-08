@@ -38,6 +38,8 @@ jest.mock('../../../../services/auth/session-store', () => ({
 
 import {
   generateTokenPair,
+  generateWorkspaceToken,
+  lookupUserOrgPlan,
   verifyAccessToken,
   refreshTokens,
   revokeSession,
@@ -83,6 +85,10 @@ describe('JwtService', () => {
     mockRevokeSession.mockReset();
     mockRevokeAllUserSessions.mockReset();
     process.env = { ...originalEnv, JWT_SECRET: 'test-secret-for-jwt-unit-tests' };
+    // Sprint 1.9: default plan lookup returns no membership → 'free'.
+    // Individual tests can override with mockResolvedValueOnce to simulate
+    // membership rows. This default keeps pre-1.9 tests from needing edits.
+    mockQuery.mockResolvedValue({ rows: [] });
   });
 
   afterAll(() => {
@@ -322,6 +328,158 @@ describe('JwtService', () => {
       // Should not throw — uses fallback
       const result = await generateTokenPair(mockUser);
       expect(result.accessToken).toBeTruthy();
+    });
+  });
+
+  // ----- Sprint 1.9: plan propagation -----
+  describe('Sprint 1.9 — org plan propagation', () => {
+    describe('lookupUserOrgPlan', () => {
+      it('should default to "free" when user has no org membership', async () => {
+        mockQuery.mockReset();
+        mockQuery.mockResolvedValueOnce({ rows: [] });
+
+        const plan = await lookupUserOrgPlan('usr_nomembership');
+
+        expect(plan).toBe('free');
+        expect(mockQuery).toHaveBeenCalledWith(
+          expect.stringMatching(/FROM\s+public\.organization_members[\s\S]*JOIN\s+public\.organizations/i),
+          ['usr_nomembership']
+        );
+      });
+
+      it('should return the plan from a single-org membership', async () => {
+        mockQuery.mockReset();
+        mockQuery.mockResolvedValueOnce({ rows: [{ plan: 'pro' }] });
+
+        expect(await lookupUserOrgPlan('usr_pro')).toBe('pro');
+      });
+
+      it('should return the strongest plan across multiple memberships', async () => {
+        mockQuery.mockReset();
+        mockQuery.mockResolvedValueOnce({
+          rows: [{ plan: 'free' }, { plan: 'personal' }, { plan: 'business' }, { plan: 'pro' }],
+        });
+
+        expect(await lookupUserOrgPlan('usr_multi')).toBe('business');
+      });
+
+      it('should treat enterprise as the highest tier', async () => {
+        mockQuery.mockReset();
+        mockQuery.mockResolvedValueOnce({
+          rows: [{ plan: 'pro' }, { plan: 'enterprise' }, { plan: 'business' }],
+        });
+
+        expect(await lookupUserOrgPlan('usr_ent')).toBe('enterprise');
+      });
+
+      it('should ignore invalid plan values in the DB', async () => {
+        mockQuery.mockReset();
+        mockQuery.mockResolvedValueOnce({
+          rows: [{ plan: 'god-mode' }, { plan: null }, { plan: 123 }, { plan: 'pro' }],
+        });
+
+        expect(await lookupUserOrgPlan('usr_dirty')).toBe('pro');
+      });
+
+      it('should fall back to "free" when the DB query throws', async () => {
+        mockQuery.mockReset();
+        mockQuery.mockRejectedValueOnce(new Error('connection refused'));
+
+        expect(await lookupUserOrgPlan('usr_dberror')).toBe('free');
+      });
+    });
+
+    describe('generateTokenPair embeds plan in access token', () => {
+      it('should embed plan="free" when user has no org membership', async () => {
+        mockQuery.mockReset();
+        mockQuery.mockResolvedValueOnce({ rows: [] }); // plan lookup
+        mockCreateSession.mockResolvedValueOnce({ id: 'sess_1' });
+
+        const { accessToken } = await generateTokenPair(mockUser);
+        const decoded = jwt.verify(accessToken, 'test-secret-for-jwt-unit-tests') as Record<string, unknown>;
+
+        expect(decoded.plan).toBe('free');
+      });
+
+      it('should embed the user\'s best org plan', async () => {
+        mockQuery.mockReset();
+        mockQuery.mockResolvedValueOnce({ rows: [{ plan: 'pro' }] });
+        mockCreateSession.mockResolvedValueOnce({ id: 'sess_1' });
+
+        const { accessToken } = await generateTokenPair(mockUser);
+        const decoded = jwt.verify(accessToken, 'test-secret-for-jwt-unit-tests') as Record<string, unknown>;
+
+        expect(decoded.plan).toBe('pro');
+      });
+
+      it('should still issue a usable token when plan lookup fails', async () => {
+        mockQuery.mockReset();
+        mockQuery.mockRejectedValueOnce(new Error('db down'));
+        mockCreateSession.mockResolvedValueOnce({ id: 'sess_1' });
+
+        const { accessToken } = await generateTokenPair(mockUser);
+        const decoded = jwt.verify(accessToken, 'test-secret-for-jwt-unit-tests') as Record<string, unknown>;
+
+        expect(decoded.plan).toBe('free');
+        expect(decoded.sub).toBe('usr_123');
+      });
+    });
+
+    describe('generateWorkspaceToken embeds plan', () => {
+      it('should use an explicit plan when provided (workspace switch)', async () => {
+        mockQuery.mockReset(); // prove no lookup happens when plan is explicit
+
+        const token = await generateWorkspaceToken(
+          { id: 'usr_1', email: 'u@x.io', role: 'user' },
+          { orgId: 'org_1', workspaceId: 'ws_1', workspaceRole: 'admin', plan: 'business' }
+        );
+        const decoded = jwt.verify(token, 'test-secret-for-jwt-unit-tests') as Record<string, unknown>;
+
+        expect(decoded.plan).toBe('business');
+        expect(decoded.orgId).toBe('org_1');
+        expect(decoded.workspaceId).toBe('ws_1');
+        expect(mockQuery).not.toHaveBeenCalled();
+      });
+
+      it('should fall back to lookupUserOrgPlan when no plan is provided', async () => {
+        mockQuery.mockReset();
+        mockQuery.mockResolvedValueOnce({ rows: [{ plan: 'personal' }] });
+
+        const token = await generateWorkspaceToken(
+          { id: 'usr_1', email: 'u@x.io', role: 'user' },
+          { orgId: 'org_1', workspaceId: 'ws_1', workspaceRole: 'member' }
+        );
+        const decoded = jwt.verify(token, 'test-secret-for-jwt-unit-tests') as Record<string, unknown>;
+
+        expect(decoded.plan).toBe('personal');
+      });
+    });
+
+    describe('verifyAccessToken surfaces plan', () => {
+      it('should return plan in the decoded payload when present', async () => {
+        mockQuery.mockReset();
+        mockQuery.mockResolvedValueOnce({ rows: [{ plan: 'enterprise' }] });
+        mockCreateSession.mockResolvedValueOnce({ id: 'sess_1' });
+
+        const { accessToken } = await generateTokenPair(mockUser);
+        const payload = verifyAccessToken(accessToken);
+
+        expect(payload.plan).toBe('enterprise');
+      });
+
+      it('should return plan=undefined for legacy pre-1.9 tokens', () => {
+        // Legacy token (no plan field) — still must verify cleanly so existing
+        // sessions keep working during the 15-min access-token grace period.
+        const legacyToken = jwt.sign(
+          { sub: 'usr_legacy', email: 'legacy@x.io', role: 'user' },
+          'test-secret-for-jwt-unit-tests',
+          { expiresIn: '15m', algorithm: 'HS256' }
+        );
+
+        const payload = verifyAccessToken(legacyToken);
+        expect(payload.sub).toBe('usr_legacy');
+        expect(payload.plan).toBeUndefined();
+      });
     });
   });
 });

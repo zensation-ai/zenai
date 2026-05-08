@@ -413,7 +413,7 @@ describe('expandQueryWithGraphContext (Phase 113)', () => {
       ],
     } as any);
 
-    const expanded = await expandQueryWithGraphContext('transformer model', 'personal');
+    const expanded = await expandQueryWithGraphContext('transformer model', 'operations');
 
     expect(expanded).toContain('transformer model');
     expect(expanded).toContain('Attention Mechanism');
@@ -423,7 +423,7 @@ describe('expandQueryWithGraphContext (Phase 113)', () => {
   it('returns original query when no graph entities found', async () => {
     mockQueryContext.mockResolvedValueOnce({ rows: [] } as any);
 
-    const expanded = await expandQueryWithGraphContext('some obscure query', 'personal');
+    const expanded = await expandQueryWithGraphContext('some obscure query', 'operations');
 
     expect(expanded).toBe('some obscure query');
   });
@@ -431,13 +431,13 @@ describe('expandQueryWithGraphContext (Phase 113)', () => {
   it('returns original query on database error (graceful degradation)', async () => {
     mockQueryContext.mockRejectedValueOnce(new Error('DB connection error'));
 
-    const expanded = await expandQueryWithGraphContext('machine learning', 'personal');
+    const expanded = await expandQueryWithGraphContext('machine learning', 'operations');
 
     expect(expanded).toBe('machine learning');
   });
 
   it('handles empty query gracefully', async () => {
-    const expanded = await expandQueryWithGraphContext('', 'personal');
+    const expanded = await expandQueryWithGraphContext('', 'operations');
     expect(expanded).toBe('');
   });
 
@@ -450,7 +450,7 @@ describe('expandQueryWithGraphContext (Phase 113)', () => {
       })),
     } as any);
 
-    const expanded = await expandQueryWithGraphContext('machine learning', 'personal', 3);
+    const expanded = await expandQueryWithGraphContext('machine learning', 'operations', 3);
     const addedPart = expanded.replace('machine learning', '').trim();
 
     // Should not add more than maxEntities (3) terms beyond the original

@@ -14,6 +14,7 @@
 
 import { Router, Request, Response } from 'express';
 import { apiKeyAuth } from '../middleware/auth';
+import { requirePlan } from '../middleware/plan-gate';
 import { asyncHandler, ValidationError } from '../middleware/errorHandler';
 import { logger } from '../utils/logger';
 import {
@@ -47,6 +48,7 @@ export const codeExecutionRouter = Router();
 codeExecutionRouter.post(
   '/execute',
   apiKeyAuth,
+  requirePlan('pro'),
   asyncHandler(async (req: Request, res: Response) => {
     const { task, language, context, inputData } = req.body;
 
@@ -118,6 +120,7 @@ codeExecutionRouter.post(
 codeExecutionRouter.post(
   '/run',
   apiKeyAuth,
+  requirePlan('pro'),
   asyncHandler(async (req: Request, res: Response) => {
     const { code, language } = req.body;
 

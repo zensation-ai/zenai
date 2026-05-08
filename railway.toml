@@ -2,3 +2,9 @@
 dockerfilePath = "Dockerfile"
 # Ensure build context is repo root for pnpm workspace access
 dockerContext = "."
+
+[deploy]
+healthcheckPath = "/api/health/ready"
+healthcheckTimeout = 30
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 3

@@ -15,8 +15,6 @@ import type { AIContext } from '../ContextSwitcher';
 import { SlidePanel } from './SlidePanel';
 import { ErrorBoundary } from '../ErrorBoundary';
 import { SkeletonLoader } from '../SkeletonLoader';
-import './ChatHub.css';
-
 // Lazy-load GeneralChat (heavyweight, pulls in chat infra ~150KB)
 const GeneralChat = lazy(() =>
   import('../GeneralChat').then(m => ({ default: m.GeneralChat }))
@@ -27,7 +25,7 @@ interface ChatHubProps {
 }
 
 const ChatLoader = () => (
-  <div className="chat-hub__loader" role="status" aria-live="polite" aria-label="Chat wird geladen">
+  <div className="flex flex-col gap-4 p-4 h-full" role="status" aria-live="polite" aria-label="Chat wird geladen">
     <SkeletonLoader type="card" count={2} />
   </div>
 );
@@ -36,9 +34,9 @@ export function ChatHub({ context }: ChatHubProps) {
   const [slidePanelOpen, setSlidePanelOpen] = useState(false);
 
   return (
-    <main className="chat-hub" role="main" aria-label="Chat Hub">
+    <main className="flex flex-col h-full w-full overflow-hidden" role="main" aria-label="Chat Hub">
       {/* Conversation stream — GeneralChat includes its own input */}
-      <div className="chat-hub__conversation">
+      <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
         <ErrorBoundary>
           <Suspense fallback={<ChatLoader />}>
             <GeneralChat
@@ -55,7 +53,7 @@ export function ChatHub({ context }: ChatHubProps) {
         onClose={() => setSlidePanelOpen(false)}
         title="Details"
       >
-        <p>Panel content will be populated in Phase 105.</p>
+        <p className="text-sm text-white/50">Keine Details verfügbar.</p>
       </SlidePanel>
     </main>
   );

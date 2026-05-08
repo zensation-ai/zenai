@@ -7,7 +7,8 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import type { Task, TaskStatus, TaskPriority, Project } from './types';
 import { useFocusTrap } from '../../hooks/useFocusTrap';
-import './TaskForm.css';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 
 interface TaskFormProps {
   task: Task | null; // null = create new
@@ -41,6 +42,7 @@ export function TaskForm({ task, projects, onSubmit, onClose }: TaskFormProps) {
   const [assignee, setAssignee] = useState(task?.assignee || '');
   const [estimatedHours, setEstimatedHours] = useState(task?.estimated_hours?.toString() || '');
   const [submitting, setSubmitting] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const titleRef = useRef<HTMLInputElement>(null);
   const overlayRef = useRef<HTMLDivElement>(null);
   const focusTrapRef = useFocusTrap<HTMLDivElement>({ isActive: true, initialFocusSelector: 'input[type="text"]' });
@@ -65,7 +67,10 @@ export function TaskForm({ task, projects, onSubmit, onClose }: TaskFormProps) {
 
   const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title.trim()) return;
+    const newErrors: Record<string, string> = {};
+    if (!title.trim()) newErrors.title = 'Titel ist erforderlich';
+    setErrors(newErrors);
+    if (Object.keys(newErrors).length > 0) return;
     setSubmitting(true);
 
     const data: Partial<Task> = {
@@ -91,50 +96,74 @@ export function TaskForm({ task, projects, onSubmit, onClose }: TaskFormProps) {
   const isEditing = !!task;
 
   return (
-    <div className="task-form-overlay" ref={overlayRef} onClick={handleOverlayClick}>
-      <div ref={focusTrapRef} className="task-form" role="dialog" aria-modal="true" aria-label={isEditing ? 'Aufgabe bearbeiten' : 'Neue Aufgabe'}>
-        <div className="task-form__header">
-          <h3>{isEditing ? 'Aufgabe bearbeiten' : 'Neue Aufgabe'}</h3>
-          <button className="task-form__close" onClick={onClose} aria-label="Schließen">
+    <div
+      data-testid="task-form-overlay"
+      className="fixed inset-0 bg-black/50 flex items-center justify-center z-[2000] p-4 animate-in fade-in duration-200 max-md:items-end max-md:p-0"
+      ref={overlayRef}
+      onClick={handleOverlayClick}
+    >
+      <div
+        ref={focusTrapRef}
+        className="bg-surface border border-glass-border rounded-xl shadow-lg w-full max-w-[560px] max-h-[90vh] overflow-y-auto animate-in slide-in-from-bottom-4 duration-250 max-md:max-h-[85vh] max-md:max-h-[85dvh] max-md:rounded-b-none"
+        role="dialog"
+        aria-modal="true"
+        aria-label={isEditing ? 'Aufgabe bearbeiten' : 'Neue Aufgabe'}
+      >
+        <div className="flex items-center justify-between px-5 py-4 border-b border-glass-border">
+          <h3 className="m-0 text-lg font-semibold text-text">{isEditing ? 'Aufgabe bearbeiten' : 'Neue Aufgabe'}</h3>
+          <button
+            className="flex items-center justify-center w-8 h-8 border-none bg-bg-secondary rounded-md text-text-secondary text-sm cursor-pointer transition-colors hover:bg-surface-hover hover:text-text max-md:w-10 max-md:h-10"
+            onClick={onClose}
+            aria-label="Schließen"
+          >
             ✕
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="task-form__body">
+        <form onSubmit={handleSubmit} className="p-5 flex flex-col gap-4 max-[480px]:p-4">
           {/* Title */}
-          <div className="task-form__field">
-            <label htmlFor="task-title">Titel *</label>
-            <input
+          <div className="flex flex-col gap-1">
+            <label htmlFor="task-title" className="text-[0.8rem] font-medium text-text-secondary uppercase tracking-wide">Titel *</label>
+            <Input
               ref={titleRef}
               id="task-title"
               type="text"
               value={title}
-              onChange={e => setTitle(e.target.value)}
+              onChange={e => { setTitle(e.target.value); if (errors.title) setErrors(prev => ({ ...prev, title: '' })); }}
               placeholder="Was muss erledigt werden?"
+              aria-invalid={!!errors.title}
+              aria-describedby={errors.title ? 'task-title-error' : undefined}
               required
             />
+            {errors.title && (
+              <span id="task-title-error" className="block mt-1 text-[0.78rem] text-red-500 font-medium" role="alert">
+                {errors.title}
+              </span>
+            )}
           </div>
 
           {/* Description */}
-          <div className="task-form__field">
-            <label htmlFor="task-desc">Beschreibung</label>
+          <div className="flex flex-col gap-1">
+            <label htmlFor="task-desc" className="text-[0.8rem] font-medium text-text-secondary uppercase tracking-wide">Beschreibung</label>
             <textarea
               id="task-desc"
               value={description}
               onChange={e => setDescription(e.target.value)}
               placeholder="Details..."
               rows={3}
+              className="px-3 py-2 border border-glass-border rounded-md bg-surface text-text text-[0.9rem] font-[inherit] resize-y min-h-[72px] transition-colors hover:border-glass-border focus:outline-none focus:border-primary focus:ring-[3px] focus:ring-primary/35 max-md:text-base max-md:min-h-[44px]"
             />
           </div>
 
           {/* Status + Priority row */}
-          <div className="task-form__row">
-            <div className="task-form__field">
-              <label htmlFor="task-status">Status</label>
+          <div className="grid grid-cols-2 gap-3 max-md:grid-cols-1">
+            <div className="flex flex-col gap-1">
+              <label htmlFor="task-status" className="text-[0.8rem] font-medium text-text-secondary uppercase tracking-wide">Status</label>
               <select
                 id="task-status"
                 value={status}
                 onChange={e => setStatus(e.target.value as TaskStatus)}
+                className="px-3 py-2 border border-glass-border rounded-md bg-surface text-text text-[0.9rem] font-[inherit] transition-colors hover:border-glass-border focus:outline-none focus:border-primary focus:ring-[3px] focus:ring-primary/35 max-md:text-base max-md:min-h-[44px]"
               >
                 {STATUS_OPTIONS.map(opt => (
                   <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -142,12 +171,13 @@ export function TaskForm({ task, projects, onSubmit, onClose }: TaskFormProps) {
               </select>
             </div>
 
-            <div className="task-form__field">
-              <label htmlFor="task-priority">Priorität</label>
+            <div className="flex flex-col gap-1">
+              <label htmlFor="task-priority" className="text-[0.8rem] font-medium text-text-secondary uppercase tracking-wide">Priorität</label>
               <select
                 id="task-priority"
                 value={priority}
                 onChange={e => setPriority(e.target.value as TaskPriority)}
+                className="px-3 py-2 border border-glass-border rounded-md bg-surface text-text text-[0.9rem] font-[inherit] transition-colors hover:border-glass-border focus:outline-none focus:border-primary focus:ring-[3px] focus:ring-primary/35 max-md:text-base max-md:min-h-[44px]"
               >
                 {PRIORITY_OPTIONS.map(opt => (
                   <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -157,12 +187,13 @@ export function TaskForm({ task, projects, onSubmit, onClose }: TaskFormProps) {
           </div>
 
           {/* Project */}
-          <div className="task-form__field">
-            <label htmlFor="task-project">Projekt</label>
+          <div className="flex flex-col gap-1">
+            <label htmlFor="task-project" className="text-[0.8rem] font-medium text-text-secondary uppercase tracking-wide">Projekt</label>
             <select
               id="task-project"
               value={projectId}
               onChange={e => setProjectId(e.target.value)}
+              className="px-3 py-2 border border-glass-border rounded-md bg-surface text-text text-[0.9rem] font-[inherit] transition-colors hover:border-glass-border focus:outline-none focus:border-primary focus:ring-[3px] focus:ring-primary/35 max-md:text-base max-md:min-h-[44px]"
             >
               <option value="">Kein Projekt</option>
               {projects.filter(p => p.status !== 'archived').map(p => (
@@ -172,10 +203,10 @@ export function TaskForm({ task, projects, onSubmit, onClose }: TaskFormProps) {
           </div>
 
           {/* Dates row */}
-          <div className="task-form__row">
-            <div className="task-form__field">
-              <label htmlFor="task-start">Startdatum</label>
-              <input
+          <div className="grid grid-cols-2 gap-3 max-md:grid-cols-1">
+            <div className="flex flex-col gap-1">
+              <label htmlFor="task-start" className="text-[0.8rem] font-medium text-text-secondary uppercase tracking-wide">Startdatum</label>
+              <Input
                 id="task-start"
                 type="date"
                 value={startDate}
@@ -183,9 +214,9 @@ export function TaskForm({ task, projects, onSubmit, onClose }: TaskFormProps) {
               />
             </div>
 
-            <div className="task-form__field">
-              <label htmlFor="task-due">Fälligkeitsdatum</label>
-              <input
+            <div className="flex flex-col gap-1">
+              <label htmlFor="task-due" className="text-[0.8rem] font-medium text-text-secondary uppercase tracking-wide">Fälligkeitsdatum</label>
+              <Input
                 id="task-due"
                 type="date"
                 value={dueDate}
@@ -195,10 +226,10 @@ export function TaskForm({ task, projects, onSubmit, onClose }: TaskFormProps) {
           </div>
 
           {/* Assignee + Hours row */}
-          <div className="task-form__row">
-            <div className="task-form__field">
-              <label htmlFor="task-assignee">Zuständig</label>
-              <input
+          <div className="grid grid-cols-2 gap-3 max-md:grid-cols-1">
+            <div className="flex flex-col gap-1">
+              <label htmlFor="task-assignee" className="text-[0.8rem] font-medium text-text-secondary uppercase tracking-wide">Zuständig</label>
+              <Input
                 id="task-assignee"
                 type="text"
                 value={assignee}
@@ -207,13 +238,13 @@ export function TaskForm({ task, projects, onSubmit, onClose }: TaskFormProps) {
               />
             </div>
 
-            <div className="task-form__field">
-              <label htmlFor="task-hours">Geschätzte Stunden</label>
-              <input
+            <div className="flex flex-col gap-1">
+              <label htmlFor="task-hours" className="text-[0.8rem] font-medium text-text-secondary uppercase tracking-wide">Geschätzte Stunden</label>
+              <Input
                 id="task-hours"
                 type="number"
-                min="0"
-                step="0.5"
+                min={0}
+                step={0.5}
                 value={estimatedHours}
                 onChange={e => setEstimatedHours(e.target.value)}
                 placeholder="0"
@@ -222,17 +253,16 @@ export function TaskForm({ task, projects, onSubmit, onClose }: TaskFormProps) {
           </div>
 
           {/* Actions */}
-          <div className="task-form__actions">
-            <button type="button" className="task-form__cancel" onClick={onClose}>
+          <div className="flex justify-end gap-2 pt-2 border-t border-glass-border">
+            <Button type="button" variant="outline" onClick={onClose}>
               Abbrechen
-            </button>
-            <button
+            </Button>
+            <Button
               type="submit"
-              className="task-form__submit"
               disabled={!title.trim() || submitting}
             >
               {submitting ? 'Speichert...' : isEditing ? 'Speichern' : 'Erstellen'}
-            </button>
+            </Button>
           </div>
         </form>
       </div>

@@ -6,12 +6,15 @@
  * - Follow-up reminders, budget alerts, AI briefings
  */
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import type { CSSProperties } from 'react';
 import axios from 'axios';
+import { useVirtualizer } from '@tanstack/react-virtual';
 import type { AIContext } from '../ContextSwitcher';
 import { logError } from '../../utils/errors';
-import './UnifiedInbox.css';
 
+const INBOX_VIRTUALIZATION_THRESHOLD = 50;
+const INBOX_ROW_HEIGHT = 80;
 // ===========================================
 // Types
 // ===========================================
@@ -60,11 +63,11 @@ interface UnifiedInboxProps {
 const TYPE_CONFIG: Record<InboxItemType, { icon: string; label: string; color: string }> = {
   email: { icon: '✉️', label: 'E-Mail', color: '#3b82f6' },
   task_due: { icon: '✅', label: 'Aufgabe', color: '#f59e0b' },
-  meeting_soon: { icon: '📅', label: 'Termin', color: '#8b5cf6' },
+  meeting_soon: { icon: '📅', label: 'Termin', color: '#1a6b7a' },
   follow_up: { icon: '👤', label: 'Follow-up', color: '#06b6d4' },
   budget_alert: { icon: '💰', label: 'Budget', color: '#ef4444' },
   proactive_suggestion: { icon: '✨', label: 'KI-Vorschlag', color: '#10b981' },
-  briefing: { icon: '☀️', label: 'Briefing', color: '#f97316' },
+  briefing: { icon: '☀️', label: 'Briefing', color: 'var(--accent-orange)' },
 };
 
 const PRIORITY_CONFIG: Record<InboxPriority, { label: string; className: string }> = {
@@ -92,6 +95,7 @@ export function UnifiedInbox({ context, onNavigate }: UnifiedInboxProps) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeFilter, setActiveFilter] = useState<InboxItemType | 'all'>('all');
+  const listRef = useRef<HTMLDivElement>(null);
 
   const loadInbox = useCallback(async () => {
     setLoading(true);
@@ -138,6 +142,15 @@ export function UnifiedInbox({ context, onNavigate }: UnifiedInboxProps) {
   };
 
   const filteredItems = data?.items ?? [];
+  const shouldVirtualize = filteredItems.length >= INBOX_VIRTUALIZATION_THRESHOLD;
+
+  const virtualizer = useVirtualizer({
+    count: filteredItems.length,
+    getScrollElement: () => listRef.current,
+    estimateSize: () => INBOX_ROW_HEIGHT,
+    overscan: 5,
+    enabled: shouldVirtualize,
+  });
   const totalCounts = data?.counts ?? {};
 
   return (
@@ -196,43 +209,93 @@ export function UnifiedInbox({ context, onNavigate }: UnifiedInboxProps) {
         </div>
       )}
 
-      <div className="inbox-items">
-        {filteredItems.map(item => {
-          const typeInfo = TYPE_CONFIG[item.type];
-          const priInfo = PRIORITY_CONFIG[item.priority];
-          return (
-            <div
-              key={item.id}
-              className={`inbox-item ${priInfo.className}`}
-              onClick={() => handleAction(item)}
-              role={item.is_actionable ? 'button' : undefined}
-              tabIndex={item.is_actionable ? 0 : undefined}
-              onKeyDown={e => {
-                if ((e.key === 'Enter' || e.key === ' ') && item.is_actionable) { e.preventDefault(); handleAction(item); }
-              }}
-            >
-              <div className="inbox-item-icon" style={{ color: typeInfo.color }}>
-                {typeInfo.icon}
-              </div>
-              <div className="inbox-item-content">
-                <div className="inbox-item-title">{item.title}</div>
-                <div className="inbox-item-subtitle">{item.subtitle}</div>
-              </div>
-              <div className="inbox-item-meta">
-                <span className="inbox-item-time">{formatTimestamp(item.timestamp)}</span>
-                <span className={`inbox-item-type-badge`} style={{ backgroundColor: `${typeInfo.color}20`, color: typeInfo.color }}>
-                  {typeInfo.label}
-                </span>
-              </div>
-              {item.is_actionable && item.action_label && (
-                <div className="inbox-item-action">
-                  <span className="inbox-action-arrow">→</span>
+      {shouldVirtualize ? (
+        <div
+          ref={listRef}
+          className="inbox-items overflow-auto"
+          style={{ height: 'calc(100vh - 260px)', minHeight: '400px' }}
+        >
+          <div style={{ height: `${virtualizer.getTotalSize()}px`, position: 'relative' }}>
+            {virtualizer.getVirtualItems().map((virtualRow) => {
+              const item = filteredItems[virtualRow.index];
+              const typeInfo = TYPE_CONFIG[item.type];
+              const priInfo = PRIORITY_CONFIG[item.priority];
+              return (
+                <div
+                  key={item.id}
+                  data-index={virtualRow.index}
+                  ref={virtualizer.measureElement}
+                  className={`inbox-item ${priInfo.className} absolute w-full`}
+                  style={{ transform: `translateY(${virtualRow.start}px)` }}
+                  onClick={() => handleAction(item)}
+                  role={item.is_actionable ? 'button' : undefined}
+                  tabIndex={item.is_actionable ? 0 : undefined}
+                  onKeyDown={e => {
+                    if ((e.key === 'Enter' || e.key === ' ') && item.is_actionable) { e.preventDefault(); handleAction(item); }
+                  }}
+                >
+                  <div className="inbox-item-icon text-[var(--c)]" style={{ '--c': typeInfo.color } as CSSProperties}>
+                    {typeInfo.icon}
+                  </div>
+                  <div className="inbox-item-content">
+                    <div className="inbox-item-title">{item.title}</div>
+                    <div className="inbox-item-subtitle">{item.subtitle}</div>
+                  </div>
+                  <div className="inbox-item-meta">
+                    <span className="inbox-item-time">{formatTimestamp(item.timestamp)}</span>
+                    <span className="inbox-item-type-badge bg-[var(--bg)] text-[var(--c)]" style={{ '--bg': `${typeInfo.color}20`, '--c': typeInfo.color } as CSSProperties}>
+                      {typeInfo.label}
+                    </span>
+                  </div>
+                  {item.is_actionable && item.action_label && (
+                    <div className="inbox-item-action">
+                      <span className="inbox-action-arrow">→</span>
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
-          );
-        })}
-      </div>
+              );
+            })}
+          </div>
+        </div>
+      ) : (
+        <div className="inbox-items">
+          {filteredItems.map(item => {
+            const typeInfo = TYPE_CONFIG[item.type];
+            const priInfo = PRIORITY_CONFIG[item.priority];
+            return (
+              <div
+                key={item.id}
+                className={`inbox-item ${priInfo.className}`}
+                onClick={() => handleAction(item)}
+                role={item.is_actionable ? 'button' : undefined}
+                tabIndex={item.is_actionable ? 0 : undefined}
+                onKeyDown={e => {
+                  if ((e.key === 'Enter' || e.key === ' ') && item.is_actionable) { e.preventDefault(); handleAction(item); }
+                }}
+              >
+                <div className="inbox-item-icon text-[var(--c)]" style={{ '--c': typeInfo.color } as CSSProperties}>
+                  {typeInfo.icon}
+                </div>
+                <div className="inbox-item-content">
+                  <div className="inbox-item-title">{item.title}</div>
+                  <div className="inbox-item-subtitle">{item.subtitle}</div>
+                </div>
+                <div className="inbox-item-meta">
+                  <span className="inbox-item-time">{formatTimestamp(item.timestamp)}</span>
+                  <span className="inbox-item-type-badge bg-[var(--bg)] text-[var(--c)]" style={{ '--bg': `${typeInfo.color}20`, '--c': typeInfo.color } as CSSProperties}>
+                    {typeInfo.label}
+                  </span>
+                </div>
+                {item.is_actionable && item.action_label && (
+                  <div className="inbox-item-action">
+                    <span className="inbox-action-arrow">→</span>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }

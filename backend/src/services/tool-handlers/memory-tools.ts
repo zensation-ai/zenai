@@ -237,8 +237,8 @@ export async function handleMemoryUpdateProfile(
   logger.debug('Tool: memory_update_profile', { category, factKey, factValue });
 
   try {
-    // Always use 'personal' schema for personal_facts (identity is context-independent)
-    const _context = 'personal' as AIContext;
+    // Always use 'operations' schema for personal_facts (identity is context-independent)
+    const _context = 'operations' as AIContext;
 
     await queryContext(
       _context,
@@ -298,7 +298,7 @@ export async function handleMemoryRethink(
   try {
     // 1. Load the existing fact from DB
     const result = await queryContext(
-      context as 'personal' | 'work' | 'learning' | 'creative' | 'demo',
+      context as 'operations' | 'finance' | 'people' | 'strategy' | 'demo',
       `SELECT id, content, fact_type, confidence, metadata
        FROM personalization_facts
        WHERE id = $1 AND is_active = true LIMIT 1`,
@@ -377,7 +377,7 @@ async function synthesizeAndUpdateFact(
   // 4. Persist revised content + lineage to DB
   try {
     await queryContext(
-      context as 'personal' | 'work' | 'learning' | 'creative' | 'demo',
+      context as 'operations' | 'finance' | 'people' | 'strategy' | 'demo',
       `UPDATE personalization_facts
        SET content = $1,
            last_confirmed = NOW(),
@@ -390,7 +390,7 @@ async function synthesizeAndUpdateFact(
     logger.debug('DB rethink with metadata failed, falling back to simple update', { dbError });
     try {
       await queryContext(
-        context as 'personal' | 'work' | 'learning' | 'creative' | 'demo',
+        context as 'operations' | 'finance' | 'people' | 'strategy' | 'demo',
         `UPDATE personalization_facts
          SET content = $1,
              last_confirmed = NOW(),

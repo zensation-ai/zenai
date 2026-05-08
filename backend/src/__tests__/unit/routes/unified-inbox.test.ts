@@ -34,7 +34,7 @@ jest.mock('../../../utils/response', () => ({
 
 // Mock database-context
 jest.mock('../../../utils/database-context', () => ({
-  isValidContext: jest.fn((ctx: string) => ['personal', 'work', 'learning', 'creative'].includes(ctx)),
+  isValidContext: jest.fn((ctx: string) => ['operations', 'finance', 'people', 'strategy'].includes(ctx)),
 }));
 
 describe('Unified Inbox Routes', () => {
@@ -71,7 +71,7 @@ describe('Unified Inbox Routes', () => {
 
   describe('GET /api/:context/inbox', () => {
     it('should return unified inbox items', async () => {
-      const res = await request(app).get('/api/personal/inbox');
+      const res = await request(app).get('/api/operations/inbox');
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
       expect(res.body.data.items).toHaveLength(2);
@@ -87,9 +87,9 @@ describe('Unified Inbox Routes', () => {
     });
 
     it('should pass type filters to service', async () => {
-      await request(app).get('/api/work/inbox?types=email,task_due');
+      await request(app).get('/api/finance/inbox?types=email,task_due');
       expect(mockGetUnifiedInbox).toHaveBeenCalledWith(
-        'work',
+        'finance',
         expect.objectContaining({
           types: ['email', 'task_due'],
         })
@@ -97,30 +97,30 @@ describe('Unified Inbox Routes', () => {
     });
 
     it('should reject invalid inbox type', async () => {
-      const res = await request(app).get('/api/personal/inbox?types=invalid_type');
+      const res = await request(app).get('/api/operations/inbox?types=invalid_type');
       expect(res.status).toBe(400);
     });
 
     it('should respect limit parameter', async () => {
-      await request(app).get('/api/personal/inbox?limit=10');
+      await request(app).get('/api/operations/inbox?limit=10');
       expect(mockGetUnifiedInbox).toHaveBeenCalledWith(
-        'personal',
+        'operations',
         expect.objectContaining({ limit: 10 })
       );
     });
 
     it('should cap limit at 100', async () => {
-      await request(app).get('/api/personal/inbox?limit=999');
+      await request(app).get('/api/operations/inbox?limit=999');
       expect(mockGetUnifiedInbox).toHaveBeenCalledWith(
-        'personal',
+        'operations',
         expect.objectContaining({ limit: 100 })
       );
     });
 
     it('should default limit to 50', async () => {
-      await request(app).get('/api/personal/inbox');
+      await request(app).get('/api/operations/inbox');
       expect(mockGetUnifiedInbox).toHaveBeenCalledWith(
-        'personal',
+        'operations',
         expect.objectContaining({ limit: 50 })
       );
     });
@@ -132,7 +132,7 @@ describe('Unified Inbox Routes', () => {
 
   describe('GET /api/:context/inbox/counts', () => {
     it('should return item counts per type', async () => {
-      const res = await request(app).get('/api/personal/inbox/counts');
+      const res = await request(app).get('/api/operations/inbox/counts');
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
       expect(res.body.counts).toHaveProperty('email');

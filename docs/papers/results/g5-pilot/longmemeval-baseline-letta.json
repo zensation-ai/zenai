@@ -1,0 +1,505 @@
+{
+  "name": "letta",
+  "seeds": [
+    42
+  ],
+  "k": 5,
+  "runs": [
+    {
+      "seed": 42,
+      "wall_time_s": 6271.154822000011,
+      "per_query": [
+        {
+          "question_id": "a06e4cfe",
+          "category": "single-session-user",
+          "n_facts": 534,
+          "n_relevant": 12,
+          "precision_at_k": 1.0,
+          "recall_at_k": 0.4166666666666667,
+          "mrr": 1.0,
+          "ndcg_at_k": 1.0,
+          "retrieved_ids": [
+            "a06e4cfe::s9::t4",
+            "a06e4cfe::s9::t5",
+            "a06e4cfe::s9::t2",
+            "a06e4cfe::s9::t3",
+            "a06e4cfe::s9::t1"
+          ],
+          "latency_ms": 299.69154100399464,
+          "ingest_ms": 267243.98425000254
+        },
+        {
+          "question_id": "60d45044",
+          "category": "single-session-user",
+          "error": "InternalServerError: Error code: 500 - {'detail': 'An unknown error occurred'}"
+        },
+        {
+          "question_id": "001be529",
+          "category": "single-session-user",
+          "error": "InternalServerError: Error code: 500 - {'detail': 'An unknown error occurred'}"
+        },
+        {
+          "question_id": "36580ce8",
+          "category": "single-session-user",
+          "n_facts": 545,
+          "n_relevant": 12,
+          "precision_at_k": 0.2,
+          "recall_at_k": 0.08333333333333333,
+          "mrr": 0.25,
+          "ndcg_at_k": 0.14606834984270645,
+          "retrieved_ids": [
+            "36580ce8::s11::t9",
+            "36580ce8::s44::t6",
+            "36580ce8::s13::t0",
+            "36580ce8::s47::t4",
+            "36580ce8::s11::t10"
+          ],
+          "latency_ms": 287.54474996821955,
+          "ingest_ms": 318217.99750003265
+        },
+        {
+          "question_id": "15745da0_abs",
+          "category": "single-session-user",
+          "n_facts": 547,
+          "n_relevant": 12,
+          "precision_at_k": 1.0,
+          "recall_at_k": 0.4166666666666667,
+          "mrr": 1.0,
+          "ndcg_at_k": 1.0,
+          "retrieved_ids": [
+            "15745da0_abs::s36::t4",
+            "15745da0_abs::s36::t0",
+            "15745da0_abs::s36::t1",
+            "15745da0_abs::s36::t5",
+            "15745da0_abs::s36::t3"
+          ],
+          "latency_ms": 294.0028749871999,
+          "ingest_ms": 232598.18266599905
+        },
+        {
+          "question_id": "gpt4_7fce9456",
+          "category": "multi-session",
+          "n_facts": 493,
+          "n_relevant": 60,
+          "precision_at_k": 1.0,
+          "recall_at_k": 0.08333333333333333,
+          "mrr": 1.0,
+          "ndcg_at_k": 1.0,
+          "retrieved_ids": [
+            "gpt4_7fce9456::s22::t10",
+            "gpt4_7fce9456::s35::t2",
+            "gpt4_7fce9456::s22::t0",
+            "gpt4_7fce9456::s39::t3",
+            "gpt4_7fce9456::s28::t10"
+          ],
+          "latency_ms": 270.7457499927841,
+          "ingest_ms": 225789.96670799097
+        },
+        {
+          "question_id": "00ca467f",
+          "category": "multi-session",
+          "error": "InternalServerError: Error code: 500 - {'detail': 'An unknown error occurred'}"
+        },
+        {
+          "question_id": "gpt4_731e37d7",
+          "category": "multi-session",
+          "error": "InternalServerError: Error code: 500 - {'detail': 'An unknown error occurred'}"
+        },
+        {
+          "question_id": "bf659f65",
+          "category": "multi-session",
+          "n_facts": 516,
+          "n_relevant": 34,
+          "precision_at_k": 0.8,
+          "recall_at_k": 0.11764705882352941,
+          "mrr": 1.0,
+          "ndcg_at_k": 0.8539316501572937,
+          "retrieved_ids": [
+            "bf659f65::s3::t2",
+            "bf659f65::s3::t0",
+            "bf659f65::s3::t6",
+            "bf659f65::s17::t8",
+            "bf659f65::s3::t3"
+          ],
+          "latency_ms": 277.6213330216706,
+          "ingest_ms": 215570.10637497297
+        },
+        {
+          "question_id": "edced276_abs",
+          "category": "multi-session",
+          "n_facts": 544,
+          "n_relevant": 18,
+          "precision_at_k": 0.8,
+          "recall_at_k": 0.2222222222222222,
+          "mrr": 1.0,
+          "ndcg_at_k": 0.8539316501572937,
+          "retrieved_ids": [
+            "edced276_abs::s18::t8",
+            "edced276_abs::s18::t4",
+            "edced276_abs::s18::t0",
+            "edced276_abs::s34::t6",
+            "edced276_abs::s18::t6"
+          ],
+          "latency_ms": 277.3980830097571,
+          "ingest_ms": 148503.06912499946
+        },
+        {
+          "question_id": "6b7dfb22",
+          "category": "single-session-preference",
+          "error": "InternalServerError: Error code: 500 - {'detail': 'An unknown error occurred'}"
+        },
+        {
+          "question_id": "57f827a0",
+          "category": "single-session-preference",
+          "error": "InternalServerError: Error code: 500 - {'detail': 'An unknown error occurred'}"
+        },
+        {
+          "question_id": "75f70248",
+          "category": "single-session-preference",
+          "n_facts": 466,
+          "n_relevant": 12,
+          "precision_at_k": 0.8,
+          "recall_at_k": 0.3333333333333333,
+          "mrr": 1.0,
+          "ndcg_at_k": 0.8539316501572937,
+          "retrieved_ids": [
+            "75f70248::s25::t2",
+            "75f70248::s25::t3",
+            "75f70248::s25::t6",
+            "75f70248::s14::t6",
+            "75f70248::s25::t8"
+          ],
+          "latency_ms": 285.82316695246845,
+          "ingest_ms": 181926.68799997773
+        },
+        {
+          "question_id": "b0479f84",
+          "category": "single-session-preference",
+          "n_facts": 502,
+          "n_relevant": 12,
+          "precision_at_k": 0.6,
+          "recall_at_k": 0.25,
+          "mrr": 1.0,
+          "ndcg_at_k": 0.6992148198508501,
+          "retrieved_ids": [
+            "b0479f84::s38::t0",
+            "b0479f84::s38::t1",
+            "b0479f84::s10::t6",
+            "b0479f84::s38::t2",
+            "b0479f84::s10::t0"
+          ],
+          "latency_ms": 313.970250019338,
+          "ingest_ms": 151582.0916669909
+        },
+        {
+          "question_id": "07b6f563",
+          "category": "single-session-preference",
+          "n_facts": 524,
+          "n_relevant": 14,
+          "precision_at_k": 0.2,
+          "recall_at_k": 0.07142857142857142,
+          "mrr": 0.25,
+          "ndcg_at_k": 0.14606834984270645,
+          "retrieved_ids": [
+            "07b6f563::s35::t11",
+            "07b6f563::s27::t0",
+            "07b6f563::s35::t9",
+            "07b6f563::s40::t2",
+            "07b6f563::s35::t10"
+          ],
+          "latency_ms": 281.58312500454485,
+          "ingest_ms": 122071.4150419808
+        },
+        {
+          "question_id": "gpt4_4929293a",
+          "category": "temporal-reasoning",
+          "n_facts": 486,
+          "n_relevant": 24,
+          "precision_at_k": 1.0,
+          "recall_at_k": 0.20833333333333334,
+          "mrr": 1.0,
+          "ndcg_at_k": 1.0,
+          "retrieved_ids": [
+            "gpt4_4929293a::s27::t8",
+            "gpt4_4929293a::s16::t0",
+            "gpt4_4929293a::s27::t0",
+            "gpt4_4929293a::s27::t9",
+            "gpt4_4929293a::s27::t6"
+          ],
+          "latency_ms": 295.6537500140257,
+          "ingest_ms": 152925.89454201516
+        },
+        {
+          "question_id": "2ebe6c90",
+          "category": "temporal-reasoning",
+          "n_facts": 485,
+          "n_relevant": 22,
+          "precision_at_k": 0.4,
+          "recall_at_k": 0.09090909090909091,
+          "mrr": 1.0,
+          "ndcg_at_k": 0.5531464700081437,
+          "retrieved_ids": [
+            "2ebe6c90::s19::t8",
+            "2ebe6c90::s19::t9",
+            "2ebe6c90::s35::t20",
+            "2ebe6c90::s35::t11",
+            "2ebe6c90::s31::t11"
+          ],
+          "latency_ms": 253.5818750038743,
+          "ingest_ms": 194235.80349999247
+        },
+        {
+          "question_id": "2ebe6c92",
+          "category": "temporal-reasoning",
+          "n_facts": 487,
+          "n_relevant": 22,
+          "precision_at_k": 0.6,
+          "recall_at_k": 0.13636363636363635,
+          "mrr": 1.0,
+          "ndcg_at_k": 0.7227265726449519,
+          "retrieved_ids": [
+            "2ebe6c92::s43::t8",
+            "2ebe6c92::s43::t2",
+            "2ebe6c92::s43::t9",
+            "2ebe6c92::s37::t2",
+            "2ebe6c92::s17::t8"
+          ],
+          "latency_ms": 300.65379198640585,
+          "ingest_ms": 254361.76429199986
+        },
+        {
+          "question_id": "gpt4_59149c78",
+          "category": "temporal-reasoning",
+          "error": "InternalServerError: Error code: 500 - {'detail': 'An unknown error occurred'}"
+        },
+        {
+          "question_id": "b29f3365",
+          "category": "temporal-reasoning",
+          "n_facts": 494,
+          "n_relevant": 24,
+          "precision_at_k": 1.0,
+          "recall_at_k": 0.20833333333333334,
+          "mrr": 1.0,
+          "ndcg_at_k": 1.0,
+          "retrieved_ids": [
+            "b29f3365::s29::t1",
+            "b29f3365::s29::t6",
+            "b29f3365::s16::t2",
+            "b29f3365::s16::t7",
+            "b29f3365::s29::t7"
+          ],
+          "latency_ms": 290.96141702029854,
+          "ingest_ms": 165400.87345795473
+        },
+        {
+          "question_id": "ce6d2d27",
+          "category": "knowledge-update",
+          "n_facts": 521,
+          "n_relevant": 24,
+          "precision_at_k": 0.6,
+          "recall_at_k": 0.125,
+          "mrr": 1.0,
+          "ndcg_at_k": 0.6843515475204855,
+          "retrieved_ids": [
+            "ce6d2d27::s17::t8",
+            "ce6d2d27::s17::t0",
+            "ce6d2d27::s8::t8",
+            "ce6d2d27::s8::t9",
+            "ce6d2d27::s17::t10"
+          ],
+          "latency_ms": 298.6491249757819,
+          "ingest_ms": 181277.3669169983
+        },
+        {
+          "question_id": "affe2881",
+          "category": "knowledge-update",
+          "n_facts": 481,
+          "n_relevant": 24,
+          "precision_at_k": 1.0,
+          "recall_at_k": 0.20833333333333334,
+          "mrr": 1.0,
+          "ndcg_at_k": 1.0,
+          "retrieved_ids": [
+            "affe2881::s16::t4",
+            "affe2881::s16::t5",
+            "affe2881::s16::t6",
+            "affe2881::s24::t3",
+            "affe2881::s16::t7"
+          ],
+          "latency_ms": 288.5086669703014,
+          "ingest_ms": 150590.48233396607
+        },
+        {
+          "question_id": "50635ada",
+          "category": "knowledge-update",
+          "n_facts": 531,
+          "n_relevant": 24,
+          "precision_at_k": 1.0,
+          "recall_at_k": 0.20833333333333334,
+          "mrr": 1.0,
+          "ndcg_at_k": 1.0,
+          "retrieved_ids": [
+            "50635ada::s19::t2",
+            "50635ada::s19::t3",
+            "50635ada::s19::t4",
+            "50635ada::s42::t3",
+            "50635ada::s42::t6"
+          ],
+          "latency_ms": 287.1891249669716,
+          "ingest_ms": 173296.85812501702
+        },
+        {
+          "question_id": "f685340e",
+          "category": "knowledge-update",
+          "error": "InternalServerError: Error code: 500 - {'detail': 'An unknown error occurred'}"
+        },
+        {
+          "question_id": "cc5ded98",
+          "category": "knowledge-update",
+          "error": "InternalServerError: Error code: 500 - {'detail': 'An unknown error occurred'}"
+        },
+        {
+          "question_id": "ceb54acb",
+          "category": "single-session-assistant",
+          "n_facts": 493,
+          "n_relevant": 4,
+          "precision_at_k": 0.4,
+          "recall_at_k": 0.5,
+          "mrr": 1.0,
+          "ndcg_at_k": 0.6366824387328317,
+          "retrieved_ids": [
+            "ceb54acb::s29::t3",
+            "ceb54acb::s29::t1",
+            "ceb54acb::s30::t8",
+            "ceb54acb::s12::t10",
+            "ceb54acb::s42::t4"
+          ],
+          "latency_ms": 276.37712500290945,
+          "ingest_ms": 214349.62862497196
+        },
+        {
+          "question_id": "f523d9fe",
+          "category": "single-session-assistant",
+          "n_facts": 484,
+          "n_relevant": 22,
+          "precision_at_k": 0.8,
+          "recall_at_k": 0.18181818181818182,
+          "mrr": 1.0,
+          "ndcg_at_k": 0.830419897363192,
+          "retrieved_ids": [
+            "f523d9fe::s28::t14",
+            "f523d9fe::s28::t5",
+            "f523d9fe::s29::t4",
+            "f523d9fe::s28::t21",
+            "f523d9fe::s28::t7"
+          ],
+          "latency_ms": 295.54337495937943,
+          "ingest_ms": 158759.67829104047
+        },
+        {
+          "question_id": "8464fc84",
+          "category": "single-session-assistant",
+          "n_facts": 484,
+          "n_relevant": 12,
+          "precision_at_k": 0.8,
+          "recall_at_k": 0.3333333333333333,
+          "mrr": 1.0,
+          "ndcg_at_k": 0.830419897363192,
+          "retrieved_ids": [
+            "8464fc84::s26::t5",
+            "8464fc84::s26::t11",
+            "8464fc84::s1::t1",
+            "8464fc84::s26::t4",
+            "8464fc84::s26::t8"
+          ],
+          "latency_ms": 281.00933402311057,
+          "ingest_ms": 250895.34395799274
+        },
+        {
+          "question_id": "e8a79c70",
+          "category": "single-session-assistant",
+          "n_facts": 483,
+          "n_relevant": 8,
+          "precision_at_k": 0.6,
+          "recall_at_k": 0.375,
+          "mrr": 1.0,
+          "ndcg_at_k": 0.6164336326286644,
+          "retrieved_ids": [
+            "e8a79c70::s7::t0",
+            "e8a79c70::s13::t2",
+            "e8a79c70::s13::t3",
+            "e8a79c70::s7::t1",
+            "e8a79c70::s7::t5"
+          ],
+          "latency_ms": 282.17287495499477,
+          "ingest_ms": 115330.1017920021
+        },
+        {
+          "question_id": "4388e9dd",
+          "category": "single-session-assistant",
+          "error": "InternalServerError: Error code: 500 - {'detail': 'An unknown error occurred'}"
+        }
+      ],
+      "aggregate": {
+        "n_scored": 20,
+        "precision_at_k": 0.73,
+        "recall_at_k": 0.22851943807826164,
+        "mrr": 0.925,
+        "ndcg_at_k": 0.7713663463134803,
+        "latency_ms_mean": 286.93406669190153,
+        "f1": 0.34807680088697474,
+        "per_category_p_at_k": {
+          "single-session-user": 0.7333333333333334,
+          "multi-session": 0.8666666666666667,
+          "single-session-preference": 0.5333333333333333,
+          "temporal-reasoning": 0.75,
+          "knowledge-update": 0.8666666666666667,
+          "single-session-assistant": 0.65
+        }
+      }
+    }
+  ],
+  "error": null,
+  "aggregate": {
+    "precision_at_k": {
+      "mean": 0.73,
+      "ci_low": 0.73,
+      "ci_high": 0.73,
+      "per_seed": [
+        0.73
+      ]
+    },
+    "recall_at_k": {
+      "mean": 0.22851943807826164,
+      "ci_low": 0.22851943807826164,
+      "ci_high": 0.22851943807826164,
+      "per_seed": [
+        0.22851943807826164
+      ]
+    },
+    "mrr": {
+      "mean": 0.925,
+      "ci_low": 0.925,
+      "ci_high": 0.925,
+      "per_seed": [
+        0.925
+      ]
+    },
+    "ndcg_at_k": {
+      "mean": 0.7713663463134803,
+      "ci_low": 0.7713663463134803,
+      "ci_high": 0.7713663463134803,
+      "per_seed": [
+        0.7713663463134803
+      ]
+    },
+    "f1": {
+      "mean": 0.34807680088697474,
+      "ci_low": 0.34807680088697474,
+      "ci_high": 0.34807680088697474,
+      "per_seed": [
+        0.34807680088697474
+      ]
+    }
+  }
+}

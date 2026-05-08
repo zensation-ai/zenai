@@ -87,7 +87,7 @@ export const pageTransition: Transition = {
 };
 
 export const pageExitTransition: Transition = {
-  duration: durations.fast,
+  duration: 0.12,
   ease: 'easeOut',
 };
 

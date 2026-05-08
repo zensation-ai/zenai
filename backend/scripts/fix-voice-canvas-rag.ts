@@ -14,7 +14,7 @@ const pool = new Pool({
   ssl: { rejectUnauthorized: false }
 });
 
-const SCHEMAS = ['personal', 'work', 'learning', 'creative'];
+const SCHEMAS = ['operations', 'finance', 'people', 'strategy'];
 const DEFAULT_USER = '00000000-0000-0000-0000-000000000001';
 
 async function run() {

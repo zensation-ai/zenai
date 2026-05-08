@@ -43,7 +43,7 @@ jest.mock('../../services/tasks', () => ({
 
 jest.mock('../../utils/database-context', () => ({
   queryContext: jest.fn().mockResolvedValue({ rows: [] }),
-  isValidContext: jest.fn((ctx: string) => ['personal', 'work', 'learning', 'creative'].includes(ctx)),
+  isValidContext: jest.fn((ctx: string) => ['operations', 'finance', 'people', 'strategy'].includes(ctx)),
   isValidUUID: jest.fn((id: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id)),
   AIContext: {},
 }));
@@ -64,7 +64,7 @@ jest.mock('../../utils/user-context', () => ({
 jest.mock('../../utils/validation', () => ({
   isValidUUID: jest.fn((id: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id)),
   validateContextParam: jest.fn((ctx: string) => {
-    if (!['personal', 'work', 'learning', 'creative'].includes(ctx)) {
+    if (!['operations', 'finance', 'people', 'strategy'].includes(ctx)) {
       throw new Error(`Invalid context: ${ctx}`);
     }
     return ctx;
@@ -133,24 +133,24 @@ describe('Task Lifecycle Integration Tests', () => {
   });
 
   describe('Create Task', () => {
-    it('should create a task in personal context', async () => {
+    it('should create a task in operations context', async () => {
       mockCreateTask.mockResolvedValue(mockTask);
 
       const res = await request(app)
-        .post('/api/personal/tasks')
+        .post('/api/operations/tasks')
         .send({ title: 'Test Task', priority: 'medium' });
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
       expect(mockCreateTask).toHaveBeenCalledWith(
-        'personal',
+        'operations',
         expect.objectContaining({ title: 'Test Task' }),
         TEST_USER_ID
       );
     });
 
     it('should create tasks across all contexts', async () => {
-      for (const ctx of ['personal', 'work', 'learning', 'creative']) {
+      for (const ctx of ['operations', 'finance', 'people', 'strategy']) {
         mockCreateTask.mockResolvedValue({ ...mockTask, context: ctx });
 
         const res = await request(app)
@@ -170,11 +170,11 @@ describe('Task Lifecycle Integration Tests', () => {
       mockCreateTask.mockResolvedValue(mockTask);
 
       await request(app)
-        .post('/api/personal/tasks')
+        .post('/api/operations/tasks')
         .send({ title: 'User Task' });
 
       expect(mockCreateTask).toHaveBeenCalledWith(
-        'personal',
+        'operations',
         expect.any(Object),
         TEST_USER_ID
       );
@@ -186,12 +186,12 @@ describe('Task Lifecycle Integration Tests', () => {
       mockUpdateTask.mockResolvedValue({ ...mockTask, status: 'in_progress' });
 
       const res = await request(app)
-        .put(`/api/personal/tasks/${TEST_TASK_ID}`)
+        .put(`/api/operations/tasks/${TEST_TASK_ID}`)
         .send({ status: 'in_progress' });
 
       expect(res.status).toBe(200);
       expect(mockUpdateTask).toHaveBeenCalledWith(
-        'personal',
+        'operations',
         TEST_TASK_ID,
         expect.objectContaining({ status: 'in_progress' }),
         TEST_USER_ID
@@ -202,7 +202,7 @@ describe('Task Lifecycle Integration Tests', () => {
       mockUpdateTask.mockResolvedValue({ ...mockTask, status: 'done' });
 
       const res = await request(app)
-        .put(`/api/personal/tasks/${TEST_TASK_ID}`)
+        .put(`/api/operations/tasks/${TEST_TASK_ID}`)
         .send({ status: 'done' });
 
       expect(res.status).toBe(200);
@@ -214,12 +214,12 @@ describe('Task Lifecycle Integration Tests', () => {
       mockUpdateTask.mockResolvedValue({ ...mockTask, project_id: TEST_PROJECT_ID });
 
       const res = await request(app)
-        .put(`/api/personal/tasks/${TEST_TASK_ID}`)
+        .put(`/api/operations/tasks/${TEST_TASK_ID}`)
         .send({ project_id: TEST_PROJECT_ID });
 
       expect(res.status).toBe(200);
       expect(mockUpdateTask).toHaveBeenCalledWith(
-        'personal',
+        'operations',
         TEST_TASK_ID,
         expect.objectContaining({ project_id: TEST_PROJECT_ID }),
         TEST_USER_ID
@@ -232,11 +232,11 @@ describe('Task Lifecycle Integration Tests', () => {
       mockDeleteTask.mockResolvedValue(true);
 
       const res = await request(app)
-        .delete(`/api/personal/tasks/${TEST_TASK_ID}`);
+        .delete(`/api/operations/tasks/${TEST_TASK_ID}`);
 
       expect([200, 204]).toContain(res.status);
       expect(mockDeleteTask).toHaveBeenCalledWith(
-        'personal',
+        'operations',
         TEST_TASK_ID,
         TEST_USER_ID
       );
@@ -253,12 +253,12 @@ describe('Task Lifecycle Integration Tests', () => {
       ];
 
       const res = await request(app)
-        .post('/api/personal/tasks/reorder')
+        .post('/api/operations/tasks/reorder')
         .send({ status: 'todo', taskIds });
 
       expect(res.status).toBe(200);
       expect(mockReorderTasks).toHaveBeenCalledWith(
-        'personal',
+        'operations',
         'todo',
         taskIds,
         TEST_USER_ID
@@ -267,7 +267,7 @@ describe('Task Lifecycle Integration Tests', () => {
 
     it('should reject reorder with invalid status', async () => {
       const res = await request(app)
-        .post('/api/personal/tasks/reorder')
+        .post('/api/operations/tasks/reorder')
         .send({ status: 'invalid', taskIds: ['11111111-1111-1111-a111-111111111111'] });
 
       expect([400, 422]).toContain(res.status);
@@ -275,7 +275,7 @@ describe('Task Lifecycle Integration Tests', () => {
 
     it('should reject reorder with empty taskIds', async () => {
       const res = await request(app)
-        .post('/api/personal/tasks/reorder')
+        .post('/api/operations/tasks/reorder')
         .send({ status: 'todo', taskIds: [] });
 
       expect([400, 422]).toContain(res.status);
@@ -291,7 +291,7 @@ describe('Task Lifecycle Integration Tests', () => {
       });
 
       const res = await request(app)
-        .get('/api/personal/tasks/gantt');
+        .get('/api/operations/tasks/gantt');
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
@@ -302,24 +302,24 @@ describe('Task Lifecycle Integration Tests', () => {
     it('should always pass user_id to service functions', async () => {
       // Create
       mockCreateTask.mockResolvedValue(mockTask);
-      await request(app).post('/api/personal/tasks').send({ title: 'Test' });
-      expect(mockCreateTask).toHaveBeenCalledWith('personal', expect.any(Object), TEST_USER_ID);
+      await request(app).post('/api/operations/tasks').send({ title: 'Test' });
+      expect(mockCreateTask).toHaveBeenCalledWith('operations', expect.any(Object), TEST_USER_ID);
 
       // Update
       mockUpdateTask.mockResolvedValue(mockTask);
-      await request(app).put(`/api/personal/tasks/${TEST_TASK_ID}`).send({ title: 'Updated' });
-      expect(mockUpdateTask).toHaveBeenCalledWith('personal', TEST_TASK_ID, expect.any(Object), TEST_USER_ID);
+      await request(app).put(`/api/operations/tasks/${TEST_TASK_ID}`).send({ title: 'Updated' });
+      expect(mockUpdateTask).toHaveBeenCalledWith('operations', TEST_TASK_ID, expect.any(Object), TEST_USER_ID);
 
       // Delete
       mockDeleteTask.mockResolvedValue(true);
-      await request(app).delete(`/api/personal/tasks/${TEST_TASK_ID}`);
-      expect(mockDeleteTask).toHaveBeenCalledWith('personal', TEST_TASK_ID, TEST_USER_ID);
+      await request(app).delete(`/api/operations/tasks/${TEST_TASK_ID}`);
+      expect(mockDeleteTask).toHaveBeenCalledWith('operations', TEST_TASK_ID, TEST_USER_ID);
 
       // List gantt
       mockGetTasksForGantt.mockResolvedValue({ tasks: [], dependencies: [], projects: [] });
-      await request(app).get('/api/personal/tasks/gantt');
+      await request(app).get('/api/operations/tasks/gantt');
       // When no project_id filter, the route passes undefined as the filter arg
-      expect(mockGetTasksForGantt).toHaveBeenCalledWith('personal', undefined, TEST_USER_ID);
+      expect(mockGetTasksForGantt).toHaveBeenCalledWith('operations', undefined, TEST_USER_ID);
     });
   });
 });

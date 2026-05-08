@@ -1,7 +1,5 @@
 import { useState } from 'react';
 import axios from 'axios';
-import './DemoPage.css';
-
 interface DemoPageProps {
   onDemoStart: () => void;
   onNavigateToAuth: () => void;
@@ -10,13 +8,13 @@ interface DemoPageProps {
 const FEATURES = [
   {
     icon: '🧠',
-    title: '4-Layer Memory',
-    description: 'KI die sich erinnert und dazulernt',
+    title: '7-Layer Memory',
+    description: 'Neurowissenschaftlich fundierte Architektur, die sich erinnert und vergisst',
   },
   {
     icon: '🛠️',
-    title: '55 AI Tools',
-    description: 'Von Recherche bis Code-Ausführung',
+    title: '60+ AI Tools',
+    description: 'Von Recherche über Code-Ausführung bis Vision',
   },
   {
     icon: '🕸️',

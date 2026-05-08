@@ -14,7 +14,7 @@ import { globalSearch } from '../../../services/global-search';
 jest.mock('../../../utils/database-context', () => ({
   queryContext: jest.fn(),
   isValidContext: (ctx: string) =>
-    ['personal', 'work', 'learning', 'creative'].includes(ctx),
+    ['operations', 'finance', 'people', 'strategy'].includes(ctx),
 }));
 
 jest.mock('../../../utils/logger', () => ({
@@ -65,7 +65,7 @@ describe('GlobalSearchService', () => {
       await globalSearch.search({
         query: 'test query',
         types: ['idea'],
-        contexts: ['personal'],
+        contexts: ['operations'],
       });
 
       // Only 1 context x 1 type = 1 query
@@ -79,12 +79,12 @@ describe('GlobalSearchService', () => {
 
       await globalSearch.search({
         query: 'test',
-        contexts: ['work'],
+        contexts: ['finance'],
         types: ['meeting'],
       });
 
       expect(mockQueryContext).toHaveBeenCalledTimes(1);
-      expect(mockQueryContext).toHaveBeenCalledWith('work', expect.any(String), expect.any(Array));
+      expect(mockQueryContext).toHaveBeenCalledWith('finance', expect.any(String), expect.any(Array));
     });
 
     it('should return and sort results by score', async () => {
@@ -115,7 +115,7 @@ describe('GlobalSearchService', () => {
       const result = await globalSearch.search({
         query: 'test',
         types: ['idea', 'meeting'],
-        contexts: ['personal'],
+        contexts: ['operations'],
       });
 
       expect(result.totalResults).toBe(2);
@@ -144,7 +144,7 @@ describe('GlobalSearchService', () => {
       const result = await globalSearch.search({
         query: 'dup',
         types: ['idea'],
-        contexts: ['personal', 'work'],
+        contexts: ['operations', 'finance'],
       });
 
       expect(result.totalResults).toBe(1);
@@ -167,7 +167,7 @@ describe('GlobalSearchService', () => {
       const result = await globalSearch.search({
         query: 'test query',
         types: ['idea'],
-        contexts: ['personal'],
+        contexts: ['operations'],
         limit: 100, // Over max
       });
 
@@ -180,7 +180,7 @@ describe('GlobalSearchService', () => {
       await globalSearch.search({
         query: 'test',
         types: ['fact'],
-        contexts: ['personal'],
+        contexts: ['operations'],
         includeMemory: false,
       });
 
@@ -197,7 +197,7 @@ describe('GlobalSearchService', () => {
       const result = await globalSearch.search({
         query: 'test',
         types: ['idea', 'document'],
-        contexts: ['personal'],
+        contexts: ['operations'],
       });
 
       // Should still return the successful idea result
@@ -211,7 +211,7 @@ describe('GlobalSearchService', () => {
       const result = await globalSearch.search({
         query: 'test',
         types: ['idea'],
-        contexts: ['personal'],
+        contexts: ['operations'],
       });
 
       expect(result.timing.totalMs).toBeGreaterThanOrEqual(0);
@@ -224,12 +224,179 @@ describe('GlobalSearchService', () => {
       await globalSearch.search({
         query: '50% discount',
         types: ['idea'],
-        contexts: ['personal'],
+        contexts: ['operations'],
       });
 
       const params = mockQueryContext.mock.calls[0][2] as string[];
       // The search pattern should have the % stripped from original query
       expect(params[1]).toBe('%50 discount%');
+    });
+
+    it('should search chat history including both user and assistant messages', async () => {
+      const chatRows = [
+        {
+          id: 'msg-1',
+          content: 'Wie funktioniert React?',
+          role: 'user',
+          session_id: 'sess-1',
+          session_title: 'React Chat',
+          created_at: new Date('2026-03-20'),
+          score: 0.7,
+        },
+        {
+          id: 'msg-2',
+          content: 'React ist eine JavaScript-Bibliothek fuer User Interfaces...',
+          role: 'assistant',
+          session_id: 'sess-2',
+          session_title: 'React Erklaerung',
+          created_at: new Date('2026-03-20'),
+          score: 0.7,
+        },
+      ];
+
+      mockQueryContext.mockResolvedValue({ rows: chatRows, rowCount: 2 } as any);
+
+      const result = await globalSearch.search({
+        query: 'React',
+        types: ['chat'],
+        contexts: ['operations'],
+      });
+
+      // Should return results from both sessions (different session_ids avoid dedup)
+      expect(result.totalResults).toBe(2);
+
+      // Verify the SQL does NOT filter by role = 'user' (both roles are searched)
+      const sql = mockQueryContext.mock.calls[0][1] as string;
+      expect(sql).not.toContain("m.role = 'user'");
+      expect(sql).toContain('FROM general_chat_messages');
+    });
+
+    it('should search contacts via global search', async () => {
+      const contactRow = {
+        id: 'contact-1',
+        display_name: 'Max Mustermann',
+        email: ['max@example.com'],
+        role: 'Developer',
+        organization_id: null,
+        relationship_type: 'colleague',
+        ai_summary: 'Frontend developer at Acme Corp',
+        created_at: new Date('2026-03-20'),
+        score: 0.9,
+      };
+
+      mockQueryContext.mockResolvedValue({ rows: [contactRow], rowCount: 1 } as any);
+
+      const result = await globalSearch.search({
+        query: 'Max',
+        types: ['contact'],
+        contexts: ['operations'],
+      });
+
+      expect(result.totalResults).toBe(1);
+      expect(result.results[0].type).toBe('contact');
+      expect(result.results[0].title).toBe('Max Mustermann');
+    });
+
+    it('should search emails via global search', async () => {
+      const emailRow = {
+        id: 'email-1',
+        subject: 'Project Update Q1',
+        from_address: 'boss@company.com',
+        to_addresses: ['me@company.com'],
+        ai_summary: 'Q1 results exceeded expectations',
+        direction: 'inbound',
+        status: 'read',
+        created_at: new Date('2026-03-20'),
+        score: 0.85,
+      };
+
+      mockQueryContext.mockResolvedValue({ rows: [emailRow], rowCount: 1 } as any);
+
+      const result = await globalSearch.search({
+        query: 'Project Update',
+        types: ['email'],
+        contexts: ['finance'],
+      });
+
+      expect(result.totalResults).toBe(1);
+      expect(result.results[0].type).toBe('email');
+      expect(result.results[0].title).toBe('Project Update Q1');
+    });
+
+    it('should search calendar events via global search', async () => {
+      const calendarRow = {
+        id: 'cal-1',
+        title: 'Team Standup',
+        description: 'Daily sync meeting',
+        location: 'Zoom',
+        start_time: new Date('2026-03-21T09:00:00'),
+        end_time: new Date('2026-03-21T09:30:00'),
+        created_at: new Date('2026-03-20'),
+        score: 0.85,
+      };
+
+      mockQueryContext.mockResolvedValue({ rows: [calendarRow], rowCount: 1 } as any);
+
+      const result = await globalSearch.search({
+        query: 'Standup',
+        types: ['calendar_event'],
+        contexts: ['finance'],
+      });
+
+      expect(result.totalResults).toBe(1);
+      expect(result.results[0].type).toBe('calendar_event');
+      expect(result.results[0].title).toBe('Team Standup');
+    });
+
+    it('should search across multiple types simultaneously', async () => {
+      const ideaRow = {
+        id: 'idea-multi',
+        title: 'Budget Planning',
+        summary: 'Annual budget',
+        type: 'idea',
+        category: null,
+        priority: 'high',
+        created_at: new Date(),
+        score: 0.9,
+      };
+      const emailRow = {
+        id: 'email-multi',
+        subject: 'Budget Review',
+        from_address: 'cfo@company.com',
+        to_addresses: [],
+        ai_summary: 'Budget review needed',
+        direction: 'inbound',
+        status: 'unread',
+        created_at: new Date(),
+        score: 0.85,
+      };
+      const transRow = {
+        id: 'trans-1',
+        description: 'Budget allocation',
+        amount: 5000,
+        type: 'expense',
+        category: 'Operations',
+        account_id: 'acc-1',
+        transaction_date: new Date(),
+        created_at: new Date(),
+        score: 0.6,
+      };
+
+      mockQueryContext
+        .mockResolvedValueOnce({ rows: [ideaRow], rowCount: 1 } as any)
+        .mockResolvedValueOnce({ rows: [emailRow], rowCount: 1 } as any)
+        .mockResolvedValueOnce({ rows: [transRow], rowCount: 1 } as any);
+
+      const result = await globalSearch.search({
+        query: 'Budget',
+        types: ['idea', 'email', 'transaction'],
+        contexts: ['finance'],
+      });
+
+      expect(result.totalResults).toBe(3);
+      // Sorted by score descending
+      expect(result.results[0].score).toBeGreaterThanOrEqual(result.results[1].score);
+      expect(result.results[1].score).toBeGreaterThanOrEqual(result.results[2].score);
     });
   });
 });

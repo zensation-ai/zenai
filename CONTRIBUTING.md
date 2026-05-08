@@ -16,7 +16,7 @@ Thank you for your interest in contributing to ZenAI!
 ### Backend
 ```bash
 cd backend && npm run dev    # Start dev server (port 3000)
-cd backend && npm test       # Run tests (10,141 tests)
+cd backend && npm test       # Run tests (10,141+ tests)
 cd backend && npm run build  # TypeScript build
 ```
 
@@ -34,7 +34,7 @@ cd frontend && npm run build   # Production build
 - Run `npm run build` before committing (must pass with 0 errors)
 - Use `asyncHandler` wrapper for all Express routes
 - Use `queryContext(context, sql, params)` for database queries (not raw pool.query)
-- 4 DB contexts: `personal`, `work`, `learning`, `creative`
+- 4 DB contexts: `operations`, `finance`, `people`, `strategy`
 
 ## Pull Requests
 

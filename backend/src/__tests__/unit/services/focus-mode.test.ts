@@ -7,7 +7,7 @@ import { queryContext } from '../../../utils/database-context';
 jest.mock('../../../utils/database-context', () => ({
   queryContext: jest.fn(),
   isValidContext: jest.fn((ctx: string) =>
-    ['personal', 'work', 'learning', 'creative'].includes(ctx),
+    ['operations', 'finance', 'people', 'strategy'].includes(ctx),
   ),
 }));
 
@@ -65,7 +65,7 @@ describe('startFocusMode', () => {
       rows: [makeFocusRow()],
     } as any); // insert
 
-    const session = await startFocusMode('personal', 'user-1', 25);
+    const session = await startFocusMode('operations', 'user-1', 25);
 
     expect(session.id).toBe('session-1');
     expect(session.status).toBe('active');
@@ -73,13 +73,13 @@ describe('startFocusMode', () => {
     expect(mockQueryContext).toHaveBeenCalledTimes(2);
     expect(mockQueryContext).toHaveBeenNthCalledWith(
       1,
-      'personal',
+      'operations',
       expect.stringContaining('UPDATE focus_sessions'),
       ['user-1'],
     );
     expect(mockQueryContext).toHaveBeenNthCalledWith(
       2,
-      'personal',
+      'operations',
       expect.stringContaining('INSERT INTO focus_sessions'),
       expect.arrayContaining(['mock-uuid-1234', 'user-1']),
     );
@@ -91,12 +91,12 @@ describe('startFocusMode', () => {
       rows: [makeFocusRow({ active_task_id: 'task-99' })],
     } as any);
 
-    const session = await startFocusMode('personal', 'user-1', 30, 'task-99');
+    const session = await startFocusMode('operations', 'user-1', 30, 'task-99');
 
     expect(session.active_task_id).toBe('task-99');
     expect(mockQueryContext).toHaveBeenNthCalledWith(
       2,
-      'personal',
+      'operations',
       expect.stringContaining('INSERT INTO focus_sessions'),
       expect.arrayContaining(['task-99']),
     );
@@ -108,14 +108,14 @@ describe('startFocusMode', () => {
       rows: [makeFocusRow()],
     } as any);
 
-    await startFocusMode('personal', 'user-1', 25);
+    await startFocusMode('operations', 'user-1', 25);
 
     const insertArgs = mockQueryContext.mock.calls[1][2] as unknown[];
     expect(insertArgs[insertArgs.length - 1]).toBeNull();
   });
 
   it('should work with all valid contexts', async () => {
-    for (const ctx of ['personal', 'work', 'learning', 'creative'] as const) {
+    for (const ctx of ['operations', 'finance', 'people', 'strategy'] as const) {
       mockQueryContext.mockReset();
       mockQueryContext.mockResolvedValueOnce({ rows: [] } as any);
       mockQueryContext.mockResolvedValueOnce({ rows: [makeFocusRow()] } as any);
@@ -129,7 +129,7 @@ describe('startFocusMode', () => {
   it('should propagate database errors', async () => {
     mockQueryContext.mockRejectedValueOnce(new Error('DB connection failed'));
 
-    await expect(startFocusMode('personal', 'user-1', 25)).rejects.toThrow('DB connection failed');
+    await expect(startFocusMode('operations', 'user-1', 25)).rejects.toThrow('DB connection failed');
   });
 
   it('should map row fields correctly including null ends_at', async () => {
@@ -138,7 +138,7 @@ describe('startFocusMode', () => {
       rows: [makeFocusRow({ ends_at: null })],
     } as any);
 
-    const session = await startFocusMode('personal', 'user-1', 25);
+    const session = await startFocusMode('operations', 'user-1', 25);
     expect(session.ends_at).toBeNull();
   });
 });
@@ -156,7 +156,7 @@ describe('endFocusMode', () => {
   it('should return null when no active session exists', async () => {
     mockQueryContext.mockResolvedValueOnce({ rows: [] } as any);
 
-    const result = await endFocusMode('personal', 'user-1');
+    const result = await endFocusMode('operations', 'user-1');
     expect(result).toBeNull();
   });
 
@@ -165,7 +165,7 @@ describe('endFocusMode', () => {
       rows: [makeFocusRow({ status: 'completed' })],
     } as any);
 
-    const result = await endFocusMode('personal', 'user-1');
+    const result = await endFocusMode('operations', 'user-1');
     expect(result).not.toBeNull();
     expect(result!.status).toBe('completed');
     expect(result!.id).toBe('session-1');
@@ -176,10 +176,10 @@ describe('endFocusMode', () => {
       rows: [makeFocusRow({ status: 'completed' })],
     } as any);
 
-    await endFocusMode('work', 'user-42');
+    await endFocusMode('finance', 'user-42');
 
     expect(mockQueryContext).toHaveBeenCalledWith(
-      'work',
+      'finance',
       expect.stringContaining("SET status = 'completed'"),
       ['user-42'],
     );
@@ -188,7 +188,7 @@ describe('endFocusMode', () => {
   it('should propagate database errors', async () => {
     mockQueryContext.mockRejectedValueOnce(new Error('Connection lost'));
 
-    await expect(endFocusMode('personal', 'user-1')).rejects.toThrow('Connection lost');
+    await expect(endFocusMode('operations', 'user-1')).rejects.toThrow('Connection lost');
   });
 });
 
@@ -206,7 +206,7 @@ describe('getFocusStatus', () => {
     mockQueryContext.mockResolvedValueOnce({ rows: [] } as any); // auto-complete
     mockQueryContext.mockResolvedValueOnce({ rows: [] } as any); // select active
 
-    const status = await getFocusStatus('personal', 'user-1');
+    const status = await getFocusStatus('operations', 'user-1');
 
     expect(status.active).toBe(false);
     expect(status.session).toBeNull();
@@ -217,12 +217,12 @@ describe('getFocusStatus', () => {
     mockQueryContext.mockResolvedValueOnce({ rows: [] } as any);
     mockQueryContext.mockResolvedValueOnce({ rows: [] } as any);
 
-    await getFocusStatus('personal', 'user-1');
+    await getFocusStatus('operations', 'user-1');
 
     expect(mockQueryContext).toHaveBeenCalledTimes(2);
     expect(mockQueryContext).toHaveBeenNthCalledWith(
       1,
-      'personal',
+      'operations',
       expect.stringContaining('SET status'),
       ['user-1'],
     );
@@ -236,7 +236,7 @@ describe('getFocusStatus', () => {
       rows: [makeFocusRow({ ends_at: futureTime })],
     } as any);
 
-    const status = await getFocusStatus('personal', 'user-1');
+    const status = await getFocusStatus('operations', 'user-1');
 
     expect(status.active).toBe(true);
     expect(status.session).not.toBeNull();
@@ -250,7 +250,7 @@ describe('getFocusStatus', () => {
       rows: [makeFocusRow({ ends_at: null })],
     } as any);
 
-    const status = await getFocusStatus('personal', 'user-1');
+    const status = await getFocusStatus('operations', 'user-1');
 
     expect(status.active).toBe(true);
     expect(status.remainingMinutes).toBe(0);
@@ -264,7 +264,7 @@ describe('getFocusStatus', () => {
       rows: [makeFocusRow({ ends_at: pastTime })],
     } as any);
 
-    const status = await getFocusStatus('personal', 'user-1');
+    const status = await getFocusStatus('operations', 'user-1');
 
     expect(status.remainingMinutes).toBe(0);
   });
@@ -272,7 +272,7 @@ describe('getFocusStatus', () => {
   it('should propagate database errors', async () => {
     mockQueryContext.mockRejectedValueOnce(new Error('DB error'));
 
-    await expect(getFocusStatus('personal', 'user-1')).rejects.toThrow('DB error');
+    await expect(getFocusStatus('operations', 'user-1')).rejects.toThrow('DB error');
   });
 });
 
@@ -289,7 +289,7 @@ describe('getFocusHistory', () => {
   it('should return empty array when no history', async () => {
     mockQueryContext.mockResolvedValueOnce({ rows: [] } as any);
 
-    const result = await getFocusHistory('personal', 'user-1');
+    const result = await getFocusHistory('operations', 'user-1');
     expect(result).toEqual([]);
   });
 
@@ -301,7 +301,7 @@ describe('getFocusHistory', () => {
       ],
     } as any);
 
-    const sessions = await getFocusHistory('personal', 'user-1', 7);
+    const sessions = await getFocusHistory('operations', 'user-1', 7);
 
     expect(sessions).toHaveLength(2);
     expect(sessions[0].id).toBe('s1');
@@ -314,10 +314,10 @@ describe('getFocusHistory', () => {
   it('should use default days value of 7', async () => {
     mockQueryContext.mockResolvedValueOnce({ rows: [] } as any);
 
-    await getFocusHistory('personal', 'user-1');
+    await getFocusHistory('operations', 'user-1');
 
     expect(mockQueryContext).toHaveBeenCalledWith(
-      'personal',
+      'operations',
       expect.any(String),
       ['user-1', '7'],
     );
@@ -326,17 +326,17 @@ describe('getFocusHistory', () => {
   it('should pass custom days parameter', async () => {
     mockQueryContext.mockResolvedValueOnce({ rows: [] } as any);
 
-    await getFocusHistory('personal', 'user-1', 30);
+    await getFocusHistory('operations', 'user-1', 30);
 
     expect(mockQueryContext).toHaveBeenCalledWith(
-      'personal',
+      'operations',
       expect.any(String),
       ['user-1', '30'],
     );
   });
 
   it('should work with all valid contexts', async () => {
-    for (const ctx of ['personal', 'work', 'learning', 'creative'] as const) {
+    for (const ctx of ['operations', 'finance', 'people', 'strategy'] as const) {
       mockQueryContext.mockReset();
       mockQueryContext.mockResolvedValueOnce({ rows: [] } as any);
 
@@ -348,6 +348,6 @@ describe('getFocusHistory', () => {
   it('should propagate database errors', async () => {
     mockQueryContext.mockRejectedValueOnce(new Error('Query timeout'));
 
-    await expect(getFocusHistory('personal', 'user-1')).rejects.toThrow('Query timeout');
+    await expect(getFocusHistory('operations', 'user-1')).rejects.toThrow('Query timeout');
   });
 });

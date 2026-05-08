@@ -9,11 +9,17 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { FileText } from 'lucide-react';
 import axios from 'axios';
 import { logError } from '../../utils/errors';
+import { showToast } from '../Toast';
 import { useEscapeKey } from '../../hooks/useClickOutside';
 import { useNavigate } from 'react-router-dom';
 import { DocumentUpload } from '../DocumentUpload';
 import { DocumentCard } from '../DocumentCard';
 import { DocumentDetailModal } from '../DocumentDetailModal';
+import { SmartPageSkeleton } from '../skeletons/PageSkeletons';
+import { QueryErrorState } from '../QueryErrorState';
+import { EmptyState } from '@/components/ui/empty-state';
+import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 import {
   Document,
   DocumentFilters,
@@ -22,7 +28,6 @@ import {
 } from '../../types/document';
 import { FolderSidebar } from './FolderSidebar';
 import { BatchActionBar } from './BatchActionBar';
-import '../DocumentVaultPage.css';
 import type { Folder } from '../../types/document';
 import type { ViewMode } from './types';
 import type { AIContext } from '../ContextSwitcher';
@@ -65,10 +70,16 @@ export function DocumentVaultContent({ context }: DocumentVaultContentProps) {
 
   // Pagination
   const [hasMore, setHasMore] = useState(false);
-  const [, setTotal] = useState(0);
 
   // Debounce timer for search
   const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Cleanup debounce timer on unmount
+  useEffect(() => {
+    return () => {
+      if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
+    };
+  }, []);
 
   // Fetch documents (append=true for load-more pagination)
   const fetchDocuments = useCallback(async (currentFilters: DocumentFilters, append = false) => {
@@ -92,7 +103,6 @@ export function DocumentVaultContent({ context }: DocumentVaultContentProps) {
       if (result.success) {
         setDocuments(prev => append ? [...prev, ...result.data] : result.data);
         setHasMore(result.pagination.hasMore);
-        setTotal(result.pagination.total);
       } else {
         throw new Error(result.error?.message || 'Fehler beim Laden');
       }
@@ -228,8 +238,8 @@ export function DocumentVaultContent({ context }: DocumentVaultContentProps) {
         if (result.success) {
           setDocuments(result.data.map((r: Record<string, unknown>) => ({
             id: r.id,
-            title: r.title || r.originalFilename || 'Untitled',
-            originalFilename: r.originalFilename || r.title || 'Untitled',
+            title: r.title || r.originalFilename || 'Ohne Titel',
+            originalFilename: r.originalFilename || r.title || 'Ohne Titel',
             summary: r.summary || '',
             mimeType: r.mimeType || 'application/octet-stream',
             fileSize: r.fileSize || 0,
@@ -244,7 +254,6 @@ export function DocumentVaultContent({ context }: DocumentVaultContentProps) {
             updatedAt: r.updatedAt || r.updated_at || new Date().toISOString(),
             similarity: r.similarity,
           })));
-          setTotal(result.data.length);
           setHasMore(false);
         }
       } catch (err) {
@@ -269,11 +278,11 @@ export function DocumentVaultContent({ context }: DocumentVaultContentProps) {
       const response = await axios.delete(`/api/${context}/documents/${id}`);
       if (response.data.success) {
         setDocuments(prev => prev.filter(d => d.id !== id));
-        setTotal(prev => prev - 1);
         fetchStats();
       }
     } catch (err) {
       logError('DocumentVault.delete', err);
+      showToast('Dokument konnte nicht gelöscht werden', 'error');
     }
   }, [context, fetchStats]);
 
@@ -288,6 +297,7 @@ export function DocumentVaultContent({ context }: DocumentVaultContentProps) {
       }
     } catch (err) {
       logError('DocumentVault.toggleFavorite', err);
+      showToast('Favorit konnte nicht geändert werden', 'error');
     }
   }, [context]);
 
@@ -329,6 +339,7 @@ export function DocumentVaultContent({ context }: DocumentVaultContentProps) {
       }
     } catch (err) {
       logError('DocumentVault.batchDelete', err);
+      showToast('Dokumente konnten nicht gelöscht werden', 'error');
     }
   }, [context, selectedDocuments, fetchStats]);
 
@@ -348,6 +359,7 @@ export function DocumentVaultContent({ context }: DocumentVaultContentProps) {
       }
     } catch (err) {
       logError('DocumentVault.batchMove', err);
+      showToast('Verschieben fehlgeschlagen', 'error');
     }
   }, [context, selectedDocuments, fetchDocuments, filters, fetchFolders]);
 
@@ -361,13 +373,13 @@ export function DocumentVaultContent({ context }: DocumentVaultContentProps) {
   }, [hasMore, loading, filters, fetchDocuments]);
 
   return (
-    <div className="document-vault-content">
+    <div className="flex flex-col h-full bg-bg text-text relative overflow-hidden">
       {/* Toolbar */}
-      <header className="vault-toolbar">
-        <div className="header-left">
+      <div role="toolbar" aria-label="Dokumenten-Werkzeuge" className="flex items-center justify-between px-6 py-4 bg-glass-bg border-b border-glass-border shrink-0 max-md:flex-col max-md:gap-4 max-md:px-4 max-[480px]:px-3 max-[480px]:gap-3">
+        <div className="flex items-center gap-4 max-md:w-full max-md:justify-between">
           <button
             type="button"
-            className="mobile-folder-toggle"
+            className="hidden max-md:flex items-center justify-center w-10 h-10 bg-glass-bg border border-glass-border rounded-sm text-text text-xl cursor-pointer transition-all hover:bg-surface-hover hover:border-primary"
             onClick={() => setShowMobileFolders(true)}
             aria-label="Ordner anzeigen"
           >
@@ -375,31 +387,34 @@ export function DocumentVaultContent({ context }: DocumentVaultContentProps) {
           </button>
         </div>
 
-        <div className="header-actions">
-          <div className="search-box">
+        <div className="flex items-center gap-4 max-md:w-full max-md:flex-wrap">
+          <div className="relative max-md:flex-1 max-md:min-w-[200px] max-[480px]:min-w-0 max-[480px]:w-full">
             <input
               type="text"
               placeholder="Dokumente durchsuchen..."
               value={searchQuery}
               onChange={(e) => handleSearch(e.target.value)}
-              className="search-input"
+              className="w-70 px-4 py-2.5 pr-10 bg-glass-bg border border-glass-border rounded-sm text-text text-sm transition-all placeholder:text-text-muted focus:outline-none focus:border-primary focus:bg-surface-hover max-md:w-full max-md:text-base max-md:min-h-11"
             />
             {searchQuery && (
               <button
                 type="button"
-                className="search-clear"
+                className="absolute right-2 top-1/2 -translate-y-1/2 w-6 h-6 bg-transparent border-none text-text-secondary cursor-pointer text-sm"
                 onClick={() => handleSearch('')}
-                aria-label="Suche l\u00f6schen"
+                aria-label="Suche löschen"
               >
                 ✕
               </button>
             )}
           </div>
 
-          <div className="view-toggle">
+          <div className="flex bg-glass-bg rounded-sm overflow-hidden">
             <button
               type="button"
-              className={viewMode === 'grid' ? 'active' : ''}
+              className={cn(
+                'px-3 py-2 bg-transparent border-none text-text-secondary text-lg cursor-pointer transition-all hover:bg-surface-hover max-[480px]:min-w-10 max-[480px]:min-h-10',
+                viewMode === 'grid' && 'bg-primary/10 text-primary'
+              )}
               onClick={() => setViewMode('grid')}
               aria-label="Grid-Ansicht"
             >
@@ -407,7 +422,10 @@ export function DocumentVaultContent({ context }: DocumentVaultContentProps) {
             </button>
             <button
               type="button"
-              className={viewMode === 'list' ? 'active' : ''}
+              className={cn(
+                'px-3 py-2 bg-transparent border-none text-text-secondary text-lg cursor-pointer transition-all hover:bg-surface-hover max-[480px]:min-w-10 max-[480px]:min-h-10',
+                viewMode === 'list' && 'bg-primary/10 text-primary'
+              )}
               onClick={() => setViewMode('list')}
               aria-label="Listen-Ansicht"
             >
@@ -415,47 +433,43 @@ export function DocumentVaultContent({ context }: DocumentVaultContentProps) {
             </button>
           </div>
 
-          <button
-            type="button"
-            className="upload-trigger neuro-hover-lift"
+          <Button
+            variant="default"
+            className="hover:-translate-y-0.5 transition-transform bg-gradient-to-br from-[var(--accent,#0ea5e9)] to-[var(--info,#06b6d4)] text-white max-md:min-h-11"
             onClick={() => contentNavigate('/my-ai/voice-chat')}
-            style={{
-              background: 'linear-gradient(135deg, var(--accent, #0ea5e9), var(--info, #06b6d4))',
-              color: '#fff',
-            }}
           >
             Frag dein Wissen
-          </button>
+          </Button>
 
-          <button
-            type="button"
-            className="upload-trigger neuro-hover-lift"
+          <Button
+            variant="default"
+            className="hover:-translate-y-0.5 transition-transform max-md:min-h-11"
             onClick={() => setShowUpload(true)}
           >
             + Hochladen
-          </button>
+          </Button>
         </div>
-      </header>
+      </div>
 
       {/* Stats Bar */}
       {stats && (
-        <div className="stats-bar">
-          <div className="stat">
-            <span className="stat-value">{stats.total}</span>
-            <span className="stat-label">Dokumente</span>
+        <div className="flex gap-8 px-6 py-3 bg-glass-bg border-b border-glass-border shrink-0 max-md:flex-wrap max-md:gap-4 max-md:px-4 max-[480px]:px-3 max-[480px]:gap-3">
+          <div className="flex flex-col gap-0.5 max-md:min-w-20">
+            <span className="text-xl font-bold text-text max-[480px]:text-base">{stats.total}</span>
+            <span className="text-xs text-text-secondary">Dokumente</span>
           </div>
-          <div className="stat">
-            <span className="stat-value">{stats.completed}</span>
-            <span className="stat-label">Verarbeitet</span>
+          <div className="flex flex-col gap-0.5 max-md:min-w-20">
+            <span className="text-xl font-bold text-text max-[480px]:text-base">{stats.completed}</span>
+            <span className="text-xs text-text-secondary">Verarbeitet</span>
           </div>
-          <div className="stat">
-            <span className="stat-value">{stats.pending + stats.processing}</span>
-            <span className="stat-label">Wartend</span>
+          <div className="flex flex-col gap-0.5 max-md:min-w-20">
+            <span className="text-xl font-bold text-text max-[480px]:text-base">{stats.pending + stats.processing}</span>
+            <span className="text-xs text-text-secondary">Wartend</span>
           </div>
           {stats.failed > 0 && (
-            <div className="stat error">
-              <span className="stat-value">{stats.failed}</span>
-              <span className="stat-label">Fehler</span>
+            <div className="flex flex-col gap-0.5 max-md:min-w-20">
+              <span className="text-xl font-bold text-destructive max-[480px]:text-base">{stats.failed}</span>
+              <span className="text-xs text-text-secondary">Fehler</span>
             </div>
           )}
         </div>
@@ -472,7 +486,7 @@ export function DocumentVaultContent({ context }: DocumentVaultContentProps) {
       />
 
       {/* Main Content */}
-      <div className="vault-content">
+      <div className="flex flex-1 overflow-hidden">
         {/* Folder Sidebar + Mobile Drawer + Create Folder Modal */}
         <FolderSidebar
           folders={folders}
@@ -488,43 +502,38 @@ export function DocumentVaultContent({ context }: DocumentVaultContentProps) {
         />
 
         {/* Document Grid/List */}
-        <main className="document-area">
+        <main className="flex-1 p-6 overflow-y-auto max-md:p-4 max-[480px]:p-3">
           {loading && documents.length === 0 ? (
-            <div className="loading-state">
-              <div className="spinner" />
-              <p>Dokumente werden geladen...</p>
-            </div>
+            <SmartPageSkeleton />
           ) : error ? (
-            <div className="error-state">
-              <p>❌ {error}</p>
-              <button type="button" onClick={() => fetchDocuments(filters)}>
-                Erneut versuchen
-              </button>
-            </div>
+            <QueryErrorState
+              error={new Error(error)}
+              refetch={() => fetchDocuments(filters)}
+            />
           ) : documents.length === 0 ? (
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '48px 24px', textAlign: 'center', color: 'var(--text-secondary)' }}>
-              <FileText size={40} strokeWidth={1.5} style={{ marginBottom: '16px', opacity: 0.6 }} />
-              <h3 style={{ margin: '0 0 8px', fontSize: '18px', color: 'var(--text-primary)' }}>
-                {searchQuery ? 'Keine Dokumente gefunden' : 'Deine Wissensbasis ist leer'}
-              </h3>
-              <p style={{ margin: '0 0 16px', fontSize: '14px', maxWidth: '360px' }}>
-                {searchQuery
+            <EmptyState
+              icon={<FileText size={40} strokeWidth={1.5} />}
+              title={searchQuery ? 'Keine Dokumente gefunden' : 'Keine Dokumente'}
+              description={
+                searchQuery
                   ? 'Versuche eine andere Suchanfrage.'
-                  : 'Lade Dokumente hoch und die KI macht sie durchsuchbar.'}
-              </p>
-              {!searchQuery && (
-                <button
-                  type="button"
-                  className="ds-button ds-button--primary ds-button--sm"
-                  onClick={() => setShowUpload(true)}
-                >
-                  Dokument hochladen
-                </button>
-              )}
-            </div>
+                  : 'Lade Dokumente hoch und die KI macht sie durchsuchbar.'
+              }
+              action={
+                !searchQuery ? (
+                  <Button variant="default" size="sm" onClick={() => setShowUpload(true)}>
+                    Dokument hochladen
+                  </Button>
+                ) : undefined
+              }
+            />
           ) : (
             <>
-              <div className={`document-${viewMode}`}>
+              <div className={cn(
+                viewMode === 'grid'
+                  ? 'grid grid-cols-[repeat(auto-fill,minmax(260px,1fr))] gap-4 max-md:grid-cols-[repeat(auto-fill,minmax(200px,1fr))] max-[480px]:grid-cols-1'
+                  : 'flex flex-col gap-2'
+              )}>
                 {documents.map(doc => (
                   <DocumentCard
                     key={doc.id}
@@ -540,14 +549,14 @@ export function DocumentVaultContent({ context }: DocumentVaultContentProps) {
               </div>
 
               {hasMore && (
-                <div className="load-more">
+                <div className="flex justify-center py-6">
                   <button
                     type="button"
-                    className="load-more-button"
+                    className="px-6 py-2.5 bg-glass-bg border border-glass-border rounded-sm text-text cursor-pointer transition-all hover:bg-surface-hover hover:border-primary disabled:opacity-50 disabled:cursor-not-allowed"
                     onClick={loadMore}
                     disabled={loading}
                   >
-                    {loading ? 'L\u00e4dt...' : 'Mehr laden'}
+                    {loading ? 'Lädt...' : 'Mehr laden'}
                   </button>
                 </div>
               )}
@@ -558,20 +567,20 @@ export function DocumentVaultContent({ context }: DocumentVaultContentProps) {
 
       {/* Upload Modal */}
       {showUpload && (
-        <div className="upload-modal-overlay" onClick={() => setShowUpload(false)} role="presentation">
-          <div className="upload-modal" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-label="Dokumente hochladen">
-            <div className="modal-header">
-              <h2>Dokumente hochladen</h2>
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50" onClick={() => setShowUpload(false)} role="presentation">
+          <div className="w-[90%] max-w-[600px] max-h-[80vh] bg-surface border border-glass-border rounded-lg overflow-hidden flex flex-col" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-label="Dokumente hochladen">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-glass-border">
+              <h2 className="m-0 text-xl">Dokumente hochladen</h2>
               <button
                 type="button"
-                className="modal-close"
+                className="w-8 h-8 bg-transparent border-none text-text-secondary text-xl cursor-pointer rounded-sm transition-colors hover:bg-surface-hover"
                 onClick={() => setShowUpload(false)}
-                aria-label="Schlie\u00dfen"
+                aria-label="Schließen"
               >
                 ✕
               </button>
             </div>
-            <div className="modal-content">
+            <div className="p-6 overflow-y-auto">
               <DocumentUpload
                 context={context}
                 folderPath={selectedFolder}

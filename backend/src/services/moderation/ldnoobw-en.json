@@ -1,0 +1,115 @@
+{
+  "language": "en",
+  "generatedBy": "scripts/moderation/build-ldnoobw.ts",
+  "count": 27,
+  "entries": [
+    {
+      "pattern": "bastard",
+      "severity": "soft"
+    },
+    {
+      "pattern": "bioweapon synthesis",
+      "severity": "block"
+    },
+    {
+      "pattern": "build a gun",
+      "severity": "block"
+    },
+    {
+      "pattern": "child porn",
+      "severity": "block"
+    },
+    {
+      "pattern": "commit suicide",
+      "severity": "block"
+    },
+    {
+      "pattern": "cp (video|material)",
+      "severity": "block"
+    },
+    {
+      "pattern": "csam",
+      "severity": "block"
+    },
+    {
+      "pattern": "end your life",
+      "severity": "block"
+    },
+    {
+      "pattern": "exterminate (jews|blacks|muslims)",
+      "severity": "block"
+    },
+    {
+      "pattern": "fuck you",
+      "severity": "soft"
+    },
+    {
+      "pattern": "gas the (jews|blacks|asians)",
+      "severity": "block"
+    },
+    {
+      "pattern": "hang yourself",
+      "severity": "block"
+    },
+    {
+      "pattern": "homemade explosive",
+      "severity": "block"
+    },
+    {
+      "pattern": "how to make a bomb",
+      "severity": "block"
+    },
+    {
+      "pattern": "kill yourself",
+      "severity": "block"
+    },
+    {
+      "pattern": "loli porn",
+      "severity": "block"
+    },
+    {
+      "pattern": "lynch the",
+      "severity": "block"
+    },
+    {
+      "pattern": "make a pipe bomb",
+      "severity": "block"
+    },
+    {
+      "pattern": "mass shooting",
+      "severity": "block"
+    },
+    {
+      "pattern": "minor nudes",
+      "severity": "block"
+    },
+    {
+      "pattern": "piss off",
+      "severity": "soft"
+    },
+    {
+      "pattern": "school shooting",
+      "severity": "block"
+    },
+    {
+      "pattern": "screw you",
+      "severity": "soft"
+    },
+    {
+      "pattern": "slit your wrists",
+      "severity": "block"
+    },
+    {
+      "pattern": "suicide pact",
+      "severity": "block"
+    },
+    {
+      "pattern": "underage porn",
+      "severity": "block"
+    },
+    {
+      "pattern": "wanker",
+      "severity": "soft"
+    }
+  ]
+}

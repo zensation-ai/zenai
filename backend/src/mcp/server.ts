@@ -143,8 +143,8 @@ const TOOLS: MCPTool[] = [
         },
         context: {
           type: 'string',
-          enum: ['personal', 'work', 'health', 'finance', 'learning'],
-          description: 'Der Kontext für die Idee (default: personal)',
+          enum: ['operations', 'finance', 'people', 'strategy', 'health'],
+          description: 'Der Kontext für die Idee (default: operations)',
         },
       },
       required: ['transcript'],
@@ -162,7 +162,7 @@ const TOOLS: MCPTool[] = [
         },
         context: {
           type: 'string',
-          enum: ['personal', 'work', 'health', 'finance', 'learning'],
+          enum: ['operations', 'finance', 'people', 'strategy', 'health'],
           description: 'Optionaler Kontext-Filter',
         },
         limit: {
@@ -181,8 +181,8 @@ const TOOLS: MCPTool[] = [
       properties: {
         context: {
           type: 'string',
-          enum: ['personal', 'work', 'health', 'finance', 'learning'],
-          description: 'Der Kontext für Vorschläge (default: personal)',
+          enum: ['operations', 'finance', 'people', 'strategy', 'health'],
+          description: 'Der Kontext für Vorschläge (default: operations)',
         },
         limit: {
           type: 'number',
@@ -203,8 +203,8 @@ const TOOLS: MCPTool[] = [
         },
         context: {
           type: 'string',
-          enum: ['personal', 'work', 'health', 'finance', 'learning'],
-          description: 'Der Kontext für das Gespräch (default: personal)',
+          enum: ['operations', 'finance', 'people', 'strategy', 'health'],
+          description: 'Der Kontext für das Gespräch (default: operations)',
         },
         sessionId: {
           type: 'string',
@@ -240,7 +240,7 @@ const TOOLS: MCPTool[] = [
       properties: {
         context: {
           type: 'string',
-          enum: ['personal', 'work', 'health', 'finance', 'learning'],
+          enum: ['operations', 'finance', 'people', 'strategy', 'health'],
           description: 'Optionaler Kontext-Filter',
         },
       },
@@ -288,8 +288,8 @@ const TOOLS: MCPTool[] = [
         },
         context: {
           type: 'string',
-          enum: ['personal', 'work', 'health', 'finance', 'learning'],
-          description: 'Kontext-Filter (default: personal)',
+          enum: ['operations', 'finance', 'people', 'strategy', 'health'],
+          description: 'Kontext-Filter (default: operations)',
         },
         maxDistance: {
           type: 'number',
@@ -311,8 +311,8 @@ const TOOLS: MCPTool[] = [
         },
         context: {
           type: 'string',
-          enum: ['personal', 'work', 'health', 'finance', 'learning'],
-          description: 'Kontext (default: personal)',
+          enum: ['operations', 'finance', 'people', 'strategy', 'health'],
+          description: 'Kontext (default: operations)',
         },
         includeEpisodic: {
           type: 'boolean',
@@ -343,8 +343,8 @@ const TOOLS: MCPTool[] = [
         },
         context: {
           type: 'string',
-          enum: ['personal', 'work', 'health', 'finance', 'learning'],
-          description: 'Kontext (default: personal)',
+          enum: ['operations', 'finance', 'people', 'strategy', 'health'],
+          description: 'Kontext (default: operations)',
         },
       },
       required: ['text'],
@@ -362,8 +362,8 @@ const TOOLS: MCPTool[] = [
         },
         context: {
           type: 'string',
-          enum: ['personal', 'work', 'health', 'finance', 'learning'],
-          description: 'Kontext-Filter (default: personal)',
+          enum: ['operations', 'finance', 'people', 'strategy', 'health'],
+          description: 'Kontext-Filter (default: operations)',
         },
       },
       required: ['query'],
@@ -392,8 +392,8 @@ const TOOLS: MCPTool[] = [
         },
         context: {
           type: 'string',
-          enum: ['personal', 'work', 'health', 'finance', 'learning'],
-          description: 'Kontext (default: personal)',
+          enum: ['operations', 'finance', 'people', 'strategy', 'health'],
+          description: 'Kontext (default: operations)',
         },
         threshold: {
           type: 'number',
@@ -411,8 +411,8 @@ const TOOLS: MCPTool[] = [
       properties: {
         context: {
           type: 'string',
-          enum: ['personal', 'work', 'health', 'finance', 'learning'],
-          description: 'Kontext (default: personal)',
+          enum: ['operations', 'finance', 'people', 'strategy', 'health'],
+          description: 'Kontext (default: operations)',
         },
       },
     },
@@ -447,8 +447,8 @@ const TOOLS: MCPTool[] = [
         },
         context: {
           type: 'string',
-          enum: ['personal', 'work', 'health', 'finance', 'learning'],
-          description: 'Kontext (default: personal)',
+          enum: ['operations', 'finance', 'people', 'strategy', 'health'],
+          description: 'Kontext (default: operations)',
         },
       },
       required: ['action'],
@@ -466,8 +466,8 @@ const TOOLS: MCPTool[] = [
         },
         context: {
           type: 'string',
-          enum: ['personal', 'work', 'health', 'finance', 'learning'],
-          description: 'Kontext (default: personal)',
+          enum: ['operations', 'finance', 'people', 'strategy', 'health'],
+          description: 'Kontext (default: operations)',
         },
         enableGraphExpansion: {
           type: 'boolean',
@@ -521,7 +521,7 @@ const TOOLS: MCPTool[] = [
       type: 'object',
       properties: {
         query: { type: 'string', description: 'Suchbegriff (Name, Email, Organisation)' },
-        context: { type: 'string', enum: ['personal', 'work', 'learning', 'creative'], description: 'Kontext (default: personal)' },
+        context: { type: 'string', enum: ['operations', 'finance', 'people', 'strategy'], description: 'Kontext (default: operations)' },
         relationship_type: { type: 'string', description: 'Filter: colleague, friend, family, client, vendor' },
         limit: { type: 'number', description: 'Max Ergebnisse (default: 20)' },
       },
@@ -535,7 +535,7 @@ const TOOLS: MCPTool[] = [
       type: 'object',
       properties: {
         contact_id: { type: 'string', description: 'UUID des Kontakts' },
-        context: { type: 'string', enum: ['personal', 'work', 'learning', 'creative'], description: 'Kontext (default: personal)' },
+        context: { type: 'string', enum: ['operations', 'finance', 'people', 'strategy'], description: 'Kontext (default: operations)' },
         limit: { type: 'number', description: 'Max Interaktionen (default: 20)' },
       },
       required: ['contact_id'],
@@ -547,7 +547,7 @@ const TOOLS: MCPTool[] = [
     inputSchema: {
       type: 'object',
       properties: {
-        context: { type: 'string', enum: ['personal', 'work', 'learning', 'creative'], description: 'Kontext (default: personal)' },
+        context: { type: 'string', enum: ['operations', 'finance', 'people', 'strategy'], description: 'Kontext (default: operations)' },
         days_threshold: { type: 'number', description: 'Tage ohne Kontakt (default: 30)' },
         limit: { type: 'number', description: 'Max Ergebnisse (default: 10)' },
       },
@@ -559,7 +559,7 @@ const TOOLS: MCPTool[] = [
     inputSchema: {
       type: 'object',
       properties: {
-        context: { type: 'string', enum: ['personal', 'work', 'learning', 'creative'], description: 'Kontext (default: personal)' },
+        context: { type: 'string', enum: ['operations', 'finance', 'people', 'strategy'], description: 'Kontext (default: operations)' },
       },
     },
   },
@@ -571,7 +571,7 @@ const TOOLS: MCPTool[] = [
     inputSchema: {
       type: 'object',
       properties: {
-        context: { type: 'string', enum: ['personal', 'work', 'learning', 'creative'], description: 'Kontext (default: personal)' },
+        context: { type: 'string', enum: ['operations', 'finance', 'people', 'strategy'], description: 'Kontext (default: operations)' },
         months: { type: 'number', description: 'Zeitraum in Monaten (default: 6)' },
       },
     },
@@ -590,7 +590,7 @@ const TOOLS: MCPTool[] = [
     inputSchema: {
       type: 'object',
       properties: {
-        context: { type: 'string', enum: ['personal', 'work', 'learning', 'creative'], description: 'Kontext (default: personal)' },
+        context: { type: 'string', enum: ['operations', 'finance', 'people', 'strategy'], description: 'Kontext (default: operations)' },
         category: { type: 'string', description: 'Kategorie-Filter (z.B. Lebensmittel, Transport)' },
         transaction_type: { type: 'string', enum: ['income', 'expense', 'transfer'], description: 'Typ-Filter' },
         date_from: { type: 'string', description: 'Startdatum (YYYY-MM-DD)' },
@@ -605,7 +605,7 @@ const TOOLS: MCPTool[] = [
     inputSchema: {
       type: 'object',
       properties: {
-        context: { type: 'string', enum: ['personal', 'work', 'learning', 'creative'], description: 'Kontext (default: personal)' },
+        context: { type: 'string', enum: ['operations', 'finance', 'people', 'strategy'], description: 'Kontext (default: operations)' },
         active_only: { type: 'boolean', description: 'Nur aktive Budgets (default: true)' },
       },
     },
@@ -616,7 +616,7 @@ const TOOLS: MCPTool[] = [
     inputSchema: {
       type: 'object',
       properties: {
-        context: { type: 'string', enum: ['personal', 'work', 'learning', 'creative'], description: 'Kontext (default: personal)' },
+        context: { type: 'string', enum: ['operations', 'finance', 'people', 'strategy'], description: 'Kontext (default: operations)' },
         date_from: { type: 'string', description: 'Startdatum (YYYY-MM-DD)' },
         date_to: { type: 'string', description: 'Enddatum (YYYY-MM-DD)' },
       },
@@ -631,7 +631,7 @@ const TOOLS: MCPTool[] = [
       type: 'object',
       properties: {
         query: { type: 'string', description: 'Suchbegriff (im OCR-Text, Titel, App)' },
-        context: { type: 'string', enum: ['personal', 'work', 'learning', 'creative'], description: 'Kontext (default: personal)' },
+        context: { type: 'string', enum: ['operations', 'finance', 'people', 'strategy'], description: 'Kontext (default: operations)' },
         app_name: { type: 'string', description: 'Filter nach App-Name' },
         date_from: { type: 'string', description: 'Startdatum (YYYY-MM-DD)' },
         date_to: { type: 'string', description: 'Enddatum (YYYY-MM-DD)' },
@@ -646,7 +646,7 @@ const TOOLS: MCPTool[] = [
     inputSchema: {
       type: 'object',
       properties: {
-        context: { type: 'string', enum: ['personal', 'work', 'learning', 'creative'], description: 'Kontext (default: personal)' },
+        context: { type: 'string', enum: ['operations', 'finance', 'people', 'strategy'], description: 'Kontext (default: operations)' },
       },
     },
   },
@@ -658,7 +658,7 @@ const TOOLS: MCPTool[] = [
     inputSchema: {
       type: 'object',
       properties: {
-        context: { type: 'string', enum: ['personal', 'work', 'learning', 'creative'], description: 'Kontext (default: personal)' },
+        context: { type: 'string', enum: ['operations', 'finance', 'people', 'strategy'], description: 'Kontext (default: operations)' },
       },
     },
   },
@@ -668,7 +668,7 @@ const TOOLS: MCPTool[] = [
     inputSchema: {
       type: 'object',
       properties: {
-        context: { type: 'string', enum: ['personal', 'work', 'learning', 'creative'], description: 'Kontext (default: personal)' },
+        context: { type: 'string', enum: ['operations', 'finance', 'people', 'strategy'], description: 'Kontext (default: operations)' },
       },
     },
   },
@@ -678,7 +678,7 @@ const TOOLS: MCPTool[] = [
     inputSchema: {
       type: 'object',
       properties: {
-        context: { type: 'string', enum: ['personal', 'work', 'learning', 'creative'], description: 'Kontext (default: personal)' },
+        context: { type: 'string', enum: ['operations', 'finance', 'people', 'strategy'], description: 'Kontext (default: operations)' },
         days: { type: 'number', description: 'Zeitfenster in Tagen (default: 14)' },
       },
     },
@@ -689,7 +689,7 @@ const TOOLS: MCPTool[] = [
     inputSchema: {
       type: 'object',
       properties: {
-        context: { type: 'string', enum: ['personal', 'work', 'learning', 'creative'], description: 'Kontext (default: personal)' },
+        context: { type: 'string', enum: ['operations', 'finance', 'people', 'strategy'], description: 'Kontext (default: operations)' },
         confirmed_only: { type: 'boolean', description: 'Nur bestätigte Patterns (default: false)' },
       },
     },
@@ -724,9 +724,9 @@ export class KIABMCPServer {
 
   constructor(config: Partial<MCPServerConfig> = {}) {
     this.config = {
-      name: config.name || 'zenai-brain',
+      name: config.name || 'zenai-spark',
       version: config.version || '1.0.0',
-      defaultContext: config.defaultContext || 'personal',
+      defaultContext: config.defaultContext || 'operations',
     };
   }
 

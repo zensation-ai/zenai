@@ -81,7 +81,7 @@ pluginsRouter.get(
   asyncHandler(async (req: Request, res: Response) => {
     const context = validateContextParam(req.params.context);
     if (!isValidContext(context)) {
-      throw new ValidationError('Invalid context. Use: personal, work, learning, or creative.');
+      throw new ValidationError('Invalid context. Use: operations, finance, people, or strategy.');
     }
 
     const statusFilter = req.query.status as string | undefined;
@@ -109,7 +109,7 @@ pluginsRouter.get(
   asyncHandler(async (req: Request, res: Response) => {
     const context = validateContextParam(req.params.context);
     if (!isValidContext(context)) {
-      throw new ValidationError('Invalid context. Use: personal, work, learning, or creative.');
+      throw new ValidationError('Invalid context. Use: operations, finance, people, or strategy.');
     }
 
     return res.json({ success: true, data: MARKETPLACE_PLUGINS });
@@ -125,7 +125,7 @@ pluginsRouter.get(
   asyncHandler(async (req: Request, res: Response) => {
     const context = validateContextParam(req.params.context);
     if (!isValidContext(context)) {
-      throw new ValidationError('Invalid context. Use: personal, work, learning, or creative.');
+      throw new ValidationError('Invalid context. Use: operations, finance, people, or strategy.');
     }
 
     const plugin = await getPlugin(context, req.params.id);
@@ -147,7 +147,7 @@ pluginsRouter.post(
   asyncHandler(async (req: Request, res: Response) => {
     const context = validateContextParam(req.params.context);
     if (!isValidContext(context)) {
-      throw new ValidationError('Invalid context. Use: personal, work, learning, or creative.');
+      throw new ValidationError('Invalid context. Use: operations, finance, people, or strategy.');
     }
 
     const { manifest, config } = req.body;
@@ -181,7 +181,7 @@ pluginsRouter.put(
   asyncHandler(async (req: Request, res: Response) => {
     const context = validateContextParam(req.params.context);
     if (!isValidContext(context)) {
-      throw new ValidationError('Invalid context. Use: personal, work, learning, or creative.');
+      throw new ValidationError('Invalid context. Use: operations, finance, people, or strategy.');
     }
 
     try {
@@ -210,7 +210,7 @@ pluginsRouter.put(
   asyncHandler(async (req: Request, res: Response) => {
     const context = validateContextParam(req.params.context);
     if (!isValidContext(context)) {
-      throw new ValidationError('Invalid context. Use: personal, work, learning, or creative.');
+      throw new ValidationError('Invalid context. Use: operations, finance, people, or strategy.');
     }
 
     try {
@@ -239,7 +239,7 @@ pluginsRouter.put(
   asyncHandler(async (req: Request, res: Response) => {
     const context = validateContextParam(req.params.context);
     if (!isValidContext(context)) {
-      throw new ValidationError('Invalid context. Use: personal, work, learning, or creative.');
+      throw new ValidationError('Invalid context. Use: operations, finance, people, or strategy.');
     }
 
     const { config } = req.body;
@@ -275,7 +275,7 @@ pluginsRouter.delete(
   asyncHandler(async (req: Request, res: Response) => {
     const context = validateContextParam(req.params.context);
     if (!isValidContext(context)) {
-      throw new ValidationError('Invalid context. Use: personal, work, learning, or creative.');
+      throw new ValidationError('Invalid context. Use: operations, finance, people, or strategy.');
     }
 
     try {

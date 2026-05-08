@@ -1,0 +1,140 @@
+{
+  "generated_at": "2026-05-07T15:32:16.800Z",
+  "note": "Synthetic fixture — measures wiring delta only. Empirical lift on LoCoMo gold answers requires real embeddings + DB ingestion + LLM judging (separate session, see experiments/baselines/mem0_native_runner.py).",
+  "reports": {
+    "h2.1_ppr": {
+      "binding": "h2.1_ppr",
+      "callsite": "hybrid-retriever",
+      "scenarios": [
+        {
+          "name": "one-seed multi-path neighbourhood",
+          "legacy": {
+            "top_ids": [
+              "idea-multi",
+              "idea-single",
+              "idea-weak"
+            ],
+            "top1": "idea-multi"
+          },
+          "binding_on": {
+            "top_ids": [
+              "idea-multi",
+              "idea-single"
+            ],
+            "top1": "idea-multi"
+          },
+          "metrics": {
+            "jaccard": 0.6666666666666666,
+            "rank_shift_sum": 0,
+            "top1_changed": false
+          }
+        }
+      ],
+      "summary": {
+        "avg_jaccard": 0.6666666666666666,
+        "avg_rank_shift": 0,
+        "top1_change_rate": 0
+      }
+    },
+    "h2.6_mmr": {
+      "binding": "h2.6_mmr",
+      "callsite": "adaptive-retrieval",
+      "scenarios": [
+        {
+          "name": "near-duplicate cluster (a~b vs c, d)",
+          "legacy": {
+            "top_ids": [
+              "a",
+              "b",
+              "c"
+            ],
+            "top1": "a"
+          },
+          "binding_on": {
+            "top_ids": [
+              "a",
+              "d",
+              "c"
+            ],
+            "top1": "a"
+          },
+          "metrics": {
+            "jaccard": 0.5,
+            "rank_shift_sum": 4,
+            "top1_changed": false
+          }
+        }
+      ],
+      "summary": {
+        "avg_jaccard": 0.5,
+        "avg_rank_shift": 4,
+        "top1_change_rate": 0
+      }
+    },
+    "h2.3_evidence_gap": {
+      "binding": "h2.3_evidence_gap",
+      "callsite": "iterative-retriever",
+      "scenarios": [
+        {
+          "name": "full-coverage triggers early exit",
+          "legacy": {
+            "top_ids": [
+              "iterations=1"
+            ],
+            "top1": "iterations=1"
+          },
+          "binding_on": {
+            "top_ids": [
+              "iterations=1"
+            ],
+            "top1": "iterations=1"
+          },
+          "metrics": {
+            "jaccard": 1,
+            "rank_shift_sum": 0,
+            "top1_changed": false
+          }
+        }
+      ],
+      "summary": {
+        "avg_jaccard": 1,
+        "avg_rank_shift": 0,
+        "top1_change_rate": 0
+      }
+    },
+    "h2.2_memorag": {
+      "binding": "h2.2_memorag",
+      "callsite": "iterative-retriever",
+      "scenarios": [
+        {
+          "name": "draft-clue round broadens hit set",
+          "legacy": {
+            "top_ids": [
+              "r-memo-1",
+              "r-memo-2"
+            ],
+            "top1": "r-memo-1"
+          },
+          "binding_on": {
+            "top_ids": [
+              "r-memo-1",
+              "r-plan-1",
+              "r-memo-2"
+            ],
+            "top1": "r-memo-1"
+          },
+          "metrics": {
+            "jaccard": 0.6666666666666666,
+            "rank_shift_sum": 2,
+            "top1_changed": false
+          }
+        }
+      ],
+      "summary": {
+        "avg_jaccard": 0.6666666666666666,
+        "avg_rank_shift": 2,
+        "top1_change_rate": 0
+      }
+    }
+  }
+}

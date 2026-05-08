@@ -612,7 +612,7 @@ Antworte in klarem Markdown mit Tabellen, Listen und Überschriften.${language =
   async saveToHistory(
     result: DocumentAnalysisResult,
     analysisType: string,
-    context: string = 'work'
+    context: string = 'finance'
   ): Promise<string | null> {
     try {
       const res = await query(
@@ -643,7 +643,7 @@ Antworte in klarem Markdown mit Tabellen, Listen und Überschriften.${language =
    * Get analysis history
    */
   async getHistory(
-    context: string = 'work',
+    context: string = 'finance',
     limit: number = 20,
     offset: number = 0
   ): Promise<{ entries: AnalysisHistoryEntry[]; total: number }> {
@@ -738,7 +738,7 @@ Antworte in klarem Markdown mit Tabellen, Listen und Überschriften.${language =
   /**
    * Get all custom templates for a context
    */
-  async getCustomTemplates(context: string = 'work'): Promise<CustomAnalysisTemplate[]> {
+  async getCustomTemplates(context: string = 'finance'): Promise<CustomAnalysisTemplate[]> {
     try {
       const res = await query(
         `SELECT id, name, system_prompt, instruction, icon, context, created_at, updated_at
@@ -791,7 +791,7 @@ Antworte in klarem Markdown mit Tabellen, Listen und Überschriften.${language =
           template.system_prompt,
           template.instruction,
           template.icon || 'file-text',
-          template.context || 'work',
+          template.context || 'finance',
         ]
       );
       logger.info('Custom template created', { id: res.rows[0]?.id, name: template.name });

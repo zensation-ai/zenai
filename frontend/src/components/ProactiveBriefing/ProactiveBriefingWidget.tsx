@@ -13,13 +13,11 @@
  * - GET /api/proactive/follow-ups
  */
 
-import { useState, useEffect, useCallback, memo } from 'react';
+import { useState, useEffect, useCallback, memo, type CSSProperties } from 'react';
 import axios from 'axios';
 import type { Page } from '../../types';
 import type { AIContext } from '../ContextSwitcher';
 import { logError } from '../../utils/errors';
-import './ProactiveBriefingWidget.css';
-
 // ============================================
 // Types
 // ============================================
@@ -212,7 +210,7 @@ const ProactiveBriefingWidgetComponent: React.FC<ProactiveBriefingWidgetProps> =
             {generating ? 'Wird erstellt...' : 'Briefing erstellen'}
           </button>
         </div>
-        <p className="proactive-briefing-hint">Erstelle ein Tagesbriefing fuer eine Uebersicht deiner Termine, Aufgaben und E-Mails.</p>
+        <p className="proactive-briefing-hint">Erstelle ein Tagesbriefing für eine Übersicht deiner Termine, Aufgaben und E-Mails.</p>
       </section>
     );
   }
@@ -241,7 +239,7 @@ const ProactiveBriefingWidgetComponent: React.FC<ProactiveBriefingWidgetProps> =
             </button>
           )}
           {briefing && (
-            <button type="button" className="proactive-dismiss-btn" onClick={handleDismiss} title="Briefing schliessen">
+            <button type="button" className="proactive-dismiss-btn" onClick={handleDismiss} title="Briefing schließen">
               ✕
             </button>
           )}
@@ -272,7 +270,7 @@ const ProactiveBriefingWidgetComponent: React.FC<ProactiveBriefingWidgetProps> =
                     >
                       <span className="proactive-item-label">
                         {item.priority && (
-                          <span className="proactive-item-dot" style={{ background: PRIORITY_COLORS[item.priority] }} />
+                          <span className="proactive-item-dot bg-[var(--c)]" style={{ '--c': PRIORITY_COLORS[item.priority] } as CSSProperties} />
                         )}
                         {item.label}
                       </span>
@@ -289,7 +287,7 @@ const ProactiveBriefingWidgetComponent: React.FC<ProactiveBriefingWidgetProps> =
             <div className="proactive-section proactive-section-suggestions">
               <h4 className="proactive-section-title">
                 <span aria-hidden="true">{'\uD83D\uDCA1'}</span>
-                Vorschlaege
+                Vorschläge
               </h4>
               <ul className="proactive-suggestion-list">
                 {schedule.suggestions.map((s, i) => (

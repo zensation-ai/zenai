@@ -16,7 +16,7 @@ jest.mock('../../../utils/user-context', () => ({
 }));
 
 jest.mock('../../../utils/database-context', () => ({
-  isValidContext: jest.fn((ctx: string) => ['personal', 'work', 'learning', 'creative'].includes(ctx)),
+  isValidContext: jest.fn((ctx: string) => ['operations', 'finance', 'people', 'strategy'].includes(ctx)),
   AIContext: {},
 }));
 
@@ -193,11 +193,11 @@ describe('User Profile Routes', () => {
     it('should return context-specific stats', async () => {
       mockGetUserProfileWithContext.mockResolvedValue(mockProfile);
 
-      const res = await request(app).get('/api/personal/profile/stats');
+      const res = await request(app).get('/api/operations/profile/stats');
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
-      expect(mockGetUserProfileWithContext).toHaveBeenCalledWith('personal', 'default');
+      expect(mockGetUserProfileWithContext).toHaveBeenCalledWith('operations', 'default');
     });
 
     it('should reject invalid context', async () => {

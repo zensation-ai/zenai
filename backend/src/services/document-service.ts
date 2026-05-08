@@ -228,6 +228,13 @@ export class DocumentService {
         if (result.success) {
           // Auto-assign topic
           await this.autoAssignTopic(documentId, context);
+
+          // Bridge to episodic memory for sleep consolidation (Stufe 8.1)
+          bridgeDocumentToEpisodicMemory(context, documentId, result).catch(err => {
+            logger.warn('Failed to bridge document to episodic memory', {
+              documentId, error: err instanceof Error ? err.message : String(err),
+            });
+          });
         }
       })
       .catch(error => {
@@ -953,6 +960,56 @@ export class DocumentService {
       byMimeType,
     };
   }
+}
+
+// ===========================================
+// Episodic Memory Bridge (Stufe 8.1)
+// ===========================================
+
+/**
+ * Bridge processed document to episodic memory for sleep consolidation.
+ * McClelland et al. 1995 — documents become cortical schema candidates
+ * when stored as episodic memories, enabling cross-referencing during sleep.
+ */
+export async function bridgeDocumentToEpisodicMemory(
+  context: AIContext,
+  documentId: string,
+  result: ProcessingResult
+): Promise<void> {
+  const { episodicMemory } = await import('./memory/episodic-memory');
+
+  const keywordsStr = result.keywords?.length ? result.keywords.join(', ') : '';
+  const trigger = `Dokument analysiert: ${result.title || 'Unbekannt'}`;
+  const response = [
+    result.summary || '',
+    keywordsStr ? `Schlüsselwörter: ${keywordsStr}` : '',
+    result.pageCount ? `${result.pageCount} Seiten` : '',
+    result.language ? `Sprache: ${result.language}` : '',
+  ].filter(Boolean).join(' | ');
+
+  await episodicMemory.store(
+    trigger,
+    response,
+    `document-${documentId}`,
+    context,
+  );
+
+  // Emit event so sleep compute can cross-reference
+  import('./event-system').then(({ emitSystemEvent }) => {
+    emitSystemEvent({
+      context,
+      eventType: 'memory.fact_learned',
+      eventSource: 'document-processing',
+      payload: {
+        factType: 'document_analyzed',
+        documentId,
+        title: result.title,
+        keywords: result.keywords,
+      },
+    });
+  }).catch(() => {});
+
+  logger.debug('Document bridged to episodic memory', { documentId, title: result.title });
 }
 
 // Export singleton instance

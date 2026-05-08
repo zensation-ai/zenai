@@ -1,0 +1,12 @@
+src/
+node_modules/
+jest.config.js
+tsconfig.json
+package-lock.json
+*.test.ts
+*.test.js
+.github/
+.git/
+.gitignore
+dist/*.js.map
+dist/*.d.ts.map

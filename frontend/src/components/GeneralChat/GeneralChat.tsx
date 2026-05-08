@@ -16,12 +16,15 @@ import { ErrorBoundary } from '../ErrorBoundary';
 import type { Artifact } from '../../types/artifacts';
 import { isOffline, queueMessage, generateOfflineResponse, syncPendingMessages } from '../../services/offline-chat';
 import { MAX_TOOL_RESULTS, MAX_IMAGE_SIZE_BYTES, IMAGE_MIME_PREFIX } from '../../config/chat';
-import '../GeneralChat.css';
+import { AmbientGlow } from '../AmbientGlow';
 
 import { ChatMessageList } from './ChatMessageList';
 import { ChatInput } from './ChatInput';
 import { useChatContentRenderer } from './ChatContentRenderer';
 import { chatReducer, INITIAL_CHAT_STATE } from './chatReducer';
+import { AgUICards } from './AgUICards';
+import { useAgUIState } from '../../hooks/useAgUIState';
+import { ProviderBadge } from './ProviderBadge';
 import type { ChatMessage, GeneralChatProps } from './types';
 
 // Lazy-load ArtifactPanel (pulls in react-syntax-highlighter ~200KB + react-markdown)
@@ -30,39 +33,70 @@ const ArtifactPanel = lazy(() => import('../ArtifactPanel').then(m => ({ default
 const VoiceChatOverlay = lazy(() => import('../VoiceChat').then(m => ({ default: m.VoiceChat })));
 
 export function GeneralChat({ context, isCompact = false, assistantMode = false, fullPage = false, initialSessionId, onSessionChange, onPanelAction }: GeneralChatProps) {
-  // Chat lifecycle state machine (Fix 26)
+  // ── Consolidated chat state machine (Phase 142 — 19→5 useState) ──
   const [chatState, dispatchChat] = useReducer(chatReducer, INITIAL_CHAT_STATE);
 
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [sessionId, setSessionId] = useState<string | null>(null);
-  const [inputValue, setInputValue] = useState('');
-  const [sending, setSending] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [selectedImages, setSelectedImages] = useState<File[]>([]);
-  // Streaming state for real-time token display
-  const [streamingContent, setStreamingContent] = useState<string>('');
-  const [isStreaming, setIsStreaming] = useState(false);
-  const [thinkingContent, setThinkingContent] = useState<string>('');
-  // Inline error message for assistant mode (toast is hidden behind panel)
-  const [inlineError, setInlineError] = useState<string | null>(null);
+  // Derived values from chatState (replacing 14 individual useState calls)
+  const { messages, sessionId, inputValue, sending, loading, isStreaming,
+    streamingContent, thinkingContent, thinkingTier, inlineError, activeToolName,
+    completedTools: toolResults, selectedImages } = chatState;
+
+  // Dispatch helpers (stable setter replacements)
+  const setMessages = useCallback((v: ChatMessage[] | ((prev: ChatMessage[]) => ChatMessage[])) => {
+    const resolved = typeof v === 'function' ? v(chatState.messages) : v;
+    dispatchChat({ type: 'SET_MESSAGES', messages: resolved });
+  }, [chatState.messages]);
+  const setSessionId = useCallback((v: string | null) => dispatchChat({ type: 'SET_SESSION_ID', sessionId: v }), []);
+  const setInputValue: React.Dispatch<React.SetStateAction<string>> = useCallback((v) => {
+    const resolved = typeof v === 'function' ? v(chatState.inputValue) : v;
+    dispatchChat({ type: 'SET_INPUT_VALUE', value: resolved });
+  }, [chatState.inputValue]);
+  // Synchronous guard against double-submit (Enter + click before React state flush)
+  const sendingRef = useRef(false);
+  const setSending = useCallback((v: boolean) => {
+    sendingRef.current = v;
+    dispatchChat({ type: 'SET_SENDING', sending: v });
+  }, []);
+  const setLoading = useCallback((v: boolean) => dispatchChat({ type: 'SET_LOADING', loading: v }), []);
+  const setIsStreaming = useCallback((v: boolean) => dispatchChat({ type: 'SET_STREAMING', isStreaming: v }), []);
+  const setStreamingContent = useCallback((v: string) => dispatchChat({ type: 'SET_STREAMING_CONTENT', content: v }), []);
+  const setThinkingContent = useCallback((v: string | ((prev: string) => string)) => {
+    if (typeof v === 'function') {
+      dispatchChat({ type: 'SET_THINKING_CONTENT', content: v(chatState.thinkingContent) });
+    } else {
+      dispatchChat({ type: 'SET_THINKING_CONTENT', content: v });
+    }
+  }, [chatState.thinkingContent]);
+  const setInlineError: React.Dispatch<React.SetStateAction<string | null>> = useCallback((v) => {
+    const resolved = typeof v === 'function' ? v(chatState.inlineError) : v;
+    dispatchChat({ type: 'SET_INLINE_ERROR', error: resolved });
+  }, [chatState.inlineError]);
+  const setActiveToolName = useCallback((v: string | null) => dispatchChat({ type: 'SET_TOOL_ACTIVITY', activeToolName: v }), []);
+  const setToolResults = useCallback((v: typeof toolResults | ((prev: typeof toolResults) => typeof toolResults)) => {
+    const resolved = typeof v === 'function' ? v(chatState.completedTools) : v;
+    dispatchChat({ type: 'SET_TOOL_RESULTS', results: resolved });
+  }, [chatState.completedTools]);
+  const setSelectedImages: React.Dispatch<React.SetStateAction<File[]>> = useCallback((v) => {
+    const resolved = typeof v === 'function' ? v(chatState.selectedImages) : v;
+    dispatchChat({ type: 'SET_SELECTED_IMAGES', images: resolved });
+  }, [chatState.selectedImages]);
+
   // RAF-based throttle for streaming content updates (caps at ~60fps instead of per-token)
   const streamingRafRef = useRef<number | null>(null);
   const pendingStreamContentRef = useRef<string>('');
-  // Thinking partner mode state (Phase 32C-1)
+  // 5 remaining independent useState calls (genuinely separate concerns)
   const [thinkingMode, setThinkingMode] = useState<'assist' | 'challenge' | 'coach' | 'synthesize'>('assist');
-  // Voice chat overlay state
   const [voiceChatOpen, setVoiceChatOpen] = useState(false);
-  // Offline detection state (Phase 74)
   const [offline, setOffline] = useState(() => isOffline());
-  // Tool activity tracking (Phase 76 — Tool-Use Visualization)
-  const [activeToolName, setActiveToolName] = useState<string | null>(null);
-  const [toolResults, setToolResults] = useState<Array<{ name: string; result: string; duration_ms: number; success: boolean }>>([]);
-  // Track when the current tool started (for duration calculation)
-  const toolStartTimeRef = useRef<number>(0);
-  // Artifacts state
   const [artifacts, setArtifacts] = useState<Map<string, Artifact[]>>(new Map());
   const [activeArtifact, setActiveArtifact] = useState<{ artifact: Artifact; messageId: string; index: number } | null>(null);
+  // Track when the current tool started (for duration calculation)
+  const toolStartTimeRef = useRef<number>(0);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // AG-UI Protocol state — cards, pipeline status, predicted intent
+  const { cards: aguiCards, pipelineStatus, handleAgUIEvent, clearCards } = useAgUIState();
+  const [modelInfo, setModelInfo] = useState<{ model: string; provider: string } | null>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
   // Master AbortController: aborted on context change to cancel ALL in-flight requests
@@ -71,6 +105,7 @@ export function GeneralChat({ context, isCompact = false, assistantMode = false,
   const abortControllerRef = useRef<AbortController | null>(null);
   // Separate AbortController for streaming — useEffect must NOT abort this
   const streamAbortRef = useRef<AbortController | null>(null);
+  const userStoppedStreamRef = useRef(false);
   // skipNextLoad is now managed by chatReducer (Fix 26)
   // Kept as derived ref for backward compatibility in the useEffect
   // Track previous initialSessionId to detect "new chat" signal (had value → null)
@@ -329,7 +364,7 @@ export function GeneralChat({ context, isCompact = false, assistantMode = false,
   const handleSendMessage = useCallback(async () => {
     // Allow sending with only images (no text required)
     // Guard against sending while session is still loading (race condition)
-    if ((!inputValue.trim() && selectedImages.length === 0) || sending || loading) return;
+    if ((!inputValue.trim() && selectedImages.length === 0) || sending || loading || sendingRef.current) return;
 
     const messageContent = inputValue.trim();
     const imagesToSend = [...selectedImages];
@@ -337,6 +372,8 @@ export function GeneralChat({ context, isCompact = false, assistantMode = false,
     setSelectedImages([]);
     setSending(true);
     setInlineError(null);
+    clearCards(); // Reset AG-UI cards for new message
+    setModelInfo(null);
 
     try {
       // Get or create session
@@ -442,13 +479,14 @@ export function GeneralChat({ context, isCompact = false, assistantMode = false,
         // Create a new AbortController for this streaming request (separate from session-load ref)
         const streamAbortController = new AbortController();
         streamAbortRef.current = streamAbortController;
+        userStoppedStreamRef.current = false; // Reset: not a user-initiated stop
 
-        // Timeout: abort if no response starts within 60 seconds.
+        // Timeout: abort if no response starts within 120 seconds.
         // Cleared as soon as the first SSE byte is received to avoid
-        // killing long-running tool calls (backend tool budget is 60s).
+        // killing long-running tool calls (Extended Thinking + Tool Use can take 5+ min).
         const streamTimeout = setTimeout(() => {
           streamAbortController.abort();
-        }, 60000);
+        }, 120000);
         let streamTimeoutCleared = false;
 
         try {
@@ -478,8 +516,8 @@ export function GeneralChat({ context, isCompact = false, assistantMode = false,
               403: 'Zugriff verweigert.',
               429: 'Zu viele Anfragen. Bitte kurz warten.',
               500: 'Serverfehler. Bitte erneut versuchen.',
-              502: 'Server nicht erreichbar. Bitte spaeter versuchen.',
-              503: 'Server ueberlastet. Bitte spaeter versuchen.',
+              502: 'Server nicht erreichbar. Bitte später versuchen.',
+              503: 'Server überlastet. Bitte später versuchen.',
             };
             throw new Error(statusMessages[response.status] || `Serverfehler (${response.status})`);
           }
@@ -519,6 +557,13 @@ export function GeneralChat({ context, isCompact = false, assistantMode = false,
                     try {
                       const data = JSON.parse(dataStr);
 
+                      // Thinking tier event — adaptive thinking metadata
+                      if (currentEventType === 'thinking_tier') {
+                        dispatchChat({ type: 'SET_THINKING_TIER', tier: data });
+                        currentEventType = '';
+                        continue;
+                      }
+
                       // Skip non-delta events that contain full content (would duplicate)
                       if (currentEventType === 'done' || currentEventType === 'compaction_info' || currentEventType === 'thinking_end') {
                         currentEventType = '';
@@ -549,6 +594,7 @@ export function GeneralChat({ context, isCompact = false, assistantMode = false,
                             result: toolResult,
                             duration_ms,
                             success: !toolError,
+                            status: toolError ? 'error' as const : 'success' as const,
                           }];
                           return next.length > MAX_TOOL_RESULTS ? next.slice(-MAX_TOOL_RESULTS) : next;
                         });
@@ -570,6 +616,20 @@ export function GeneralChat({ context, isCompact = false, assistantMode = false,
                       // Handle panel_action events (from open_panel tool)
                       if (currentEventType === 'panel_action' && data.panel && onPanelAction) {
                         onPanelAction(data.panel, data.filter);
+                        currentEventType = '';
+                        continue;
+                      }
+
+                      // Handle model_info events (V4 Multi-LLM provider badge)
+                      if (currentEventType === 'model_info') {
+                        try { setModelInfo(data as { model: string; provider: string }); } catch { /* ignore */ }
+                        currentEventType = '';
+                        continue;
+                      }
+
+                      // Handle AG-UI protocol events (hypothesis cards, pipeline status, etc.)
+                      if (currentEventType === 'agui') {
+                        try { handleAgUIEvent(data); } catch { /* ignore malformed agui events */ }
                         currentEventType = '';
                         continue;
                       }
@@ -651,19 +711,47 @@ export function GeneralChat({ context, isCompact = false, assistantMode = false,
           setIsStreaming(false);
           setStreamingContent('');
           setThinkingContent('');
+          dispatchChat({ type: 'SET_THINKING_TIER', tier: null });
         }
       }
 
     } catch (err) {
-      // Don't show error for aborted requests (e.g., component unmount or context change)
+      // Only ignore AbortErrors that were explicitly triggered by the user (clicking "Stop")
+      // Network-caused aborts (proxy timeout, connection drop) should show an error
       if (err instanceof Error && err.name === 'AbortError') {
+        if (userStoppedStreamRef.current) {
+          return; // User clicked "Stop" — clean exit, no error
+        }
+        // Network/proxy timeout abort — show friendly error
+        const errorMessage = 'Die Verbindung wurde unterbrochen. Der Server verarbeitet möglicherweise noch deine Anfrage. Bitte versuche es erneut.';
+
+        setMessages(prev => prev.map(m =>
+          m.id.startsWith('temp-') ? { ...m, id: m.id.replace('temp-', 'failed-') } : m
+        ));
+        setInputValue(messageContent);
+        setIsStreaming(false);
+        setStreamingContent('');
+        setThinkingContent('');
+
+        if (assistantMode) {
+          setInlineError(errorMessage);
+        } else {
+          showToast(errorMessage, {
+            type: 'error',
+            duration: 8000,
+            undoLabel: 'Erneut senden',
+            onUndo: () => handleSendMessage(),
+          });
+        }
         return;
       }
 
       const errorMessage = getErrorMessage(err, 'Deine Nachricht konnte nicht gesendet werden.');
 
-      // Remove optimistic message on error
-      setMessages(prev => prev.filter(m => !m.id.startsWith('temp-')));
+      // Keep user message visible but mark as failed (don't remove it)
+      setMessages(prev => prev.map(m =>
+        m.id.startsWith('temp-') ? { ...m, id: m.id.replace('temp-', 'failed-') } : m
+      ));
       setInputValue(messageContent); // Restore input
       setSelectedImages(imagesToSend); // Restore images
       setIsStreaming(false);
@@ -689,6 +777,7 @@ export function GeneralChat({ context, isCompact = false, assistantMode = false,
   }, [inputValue, sending, loading, sessionId, selectedImages, context, assistantMode, thinkingMode]);
 
   const handleStopGenerating = useCallback(() => {
+    userStoppedStreamRef.current = true;
     streamAbortRef.current?.abort();
     setSending(false);
     setIsStreaming(false);
@@ -740,7 +829,7 @@ export function GeneralChat({ context, isCompact = false, assistantMode = false,
 
   if (loading) {
     return (
-      <div className={`general-chat ${isCompact ? 'compact' : ''} ${fullPage ? 'full-page' : ''}`} role="status" aria-live="polite" aria-label="Chat wird geladen">
+      <div className={`general-chat ${isCompact ? 'compact' : ''} ${fullPage ? 'full-page' : ''}`} role="status" aria-live="polite" aria-busy="true" aria-label="Chat wird geladen">
         <div className="chat-loading neuro-loading-contextual">
           <div className="loading-spinner neuro-loading-spinner" aria-hidden="true" />
           <span className="visually-hidden">Chat wird geladen</span>
@@ -750,12 +839,13 @@ export function GeneralChat({ context, isCompact = false, assistantMode = false,
   }
 
   return (
-    <div className={`general-chat liquid-glass ${isCompact ? 'compact' : ''} ${fullPage ? 'full-page' : ''}`}>
+    <div className={`general-chat liquid-glass ${isCompact ? 'compact' : ''} ${fullPage ? 'full-page' : ''}`} aria-busy={sending || isStreaming}>
+      <AmbientGlow state="idle" />
       {/* Offline Banner (Phase 74) */}
       {offline && (
         <div className="chat-offline-banner" role="alert">
           <span className="chat-offline-icon" aria-hidden="true">&#9888;</span>
-          Offline-Modus: eingeschraenkte KI-Antworten
+          Offline-Modus: eingeschränkte KI-Antworten
         </div>
       )}
 
@@ -765,15 +855,22 @@ export function GeneralChat({ context, isCompact = false, assistantMode = false,
         isStreaming={isStreaming}
         streamingContent={streamingContent}
         thinkingContent={thinkingContent}
+        thinkingTier={thinkingTier}
         sending={sending}
         activeToolName={activeToolName}
-        toolResults={toolResults}
+        toolResults={toolResults as Array<{ name: string; result: string; duration_ms: number; success: boolean }>}
         renderContent={renderContent}
         messagesEndRef={messagesEndRef}
         onStopGenerating={handleStopGenerating}
         onEditMessage={handleEditMessage}
         onRegenerateMessage={handleRegenerateMessage}
       />
+
+      {/* AG-UI Cards — hypothesis, approval, insight cards from cognitive services */}
+      {(aguiCards.length > 0 || pipelineStatus) && (
+        <AgUICards cards={aguiCards} pipelineStatus={pipelineStatus} onDismiss={() => clearCards()} />
+      )}
+      {modelInfo && <ProviderBadge provider={modelInfo.provider} model={modelInfo.model} />}
 
       {/* Input Area with Thinking Mode and Error Display */}
       <ChatInput

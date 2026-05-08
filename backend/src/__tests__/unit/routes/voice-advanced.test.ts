@@ -23,7 +23,7 @@ jest.mock('../../../utils/logger', () => ({
 }));
 
 jest.mock('../../../utils/database-context', () => ({
-  isValidContext: (ctx: string) => ['personal', 'work', 'learning', 'creative'].includes(ctx),
+  isValidContext: (ctx: string) => ['operations', 'finance', 'people', 'strategy'].includes(ctx),
   queryContext: jest.fn().mockResolvedValue({ rows: [] }),
 }));
 
@@ -78,7 +78,7 @@ describe('Voice Advanced Routes', () => {
     mockDetectFromText.mockReturnValue({ primary: 'happy', confidence: 0.8 });
 
     const res = await request(app)
-      .post('/api/personal/voice/emotion/detect')
+      .post('/api/operations/voice/emotion/detect')
       .send({ text: 'I feel great today!' });
 
     expect(res.status).toBe(200);
@@ -89,7 +89,7 @@ describe('Voice Advanced Routes', () => {
     mockDetectFromProsody.mockReturnValue({ primary: 'excited', confidence: 0.7 });
 
     const res = await request(app)
-      .post('/api/personal/voice/emotion/detect')
+      .post('/api/operations/voice/emotion/detect')
       .send({ speechRate: 180, avgPitch: 200, volume: 0.8 });
 
     expect(res.status).toBe(200);
@@ -102,7 +102,7 @@ describe('Voice Advanced Routes', () => {
     mockCombineSignals.mockReturnValue({ primary: 'excited', confidence: 0.75 });
 
     const res = await request(app)
-      .post('/api/personal/voice/emotion/detect')
+      .post('/api/operations/voice/emotion/detect')
       .send({ text: 'Great!', speechRate: 200, volume: 0.9 });
 
     expect(res.status).toBe(200);
@@ -111,7 +111,7 @@ describe('Voice Advanced Routes', () => {
 
   it('POST /:context/voice/emotion/detect — rejects empty body', async () => {
     const res = await request(app)
-      .post('/api/personal/voice/emotion/detect')
+      .post('/api/operations/voice/emotion/detect')
       .send({});
 
     expect(res.status).toBe(400);
@@ -131,7 +131,7 @@ describe('Voice Advanced Routes', () => {
     mockListPersonas.mockReturnValue([{ id: 'zen', name: 'Zen' }]);
     mockGetPersona.mockReturnValue({ id: 'zen', name: 'Zen' });
 
-    const res = await request(app).get('/api/personal/voice/personas');
+    const res = await request(app).get('/api/operations/voice/personas');
 
     expect(res.status).toBe(200);
     expect(res.body.data.personas).toHaveLength(1);
@@ -142,7 +142,7 @@ describe('Voice Advanced Routes', () => {
     mockGetPersona.mockReturnValue({ id: 'zen', name: 'Zen' });
     mockGetPersonaPromptAddendum.mockReturnValue('Be calm and helpful.');
 
-    const res = await request(app).get('/api/personal/voice/personas/active');
+    const res = await request(app).get('/api/operations/voice/personas/active');
 
     expect(res.status).toBe(200);
     expect(res.body.data.persona).toBeDefined();
@@ -153,7 +153,7 @@ describe('Voice Advanced Routes', () => {
     mockGetPersonaById.mockReturnValue(null);
 
     const res = await request(app)
-      .put('/api/personal/voice/personas/active')
+      .put('/api/operations/voice/personas/active')
       .send({ personaId: 'nonexistent' });
 
     expect(res.status).toBe(400);
@@ -165,7 +165,7 @@ describe('Voice Advanced Routes', () => {
     mockParseCommand.mockReturnValue({ intent: 'create_task', entities: { title: 'Buy milk' } });
 
     const res = await request(app)
-      .post('/api/personal/voice/command/parse')
+      .post('/api/operations/voice/command/parse')
       .send({ transcript: 'Create a task to buy milk' });
 
     expect(res.status).toBe(200);
@@ -174,7 +174,7 @@ describe('Voice Advanced Routes', () => {
 
   it('POST /:context/voice/command/parse — rejects empty transcript', async () => {
     const res = await request(app)
-      .post('/api/personal/voice/command/parse')
+      .post('/api/operations/voice/command/parse')
       .send({ transcript: '' });
 
     expect(res.status).toBe(400);
@@ -183,7 +183,7 @@ describe('Voice Advanced Routes', () => {
   // --- Emotion Settings ---
 
   it('GET /:context/voice/emotion/settings — returns defaults when no settings', async () => {
-    const res = await request(app).get('/api/personal/voice/emotion/settings');
+    const res = await request(app).get('/api/operations/voice/emotion/settings');
 
     expect(res.status).toBe(200);
     expect(res.body.data.emotion_detection_enabled).toBe(true);

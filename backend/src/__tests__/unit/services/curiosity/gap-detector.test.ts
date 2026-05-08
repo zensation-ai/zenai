@@ -243,7 +243,7 @@ describe('groupQueriesByTopic', () => {
     const result = groupQueriesByTopic([
       { text: 'machine learning basics', domain: 'learning' },
       { text: 'machine learning advanced topics', domain: 'learning' },
-      { text: 'quantum computing principles', domain: 'work' },
+      { text: 'quantum computing principles', domain: 'finance' },
     ]);
     expect(result.length).toBeGreaterThanOrEqual(2);
   });
@@ -262,7 +262,7 @@ describe('groupQueriesByTopic', () => {
 
   it('each result has topic, domain, and queryCount', () => {
     const result = groupQueriesByTopic([
-      { text: 'typescript generics', domain: 'work' },
+      { text: 'typescript generics', domain: 'finance' },
     ]);
     expect(result[0]).toHaveProperty('topic');
     expect(result[0]).toHaveProperty('domain');
@@ -280,8 +280,8 @@ describe('groupQueriesByTopic', () => {
 
   it('handles queries with identical text', () => {
     const result = groupQueriesByTopic([
-      { text: 'kubernetes deployment', domain: 'work' },
-      { text: 'kubernetes deployment', domain: 'work' },
+      { text: 'kubernetes deployment', domain: 'finance' },
+      { text: 'kubernetes deployment', domain: 'finance' },
     ]);
     expect(result).toHaveLength(1);
     expect(result[0].queryCount).toBe(2);
@@ -300,18 +300,18 @@ describe('detectGaps', () => {
         rows: [
           { query_text: 'machine learning basics', domain: 'learning', confidence: 0.4, rag_score: 0.3 },
           { query_text: 'machine learning advanced', domain: 'learning', confidence: 0.3, rag_score: 0.2 },
-          { query_text: 'react optimization', domain: 'work', confidence: 0.8, rag_score: 0.9 },
+          { query_text: 'react optimization', domain: 'finance', confidence: 0.8, rag_score: 0.9 },
         ],
       } as any)
       // Mock fact counts
       .mockResolvedValueOnce({
         rows: [
           { domain: 'learning', fact_count: 2 },
-          { domain: 'work', fact_count: 15 },
+          { domain: 'finance', fact_count: 15 },
         ],
       } as any);
 
-    const gaps = await detectGaps('personal');
+    const gaps = await detectGaps('operations');
     expect(Array.isArray(gaps)).toBe(true);
     expect(gaps.length).toBeLessThanOrEqual(5);
   });
@@ -319,7 +319,7 @@ describe('detectGaps', () => {
   it('returns empty array when no query history exists', async () => {
     mockQueryContext.mockResolvedValueOnce({ rows: [] } as any);
 
-    const gaps = await detectGaps('personal');
+    const gaps = await detectGaps('operations');
     expect(gaps).toEqual([]);
   });
 
@@ -329,17 +329,17 @@ describe('detectGaps', () => {
         rows: [
           { query_text: 'unknown topic A', domain: 'learning', confidence: 0.1, rag_score: 0.1 },
           { query_text: 'unknown topic A again', domain: 'learning', confidence: 0.1, rag_score: 0.1 },
-          { query_text: 'well known topic B', domain: 'work', confidence: 0.9, rag_score: 0.9 },
+          { query_text: 'well known topic B', domain: 'finance', confidence: 0.9, rag_score: 0.9 },
         ],
       } as any)
       .mockResolvedValueOnce({
         rows: [
           { domain: 'learning', fact_count: 0 },
-          { domain: 'work', fact_count: 50 },
+          { domain: 'finance', fact_count: 50 },
         ],
       } as any);
 
-    const gaps = await detectGaps('personal');
+    const gaps = await detectGaps('operations');
     if (gaps.length >= 2) {
       expect(gaps[0].gapScore).toBeGreaterThanOrEqual(gaps[1].gapScore);
     }
@@ -356,14 +356,14 @@ describe('detectGaps', () => {
       .mockResolvedValueOnce({ rows: manyQueries } as any)
       .mockResolvedValueOnce({ rows: [] } as any);
 
-    const gaps = await detectGaps('personal');
+    const gaps = await detectGaps('operations');
     expect(gaps.length).toBeLessThanOrEqual(5);
   });
 
   it('handles DB errors gracefully and returns empty array', async () => {
     mockQueryContext.mockRejectedValueOnce(new Error('DB connection failed'));
 
-    const gaps = await detectGaps('personal');
+    const gaps = await detectGaps('operations');
     expect(gaps).toEqual([]);
   });
 
@@ -371,7 +371,7 @@ describe('detectGaps', () => {
     mockQueryContext
       .mockResolvedValueOnce({ rows: [] } as any);
 
-    await detectGaps('personal', 'user-123');
+    await detectGaps('operations', 'user-123');
     expect(mockQueryContext).toHaveBeenCalled();
   });
 
@@ -386,7 +386,7 @@ describe('detectGaps', () => {
         rows: [{ domain: 'learning', fact_count: 1 }],
       } as any);
 
-    const gaps = await detectGaps('personal');
+    const gaps = await detectGaps('operations');
     if (gaps.length > 0) {
       const gap: KnowledgeGap = gaps[0];
       expect(gap).toHaveProperty('topic');

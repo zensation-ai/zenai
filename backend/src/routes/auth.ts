@@ -12,10 +12,21 @@ import { requireJwt } from '../middleware/jwt-auth';
 import { logger } from '../utils/logger';
 import * as userService from '../services/auth/user-service';
 import * as jwtService from '../services/auth/jwt-service';
+import { generateWorkspaceToken } from '../services/auth/jwt-service';
+import { checkMembership, getWorkspace, listContexts } from '../services/workspace-service';
 import { oauthManager } from '../services/auth/oauth-providers';
 import { sessionStore } from '../services/auth/session-store';
 import { decrypt } from '../services/security/field-encryption';
 import { createEndpointLimiter } from '../services/security/rate-limit-advanced';
+import {
+  getConsentState,
+  setConsent,
+  revokeConsent,
+  getConsentHistory,
+  isConsentKind,
+  CONSENT_KINDS,
+  type ConsentKind,
+} from '../services/auth/consent-service';
 
 export const authRouter = Router();
 
@@ -111,9 +122,20 @@ authRouter.post('/login', authRateLimiter, asyncHandler(async (req: Request, res
         });
       }
 
+      let decryptedSecret: string;
+      try {
+        decryptedSecret = decrypt(user.mfa_secret);
+      } catch {
+        return res.status(500).json({
+          success: false,
+          error: 'MFA configuration error. Please contact support.',
+          code: 'MFA_CONFIG_ERROR',
+        });
+      }
+
       const isValid = authenticator.verify({
         token: mfa_code,
-        secret: decrypt(user.mfa_secret),
+        secret: decryptedSecret,
       });
 
       if (!isValid) {
@@ -321,6 +343,37 @@ authRouter.put('/profile', requireJwt, asyncHandler(async (req: Request, res: Re
 }));
 
 // ===========================================
+// Onboarding (Sprint 1.6)
+// ===========================================
+
+/**
+ * POST /api/auth/onboarding/complete
+ *
+ * Marks the welcome-wizard as completed for the current user. Idempotent: a
+ * second call keeps the original timestamp so we always know the *first* time
+ * the user reached the end (or Skip) of the wizard.
+ */
+authRouter.post('/onboarding/complete', requireJwt, asyncHandler(async (req: Request, res: Response) => {
+  const userId = getAuthUserId(req);
+  try {
+    const completedAt = await userService.markOnboardingComplete(userId);
+    return res.json({
+      success: true,
+      data: { onboarding_completed_at: completedAt },
+    });
+  } catch (error) {
+    if (error instanceof userService.UserServiceError) {
+      return res.status(error.statusCode).json({
+        success: false,
+        error: error.message,
+        code: error.code,
+      });
+    }
+    throw error;
+  }
+}));
+
+// ===========================================
 // OAuth
 // ===========================================
 
@@ -369,6 +422,70 @@ authRouter.get('/providers/:provider', asyncHandler(async (req: Request, res: Re
         success: false,
         error: error.message,
         code: oauthError.code,
+      });
+    }
+    throw error;
+  }
+}));
+
+/**
+ * POST /api/auth/callback/apple
+ * Handle Apple Sign In callback (Apple uses form_post, not query-string redirect).
+ * Apple sends: code, state, optional user JSON (name, first login only), optional error.
+ */
+authRouter.post('/callback/apple', asyncHandler(async (req: Request, res: Response) => {
+  const { code, state, user: appleUserJson, error: oauthError } = req.body;
+
+  if (oauthError) {
+    logger.warn('Apple OAuth callback error', {
+      operation: 'auth.appleCallback',
+      error: oauthError,
+    });
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+    return res.redirect(`${frontendUrl}/auth?error=${encodeURIComponent(String(oauthError))}`);
+  }
+
+  if (!code || !state) {
+    return res.status(400).json({
+      success: false,
+      error: 'Missing code or state parameter',
+      code: 'VALIDATION_ERROR',
+    });
+  }
+
+  try {
+    const userInfo = await oauthManager.handleAppleCallback(code, state, appleUserJson);
+
+    const user = await userService.findOrCreateOAuthUser({
+      email: userInfo.email,
+      provider: 'apple',
+      providerId: userInfo.providerId,
+      displayName: userInfo.name || undefined,
+      avatarUrl: undefined,
+    });
+
+    const deviceInfo = extractDeviceInfo(req);
+    const tokenPair = await jwtService.generateTokenPair(user, deviceInfo, req.ip || undefined);
+
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+    const params = new URLSearchParams({
+      accessToken: tokenPair.accessToken,
+      refreshToken: tokenPair.refreshToken,
+      expiresIn: String(tokenPair.expiresIn),
+    });
+
+    return res.redirect(`${frontendUrl}/auth/callback#${params.toString()}`);
+  } catch (error) {
+    logger.error('Apple OAuth callback failed', error instanceof Error ? error : undefined, {
+      operation: 'auth.appleCallback',
+    });
+
+    if (error instanceof Error && 'code' in error) {
+      const typedError = error as { code: string; statusCode?: number };
+      return res.status(typedError.statusCode || 400).json({
+        success: false,
+        error: error.message,
+        code: typedError.code,
       });
     }
     throw error;
@@ -832,7 +949,10 @@ authRouter.delete('/sessions/:id', requireJwt, asyncHandler(async (req: Request,
  */
 authRouter.post('/demo', asyncHandler(async (_req: Request, res: Response) => {
   const DEMO_USER_ID = '00000000-0000-0000-0000-000000000002';
-  const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret';
+  const JWT_SECRET = process.env.JWT_SECRET;
+  if (!JWT_SECRET) {
+    return res.status(503).json({ success: false, error: 'Demo mode not available: JWT_SECRET not configured' });
+  }
 
   const accessToken = jwt.sign(
     {
@@ -851,6 +971,407 @@ authRouter.post('/demo', asyncHandler(async (_req: Request, res: Response) => {
     data: {
       accessToken,
       user: { id: DEMO_USER_ID, email: 'demo@example.com', name: 'Demo User', plan: 'pro', isDemo: true },
+    },
+  });
+}));
+
+// ===========================================
+// Workspace Switching (Multi-Tenancy)
+// ===========================================
+
+/**
+ * POST /api/auth/switch-workspace
+ * Switch to a different workspace. Verifies membership and issues a new workspace-scoped access token.
+ */
+authRouter.post('/switch-workspace', requireJwt, asyncHandler(async (req: Request, res: Response) => {
+  const { workspaceId } = req.body;
+  const userId = req.jwtUser!.id;
+
+  if (!workspaceId) {
+    return res.status(400).json({ error: 'workspaceId required' });
+  }
+
+  // Verify membership
+  const member = await checkMembership(workspaceId, userId);
+  if (!member) {
+    return res.status(403).json({ error: 'Not a member of this workspace' });
+  }
+
+  // Get workspace + org
+  const ws = await getWorkspace(workspaceId);
+  if (!ws) {
+    return res.status(404).json({ error: 'Workspace not found' });
+  }
+
+  const contexts = await listContexts(workspaceId);
+
+  // Issue new access token with workspace context
+  const accessToken = await generateWorkspaceToken(
+    { id: userId, email: req.jwtUser!.email, role: req.jwtUser!.role },
+    { orgId: ws.org_id, workspaceId, workspaceRole: member.role }
+  );
+
+  res.json({ accessToken, workspace: ws, contexts });
+}));
+
+/**
+ * GET /api/auth/current-workspace
+ * Return the current workspace from the JWT (if present).
+ */
+authRouter.get('/current-workspace', requireJwt, asyncHandler(async (req: Request, res: Response) => {
+  const wsId = req.jwtUser?.workspaceId;
+  if (!wsId) {
+    return res.json({ workspace: null, contexts: [] });
+  }
+
+  const workspace = await getWorkspace(wsId);
+  const contexts = workspace ? await listContexts(wsId) : [];
+  res.json({ workspace, contexts });
+}));
+
+// ===========================================
+// Data Export (DSGVO Art. 20 — Right to data portability)
+// ===========================================
+
+/**
+ * POST /api/auth/data-export
+ *
+ * Sprint 1.1 (2026-04-16) — Right to data portability.
+ *
+ * Enqueues an asynchronous job that builds a ZIP archive of all the user's data
+ * (profile, memory, ideas, emails, calendar, contacts, audit-log) across all
+ * 4 context schemas. The user is emailed when the export is ready.
+ *
+ * Returns immediately with `{ exportId, expiresAt }`. Clients can poll
+ * GET /api/auth/data-export/:id for status, or wait for the email.
+ *
+ * If BullMQ/Redis is unavailable (self-host without Redis), the route falls
+ * back to running the export inline so the feature still works.
+ */
+authRouter.post('/data-export', requireJwt, authRateLimiter, asyncHandler(async (req: Request, res: Response) => {
+  const userId = getAuthUserId(req);
+  const { createDataExportRequest, runDataExport } = await import('../services/auth/data-export-service');
+
+  const ipAddress = req.ip || req.socket?.remoteAddress;
+  const exportRow = await createDataExportRequest(userId, ipAddress);
+
+  // Inline-fallback when no worker exists for the queue (e.g. dev, REDIS_URL unset).
+  // We fire-and-forget so the request returns immediately; the row's status reflects progress.
+  if (!process.env.REDIS_URL) {
+    runDataExport(exportRow.id).catch(err => {
+      logger.error('Inline DSAR export failed', err instanceof Error ? err : undefined, {
+        exportId: exportRow.id,
+        userId,
+      });
+    });
+  }
+
+  return res.status(202).json({
+    success: true,
+    data: {
+      exportId: exportRow.id,
+      status: exportRow.status,
+      expiresAt: exportRow.expires_at,
+    },
+  });
+}));
+
+/**
+ * GET /api/auth/data-export/:id
+ * Returns the current status of an export request (must be owned by caller).
+ */
+authRouter.get('/data-export/:id', requireJwt, asyncHandler(async (req: Request, res: Response) => {
+  const userId = getAuthUserId(req);
+  const { getDataExport } = await import('../services/auth/data-export-service');
+
+  const row = await getDataExport(req.params.id, userId);
+  if (!row) {
+    return res.status(404).json({ success: false, error: 'Export not found' });
+  }
+
+  return res.json({
+    success: true,
+    data: {
+      id: row.id,
+      status: row.status,
+      requestedAt: row.requested_at,
+      completedAt: row.completed_at,
+      expiresAt: row.expires_at,
+      fileSize: row.file_size,
+      errorMessage: row.error_message,
+      // Download is gated by token — included only for the owner.
+      downloadUrl: row.status === 'completed' && row.download_token
+        ? `/api/auth/data-export/download/${row.download_token}`
+        : null,
+    },
+  });
+}));
+
+/**
+ * GET /api/auth/data-export/download/:token
+ * Token-gated streaming download. The token is part of the row created during request,
+ * shared via signed link in the email and via the status endpoint above.
+ * Returns 410 Gone after expires_at.
+ */
+authRouter.get('/data-export/download/:token', asyncHandler(async (req: Request, res: Response) => {
+  const { getDataExportByToken } = await import('../services/auth/data-export-service');
+
+  const row = await getDataExportByToken(req.params.token);
+  if (!row || !row.file_path) {
+    return res.status(410).json({
+      success: false,
+      error: 'Download link is invalid, expired, or the export is not yet complete.',
+    });
+  }
+
+  // Stream the ZIP. Note: file lives on the backend's local FS (or mounted volume).
+  res.setHeader('Content-Type', 'application/zip');
+  res.setHeader('Content-Disposition', `attachment; filename="zenai-data-export-${row.id}.zip"`);
+  if (row.file_size) res.setHeader('Content-Length', String(row.file_size));
+
+  const { createReadStream } = await import('fs');
+  const stream = createReadStream(row.file_path);
+  stream.on('error', (err) => {
+    logger.error('DSAR download stream error', err, { exportId: row.id });
+    if (!res.headersSent) {
+      res.status(500).json({ success: false, error: 'Download failed' });
+    } else {
+      res.end();
+    }
+  });
+  stream.pipe(res);
+}));
+
+// ===========================================
+// Account Deletion (DSGVO Art. 17)
+// ===========================================
+
+/**
+ * DELETE /api/auth/account
+ *
+ * Sprint 1.1 (2026-04-16) — Right to be forgotten (DSGVO Art. 17).
+ *
+ * Permanently deletes the authenticated user and all associated data:
+ *   - Removes rows in all 4 context schemas (operations/finance/people/strategy)
+ *     for every table with a user_id column.
+ *   - Cascades through public.users (subscriptions, sessions, OAuth links, etc.).
+ *   - Revokes all sessions (Redis + DB).
+ *   - Purges per-user cache entries.
+ *   - Clears the Sentry user scope.
+ *
+ * Confirmation: requires `confirm: "DELETE"` in the request body to prevent accidents.
+ * Idempotency: re-calling on a non-existent user returns 200 with `existed: false`.
+ *
+ * The endpoint is rate-limited via authRateLimiter to prevent automated abuse.
+ */
+authRouter.delete('/account', requireJwt, authRateLimiter, asyncHandler(async (req: Request, res: Response) => {
+  const userId = getAuthUserId(req);
+  const { confirm } = (req.body ?? {}) as { confirm?: string };
+
+  if (confirm !== 'DELETE') {
+    return res.status(400).json({
+      success: false,
+      error: 'Account-Löschung erfordert Bestätigung. Sende { "confirm": "DELETE" } im Body.',
+      code: 'CONFIRMATION_REQUIRED',
+    });
+  }
+
+  logger.warn('Account deletion requested', {
+    operation: 'auth.deleteAccount',
+    userId,
+    ip: req.ip,
+    userAgent: req.headers['user-agent'],
+  });
+
+  const result = await userService.deleteUserCascade(userId);
+
+  return res.json({
+    success: true,
+    data: {
+      deleted: result.existed,
+      userId: result.userId,
+      stats: {
+        rowsDeletedByContext: result.rowsDeletedByContext,
+        rowsDeletedPublic: result.rowsDeletedPublic,
+        sessionsRevoked: result.sessionsRevoked,
+        cachePurged: result.cachePurged,
+      },
+    },
+  });
+}));
+
+// ===========================================
+// Consent-Center (DSGVO Art. 6/7) — Sprint 1.2
+// ===========================================
+
+/**
+ * GET /api/auth/consent
+ *
+ * Aktueller Consent-Zustand für alle bekannten kinds. Für nicht gesetzte
+ * kinds wird der Default zurückgegeben (is_default: true). Das Frontend
+ * rendert davon die Toggles.
+ */
+authRouter.get('/consent', requireJwt, asyncHandler(async (req: Request, res: Response) => {
+  const userId = getAuthUserId(req);
+  const state = await getConsentState(userId);
+  res.json({
+    success: true,
+    data: {
+      state,
+      supported_kinds: CONSENT_KINDS,
+    },
+  });
+}));
+
+/**
+ * PUT /api/auth/consent
+ *
+ * Body: { kind: ConsentKind, granted: boolean }
+ *
+ * Setzt oder aktualisiert einen einzelnen Consent. Bei unverändertem Zustand
+ * ist der Call idempotent (kein neuer Historie-Eintrag).
+ *
+ * Art. 7 Abs. 3 DSGVO: Widerruf so einfach wie Erteilung — also PUT granted=false.
+ */
+authRouter.put('/consent', requireJwt, asyncHandler(async (req: Request, res: Response) => {
+  const userId = getAuthUserId(req);
+  const { kind, granted } = req.body as { kind?: unknown; granted?: unknown };
+
+  if (!isConsentKind(kind)) {
+    return res.status(400).json({
+      success: false,
+      error: `Invalid kind. Must be one of: ${CONSENT_KINDS.join(', ')}`,
+      code: 'VALIDATION_ERROR',
+    });
+  }
+  if (typeof granted !== 'boolean') {
+    return res.status(400).json({
+      success: false,
+      error: '"granted" must be boolean',
+      code: 'VALIDATION_ERROR',
+    });
+  }
+
+  const entry = await setConsent({
+    userId,
+    kind,
+    granted,
+    ipAddress: req.ip || null,
+    userAgent: req.headers['user-agent'] || null,
+    source: 'settings',
+  });
+
+  return res.json({ success: true, data: entry });
+}));
+
+/**
+ * DELETE /api/auth/consent/:kind
+ *
+ * Widerruf (Art. 7 Abs. 3). Markiert den aktuellen Eintrag als revoked
+ * und persistiert zusätzlich einen expliziten granted=false-Eintrag.
+ */
+authRouter.delete('/consent/:kind', requireJwt, asyncHandler(async (req: Request, res: Response) => {
+  const userId = getAuthUserId(req);
+  const kind = req.params.kind;
+  if (!isConsentKind(kind)) {
+    return res.status(400).json({
+      success: false,
+      error: `Invalid kind. Must be one of: ${CONSENT_KINDS.join(', ')}`,
+      code: 'VALIDATION_ERROR',
+    });
+  }
+
+  const entry = await revokeConsent({
+    userId,
+    kind: kind as ConsentKind,
+    ipAddress: req.ip || null,
+    userAgent: req.headers['user-agent'] || null,
+  });
+  return res.json({ success: true, data: entry });
+}));
+
+/**
+ * GET /api/auth/consent/history
+ *
+ * Vollständige Historie (für "wann habe ich was erteilt/widerrufen").
+ * Optional ?kind= filtert auf einen Consent-Typ.
+ */
+authRouter.get('/consent/history', requireJwt, asyncHandler(async (req: Request, res: Response) => {
+  const userId = getAuthUserId(req);
+  const rawKind = typeof req.query.kind === 'string' ? req.query.kind : undefined;
+  const kind = rawKind && isConsentKind(rawKind) ? rawKind : undefined;
+  const entries = await getConsentHistory(userId, kind);
+  res.json({ success: true, data: entries });
+}));
+
+/**
+ * POST /api/auth/consent/banner-complete
+ *
+ * Body: {
+ *   cookies_analytics: boolean,
+ *   ai_training_opt_out: boolean,
+ *   analytics_tracking: boolean,
+ *   functional_tracking: boolean,
+ * }
+ *
+ * Sprint 1.10: records the user's choice from the explicit DSGVO consent
+ * banner shown on signup / first-login. Writes each toggle through the
+ * existing `setConsent()` service (source='signup') and stamps
+ * `users.consent_banner_shown_at` so the banner does not reappear.
+ *
+ * `cookies_functional` is session-essential and always true — not a toggle.
+ * Double-submit is a no-op: `setConsent()` is already idempotent, and
+ * `markConsentBannerShown()` preserves the first acknowledgement timestamp.
+ */
+authRouter.post('/consent/banner-complete', requireJwt, asyncHandler(async (req: Request, res: Response) => {
+  const userId = getAuthUserId(req);
+  const body = req.body as Partial<Record<ConsentKind, unknown>>;
+
+  const togglableKinds: ConsentKind[] = [
+    'cookies_analytics',
+    'ai_training_opt_out',
+    'analytics_tracking',
+    'functional_tracking',
+  ];
+
+  for (const kind of togglableKinds) {
+    if (typeof body[kind] !== 'boolean') {
+      return res.status(400).json({
+        success: false,
+        error: `"${kind}" must be boolean`,
+        code: 'VALIDATION_ERROR',
+      });
+    }
+  }
+
+  const ipAddress = req.ip || null;
+  const userAgent = req.headers['user-agent'] || null;
+
+  for (const kind of togglableKinds) {
+    await setConsent({
+      userId,
+      kind,
+      granted: body[kind] as boolean,
+      ipAddress,
+      userAgent,
+      source: 'signup',
+    });
+  }
+  await setConsent({
+    userId,
+    kind: 'cookies_functional',
+    granted: true,
+    ipAddress,
+    userAgent,
+    source: 'signup',
+  });
+
+  const shownAt = await userService.markConsentBannerShown(userId);
+
+  return res.json({
+    success: true,
+    data: {
+      consent_banner_shown_at: shownAt,
     },
   });
 }));

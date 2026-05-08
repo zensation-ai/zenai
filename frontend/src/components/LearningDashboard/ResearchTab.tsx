@@ -1,3 +1,4 @@
+import { type CSSProperties } from 'react';
 import { ProactiveResearch } from './types';
 import { formatDate } from './helpers';
 import { EMPTY_STATE_MESSAGES } from '../../utils/aiPersonality';
@@ -21,8 +22,8 @@ export function ResearchTab({ research, onViewResearch }: ResearchTabProps) {
           {research.slice(0, 7).map((item, index) => (
             <div
               key={item.id}
-              className="research-card liquid-glass neuro-hover-lift neuro-stagger-item"
-              style={{ animationDelay: `${index * 50}ms` }}
+              className="research-card liquid-glass neuro-hover-lift neuro-stagger-item [animation-delay:var(--delay)]"
+              style={{ '--delay': `${index * 50}ms` } as CSSProperties}
               onClick={() => onViewResearch(item.id)}
             >
               <div className="research-status-badge">

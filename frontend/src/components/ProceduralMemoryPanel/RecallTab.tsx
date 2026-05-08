@@ -4,7 +4,7 @@
  * Extracted from ProceduralMemoryPanel.tsx (Phase 121).
  */
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, type CSSProperties } from 'react';
 import axios from 'axios';
 import type { RecallResult } from './types';
 import { OUTCOME_STYLES } from './types';
@@ -37,47 +37,30 @@ export function RecallTab({ context, onError }: RecallTabProps) {
 
   return (
     <div>
-      <p style={{ fontSize: '0.85rem', opacity: 0.6, margin: '0 0 1rem' }}>
-        Gib einen Trigger ein, um aehnliche gespeicherte Prozeduren zu finden.
+      <p className="text-[0.85rem] opacity-60 m-0 mb-4">
+        Gib einen Trigger ein, um ähnliche gespeicherte Prozeduren zu finden.
       </p>
-      <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem' }}>
+      <div className="flex gap-2 mb-4">
         <input
           type="text"
           placeholder="Trigger beschreiben..."
           value={recallTrigger}
           onChange={e => setRecallTrigger(e.target.value)}
           onKeyDown={e => e.key === 'Enter' && runRecall()}
-          style={{
-            flex: 1,
-            padding: '0.5rem 0.75rem',
-            borderRadius: '6px',
-            border: '1px solid rgba(255,255,255,0.15)',
-            background: 'rgba(255,255,255,0.05)',
-            color: 'inherit',
-            fontSize: '0.875rem',
-          }}
+          className="flex-1 py-2 px-3 rounded-md border border-white/15 bg-white/5 text-inherit text-sm"
         />
         <button
           onClick={runRecall}
           disabled={recallLoading || !recallTrigger.trim()}
-          style={{
-            padding: '0.5rem 1rem',
-            borderRadius: '6px',
-            border: 'none',
-            background: '#3b82f6',
-            color: '#fff',
-            cursor: recallLoading ? 'not-allowed' : 'pointer',
-            fontSize: '0.875rem',
-            opacity: recallLoading || !recallTrigger.trim() ? 0.5 : 1,
-          }}
+          className="py-2 px-4 rounded-md border-0 bg-blue-500 text-white text-sm cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          {recallLoading ? 'Suche...' : 'Recall'}
+          {recallLoading ? 'Suche...' : 'Abrufen'}
         </button>
       </div>
 
       {recallResults.length > 0 && (
         <div>
-          <div style={{ fontSize: '0.8rem', opacity: 0.5, marginBottom: '0.75rem' }}>
+          <div className="text-[0.8rem] opacity-50 mb-3">
             {recallResults.length} passende Prozedur{recallResults.length !== 1 ? 'en' : ''} gefunden
           </div>
           {recallResults.map(result => {
@@ -85,42 +68,26 @@ export function RecallTab({ context, onError }: RecallTabProps) {
             return (
               <div
                 key={result.id}
-                style={{
-                  padding: '0.75rem',
-                  marginBottom: '0.5rem',
-                  borderRadius: '8px',
-                  border: '1px solid rgba(255,255,255,0.08)',
-                  background: 'rgba(255,255,255,0.03)',
-                }}
+                className="p-3 mb-2 rounded-lg border border-white/[0.08] bg-white/[0.03]"
               >
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.375rem' }}>
-                  <span style={{ fontWeight: 500, fontSize: '0.9rem' }}>{result.name}</span>
-                  <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-                    <span style={{
-                      fontSize: '0.7rem',
-                      padding: '0.1rem 0.4rem',
-                      borderRadius: '4px',
-                      background: outcomeStyle.color + '22',
-                      color: outcomeStyle.color,
-                      fontWeight: 600,
-                    }}>
+                <div className="flex justify-between items-center mb-1.5">
+                  <span className="font-medium text-[0.9rem]">{result.name}</span>
+                  <div className="flex gap-2 items-center">
+                    <span
+                      className="text-[0.7rem] py-[0.1rem] px-[0.4rem] rounded font-semibold bg-[var(--bg)] text-[var(--c)]"
+                      style={{ '--bg': outcomeStyle.color + '22', '--c': outcomeStyle.color } as CSSProperties}
+                    >
                       {outcomeStyle.label}
                     </span>
-                    <span style={{
-                      fontSize: '0.7rem',
-                      padding: '0.1rem 0.4rem',
-                      borderRadius: '4px',
-                      background: 'rgba(34,197,94,0.15)',
-                      color: '#22c55e',
-                    }}>
+                    <span className="text-[0.7rem] py-[0.1rem] px-[0.4rem] rounded bg-green-500/15 text-green-500">
                       Sim: {result.similarity?.toFixed(3) || 'N/A'}
                     </span>
                   </div>
                 </div>
-                <div style={{ fontSize: '0.8rem', opacity: 0.6, marginBottom: '0.25rem' }}>
+                <div className="text-[0.8rem] opacity-60 mb-1">
                   Trigger: {result.trigger}
                 </div>
-                <div style={{ fontSize: '0.75rem', opacity: 0.4 }}>
+                <div className="text-xs opacity-40">
                   Erfolgsrate: {(result.success_rate * 100).toFixed(0)}% |
                   {result.steps?.length || 0} Schritte |
                   {result.tools_used?.length || 0} Tools

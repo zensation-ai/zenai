@@ -19,6 +19,7 @@
  */
 
 import { createHash } from 'crypto';
+import type { ModulationParams } from './neuromodulator-engine';
 import { AIContext } from '../../utils/database-context';
 import { logger } from '../../utils/logger';
 import { generateEmbedding } from '../ai';
@@ -57,6 +58,11 @@ import {
   applyDiversity,
   fitToTokenBudget,
 } from './memory-stats';
+import { CompositionalContextEncoder, type ContextMemory } from './compositional-context';
+import {
+  buildHindsightContextParts,
+  type HindsightContextBuilderStores,
+} from './hindsight-networks/hindsight-context-builder';
 
 // Re-export extracted modules for direct access
 export { processWithConcurrency, extractFromQuery, inferEmotionalContext } from './memory-query-router';
@@ -67,13 +73,9 @@ export { calculateDecay, getImportanceScore, getTypeBoost, applyDiversity, fitTo
 // Types & Interfaces
 // ===========================================
 
-export interface ContextPart {
-  type: 'summary' | 'fact' | 'pattern' | 'document' | 'interaction' | 'hint' | 'episode' | 'working';
-  content: string;
-  relevance: number;
-  source: 'short_term' | 'long_term' | 'pre_retrieved' | 'episodic' | 'working' | 'knowledge_graph';
-  timestamp?: number;
-}
+// ContextPart extracted to memory-types.ts to break circular dependency with memory-stats.ts
+export type { ContextPart } from './memory-types';
+import type { ContextPart } from './memory-types';
 
 export interface PreparedContext {
   /** Session ID for tracking */
@@ -141,6 +143,88 @@ export interface MemorySessionOptions {
   includeGraphExpansion?: boolean;
   /** Enable serendipity hints from 2-hop graph neighbors */
   enableSerendipity?: boolean;
+  /** Enable cross-context recall via compositional embeddings (Nature 2025) */
+  enableCrossContextRecall?: boolean;
+  /**
+   * Phase H4 binding: enable Hindsight cross-network router. When true
+   * (or env H4_HINDSIGHT_ROUTER=true) AND Hindsight stores are wired
+   * via `setHindsightStores`, the cross-network router routes the
+   * query to top-K networks (entity_summaries + evolving_beliefs) and
+   * the resulting ContextParts are added to the merge stage. Default
+   * OFF — eval harness flips per run.
+   */
+  enableHindsightRouter?: boolean;
+}
+
+// Singleton compositional context encoder for orthogonal subspace encoding
+// Default 768-dim embeddings with 256-dim shared subspace
+const compositionalEncoder = new CompositionalContextEncoder(768, 256);
+
+/**
+ * Phase H4 binding: shared Hindsight stores. Two wiring modes:
+ *
+ * 1. STATIC (in-memory): `setHindsightStores({...})` registers a single
+ *    pair of stores used regardless of context. Best for tests + smoke.
+ *
+ * 2. PER-CONTEXT FACTORY: `setHindsightStoreFactory((ctx) => {...})`
+ *    registers a factory that's called with the AIContext on each
+ *    `prepareEnhancedContext` invocation. Best for production
+ *    Postgres-backed stores that need per-schema routing.
+ *
+ * Factory wins over static when both are set. When neither is set,
+ * the binding is a no-op even with the env-flag on.
+ */
+let hindsightStores: HindsightContextBuilderStores = {};
+
+type HindsightStoreFactory = (ctx: AIContext) => HindsightContextBuilderStores;
+let hindsightStoreFactory: HindsightStoreFactory | null = null;
+
+/**
+ * Wire Hindsight network stores STATICALLY. Called once at server
+ * bootstrap with in-memory stubs (for tests / smoke). Subsequent calls
+ * replace the previous wiring.
+ *
+ * For production DB-backed stores prefer `setHindsightStoreFactory`.
+ */
+export function setHindsightStores(stores: HindsightContextBuilderStores): void {
+  hindsightStores = { ...stores };
+}
+
+/**
+ * Wire a Hindsight store FACTORY. Called once at server bootstrap; the
+ * factory is invoked with the current AIContext on each
+ * `prepareEnhancedContext` call.
+ *
+ * Pass `null` to clear the factory (revert to static stores).
+ */
+export function setHindsightStoreFactory(factory: HindsightStoreFactory | null): void {
+  hindsightStoreFactory = factory;
+}
+
+/** Read access for tests that need to inspect current wiring. */
+export function getHindsightStores(): HindsightContextBuilderStores {
+  return hindsightStores;
+}
+
+/**
+ * Resolve the Hindsight stores for a given context. Factory wins over
+ * static when both are registered. Returns an empty object when neither
+ * mode is wired.
+ */
+export function getHindsightStoresForContext(
+  ctx: AIContext,
+): HindsightContextBuilderStores {
+  if (hindsightStoreFactory) {
+    try {
+      return hindsightStoreFactory(ctx);
+    } catch (error) {
+      logger.warn('Hindsight store factory threw; falling back to static', {
+        context: ctx,
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
+  }
+  return hindsightStores;
 }
 
 // ===========================================
@@ -424,6 +508,89 @@ export class MemoryCoordinator {
         }
       }
 
+      // 2c. Cross-context recall via compositional embeddings (Nature 2025, bioRxiv 2025)
+      // Orthogonal subspace encoding enables cross-context transfer without contamination
+      const crossContextParts: ContextPart[] = [];
+      if (options.enableCrossContextRecall && longTerm?.facts && longTerm.facts.length > 0) {
+        try {
+          const queryEmb = await generateEmbedding(userQuery);
+          if (queryEmb && queryEmb.length > 0) {
+            // Build ContextMemory entries from long-term facts across ALL contexts
+            const crossContexts = (['operations', 'finance', 'people', 'strategy'] as const)
+              .filter(c => c !== context);
+
+            for (const otherCtx of crossContexts) {
+              try {
+                const otherFacts = await longTermMemory.retrieve(otherCtx, userQuery);
+                if (otherFacts?.facts && otherFacts.facts.length > 0) {
+                  const factsWithEmbeddings = otherFacts.facts
+                    .filter(f => f.embedding && f.embedding.length > 0)
+                    .slice(0, 5);
+
+                  const memories: ContextMemory[] = factsWithEmbeddings.map(f => ({
+                    id: `cross-${otherCtx}`,
+                    embedding: f.embedding!,
+                    context: otherCtx,
+                    content: f.content,
+                  }));
+
+                  // Cast context to ContextType (exclude 'demo' which is not a real memory context)
+                  const targetCtx = context as 'operations' | 'finance' | 'people' | 'strategy';
+                  if (['operations', 'finance', 'people', 'strategy'].includes(targetCtx)) {
+                    const relevant = compositionalEncoder.crossContextRecall(
+                      queryEmb, memories, targetCtx, 0.3,
+                    );
+
+                    for (const mem of relevant.slice(0, 2)) {
+                      crossContextParts.push({
+                        type: 'hint',
+                        content: `[Cross-context from ${otherCtx}] ${mem.content}`,
+                        relevance: 0.5,
+                        source: 'knowledge_graph',
+                        timestamp: Date.now(),
+                      });
+                    }
+                  }
+                }
+              } catch { /* other context may not have data */ }
+            }
+          }
+        } catch (error) {
+          logger.debug('Cross-context recall skipped (non-critical)', { error });
+        }
+      }
+
+      // 2d. Phase H4 binding: Hindsight cross-network router.
+      // When enabled AND stores are wired (static or factory), route
+      // the query to top-K Hindsight networks (entity_summaries +
+      // evolving_beliefs) and collect ContextParts. Default OFF — eval
+      // harness flips per run.
+      const hindsightParts: ContextPart[] = [];
+      const resolvedStores = getHindsightStoresForContext(context);
+      if (
+        options.enableHindsightRouter !== false &&
+        (resolvedStores.entitySummaryStore || resolvedStores.beliefStore)
+      ) {
+        try {
+          const result = await buildHindsightContextParts(
+            userQuery,
+            resolvedStores,
+            { enable: options.enableHindsightRouter },
+          );
+          if (result.applied) {
+            hindsightParts.push(...result.parts);
+            logger.debug('Hindsight router fired', {
+              sessionId,
+              category: result.routing.category,
+              hits: result.hits,
+              partsCount: result.parts.length,
+            });
+          }
+        } catch (error) {
+          logger.debug('Hindsight router skipped (non-critical)', { error });
+        }
+      }
+
       // 3. Combine all sources into context parts
       const allParts = [
         ...this.combineAllContextParts({
@@ -434,6 +601,8 @@ export class MemoryCoordinator {
           includePreRetrieved,
         }),
         ...graphParts,
+        ...crossContextParts,
+        ...hindsightParts,
       ];
 
       // 4. Prune and prioritize
@@ -851,7 +1020,8 @@ export class MemoryCoordinator {
   private async pruneContext(
     parts: ContextPart[],
     query: string,
-    minRelevance: number
+    minRelevance: number,
+    neuromodulationParams?: ModulationParams
   ): Promise<ContextPart[]> {
     if (parts.length === 0) {return [];}
 
@@ -891,7 +1061,10 @@ export class MemoryCoordinator {
             // A single low factor properly suppresses the score
             const recency = decay; // Already exponential time-based decay
             const importance = this.getImportanceScoreInternal(part);
-            const relevance = (similarity * 0.6 + part.relevance * 0.4); // Semantic-weighted relevance
+            // PMA: Acetylcholine modulates new vs recalled memory attention
+            // Default 0.6 preserves original 0.6/0.4 split when NeuromodulatorEngine unavailable
+            const achWeight = neuromodulationParams?.attentionRatio ?? 0.6;
+            const relevance = (similarity * achWeight + part.relevance * (1.0 - achWeight));
 
             // Multiplicative three-factor score with type boost
             const threeFactorScore = recency * importance * relevance * typeBoost;

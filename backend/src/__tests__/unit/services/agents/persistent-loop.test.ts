@@ -14,7 +14,7 @@
 jest.mock('../../../../utils/database-context', () => ({
   queryContext: jest.fn(),
   isValidContext: (ctx: string) =>
-    ['personal', 'work', 'learning', 'creative'].includes(ctx),
+    ['operations', 'finance', 'people', 'strategy'].includes(ctx),
 }));
 
 jest.mock('../../../../utils/logger', () => ({
@@ -85,7 +85,7 @@ function makeTaskRow(overrides: Partial<Record<string, unknown>> = {}): Record<s
     plan: JSON.stringify(plan),
     current_step: 1,
     status: 'executing',
-    context: 'work',
+    context: 'finance',
     results: JSON.stringify([]),
     max_steps: 20,
     max_duration_minutes: 60,
@@ -107,7 +107,7 @@ function makeTask(overrides: Partial<PersistentAgentTask> = {}): PersistentAgent
     plan,
     currentStep: 1,
     status: 'executing',
-    context: 'work',
+    context: 'finance',
     results: [],
     maxSteps: 20,
     maxDurationMinutes: 60,
@@ -134,11 +134,11 @@ describe('PersistentAgentLoop', () => {
       const plan = makePlan([{ stepNumber: 1, description: 'Do research' }]);
       mockQueryContext.mockResolvedValueOnce({ rows: [{ id: 'mock-task-uuid' }] } as any);
 
-      const id = await createTask('work', 'user-001', 'My goal', plan);
+      const id = await createTask('finance', 'user-001', 'My goal', plan);
 
       expect(id).toBe('mock-task-uuid');
       expect(mockQueryContext).toHaveBeenCalledWith(
-        'work',
+        'finance',
         expect.stringContaining('INSERT'),
         expect.arrayContaining(['mock-task-uuid', 'user-001', 'My goal']),
       );
@@ -152,7 +152,7 @@ describe('PersistentAgentLoop', () => {
       const plan = makePlan([{ stepNumber: 1, description: 'Do research' }]);
       mockQueryContext.mockResolvedValueOnce({ rows: [{ id: 'mock-task-uuid' }] } as any);
 
-      const id = await createTask('personal', 'user-002', 'Custom goal', plan, 10, 30);
+      const id = await createTask('operations', 'user-002', 'Custom goal', plan, 10, 30);
 
       expect(id).toBe('mock-task-uuid');
       const callArgs = mockQueryContext.mock.calls[0][2] as unknown[];
@@ -164,7 +164,7 @@ describe('PersistentAgentLoop', () => {
       const plan = makePlan([]);
       mockQueryContext.mockResolvedValueOnce({ rows: [{ id: 'mock-task-uuid' }] } as any);
 
-      await createTask('work', 'user-001', 'goal', plan);
+      await createTask('finance', 'user-001', 'goal', plan);
 
       const callArgs = mockQueryContext.mock.calls[0][2] as unknown[];
       expect(callArgs).toContain('planning');
@@ -177,7 +177,7 @@ describe('PersistentAgentLoop', () => {
     it('returns parsed task when found', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [makeTaskRow()] } as any);
 
-      const task = await getTask('work', 'task-001');
+      const task = await getTask('finance', 'task-001');
 
       expect(task).not.toBeNull();
       expect(task!.id).toBe('task-001');
@@ -191,7 +191,7 @@ describe('PersistentAgentLoop', () => {
     it('returns null when task not found', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [] } as any);
 
-      const task = await getTask('work', 'nonexistent');
+      const task = await getTask('finance', 'nonexistent');
 
       expect(task).toBeNull();
     });
@@ -199,10 +199,10 @@ describe('PersistentAgentLoop', () => {
     it('queries by taskId', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [] } as any);
 
-      await getTask('learning', 'task-xyz');
+      await getTask('people', 'task-xyz');
 
       expect(mockQueryContext).toHaveBeenCalledWith(
-        'learning',
+        'people',
         expect.any(String),
         expect.arrayContaining(['task-xyz']),
       );
@@ -217,7 +217,7 @@ describe('PersistentAgentLoop', () => {
         rows: [makeTaskRow(), makeTaskRow({ id: 'task-002', status: 'paused' })],
       } as any);
 
-      const tasks = await listActiveTasks('work', 'user-001');
+      const tasks = await listActiveTasks('finance', 'user-001');
 
       expect(tasks).toHaveLength(2);
       expect(tasks[0].id).toBe('task-001');
@@ -227,7 +227,7 @@ describe('PersistentAgentLoop', () => {
     it('returns empty array when no active tasks', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [] } as any);
 
-      const tasks = await listActiveTasks('work', 'user-001');
+      const tasks = await listActiveTasks('finance', 'user-001');
 
       expect(tasks).toEqual([]);
     });
@@ -235,10 +235,10 @@ describe('PersistentAgentLoop', () => {
     it('filters by userId and excludes completed/failed', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [] } as any);
 
-      await listActiveTasks('personal', 'user-abc');
+      await listActiveTasks('operations', 'user-abc');
 
       expect(mockQueryContext).toHaveBeenCalledWith(
-        'personal',
+        'operations',
         expect.stringContaining('user_id'),
         expect.arrayContaining(['user-abc']),
       );
@@ -260,7 +260,7 @@ describe('PersistentAgentLoop', () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [taskRow] } as any); // getTask
       mockQueryContext.mockResolvedValueOnce({ rows: [] } as any); // UPDATE
 
-      const nextStep = await advanceStep('work', 'task-001', 'Step 1 result');
+      const nextStep = await advanceStep('finance', 'task-001', 'Step 1 result');
 
       expect(nextStep).not.toBeNull();
       expect(nextStep!.stepNumber).toBe(2);
@@ -275,7 +275,7 @@ describe('PersistentAgentLoop', () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [taskRow] } as any);
       mockQueryContext.mockResolvedValueOnce({ rows: [] } as any);
 
-      const nextStep = await advanceStep('work', 'task-001', 'Done');
+      const nextStep = await advanceStep('finance', 'task-001', 'Done');
 
       expect(nextStep).toBeNull();
     });
@@ -290,7 +290,7 @@ describe('PersistentAgentLoop', () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [taskRow] } as any);
       mockQueryContext.mockResolvedValueOnce({ rows: [] } as any);
 
-      const nextStep = await advanceStep('work', 'task-001', 'Done');
+      const nextStep = await advanceStep('finance', 'task-001', 'Done');
 
       // Step 2 depends on step 3 (pending), so step 3 should be next
       expect(nextStep).not.toBeNull();
@@ -305,7 +305,7 @@ describe('PersistentAgentLoop', () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [taskRow] } as any);
       mockQueryContext.mockResolvedValueOnce({ rows: [] } as any);
 
-      await advanceStep('work', 'task-001', 'Done');
+      await advanceStep('finance', 'task-001', 'Done');
 
       // The UPDATE query should be called
       expect(mockQueryContext).toHaveBeenCalledTimes(2);
@@ -316,7 +316,7 @@ describe('PersistentAgentLoop', () => {
     it('returns null when task not found', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [] } as any);
 
-      const nextStep = await advanceStep('work', 'nonexistent', 'Done');
+      const nextStep = await advanceStep('finance', 'nonexistent', 'Done');
 
       expect(nextStep).toBeNull();
     });
@@ -333,7 +333,7 @@ describe('PersistentAgentLoop', () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [taskRow] } as any);
       mockQueryContext.mockResolvedValueOnce({ rows: [] } as any);
 
-      await failStep('work', 'task-001', 'Something went wrong');
+      await failStep('finance', 'task-001', 'Something went wrong');
 
       expect(mockQueryContext).toHaveBeenCalledTimes(2);
       const updateCall = mockQueryContext.mock.calls[1];
@@ -349,7 +349,7 @@ describe('PersistentAgentLoop', () => {
     it('does nothing when task not found', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [] } as any);
 
-      await expect(failStep('work', 'nonexistent', 'error')).resolves.toBeUndefined();
+      await expect(failStep('finance', 'nonexistent', 'error')).resolves.toBeUndefined();
 
       expect(mockQueryContext).toHaveBeenCalledTimes(1);
     });
@@ -361,10 +361,10 @@ describe('PersistentAgentLoop', () => {
     it('sets task status to paused', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [] } as any);
 
-      await pauseTask('work', 'task-001');
+      await pauseTask('finance', 'task-001');
 
       expect(mockQueryContext).toHaveBeenCalledWith(
-        'work',
+        'finance',
         expect.stringContaining('UPDATE'),
         expect.arrayContaining(['paused', 'task-001']),
       );
@@ -383,7 +383,7 @@ describe('PersistentAgentLoop', () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [taskRow] } as any); // getTask
       mockQueryContext.mockResolvedValueOnce({ rows: [] } as any); // UPDATE
 
-      const step = await resumeTask('work', 'task-001');
+      const step = await resumeTask('finance', 'task-001');
 
       expect(step).not.toBeNull();
       expect(step!.stepNumber).toBe(2);
@@ -394,7 +394,7 @@ describe('PersistentAgentLoop', () => {
     it('returns null when task not found', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [] } as any);
 
-      const step = await resumeTask('work', 'nonexistent');
+      const step = await resumeTask('finance', 'nonexistent');
 
       expect(step).toBeNull();
     });
@@ -407,7 +407,7 @@ describe('PersistentAgentLoop', () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [taskRow] } as any);
       mockQueryContext.mockResolvedValueOnce({ rows: [] } as any);
 
-      const step = await resumeTask('work', 'task-001');
+      const step = await resumeTask('finance', 'task-001');
 
       expect(step).toBeNull();
     });
@@ -419,10 +419,10 @@ describe('PersistentAgentLoop', () => {
     it('marks task as completed with final result', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [] } as any);
 
-      await completeTask('work', 'task-001', 'Final answer here');
+      await completeTask('finance', 'task-001', 'Final answer here');
 
       expect(mockQueryContext).toHaveBeenCalledWith(
-        'work',
+        'finance',
         expect.stringContaining('UPDATE'),
         expect.arrayContaining(['completed', 'task-001']),
       );

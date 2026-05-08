@@ -11,7 +11,7 @@ import type { InterruptibilitySignals } from '../../../services/interruptibility
 // Mock database-context for habit-engine and focus-mode tests
 jest.mock('../../../utils/database-context', () => ({
   queryContext: jest.fn(),
-  isValidContext: jest.fn((ctx: string) => ['personal', 'work', 'learning', 'creative'].includes(ctx)),
+  isValidContext: jest.fn((ctx: string) => ['operations', 'finance', 'people', 'strategy'].includes(ctx)),
 }));
 
 jest.mock('../../../utils/logger', () => ({
@@ -263,10 +263,10 @@ describe('Habit Engine', () => {
     const { recordActivity } = await import('../../../services/habit-engine');
     mockQueryContext.mockResolvedValueOnce({ rows: [] });
 
-    const result = await recordActivity('personal' as const, 'user-1', 'page_visit', { page: '/dashboard' });
+    const result = await recordActivity('operations' as const, 'user-1', 'page_visit', { page: '/dashboard' });
     expect(result.id).toBeDefined();
     expect(mockQueryContext).toHaveBeenCalledWith(
-      'personal',
+      'operations',
       expect.stringContaining('INSERT INTO habit_activities'),
       expect.any(Array),
     );
@@ -274,7 +274,7 @@ describe('Habit Engine', () => {
 
   test('generateSuggestions returns default when no patterns', async () => {
     const { generateSuggestions } = await import('../../../services/habit-engine');
-    const suggestions = generateSuggestions('personal' as const, 'user-1', []);
+    const suggestions = generateSuggestions('operations' as const, 'user-1', []);
     expect(suggestions.length).toBe(1);
     expect(suggestions[0].type).toBe('optimize');
     expect(suggestions[0].title).toContain('Start building');
@@ -282,7 +282,7 @@ describe('Habit Engine', () => {
 
   test('generateSuggestions creates routine suggestion from pattern', async () => {
     const { generateSuggestions } = await import('../../../services/habit-engine');
-    const suggestions = generateSuggestions('personal' as const, 'user-1', [{
+    const suggestions = generateSuggestions('operations' as const, 'user-1', [{
       id: 'p1',
       pattern_type: 'routine' as const,
       description: 'You frequently visit "/chat" around 9:00',
@@ -297,7 +297,7 @@ describe('Habit Engine', () => {
 
   test('generateSuggestions creates break suggestion', async () => {
     const { generateSuggestions } = await import('../../../services/habit-engine');
-    const suggestions = generateSuggestions('personal' as const, 'user-1', [{
+    const suggestions = generateSuggestions('operations' as const, 'user-1', [{
       id: 'p1',
       pattern_type: 'break' as const,
       description: 'You usually take breaks around 15:00',
@@ -312,7 +312,7 @@ describe('Habit Engine', () => {
     const { getHabitStats } = await import('../../../services/habit-engine');
     mockQueryContext.mockRejectedValue(new Error('DB error'));
 
-    const stats = await getHabitStats('personal' as const, 'user-1');
+    const stats = await getHabitStats('operations' as const, 'user-1');
     expect(stats.deepWorkMinutes).toBe(0);
     expect(stats.taskCompletionRate).toBe(0);
     expect(stats.currentStreak).toBe(0);
@@ -348,7 +348,7 @@ describe('Focus Mode', () => {
       }],
     });
 
-    const session = await startFocusMode('personal' as const, 'user-1', 25);
+    const session = await startFocusMode('operations' as const, 'user-1', 25);
     expect(session.status).toBe('active');
     expect(session.duration_minutes).toBe(25);
     expect(mockQueryContext).toHaveBeenCalledTimes(2);
@@ -358,7 +358,7 @@ describe('Focus Mode', () => {
     const { endFocusMode } = await import('../../../services/focus-mode');
     mockQueryContext.mockResolvedValueOnce({ rows: [] });
 
-    const result = await endFocusMode('personal' as const, 'user-1');
+    const result = await endFocusMode('operations' as const, 'user-1');
     expect(result).toBeNull();
   });
 
@@ -377,7 +377,7 @@ describe('Focus Mode', () => {
       }],
     });
 
-    const result = await endFocusMode('personal' as const, 'user-1');
+    const result = await endFocusMode('operations' as const, 'user-1');
     expect(result).not.toBeNull();
     expect(result!.status).toBe('completed');
   });
@@ -389,7 +389,7 @@ describe('Focus Mode', () => {
     // Second: query active
     mockQueryContext.mockResolvedValueOnce({ rows: [] });
 
-    const status = await getFocusStatus('personal' as const, 'user-1');
+    const status = await getFocusStatus('operations' as const, 'user-1');
     expect(status.active).toBe(false);
     expect(status.session).toBeNull();
     expect(status.remainingMinutes).toBe(0);
@@ -416,7 +416,7 @@ describe('Focus Mode', () => {
       }],
     });
 
-    const status = await getFocusStatus('personal' as const, 'user-1');
+    const status = await getFocusStatus('operations' as const, 'user-1');
     expect(status.active).toBe(true);
     expect(status.session).not.toBeNull();
     expect(status.remainingMinutes).toBeGreaterThan(0);
@@ -450,7 +450,7 @@ describe('Focus Mode', () => {
       ],
     });
 
-    const sessions = await getFocusHistory('personal' as const, 'user-1', 7);
+    const sessions = await getFocusHistory('operations' as const, 'user-1', 7);
     expect(sessions).toHaveLength(2);
     expect(sessions[0].id).toBe('s1');
     expect(sessions[1].active_task_id).toBe('task-1');
@@ -492,7 +492,7 @@ describe('Proactive Intelligence Routes', () => {
 
   test('GET /api/:context/interruptibility returns score', async () => {
     const res = await request(app)
-      .get('/api/personal/interruptibility?typingRate=0&sessionDuration=5')
+      .get('/api/operations/interruptibility?typingRate=0&sessionDuration=5')
       .expect(200);
 
     expect(res.body.success).toBe(true);
@@ -502,7 +502,7 @@ describe('Proactive Intelligence Routes', () => {
 
   test('GET /api/:context/interruptibility with focus mode', async () => {
     const res = await request(app)
-      .get('/api/personal/interruptibility?focusModeActive=true')
+      .get('/api/operations/interruptibility?focusModeActive=true')
       .expect(200);
 
     expect(res.body.data.level).toBe('dnd');
@@ -513,7 +513,7 @@ describe('Proactive Intelligence Routes', () => {
     mockQueryContext.mockResolvedValueOnce({ rows: [] });
 
     const res = await request(app)
-      .post('/api/personal/habits/activity')
+      .post('/api/operations/habits/activity')
       .send({ activityType: 'page_visit', metadata: { page: '/chat' } })
       .expect(200);
 
@@ -523,7 +523,7 @@ describe('Proactive Intelligence Routes', () => {
 
   test('POST /api/:context/habits/activity rejects missing activityType', async () => {
     const res = await request(app)
-      .post('/api/personal/habits/activity')
+      .post('/api/operations/habits/activity')
       .send({})
       .expect(400);
 
@@ -539,7 +539,7 @@ describe('Proactive Intelligence Routes', () => {
       .mockResolvedValueOnce({ rows: [{ page: '/chat', cnt: 20 }] });
 
     const res = await request(app)
-      .get('/api/personal/habits/stats')
+      .get('/api/operations/habits/stats')
       .expect(200);
 
     expect(res.body.success).toBe(true);
@@ -564,7 +564,7 @@ describe('Proactive Intelligence Routes', () => {
     });
 
     const res = await request(app)
-      .post('/api/personal/focus/start')
+      .post('/api/operations/focus/start')
       .send({ durationMinutes: 25 })
       .expect(200);
 
@@ -574,12 +574,12 @@ describe('Proactive Intelligence Routes', () => {
 
   test('POST /api/:context/focus/start rejects invalid duration', async () => {
     await request(app)
-      .post('/api/personal/focus/start')
+      .post('/api/operations/focus/start')
       .send({ durationMinutes: 0 })
       .expect(400);
 
     await request(app)
-      .post('/api/personal/focus/start')
+      .post('/api/operations/focus/start')
       .send({ durationMinutes: 999 })
       .expect(400);
   });
@@ -599,7 +599,7 @@ describe('Proactive Intelligence Routes', () => {
     });
 
     const res = await request(app)
-      .post('/api/personal/focus/end')
+      .post('/api/operations/focus/end')
       .expect(200);
 
     expect(res.body.success).toBe(true);
@@ -613,7 +613,7 @@ describe('Proactive Intelligence Routes', () => {
     mockQueryContext.mockResolvedValueOnce({ rows: [] });
 
     const res = await request(app)
-      .get('/api/personal/focus/status')
+      .get('/api/operations/focus/status')
       .expect(200);
 
     expect(res.body.success).toBe(true);
@@ -624,7 +624,7 @@ describe('Proactive Intelligence Routes', () => {
     mockQueryContext.mockResolvedValueOnce({ rows: [] });
 
     const res = await request(app)
-      .get('/api/personal/focus/history?days=14')
+      .get('/api/operations/focus/history?days=14')
       .expect(200);
 
     expect(res.body.success).toBe(true);

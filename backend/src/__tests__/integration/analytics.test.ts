@@ -12,7 +12,7 @@ import { analyticsRouter } from '../../routes/analytics';
 // Mock all external dependencies
 jest.mock('../../utils/database-context', () => ({
   queryContext: jest.fn(),
-  isValidContext: jest.fn((ctx: string) => ['personal', 'work', 'learning', 'creative'].includes(ctx)),
+  isValidContext: jest.fn((ctx: string) => ['operations', 'finance', 'people', 'strategy'].includes(ctx)),
   AIContext: {},
 }));
 
@@ -64,7 +64,7 @@ describe('Analytics API Integration Tests', () => {
   // ===========================================
 
   describe('GET /api/:context/analytics/overview', () => {
-    it('should return analytics overview for personal context', async () => {
+    it('should return analytics overview for operations context', async () => {
       // Mock all the parallel queries
       mockQueryContext
         // Total stats
@@ -142,7 +142,7 @@ describe('Analytics API Integration Tests', () => {
         });
 
       const response = await request(app)
-        .get('/api/personal/analytics/overview')
+        .get('/api/operations/analytics/overview')
         .expect(200);
 
       expect(response.body.success).toBe(true);
@@ -167,7 +167,7 @@ describe('Analytics API Integration Tests', () => {
       mockQueryContext.mockRejectedValueOnce(new Error('Database connection failed'));
 
       const response = await request(app)
-        .get('/api/personal/analytics/overview')
+        .get('/api/operations/analytics/overview')
         .expect(500);
 
       expect(response.body.error).toBeDefined();
@@ -206,7 +206,7 @@ describe('Analytics API Integration Tests', () => {
         });
 
       const response = await request(app)
-        .get('/api/personal/analytics/timeline')
+        .get('/api/operations/analytics/timeline')
         .query({ period: 'week' })
         .expect(200);
 
@@ -221,7 +221,7 @@ describe('Analytics API Integration Tests', () => {
         .mockResolvedValueOnce({ rows: [], rowCount: 0, command: 'SELECT', oid: 0, fields: [] });
 
       await request(app)
-        .get('/api/personal/analytics/timeline')
+        .get('/api/operations/analytics/timeline')
         .expect(200);
 
       expect(mockQueryContext).toHaveBeenCalled();
@@ -261,7 +261,7 @@ describe('Analytics API Integration Tests', () => {
         });
 
       const response = await request(app)
-        .get('/api/personal/analytics/engagement')
+        .get('/api/operations/analytics/engagement')
         .expect(200);
 
       expect(response.body.success).toBe(true);
@@ -316,14 +316,14 @@ describe('Analytics API Integration Tests', () => {
         .mockResolvedValueOnce({ rows: [], rowCount: 0, command: 'SELECT', oid: 0, fields: [] });
 
       const response = await request(app)
-        .get('/api/personal/analytics/overview')
+        .get('/api/operations/analytics/overview')
         .expect(200);
 
       expect(response.body.summary.total).toBe(0);
     });
 
     it('should handle all four contexts', async () => {
-      for (const ctx of ['personal', 'work', 'learning', 'creative']) {
+      for (const ctx of ['operations', 'finance', 'people', 'strategy']) {
         mockQueryContext
           .mockResolvedValueOnce({ rows: [{ total: '1', active: '1', archived: '0', last_week: '0', last_month: '0' }], rowCount: 1, command: 'SELECT', oid: 0, fields: [] })
           .mockResolvedValueOnce({ rows: [{ created: '0', updated: '0' }], rowCount: 1, command: 'SELECT', oid: 0, fields: [] })
@@ -340,7 +340,7 @@ describe('Analytics API Integration Tests', () => {
       }
     });
 
-    it('should handle work context the same as personal', async () => {
+    it('should handle finance context the same as operations', async () => {
       mockQueryContext
         .mockResolvedValueOnce({ rows: [{ total: '50', active: '45', archived: '5', last_week: '10', last_month: '25' }], rowCount: 1, command: 'SELECT', oid: 0, fields: [] })
         .mockResolvedValueOnce({ rows: [{ created: '2', updated: '5' }], rowCount: 1, command: 'SELECT', oid: 0, fields: [] })
@@ -350,7 +350,7 @@ describe('Analytics API Integration Tests', () => {
         .mockResolvedValueOnce({ rows: [], rowCount: 0, command: 'SELECT', oid: 0, fields: [] });
 
       const response = await request(app)
-        .get('/api/work/analytics/overview')
+        .get('/api/finance/analytics/overview')
         .expect(200);
 
       expect(response.body.success).toBe(true);
@@ -399,7 +399,7 @@ describe('Analytics API Integration Tests', () => {
       (getUnreadActivityCount as jest.Mock).mockResolvedValueOnce(3);
 
       const response = await request(app)
-        .get('/api/personal/analytics/dashboard-summary')
+        .get('/api/operations/analytics/dashboard-summary')
         .expect(200);
 
       expect(response.body.success).toBe(true);
@@ -414,7 +414,7 @@ describe('Analytics API Integration Tests', () => {
       expect(response.body.recentIdeas).toHaveLength(1);
       expect(response.body.activities).toHaveLength(1);
       expect(response.body.unreadCount).toBe(3);
-      expect(response.body.context).toBe('personal');
+      expect(response.body.context).toBe('operations');
     });
 
     it('should return 400 for invalid context', async () => {
@@ -447,7 +447,7 @@ describe('Analytics API Integration Tests', () => {
       (getUnreadActivityCount as jest.Mock).mockResolvedValueOnce(0);
 
       const response = await request(app)
-        .get('/api/personal/analytics/dashboard-summary')
+        .get('/api/operations/analytics/dashboard-summary')
         .expect(200);
 
       // Should still return 200 because safeQuery catches errors
@@ -476,7 +476,7 @@ describe('Analytics API Integration Tests', () => {
       (getUnreadActivityCount as jest.Mock).mockResolvedValueOnce(0);
 
       const response = await request(app)
-        .get('/api/personal/analytics/dashboard-summary')
+        .get('/api/operations/analytics/dashboard-summary')
         .expect(200);
 
       expect(response.body.stats.total).toBe(0);

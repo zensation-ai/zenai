@@ -4,8 +4,8 @@ FROM node:20-alpine AS builder
 
 WORKDIR /app
 
-# Install pnpm via npm (more reliable than corepack on CI)
-RUN npm install -g pnpm@9.15.0
+# Install pnpm via corepack (Node.js built-in package manager manager)
+RUN corepack enable && corepack prepare pnpm@9.15.0 --activate
 
 # Copy workspace config and lockfile
 COPY pnpm-workspace.yaml pnpm-lock.yaml package.json .npmrc ./
@@ -30,15 +30,18 @@ FROM node:20-alpine AS production
 
 WORKDIR /app
 
-# Install dumb-init for proper signal handling
-RUN apk add --no-cache dumb-init
+# Upgrade all system packages first to pick up security patches (e.g. musl CVEs)
+RUN apk upgrade --no-cache
+
+# Install dumb-init for proper signal handling + curl for health checks
+RUN apk add --no-cache dumb-init curl
 
 # Create non-root user for security
 RUN addgroup -g 1001 -S nodejs && \
     adduser -S nodejs -u 1001
 
 # Install pnpm for production install
-RUN npm install -g pnpm@9.15.0
+RUN corepack enable && corepack prepare pnpm@9.15.0 --activate
 
 # Copy workspace config
 COPY pnpm-workspace.yaml pnpm-lock.yaml package.json .npmrc ./
@@ -68,6 +71,10 @@ WORKDIR /app/backend
 
 # Expose port
 EXPOSE 3000
+
+# Container health check (used by Docker/Kubernetes/ECS/Railway)
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+  CMD curl -f http://localhost:3000/api/health || exit 1
 
 # Start with dumb-init
 ENTRYPOINT ["dumb-init", "--"]

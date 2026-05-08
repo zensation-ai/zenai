@@ -12,7 +12,7 @@ jest.mock('../../../../services/memory/short-term-memory', () => ({
   shortTermMemory: {
     getOrCreateMemory: jest.fn().mockResolvedValue({ sessionId: 'test', recentInteractions: [] }),
     addInteraction: jest.fn(),
-    getMemory: jest.fn().mockReturnValue({ recentInteractions: [], context: 'work' }),
+    getMemory: jest.fn().mockReturnValue({ recentInteractions: [], context: 'finance' }),
     clearMemory: jest.fn(),
     getEnrichedContext: jest.fn().mockResolvedValue({
       recentMessages: [{ role: 'user', content: 'Hello' }],
@@ -70,7 +70,7 @@ jest.mock('../../../../services/memory/working-memory', () => ({
       currentGoal: 'Test goal',
       subGoals: [],
       slots: [{ id: '1', type: 'goal', content: 'Test goal', priority: 1, activation: 1 }],
-      context: 'work',
+      context: 'finance',
       capacity: 7,
       createdAt: new Date(),
       lastActivity: new Date(),
@@ -120,16 +120,16 @@ describe('Memory Coordinator', () => {
 
   describe('startSession', () => {
     it('should start a new memory session', async () => {
-      const sessionId = await coordinator.startSession('work');
+      const sessionId = await coordinator.startSession('finance');
 
       expect(sessionId).toBeDefined();
       expect(sessionId).toContain('session_');
       expect(shortTermMemory.getOrCreateMemory).toHaveBeenCalled();
-      expect(longTermMemory.initialize).toHaveBeenCalledWith('work');
+      expect(longTermMemory.initialize).toHaveBeenCalledWith('finance');
     });
 
     it('should accept metadata', async () => {
-      const sessionId = await coordinator.startSession('personal', { source: 'voice' });
+      const sessionId = await coordinator.startSession('operations', { source: 'voice' });
 
       expect(sessionId).toBeDefined();
     });
@@ -167,18 +167,18 @@ describe('Memory Coordinator', () => {
     it('should trigger consolidation when requested', async () => {
       (shortTermMemory.getMemory as jest.Mock).mockReturnValue({
         recentInteractions: new Array(10).fill({ role: 'user', content: 'test' }),
-        context: 'work',
+        context: 'finance',
       });
 
       await coordinator.endSession('session-1', true);
 
-      expect(longTermMemory.consolidate).toHaveBeenCalledWith('work');
+      expect(longTermMemory.consolidate).toHaveBeenCalledWith('finance');
     });
 
     it('should not consolidate for short sessions', async () => {
       (shortTermMemory.getMemory as jest.Mock).mockReturnValue({
         recentInteractions: [{ role: 'user', content: 'test' }],
-        context: 'work',
+        context: 'finance',
       });
 
       await coordinator.endSession('session-1', true);
@@ -193,7 +193,7 @@ describe('Memory Coordinator', () => {
 
   describe('prepareContext', () => {
     it('should prepare context from all memory sources', async () => {
-      const context = await coordinator.prepareContext('session-1', 'What are my tasks?', 'work');
+      const context = await coordinator.prepareContext('session-1', 'What are my tasks?', 'finance');
 
       expect(context).toBeDefined();
       expect(context.sessionId).toBe('session-1');
@@ -202,13 +202,13 @@ describe('Memory Coordinator', () => {
     });
 
     it('should include long-term memory by default', async () => {
-      await coordinator.prepareContext('session-1', 'Query', 'work');
+      await coordinator.prepareContext('session-1', 'Query', 'finance');
 
-      expect(longTermMemory.retrieve).toHaveBeenCalledWith('work', 'Query');
+      expect(longTermMemory.retrieve).toHaveBeenCalledWith('finance', 'Query');
     });
 
     it('should exclude long-term memory when disabled', async () => {
-      await coordinator.prepareContext('session-1', 'Query', 'work', {
+      await coordinator.prepareContext('session-1', 'Query', 'finance', {
         includeLongTerm: false,
       });
 
@@ -223,7 +223,7 @@ describe('Memory Coordinator', () => {
         systemEnhancement: 'cached',
       });
 
-      const context = await coordinator.prepareContext('session-1', 'Same query', 'work');
+      const context = await coordinator.prepareContext('session-1', 'Same query', 'finance');
 
       expect(context.systemEnhancement).toBe('cached');
     });
@@ -231,7 +231,7 @@ describe('Memory Coordinator', () => {
     it('should return minimal context on error', async () => {
       (shortTermMemory.getEnrichedContext as jest.Mock).mockRejectedValueOnce(new Error('Test error'));
 
-      const context = await coordinator.prepareContext('session-1', 'Query', 'work');
+      const context = await coordinator.prepareContext('session-1', 'Query', 'finance');
 
       expect(context.parts).toEqual([]);
       expect(context.systemEnhancement).toBe('');
@@ -244,7 +244,7 @@ describe('Memory Coordinator', () => {
 
   describe('prepareEnhancedContext', () => {
     it('should prepare enhanced context with all 4 memory layers', async () => {
-      const context = await coordinator.prepareEnhancedContext('session-1', 'Complex query', 'work');
+      const context = await coordinator.prepareEnhancedContext('session-1', 'Complex query', 'finance');
 
       expect(context).toBeDefined();
       expect(context.workingMemory).toBeDefined();
@@ -255,19 +255,19 @@ describe('Memory Coordinator', () => {
     it('should initialize working memory if not exists', async () => {
       (workingMemory.getState as jest.Mock).mockReturnValue(null);
 
-      await coordinator.prepareEnhancedContext('session-1', 'New task', 'work');
+      await coordinator.prepareEnhancedContext('session-1', 'New task', 'finance');
 
-      expect(workingMemory.initialize).toHaveBeenCalledWith('session-1', 'New task', 'work');
+      expect(workingMemory.initialize).toHaveBeenCalledWith('session-1', 'New task', 'finance');
     });
 
     it('should include episodic memory by default', async () => {
-      await coordinator.prepareEnhancedContext('session-1', 'Query', 'work');
+      await coordinator.prepareEnhancedContext('session-1', 'Query', 'finance');
 
       expect(episodicMemory.retrieve).toHaveBeenCalled();
     });
 
     it('should exclude episodic memory when disabled', async () => {
-      await coordinator.prepareEnhancedContext('session-1', 'Query', 'work', {
+      await coordinator.prepareEnhancedContext('session-1', 'Query', 'finance', {
         includeEpisodic: false,
       });
 
@@ -275,13 +275,13 @@ describe('Memory Coordinator', () => {
     });
 
     it('should calculate emotional tone from episodes', async () => {
-      await coordinator.prepareEnhancedContext('session-1', 'Query', 'work');
+      await coordinator.prepareEnhancedContext('session-1', 'Query', 'finance');
 
       expect(episodicMemory.calculateEmotionalTone).toHaveBeenCalled();
     });
 
     it('should respect token budget', async () => {
-      const context = await coordinator.prepareEnhancedContext('session-1', 'Query', 'work', {
+      const context = await coordinator.prepareEnhancedContext('session-1', 'Query', 'finance', {
         maxContextTokens: 1000,
       });
 
@@ -289,7 +289,7 @@ describe('Memory Coordinator', () => {
     });
 
     it('should include stats in result', async () => {
-      const context = await coordinator.prepareEnhancedContext('session-1', 'Query', 'work');
+      const context = await coordinator.prepareEnhancedContext('session-1', 'Query', 'finance');
 
       expect(context.stats.shortTermInteractions).toBeDefined();
       expect(context.stats.longTermFacts).toBeDefined();
@@ -301,7 +301,7 @@ describe('Memory Coordinator', () => {
       (episodicMemory.retrieve as jest.Mock).mockRejectedValueOnce(new Error('Error'));
       (shortTermMemory.getEnrichedContext as jest.Mock).mockRejectedValueOnce(new Error('Error'));
 
-      const context = await coordinator.prepareEnhancedContext('session-1', 'Query', 'work');
+      const context = await coordinator.prepareEnhancedContext('session-1', 'Query', 'finance');
 
       expect(context.parts).toEqual([]);
       expect(context.workingMemory.goal).toBe('Query');
@@ -323,26 +323,26 @@ describe('Memory Coordinator', () => {
 
   describe('getLongTermStats', () => {
     it('should return long-term memory statistics', async () => {
-      const stats = await coordinator.getLongTermStats('work');
+      const stats = await coordinator.getLongTermStats('finance');
 
       expect(stats).toBeDefined();
-      expect(longTermMemory.getStats).toHaveBeenCalledWith('work');
+      expect(longTermMemory.getStats).toHaveBeenCalledWith('finance');
     });
   });
 
   describe('forceConsolidation', () => {
     it('should trigger consolidation', async () => {
-      await coordinator.forceConsolidation('work');
+      await coordinator.forceConsolidation('finance');
 
-      expect(longTermMemory.consolidate).toHaveBeenCalledWith('work');
+      expect(longTermMemory.consolidate).toHaveBeenCalledWith('finance');
     });
   });
 
   describe('addFact', () => {
     it('should add a fact to long-term memory', async () => {
-      await coordinator.addFact('work', 'preference', 'User prefers dark mode', 0.9);
+      await coordinator.addFact('finance', 'preference', 'User prefers dark mode', 0.9);
 
-      expect(longTermMemory.addFact).toHaveBeenCalledWith('work', {
+      expect(longTermMemory.addFact).toHaveBeenCalledWith('finance', {
         factType: 'preference',
         content: 'User prefers dark mode',
         confidence: 0.9,
@@ -351,9 +351,9 @@ describe('Memory Coordinator', () => {
     });
 
     it('should use default confidence', async () => {
-      await coordinator.addFact('personal', 'knowledge', 'User knows Python');
+      await coordinator.addFact('operations', 'knowledge', 'User knows Python');
 
-      expect(longTermMemory.addFact).toHaveBeenCalledWith('personal', expect.objectContaining({
+      expect(longTermMemory.addFact).toHaveBeenCalledWith('operations', expect.objectContaining({
         confidence: 0.8,
       }));
     });
@@ -361,17 +361,17 @@ describe('Memory Coordinator', () => {
 
   describe('getFacts', () => {
     it('should retrieve facts from long-term memory', async () => {
-      await coordinator.getFacts('work');
+      await coordinator.getFacts('finance');
 
-      expect(longTermMemory.getFacts).toHaveBeenCalledWith('work');
+      expect(longTermMemory.getFacts).toHaveBeenCalledWith('finance');
     });
   });
 
   describe('getPatterns', () => {
     it('should retrieve patterns from long-term memory', async () => {
-      await coordinator.getPatterns('work');
+      await coordinator.getPatterns('finance');
 
-      expect(longTermMemory.getPatterns).toHaveBeenCalledWith('work');
+      expect(longTermMemory.getPatterns).toHaveBeenCalledWith('finance');
     });
   });
 

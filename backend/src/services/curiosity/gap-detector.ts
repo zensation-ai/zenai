@@ -9,6 +9,7 @@
 import { logger } from '../../utils/logger';
 import { queryContext } from '../../utils/database-context';
 import type { AIContext } from '../../types/context';
+import { LearningProgressTracker } from './learning-progress';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -23,7 +24,12 @@ export interface KnowledgeGap {
   avgRAGScore: number;
   gapScore: number;
   suggestedAction: string;
+  /** Learning progress signal: positive = improving, negative = stagnating */
+  learningProgress?: number;
 }
+
+// Singleton learning progress tracker for domain-level progress signals
+const learningTracker = new LearningProgressTracker();
 
 interface GapScoreParams {
   queryCount: number;
@@ -249,14 +255,21 @@ export async function detectGaps(
     const maxQueries = Math.max(...topicGroups.map((g) => g.queryCount), 1);
     const maxFacts = Math.max(...Array.from(factMap.values()), 1);
 
-    // Score each topic group
+    // Feed confidence errors into learning progress tracker per domain
+    for (const row of queryResult.rows) {
+      const d = row.domain || context;
+      const errorSignal = 1 - Number(row.confidence || 0.5);
+      learningTracker.recordError(d, errorSignal);
+    }
+
+    // Score each topic group, weighted by learning progress
     const gaps: KnowledgeGap[] = topicGroups.map((group) => {
       const factCount = factMap.get(group.domain) || 0;
       const stats = domainStats.get(group.domain) || { confSum: 0, ragSum: 0, count: 1 };
       const avgConfidence = stats.count > 0 ? stats.confSum / stats.count : 0;
       const avgRAGScore = stats.count > 0 ? stats.ragSum / stats.count : 0;
 
-      const gapScore = computeGapScore({
+      const baseGapScore = computeGapScore({
         queryCount: group.queryCount,
         maxQueries,
         factCount,
@@ -264,6 +277,12 @@ export async function detectGaps(
         avgConfidence,
         avgRAGScore,
       });
+
+      // Learning progress boost: domains with positive progress (improving)
+      // get slight priority increase — agent should explore where it's learning
+      const progress = learningTracker.getProgress(group.domain);
+      const progressBoost = progress > 0 ? progress * 0.1 : 0;
+      const gapScore = Math.max(0, Math.min(1, baseGapScore + progressBoost));
 
       return {
         topic: group.topic,
@@ -274,6 +293,7 @@ export async function detectGaps(
         avgRAGScore,
         gapScore,
         suggestedAction: suggestAction(gapScore, factCount, avgConfidence),
+        learningProgress: progress,
       };
     });
 

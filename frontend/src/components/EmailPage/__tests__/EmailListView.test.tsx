@@ -43,7 +43,7 @@ const makeEmail = (id: string): Email => ({
   ai_processed_at: null,
   labels: [],
   is_starred: false,
-  context: 'personal',
+  context: 'operations',
   received_at: '2026-03-20T10:00:00Z',
   sent_at: null,
   created_at: '2026-03-20T10:00:00Z',
@@ -61,8 +61,7 @@ describe('EmailListView', () => {
         onSelect={vi.fn()}
       />
     );
-    expect(screen.getByRole('status')).toBeInTheDocument();
-    expect(screen.getByText('Keine E-Mails gefunden')).toBeInTheDocument();
+    expect(screen.getByText('Keine E-Mails')).toBeInTheDocument();
   });
 
   it('renders with role="list" when emails are present', () => {

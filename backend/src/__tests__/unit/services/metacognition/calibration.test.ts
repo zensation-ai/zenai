@@ -286,9 +286,9 @@ describe('generateCalibrationReport', () => {
 describe('recordCalibrationData', () => {
   it('writes to database with correct parameters', async () => {
     mockQueryContext.mockResolvedValueOnce({ rows: [], rowCount: 1 } as any);
-    await recordCalibrationData('personal', 0.85, true);
+    await recordCalibrationData('operations', 0.85, true);
     expect(mockQueryContext).toHaveBeenCalledWith(
-      'personal',
+      'operations',
       expect.stringContaining('INSERT INTO calibration_data'),
       [0.85, true],
     );
@@ -296,7 +296,7 @@ describe('recordCalibrationData', () => {
 
   it('does not throw on database error (fire-and-forget)', async () => {
     mockQueryContext.mockRejectedValueOnce(new Error('DB down'));
-    await expect(recordCalibrationData('work', 0.5, false)).resolves.toBeUndefined();
+    await expect(recordCalibrationData('finance', 0.5, false)).resolves.toBeUndefined();
     expect(logger.warn).toHaveBeenCalledWith(
       'Failed to record calibration data',
       expect.objectContaining({ error: expect.any(Error) }),
@@ -319,7 +319,7 @@ describe('loadCalibrationReport', () => {
     ];
     mockQueryContext.mockResolvedValueOnce({ rows } as any);
 
-    const report = await loadCalibrationReport('personal');
+    const report = await loadCalibrationReport('operations');
     expect(report.bins).toHaveLength(5);
     // Bin 0 (0-0.2): 2 samples, 0 positive → actualRate 0
     expect(report.bins[0].totalCount).toBe(2);
@@ -332,7 +332,7 @@ describe('loadCalibrationReport', () => {
 
   it('returns default report for empty data', async () => {
     mockQueryContext.mockResolvedValueOnce({ rows: [] } as any);
-    const report = await loadCalibrationReport('personal');
+    const report = await loadCalibrationReport('operations');
     expect(report.isWellCalibrated).toBe(true);
     expect(report.expectedCalibrationError).toBe(0);
     expect(report.bins).toHaveLength(5);
@@ -340,7 +340,7 @@ describe('loadCalibrationReport', () => {
 
   it('returns default report on database error', async () => {
     mockQueryContext.mockRejectedValueOnce(new Error('DB error'));
-    const report = await loadCalibrationReport('personal');
+    const report = await loadCalibrationReport('operations');
     expect(report.isWellCalibrated).toBe(true);
     expect(report.expectedCalibrationError).toBe(0);
     expect(logger.error).toHaveBeenCalledWith(
@@ -351,9 +351,9 @@ describe('loadCalibrationReport', () => {
 
   it('passes userId to query when provided', async () => {
     mockQueryContext.mockResolvedValueOnce({ rows: [] } as any);
-    await loadCalibrationReport('work', 'user-123');
+    await loadCalibrationReport('finance', 'user-123');
     expect(mockQueryContext).toHaveBeenCalledWith(
-      'work',
+      'finance',
       expect.stringContaining('user_id = $1'),
       ['user-123'],
     );
@@ -361,9 +361,9 @@ describe('loadCalibrationReport', () => {
 
   it('omits user filter when userId not provided', async () => {
     mockQueryContext.mockResolvedValueOnce({ rows: [] } as any);
-    await loadCalibrationReport('personal');
+    await loadCalibrationReport('operations');
     expect(mockQueryContext).toHaveBeenCalledWith(
-      'personal',
+      'operations',
       expect.not.stringContaining('user_id'),
       [],
     );

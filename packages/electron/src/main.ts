@@ -2,108 +2,51 @@
  * ZenAI Electron Main Process — Cloud Shell
  *
  * Loads the Vercel-hosted frontend in a native desktop window.
- * Provides: System Tray, Global Shortcuts, Native Notifications,
- * Screen Memory, Auto-Updates via GitHub Releases.
+ * Provides: System Tray, Spotlight Overlay, Global Shortcuts,
+ * Native Notifications, Screen Memory, Menubar-Only Mode,
+ * Auto-Updates via GitHub Releases.
  */
 
-import { app, BrowserWindow, Tray, Menu, nativeImage, globalShortcut, shell } from 'electron';
-import * as path from 'path';
+import { app, BrowserWindow, Tray, Menu, nativeImage, globalShortcut } from 'electron';
 import { registerIpcHandlers } from './ipc/handlers';
 import { createAppMenu } from './menu';
 import { initAutoUpdater } from './updater';
+import { createMainWindow, getMainWindow, showAndFocus } from './windows/main-window';
+import {
+  createSpotlightWindow,
+  toggleSpotlight,
+  hideSpotlight,
+  resizeSpotlight,
+} from './windows/spotlight-window';
+import { bindTray, setTrayStatus, destroyTrayManager } from './tray/tray-manager';
+import { handleDeepLink } from './deep-link';
 
 // ===========================
 // Constants
 // ===========================
 
 const APP_NAME = 'ZenAI';
-const PRODUCTION_URL = process.env.FRONTEND_URL || 'https://frontend-mu-six-93.vercel.app';
+const PRODUCTION_URL = process.env.FRONTEND_URL || 'http://localhost:5173';
 const DEV_URL = 'http://localhost:5173';
-const VERCEL_ORIGIN = process.env.FRONTEND_URL || 'https://frontend-mu-six-93.vercel.app';
-const RAILWAY_ORIGIN = process.env.API_URL || 'https://ki-ab-production.up.railway.app';
+const VERCEL_ORIGIN = process.env.FRONTEND_URL || 'http://localhost:5173';
+const RAILWAY_ORIGIN = process.env.API_URL || 'http://localhost:3000';
 
 // ===========================
 // State
 // ===========================
 
-let mainWindow: BrowserWindow | null = null;
 let tray: Tray | null = null;
+let runInBackground = false;
 
 const isDev = !app.isPackaged;
 const FRONTEND_URL = isDev ? DEV_URL : PRODUCTION_URL;
-
-/**
- * Get the main window (used by IPC handlers, menu, updater)
- */
-function getMainWindow(): BrowserWindow | null {
-  return mainWindow;
-}
-
-// ===========================
-// Window Management
-// ===========================
-
-/**
- * Create the main application window
- */
-function createMainWindow(): void {
-  mainWindow = new BrowserWindow({
-    width: 1400,
-    height: 900,
-    minWidth: 800,
-    minHeight: 600,
-    title: APP_NAME,
-    webPreferences: {
-      preload: path.join(__dirname, 'preload.js'),
-      contextIsolation: true,
-      nodeIntegration: false,
-      sandbox: true,
-    },
-    titleBarStyle: 'hiddenInset',
-    trafficLightPosition: { x: 16, y: 16 },
-    backgroundColor: '#0f1117',
-    show: false,
-  });
-
-  mainWindow.loadURL(FRONTEND_URL);
-
-  // Offline fallback — only for main frame, ignore aborted navigations
-  mainWindow.webContents.on('did-fail-load', (_event, errorCode, _desc, _url, isMainFrame) => {
-    if (isMainFrame && errorCode !== -3) {
-      mainWindow?.loadFile(path.join(__dirname, 'offline.html'));
-    }
-  });
-
-  mainWindow.once('ready-to-show', () => {
-    mainWindow?.show();
-  });
-
-  mainWindow.on('closed', () => {
-    mainWindow = null;
-  });
-
-  // Allow OAuth popups from our own origins, open everything else externally
-  mainWindow.webContents.setWindowOpenHandler(({ url }) => {
-    if (url.startsWith(VERCEL_ORIGIN) || url.startsWith(RAILWAY_ORIGIN)) {
-      return { action: 'allow' };
-    }
-    if (url.startsWith('http://') || url.startsWith('https://')) {
-      shell.openExternal(url);
-    }
-    return { action: 'deny' };
-  });
-
-  if (isDev) {
-    mainWindow.webContents.openDevTools({ mode: 'detach' });
-  }
-}
 
 // ===========================
 // System Tray
 // ===========================
 
 /**
- * Create system tray with quick actions
+ * Create system tray with quick actions and menubar-only toggle.
  */
 function createTray(): void {
   const icon = nativeImage.createFromBuffer(
@@ -114,53 +57,122 @@ function createTray(): void {
   );
 
   tray = new Tray(icon);
+  bindTray(tray);
 
-  const contextMenu = Menu.buildFromTemplate([
-    { label: `${APP_NAME} - Personal AI OS`, enabled: false },
-    { type: 'separator' },
-    { label: 'Neuer Gedanke', accelerator: 'CmdOrCtrl+Shift+N', click: () => showAndFocus('ideas/new') },
-    { label: 'Quick Chat', accelerator: 'CmdOrCtrl+Shift+C', click: () => showAndFocus('chat') },
-    { label: 'Suche', accelerator: 'CmdOrCtrl+K', click: () => showAndFocus('search') },
-    { type: 'separator' },
-    { label: 'Dashboard', click: () => showAndFocus('dashboard') },
-    { label: 'Planer', click: () => showAndFocus('calendar') },
-    { label: 'Email', click: () => showAndFocus('email') },
-    { type: 'separator' },
-    { label: 'Fenster anzeigen', click: () => mainWindow?.show() },
-    { label: 'Beenden', click: () => app.quit() },
-  ]);
+  rebuildTrayMenu();
 
-  tray.setContextMenu(contextMenu);
   tray.setToolTip(APP_NAME);
 
   tray.on('click', () => {
-    if (mainWindow) {
-      mainWindow.isVisible() ? mainWindow.hide() : mainWindow.show();
+    const win = getMainWindow();
+    if (win) {
+      win.isVisible() ? win.hide() : win.show();
+    } else {
+      ensureMainWindow();
     }
   });
 }
 
-// ===========================
-// Shortcuts & Navigation
-// ===========================
+/**
+ * Rebuild the tray context menu (called when runInBackground toggles).
+ */
+function rebuildTrayMenu(): void {
+  if (!tray) return;
 
-function showAndFocus(page: string): void {
-  if (!mainWindow) {
-    createMainWindow();
-  }
-  mainWindow?.show();
-  mainWindow?.focus();
-  mainWindow?.webContents.send('navigate', page);
+  const contextMenu = Menu.buildFromTemplate([
+    { label: APP_NAME, enabled: false },
+    { type: 'separator' },
+    {
+      label: 'Quick Chat',
+      accelerator: 'CmdOrCtrl+Shift+Space',
+      click: () => toggleSpotlight(),
+    },
+    {
+      label: 'Neue Idee',
+      accelerator: 'CmdOrCtrl+Shift+N',
+      click: () => { ensureMainWindow(); showAndFocus('ideas/new'); },
+    },
+    {
+      label: 'Suche',
+      accelerator: 'CmdOrCtrl+Shift+K',
+      click: () => {
+        ensureMainWindow();
+        showAndFocus('search');
+        getMainWindow()?.webContents.send('open-command-palette');
+      },
+    },
+    { type: 'separator' },
+    {
+      label: 'Fenster oeffnen',
+      click: () => { ensureMainWindow(); getMainWindow()?.show(); },
+    },
+    {
+      label: 'Im Hintergrund laufen',
+      type: 'checkbox',
+      checked: runInBackground,
+      click: (menuItem) => {
+        runInBackground = menuItem.checked;
+      },
+    },
+    { type: 'separator' },
+    {
+      label: 'Beenden',
+      accelerator: 'CmdOrCtrl+Q',
+      click: () => {
+        runInBackground = false; // ensure quit actually quits
+        app.quit();
+      },
+    },
+  ]);
+
+  tray.setContextMenu(contextMenu);
 }
 
+// ===========================
+// Window Helpers
+// ===========================
+
+/**
+ * Ensure the main window exists; create if destroyed.
+ */
+function ensureMainWindow(): void {
+  if (!getMainWindow()) {
+    createMainWindow({
+      frontendUrl: FRONTEND_URL,
+      vercelOrigin: VERCEL_ORIGIN,
+      railwayOrigin: RAILWAY_ORIGIN,
+      isDev,
+    });
+  }
+}
+
+// ===========================
+// Deep Linking
+// ===========================
+
+app.setAsDefaultProtocolClient('zenai');
+
+const deepLinkDeps = { ensureMainWindow };
+
+// ===========================
+// Shortcuts
+// ===========================
+
 function registerShortcuts(): void {
+  // Spotlight overlay toggle (replaces old showAndFocus('chat'))
   globalShortcut.register('CmdOrCtrl+Shift+Space', () => {
-    showAndFocus('chat');
+    toggleSpotlight();
+  });
+
+  globalShortcut.register('CmdOrCtrl+Shift+N', () => {
+    ensureMainWindow();
+    showAndFocus('ideas/new');
   });
 
   globalShortcut.register('CmdOrCtrl+Shift+K', () => {
+    ensureMainWindow();
     showAndFocus('search');
-    mainWindow?.webContents.send('open-command-palette');
+    getMainWindow()?.webContents.send('open-command-palette');
   });
 }
 
@@ -172,11 +184,19 @@ const gotLock = app.requestSingleInstanceLock();
 if (!gotLock) {
   app.quit();
 } else {
-  app.on('second-instance', () => {
-    if (mainWindow) {
-      if (mainWindow.isMinimized()) mainWindow.restore();
-      mainWindow.show();
-      mainWindow.focus();
+  app.on('second-instance', (_event, argv) => {
+    // Windows/Linux: deep links arrive via argv
+    const deepLink = argv.find(arg => arg.startsWith('zenai://'));
+    if (deepLink) {
+      handleDeepLink(deepLink, deepLinkDeps);
+      return;
+    }
+
+    const win = getMainWindow();
+    if (win) {
+      if (win.isMinimized()) win.restore();
+      win.show();
+      win.focus();
     }
   });
 }
@@ -188,11 +208,14 @@ app.whenReady().then(async () => {
     setConfig: () => {},
     getBackendStatus: () => 'cloud',
     getBackendUrl: () => RAILWAY_ORIGIN,
-    hideSpotlight: () => {},
-    resizeSpotlight: () => {},
+    hideSpotlight,
+    resizeSpotlight,
+    setTrayStatus: setTrayStatus as (status: string) => void,
   });
-  createAppMenu(getMainWindow);
-  createMainWindow();
+
+  createAppMenu(() => getMainWindow());
+  ensureMainWindow();
+  createSpotlightWindow();
   createTray();
   registerShortcuts();
   initAutoUpdater(getMainWindow);
@@ -200,23 +223,45 @@ app.whenReady().then(async () => {
   console.log(`[${APP_NAME}] Desktop app ready (${isDev ? 'development' : 'production'})`);
   console.log(`[${APP_NAME}] Loading: ${FRONTEND_URL}`);
 
+  // macOS: deep links via open-url
+  app.on('open-url', (event, url) => {
+    event.preventDefault();
+    handleDeepLink(url, deepLinkDeps);
+  });
+
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {
-      createMainWindow();
+      ensureMainWindow();
     } else {
-      mainWindow?.show();
+      getMainWindow()?.show();
     }
   });
 });
 
+// Menubar-only mode: hide to tray instead of quitting on macOS
 app.on('window-all-closed', () => {
+  if (process.platform === 'darwin' && runInBackground) {
+    // Stay alive in tray — don't quit
+    return;
+  }
   if (process.platform !== 'darwin') {
     app.quit();
   }
 });
 
+// Intercept main window close when running in background
+app.on('browser-window-created', (_event, window) => {
+  window.on('close', (e) => {
+    if (runInBackground && window === getMainWindow()) {
+      e.preventDefault();
+      window.hide();
+    }
+  });
+});
+
 app.on('will-quit', () => {
   globalShortcut.unregisterAll();
+  destroyTrayManager();
 
   if (tray) {
     tray.destroy();

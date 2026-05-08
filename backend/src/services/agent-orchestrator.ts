@@ -654,14 +654,14 @@ function aggregateResults(results: AgentOutput[]): string {
 // Quick Execution Helpers
 // ===========================================
 
-export async function quickResearch(query: string, aiContext: AIContext = 'personal'): Promise<TeamResult> {
+export async function quickResearch(query: string, aiContext: AIContext = 'operations'): Promise<TeamResult> {
   return executeTeamTask({ description: query, aiContext, strategy: 'research_only' });
 }
 
-export async function researchAndWrite(task: string, aiContext: AIContext = 'personal', context?: string): Promise<TeamResult> {
+export async function researchAndWrite(task: string, aiContext: AIContext = 'operations', context?: string): Promise<TeamResult> {
   return executeTeamTask({ description: task, aiContext, strategy: 'research_write_review', skipReview: true, context });
 }
 
-export async function fullTeamExecution(task: string, aiContext: AIContext = 'personal', context?: string): Promise<TeamResult> {
+export async function fullTeamExecution(task: string, aiContext: AIContext = 'operations', context?: string): Promise<TeamResult> {
   return executeTeamTask({ description: task, aiContext, strategy: 'research_write_review', context });
 }

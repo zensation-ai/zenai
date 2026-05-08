@@ -8,11 +8,9 @@
  * @module components/GeneralChat/CollapsibleResponse
  */
 
-import { useState, useId } from 'react';
+import { useState, useId, type CSSProperties } from 'react';
 import { motion } from 'framer-motion';
-import { springs } from '../../design-system/springs';
-import '../GeneralChat.css';
-
+import { springs } from '@/lib/motion';
 // ---------------------------------------------------------------------------
 // Constants
 // ---------------------------------------------------------------------------
@@ -62,11 +60,7 @@ export function CollapsibleResponse({ content, children, metadata }: Collapsible
 
       <motion.div
         id={bodyId}
-        className="collapsible-response__body"
-        style={{
-          position: 'relative',
-          overflow: 'hidden',
-        }}
+        className="collapsible-response__body relative overflow-hidden"
         animate={{
           maxHeight: expanded ? 9999 : COLLAPSED_HEIGHT,
         }}
@@ -84,7 +78,7 @@ export function CollapsibleResponse({ content, children, metadata }: Collapsible
         className="collapsible-response__toggle"
         aria-expanded={expanded}
         aria-controls={bodyId}
-        aria-label={expanded ? 'KI-Antwort einklappen' : 'KI-Antwort vollstaendig anzeigen'}
+        aria-label={expanded ? 'KI-Antwort einklappen' : 'KI-Antwort vollständig anzeigen'}
         onClick={() => setExpanded(prev => !prev)}
       >
         <svg
@@ -96,15 +90,13 @@ export function CollapsibleResponse({ content, children, metadata }: Collapsible
           strokeWidth={2.5}
           strokeLinecap="round"
           strokeLinejoin="round"
-          style={{
-            transform: expanded ? 'rotate(180deg)' : 'rotate(0deg)',
-            transition: 'transform 0.2s ease',
-          }}
+          className="transition-transform duration-200 ease-[ease] [transform:var(--tf)]"
+          style={{ '--tf': expanded ? 'rotate(180deg)' : 'rotate(0deg)' } as CSSProperties}
           aria-hidden="true"
         >
           <polyline points="6 9 12 15 18 9" />
         </svg>
-        {expanded ? 'Weniger anzeigen' : 'Vollstaendig anzeigen'}
+        {expanded ? 'Weniger anzeigen' : 'Vollständig anzeigen'}
       </button>
     </div>
   );

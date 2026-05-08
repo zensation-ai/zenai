@@ -62,7 +62,7 @@ describe('PlannerPage Component', () => {
   });
 
   it('should render tab navigation with 5 tabs', () => {
-    render(<PlannerPage context="work" {...defaultProps} />);
+    render(<PlannerPage context="finance" {...defaultProps} />);
     expect(screen.getByText('Kalender')).toBeInTheDocument();
     expect(screen.getByText('Aufgaben')).toBeInTheDocument();
     expect(screen.getByText('Projekte')).toBeInTheDocument();
@@ -71,50 +71,50 @@ describe('PlannerPage Component', () => {
   });
 
   it('should show 5 tab buttons', () => {
-    render(<PlannerPage context="work" {...defaultProps} />);
+    render(<PlannerPage context="finance" {...defaultProps} />);
     const tabs = screen.getAllByRole('tab');
     expect(tabs.length).toBe(5);
   });
 
   it('should mark the active tab as selected', () => {
-    render(<PlannerPage context="work" {...defaultProps} />);
+    render(<PlannerPage context="finance" {...defaultProps} />);
     const activeTab = screen.getByRole('tab', { selected: true });
     expect(activeTab).toHaveTextContent('Kalender');
   });
 
   it('should render calendar content when calendar tab is active', async () => {
     mockActiveTab = 'calendar';
-    render(<PlannerPage context="work" {...defaultProps} />);
-    const plannerPage = document.querySelector('.hub-page');
-    expect(plannerPage).toBeTruthy();
+    render(<PlannerPage context="finance" {...defaultProps} />);
+    const tabPanel = screen.getByRole('tabpanel');
+    expect(tabPanel).toBeTruthy();
   });
 
   it('should render KanbanBoard when tasks tab is active', async () => {
     mockActiveTab = 'tasks';
-    render(<PlannerPage context="work" initialTab="tasks" {...defaultProps} />);
+    render(<PlannerPage context="finance" initialTab="tasks" {...defaultProps} />);
     const kanban = await screen.findByTestId('kanban-board');
     expect(kanban).toBeInTheDocument();
   });
 
   it('should render content area for projects tab', () => {
     mockActiveTab = 'projects';
-    render(<PlannerPage context="work" {...defaultProps} />);
-    const plannerPage = document.querySelector('.hub-page');
-    expect(plannerPage).toBeTruthy();
+    render(<PlannerPage context="finance" {...defaultProps} />);
+    const tabPanel = screen.getByRole('tabpanel');
+    expect(tabPanel).toBeTruthy();
   });
 
   it('should render content area for meetings tab', () => {
     mockActiveTab = 'meetings';
-    render(<PlannerPage context="work" {...defaultProps} />);
-    const plannerPage = document.querySelector('.hub-page');
-    expect(plannerPage).toBeTruthy();
+    render(<PlannerPage context="finance" {...defaultProps} />);
+    const tabPanel = screen.getByRole('tabpanel');
+    expect(tabPanel).toBeTruthy();
   });
 
   it('should accept different contexts', () => {
-    const { rerender } = render(<PlannerPage context="personal" {...defaultProps} />);
+    const { rerender } = render(<PlannerPage context="operations" {...defaultProps} />);
     expect(screen.getByText('Kalender')).toBeInTheDocument();
 
-    rerender(<PlannerPage context="learning" {...defaultProps} />);
+    rerender(<PlannerPage context="people" {...defaultProps} />);
     expect(screen.getByText('Kalender')).toBeInTheDocument();
   });
 });

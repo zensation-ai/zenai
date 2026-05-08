@@ -42,7 +42,7 @@ function TaskCardResult({ content, metadata }: { content: string; metadata?: Rec
         )}
       </div>
       {metadata?.priority === 'high' && (
-        <span className="adaptive-result__task-priority" aria-label="Hohe Prioritaet">!</span>
+        <span className="adaptive-result__task-priority" aria-label="Hohe Priorität">!</span>
       )}
     </div>
   );

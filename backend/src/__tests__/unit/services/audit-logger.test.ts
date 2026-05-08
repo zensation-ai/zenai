@@ -37,16 +37,18 @@ describe('Security Audit Logger', () => {
   // ===========================================
 
   describe('logSecurityEvent', () => {
-    it('should log a login event', async () => {
+    it('should log a login event with a GDPR-truncated IP (/24)', async () => {
+      // Sprint 1.9: the audit logger truncates the stored IP to /24 before
+      // INSERTing. The mock row below reflects what gets persisted.
       const mockEvent = {
         id: 'evt-1',
         event_type: 'login',
         user_id: 'user-1',
-        ip_address: '192.168.1.1',
+        ip_address: '192.168.1.0',
         user_agent: 'Mozilla/5.0',
         details: {},
         severity: 'info',
-        context: 'personal',
+        context: 'operations',
         created_at: new Date().toISOString(),
       };
 
@@ -56,16 +58,16 @@ describe('Security Audit Logger', () => {
       const result = await logger.logSecurityEvent({
         eventType: 'login',
         userId: 'user-1',
-        ipAddress: '192.168.1.1',
+        ipAddress: '192.168.1.42',
         userAgent: 'Mozilla/5.0',
       });
 
       expect(result).toBeDefined();
       expect(result?.event_type).toBe('login');
       expect(mockQueryContext).toHaveBeenCalledWith(
-        'personal',
+        'operations',
         expect.stringContaining('INSERT INTO security_audit_log'),
-        expect.arrayContaining(['login', 'user-1', '192.168.1.1'])
+        expect.arrayContaining(['login', 'user-1', '192.168.1.0'])
       );
     });
 
@@ -79,7 +81,7 @@ describe('Security Audit Logger', () => {
       });
 
       expect(mockQueryContext).toHaveBeenCalledWith(
-        'personal',
+        'operations',
         expect.any(String),
         expect.arrayContaining(['warning']) // default severity for failed_login
       );
@@ -96,7 +98,7 @@ describe('Security Audit Logger', () => {
       });
 
       expect(mockQueryContext).toHaveBeenCalledWith(
-        'personal',
+        'operations',
         expect.any(String),
         expect.arrayContaining(['critical'])
       );
@@ -109,11 +111,11 @@ describe('Security Audit Logger', () => {
       await logger.logSecurityEvent({
         eventType: 'login',
         userId: 'user-1',
-        context: 'work' as any,
+        context: 'finance' as any,
       });
 
       expect(mockQueryContext).toHaveBeenCalledWith(
-        'work',
+        'finance',
         expect.any(String),
         expect.any(Array)
       );
@@ -129,7 +131,7 @@ describe('Security Audit Logger', () => {
       });
 
       expect(mockQueryContext).toHaveBeenCalledWith(
-        'personal',
+        'operations',
         expect.any(String),
         expect.arrayContaining(['unknown', 'unknown'])
       );
@@ -180,7 +182,7 @@ describe('Security Audit Logger', () => {
         .mockResolvedValueOnce({ rows: [{ total: '10' }], rowCount: 1 } as any);
 
       const logger = getAuditLogger();
-      const result = await logger.getAuditLog('personal' as any);
+      const result = await logger.getAuditLog('operations' as any);
 
       expect(result.entries).toHaveLength(2);
       expect(result.total).toBe(10);
@@ -192,10 +194,10 @@ describe('Security Audit Logger', () => {
         .mockResolvedValueOnce({ rows: [{ total: '0' }], rowCount: 1 } as any);
 
       const logger = getAuditLogger();
-      await logger.getAuditLog('personal' as any, { eventType: 'login' });
+      await logger.getAuditLog('operations' as any, { eventType: 'login' });
 
       expect(mockQueryContext).toHaveBeenCalledWith(
-        'personal',
+        'operations',
         expect.stringContaining('event_type = $1'),
         expect.arrayContaining(['login'])
       );
@@ -207,14 +209,14 @@ describe('Security Audit Logger', () => {
         .mockResolvedValueOnce({ rows: [{ total: '0' }], rowCount: 1 } as any);
 
       const logger = getAuditLogger();
-      await logger.getAuditLog('personal' as any, {
+      await logger.getAuditLog('operations' as any, {
         eventType: 'login',
         userId: 'user-1',
         severity: 'warning',
       });
 
       expect(mockQueryContext).toHaveBeenCalledWith(
-        'personal',
+        'operations',
         expect.stringContaining('event_type = $1'),
         expect.any(Array)
       );
@@ -230,11 +232,11 @@ describe('Security Audit Logger', () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [{ id: '1' }], rowCount: 1 } as any);
 
       const logger = getAuditLogger();
-      const result = await logger.getSecurityAlerts('personal' as any);
+      const result = await logger.getSecurityAlerts('operations' as any);
 
       expect(result).toHaveLength(1);
       expect(mockQueryContext).toHaveBeenCalledWith(
-        'personal',
+        'operations',
         expect.stringContaining("severity IN ('critical', 'warning')"),
         expect.any(Array)
       );
@@ -244,10 +246,10 @@ describe('Security Audit Logger', () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any);
 
       const logger = getAuditLogger();
-      await logger.getSecurityAlerts('personal' as any, 'critical');
+      await logger.getSecurityAlerts('operations' as any, 'critical');
 
       expect(mockQueryContext).toHaveBeenCalledWith(
-        'personal',
+        'operations',
         expect.stringContaining('severity = $1'),
         ['critical', 20]
       );
@@ -257,10 +259,10 @@ describe('Security Audit Logger', () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any);
 
       const logger = getAuditLogger();
-      await logger.getSecurityAlerts('personal' as any, undefined, 5);
+      await logger.getSecurityAlerts('operations' as any, undefined, 5);
 
       expect(mockQueryContext).toHaveBeenCalledWith(
-        'personal',
+        'operations',
         expect.any(String),
         [5]
       );

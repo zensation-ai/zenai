@@ -30,7 +30,7 @@ const mockQuery = jest.fn();
 jest.mock('../../utils/database-context', () => ({
   queryContext: (...args: unknown[]) => mockQueryContext(...args),
   query: (...args: unknown[]) => mockQuery(...args),
-  isValidContext: jest.fn((ctx: string) => ['personal', 'work', 'learning', 'creative'].includes(ctx)),
+  isValidContext: jest.fn((ctx: string) => ['operations', 'finance', 'people', 'strategy'].includes(ctx)),
   isValidUUID: jest.fn((id: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)),
   AIContext: {},
 }));
@@ -110,7 +110,7 @@ describe('Export API Integration Tests', () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [mockIdea] });
 
       const res = await request(app)
-        .get('/api/export/ideas/json?context=personal')
+        .get('/api/export/ideas/json?context=operations')
         .expect(200);
 
       expect(res.headers['content-type']).toMatch(/application\/json/);
@@ -125,7 +125,7 @@ describe('Export API Integration Tests', () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [mockIdea] });
 
       const res = await request(app)
-        .get('/api/export/ideas/json?context=personal')
+        .get('/api/export/ideas/json?context=operations')
         .expect(200);
 
       expect(res.body.ideas[0].next_steps).toEqual(['Step 1', 'Step 2']);
@@ -136,7 +136,7 @@ describe('Export API Integration Tests', () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [mockIdea] });
 
       await request(app)
-        .get('/api/export/ideas/json?context=personal&includeArchived=true')
+        .get('/api/export/ideas/json?context=operations&includeArchived=true')
         .expect(200);
 
       const sql = mockQueryContext.mock.calls[0][1] as string;
@@ -162,7 +162,7 @@ describe('Export API Integration Tests', () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [mockIdea] });
 
       const res = await request(app)
-        .get('/api/export/ideas/csv?context=personal')
+        .get('/api/export/ideas/csv?context=operations')
         .expect(200);
 
       expect(res.headers['content-type']).toMatch(/text\/csv/);
@@ -183,7 +183,7 @@ describe('Export API Integration Tests', () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [mockIdea] });
 
       const res = await request(app)
-        .get('/api/export/ideas/markdown?context=personal')
+        .get('/api/export/ideas/markdown?context=operations')
         .expect(200);
 
       expect(res.headers['content-type']).toMatch(/text\/markdown/);
@@ -202,7 +202,7 @@ describe('Export API Integration Tests', () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [mockIdea] });
 
       const res = await request(app)
-        .get('/api/export/ideas/pdf?context=personal')
+        .get('/api/export/ideas/pdf?context=operations')
         .expect(200);
 
       expect(res.headers['content-type']).toMatch(/application\/pdf/);
@@ -210,7 +210,7 @@ describe('Export API Integration Tests', () => {
 
     it('should reject invalid filter params', async () => {
       const res = await request(app)
-        .get('/api/export/ideas/pdf?context=personal&type=INVALID')
+        .get('/api/export/ideas/pdf?context=operations&type=INVALID')
         .expect(400);
 
       expect(res.body.success).toBe(false);
@@ -226,7 +226,7 @@ describe('Export API Integration Tests', () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [mockIdea] });
 
       const res = await request(app)
-        .get(`/api/export/ideas/${VALID_UUID}/markdown?context=personal`)
+        .get(`/api/export/ideas/${VALID_UUID}/markdown?context=operations`)
         .expect(200);
 
       expect(res.headers['content-type']).toMatch(/text\/markdown/);
@@ -237,13 +237,13 @@ describe('Export API Integration Tests', () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [] });
 
       await request(app)
-        .get(`/api/export/ideas/${VALID_UUID}/markdown?context=personal`)
+        .get(`/api/export/ideas/${VALID_UUID}/markdown?context=operations`)
         .expect(404);
     });
 
     it('should reject invalid UUID', async () => {
       await request(app)
-        .get('/api/export/ideas/not-a-uuid/markdown?context=personal')
+        .get('/api/export/ideas/not-a-uuid/markdown?context=operations')
         .expect(400);
     });
   });
@@ -261,7 +261,7 @@ describe('Export API Integration Tests', () => {
         .mockResolvedValueOnce({ rows: [] });              // thoughts
 
       const res = await request(app)
-        .get('/api/export/backup?context=personal')
+        .get('/api/export/backup?context=operations')
         .expect(200);
 
       expect(res.headers['content-disposition']).toMatch(/full-backup/);
@@ -329,7 +329,7 @@ describe('Export API Integration Tests', () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [mockIdea] });
 
       const res = await request(app)
-        .get('/api/export/data?format=json&content=ideas&context=personal')
+        .get('/api/export/data?format=json&content=ideas&context=operations')
         .expect(200);
 
       expect(res.body.ideas).toHaveLength(1);
@@ -337,7 +337,7 @@ describe('Export API Integration Tests', () => {
 
     it('should reject invalid format', async () => {
       const res = await request(app)
-        .get('/api/export/data?format=xml&context=personal')
+        .get('/api/export/data?format=xml&context=operations')
         .expect(400);
 
       expect(res.body.success).toBe(false);

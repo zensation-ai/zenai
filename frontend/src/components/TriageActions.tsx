@@ -1,4 +1,4 @@
-import type { TriageAction } from './InboxTriage';
+import type { TriageAction } from './triageTypes';
 
 interface TriageActionsProps {
   recommendedAction: TriageAction;
@@ -40,17 +40,16 @@ export function TriageActions({ recommendedAction, isAnimating, onAction }: Tria
         <span className="action-label">Behalten</span>
       </button>
       <button
-        className={'triage-action-btn priority neuro-hover-lift neuro-stagger-item ' + (recommendedAction === 'priority' ? 'neuro-button-glow' : '')}
+        className={'triage-action-btn priority neuro-hover-lift neuro-stagger-item relative ' + (recommendedAction === 'priority' ? 'neuro-button-glow' : '')}
         onClick={() => onAction('priority')}
         disabled={isAnimating}
         title="Als Priorität markieren"
         aria-label="Gedanke als Priorität markieren"
-        style={{ position: 'relative' }}
       >
         <span className="action-icon" aria-hidden="true">🔥</span>
         <span className="action-label">Priorität</span>
         {recommendedAction === 'priority' && (
-          <span className="neuro-suggested-action" style={{ position: 'absolute', top: '-8px', right: '-8px', fontSize: '0.65rem', padding: '2px 6px' }}>
+          <span className="neuro-suggested-action absolute -top-2 -right-2 text-[0.65rem] px-1.5 py-px">
             Empfohlen
           </span>
         )}

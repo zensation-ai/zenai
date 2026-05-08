@@ -3,8 +3,6 @@ import { AIContext } from './ContextSwitcher';
 import axios from 'axios';
 import { showToast } from './Toast';
 import { getErrorMessage } from '../utils/errors';
-import '../neurodesign.css';
-import './RecordButton.css';
 import { logError } from '../utils/errors';
 
 interface RecordButtonProps {
@@ -28,13 +26,13 @@ interface ProcessedResult {
     next_steps?: string[];
     context_needed?: string[];
     keywords?: string[];
-    suggested_context?: 'personal' | 'work' | 'learning' | 'creative';
+    suggested_context?: 'operations' | 'finance' | 'people' | 'strategy';
   };
-  suggestedContext?: 'personal' | 'work' | 'learning' | 'creative';
+  suggestedContext?: 'operations' | 'finance' | 'people' | 'strategy';
   contextConfidence?: number;
 }
 
-export function RecordButton({ onTranscript, onProcessed, onRecordingChange, disabled, context = 'personal', persona }: RecordButtonProps) {
+export function RecordButton({ onTranscript, onProcessed, onRecordingChange, disabled, context = 'operations', persona }: RecordButtonProps) {
   const [recording, setRecording] = useState(false);
   const [processing, setProcessing] = useState(false);
   const [duration, setDuration] = useState(0);

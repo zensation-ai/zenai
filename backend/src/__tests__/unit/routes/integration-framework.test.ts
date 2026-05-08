@@ -75,7 +75,7 @@ const mockConnectorDef = {
   requiredScopes: ['gmail.readonly'],
   webhookSupported: true,
   syncSupported: true,
-  defaultContext: 'work' as const,
+  defaultContext: 'finance' as const,
   description: 'Google Gmail integration',
 };
 
@@ -164,7 +164,7 @@ describe('Integration Framework Routes', () => {
         connectorId: 'gmail',
         definition: mockConnectorDef,
         status: 'connected' as const,
-        config: { targetContext: 'work' as const, syncEnabled: true },
+        config: { targetContext: 'finance' as const, syncEnabled: true },
         lastSyncAt: new Date('2026-01-01T00:00:00Z'),
       };
       mockGetForUser.mockResolvedValue([userIntegration]);
@@ -293,7 +293,7 @@ describe('Integration Framework Routes', () => {
       mockUpdateConfig.mockResolvedValue(undefined);
 
       const config = {
-        targetContext: 'work',
+        targetContext: 'finance',
         syncEnabled: true,
         syncIntervalMinutes: 30,
       };
@@ -344,7 +344,7 @@ describe('Webhook Integration Router', () => {
       connectorId: 'gmail',
       userId: 'user-1',
       type: 'email.received',
-      targetContext: 'work' as const,
+      targetContext: 'finance' as const,
       payload: { subject: 'Hello' },
       timestamp: new Date(),
     };

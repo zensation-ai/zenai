@@ -94,7 +94,7 @@ export function useCockpitSessions(context: AIContext): UseCockpitSessionsReturn
     let session: CockpitSession;
 
     try {
-      const res = await axios.post(`/api/${context}/chat/sessions`, { type: 'general' });
+      const res = await axios.post(`/api/chat/sessions`, { context, type: 'general' });
       const data = res.data?.data ?? res.data;
       session = {
         id: data.id,

@@ -38,7 +38,7 @@ router.post(
     const context = validateContextParam(req.params.context);
     getUserId(req); // auth check
     if (!isValidContext(context)) {
-      throw new ValidationError('Invalid context. Use: personal, work, learning, or creative.');
+      throw new ValidationError('Invalid context. Use: operations, finance, people, or strategy.');
     }
 
     const { chainId, wasHelpful, qualityRating, feedbackText } = req.body;
@@ -71,7 +71,7 @@ router.get(
     const context = validateContextParam(req.params.context);
     getUserId(req); // auth check
     if (!isValidContext(context)) {
-      throw new ValidationError('Invalid context. Use: personal, work, learning, or creative.');
+      throw new ValidationError('Invalid context. Use: operations, finance, people, or strategy.');
     }
 
     const stats = await getThinkingStats(context);
@@ -89,7 +89,7 @@ router.get(
     const context = validateContextParam(req.params.context);
     getUserId(req); // auth check
     if (!isValidContext(context)) {
-      throw new ValidationError('Invalid context. Use: personal, work, learning, or creative.');
+      throw new ValidationError('Invalid context. Use: operations, finance, people, or strategy.');
     }
 
     const strategies = await getStrategyHistory(context);
@@ -108,7 +108,7 @@ router.post(
     const context = validateContextParam(req.params.context);
     getUserId(req); // auth check
     if (!isValidContext(context)) {
-      throw new ValidationError('Invalid context. Use: personal, work, learning, or creative.');
+      throw new ValidationError('Invalid context. Use: operations, finance, people, or strategy.');
     }
 
     await persistStrategies(context);
@@ -127,7 +127,7 @@ router.get(
     const context = validateContextParam(req.params.context);
     getUserId(req); // auth check
     if (!isValidContext(context)) {
-      throw new ValidationError('Invalid context. Use: personal, work, learning, or creative.');
+      throw new ValidationError('Invalid context. Use: operations, finance, people, or strategy.');
     }
 
     const chain = await getThinkingChainById(req.params.id, context);
@@ -151,7 +151,7 @@ router.delete(
     const context = validateContextParam(req.params.context);
     getUserId(req); // auth check
     if (!isValidContext(context)) {
-      throw new ValidationError('Invalid context. Use: personal, work, learning, or creative.');
+      throw new ValidationError('Invalid context. Use: operations, finance, people, or strategy.');
     }
 
     await deleteThinkingChain(req.params.id, context);

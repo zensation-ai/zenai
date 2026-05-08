@@ -3,8 +3,6 @@ import axios from 'axios';
 import { showToast } from '../Toast';
 import { useConfirm } from '../ConfirmDialog';
 import { getTimeBasedGreeting, EMPTY_STATE_MESSAGES } from '../../utils/aiPersonality';
-import '../../neurodesign.css';
-import '../LearningDashboard.css';
 import { logError } from '../../utils/errors';
 import { HubPage, type TabDef } from '../HubPage';
 import { SkeletonLoader } from '../SkeletonLoader';
@@ -41,7 +39,7 @@ export function LearningDashboard({ context, onBack, initialTab = 'overview' }: 
     initialTab,
     validTabs: VALID_TABS,
     defaultTab: 'overview',
-    basePath: '/learning',
+    basePath: '/wissen/lernen',
     rootTab: 'overview',
   });
   const [newFocus, setNewFocus] = useState({ name: '', description: '', keywords: '' });

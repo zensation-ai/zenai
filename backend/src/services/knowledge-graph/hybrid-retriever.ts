@@ -16,6 +16,18 @@ import { AIContext, queryContext } from '../../utils/database-context';
 import { generateEmbedding } from '../ai';
 import { hybridRerank } from '../cross-encoder-rerank';
 import { communitySummarizer } from './community-summarizer';
+import { getEntityActivityScore, recordEvent } from './event-subgraph';
+import { loadHebbianSubgraphForPPR } from './hebbian-ppr-loader';
+import {
+  personalizedPageRank,
+  topKByPageRank,
+} from '../../algorithms/personalized-pagerank';
+import {
+  routeRetrieval,
+  routeToHybridOptions,
+  type RetrievalRoute,
+  type DopamineRoutingOptions,
+} from '../../algorithms/dopamine-routing';
 import { logger } from '../../utils/logger';
 
 // ===========================================
@@ -27,7 +39,7 @@ export interface HybridRetrievalResult {
   title: string;
   content: string;
   score: number;
-  source: 'vector' | 'graph' | 'community' | 'bm25';
+  source: 'vector' | 'graph' | 'community' | 'bm25' | 'event_aware';
   metadata?: Record<string, unknown>;
 }
 
@@ -37,19 +49,74 @@ export interface HybridRetrievalOptions {
   enableGraph?: boolean;
   enableCommunity?: boolean;
   enableBM25?: boolean;
+  enableEventAware?: boolean;
   minScore?: number;
+  /**
+   * When true, replace the legacy 2-hop graph traversal with PPR
+   * (Personalized PageRank) over a 2-hop Hebbian subgraph anchored at
+   * the query-matched entities. Spec § H2 task 1 (HippoRAG 2 pattern).
+   *
+   * Defaults to the env-driven `H2_PPR_IN_KG` flag (truthy → on). Defaults
+   * to OFF in production until eval validates the lift; the flag lets the
+   * eval harness A/B against the legacy traversal without code changes.
+   */
+  enablePPR?: boolean;
+  /** Override the PPR alpha (restart probability). Falls back to the
+   *  algorithm's default 0.15 when undefined. Exposed for sweeps in the
+   *  eval harness. */
+  pprAlpha?: number;
+  /**
+   * When true, run D-MEM dopamine-modulated retrieval routing (Phase H6.1,
+   * arXiv:2603.14597) before strategy fan-out: a per-query difficulty
+   * critic decides between `fast_cache` (vector + BM25 only),
+   * `hybrid` (+ graph + PPR), and `full_scan` (all strategies including
+   * PPR). The route's `routeToHybridOptions` flag bag OVERRIDES the
+   * per-strategy `enableX` options so D-MEM can shrink the strategy set
+   * for low-difficulty queries.
+   *
+   * Defaults to the env-driven `H6_DOPAMINE_ROUTING` flag (truthy → on).
+   * Default OFF in production; the eval harness A/Bs by setting this
+   * per-call or by exporting the env-flag.
+   */
+  enableDopamineRouting?: boolean;
+  /** Routing options for D-MEM (threshold / hybridBand / contributorScale).
+   *  Forwarded verbatim to `routeRetrieval` when `enableDopamineRouting`
+   *  is true. */
+  dopamineRoutingOptions?: DopamineRoutingOptions;
 }
 
 // ===========================================
 // Default Configuration
 // ===========================================
 
-const DEFAULT_OPTIONS: Required<HybridRetrievalOptions> = {
+/** Truthy-string parser shared by Phase-H env flags. */
+function envTruthy(value: string | undefined): boolean {
+  if (typeof value !== 'string') return false;
+  return value === 'true' || value === '1' || value.toLowerCase() === 'yes';
+}
+
+/** Read the H2_PPR_IN_KG env flag once at module load. */
+const H2_PPR_IN_KG_DEFAULT = envTruthy(process.env.H2_PPR_IN_KG);
+
+/** Read the H6_DOPAMINE_ROUTING env flag once at module load. */
+const H6_DOPAMINE_ROUTING_DEFAULT = envTruthy(process.env.H6_DOPAMINE_ROUTING);
+
+const DEFAULT_OPTIONS: Required<Pick<
+  HybridRetrievalOptions,
+  | 'maxResults'
+  | 'enableVector'
+  | 'enableGraph'
+  | 'enableCommunity'
+  | 'enableBM25'
+  | 'enableEventAware'
+  | 'minScore'
+>> = {
   maxResults: 10,
   enableVector: true,
   enableGraph: true,
   enableCommunity: true,
   enableBM25: true,
+  enableEventAware: true,
   minScore: 0.1,
 };
 
@@ -66,8 +133,37 @@ export class HybridRetriever {
     context: AIContext,
     options?: HybridRetrievalOptions
   ): Promise<HybridRetrievalResult[]> {
-    const opts = { ...DEFAULT_OPTIONS, ...options };
+    let opts = { ...DEFAULT_OPTIONS, ...options };
     const startTime = Date.now();
+
+    // ── Phase H6.1 binding: D-MEM dopamine-modulated routing ──────────
+    // Runs BEFORE strategy fan-out so the route's flag bag can override
+    // the per-strategy `enableX` options. Output route is logged in the
+    // strategy-name list as `dmem:<route>` for observability.
+    const useDMEM =
+      options?.enableDopamineRouting ?? H6_DOPAMINE_ROUTING_DEFAULT;
+    let dmemRoute: RetrievalRoute | null = null;
+    let dmemDifficulty: number | null = null;
+    if (useDMEM) {
+      const signal = routeRetrieval(
+        query,
+        options?.dopamineRoutingOptions,
+      );
+      dmemRoute = signal.route;
+      dmemDifficulty = signal.difficulty;
+      const routeFlags = routeToHybridOptions(signal.route);
+      // Route flags override per-strategy flags. PPR follows the route's
+      // `enablePPR` only when the caller didn't explicitly opt-in
+      // elsewhere (so a per-call enablePPR=true still wins).
+      opts = {
+        ...opts,
+        enableVector: routeFlags.enableVector,
+        enableGraph: routeFlags.enableGraph,
+        enableCommunity: routeFlags.enableCommunity,
+        enableBM25: routeFlags.enableBM25,
+        enableEventAware: routeFlags.enableEventAware,
+      };
+    }
 
     // Run enabled strategies in parallel
     const strategies: Promise<HybridRetrievalResult[]>[] = [];
@@ -86,13 +182,30 @@ export class HybridRetriever {
     }
 
     if (opts.enableGraph) {
+      // Phase H2.1 binding: when PPR mode is on, the random-walk-with-
+      // restart over the Hebbian subgraph replaces the legacy flat
+      // 2-hop traversal. Both produce HybridRetrievalResult[] tagged
+      // `source: 'graph'`, so the rest of the pipeline is unchanged.
+      //
+      // Phase H6.1 binding: when D-MEM is the source of the routing
+      // decision, the route's enablePPR (full_scan + hybrid → true,
+      // fast_cache → false) acts as the default. A per-call `enablePPR`
+      // override still wins.
+      const dmemPPRDefault =
+        useDMEM && dmemRoute !== null
+          ? routeToHybridOptions(dmemRoute).enablePPR
+          : H2_PPR_IN_KG_DEFAULT;
+      const usePPR = options?.enablePPR ?? dmemPPRDefault;
+      const graphFn = usePPR
+        ? this.pprGraphTraversal(query, context, perStrategyLimit, options?.pprAlpha)
+        : this.graphTraversal(query, context, perStrategyLimit);
       strategies.push(
-        this.graphTraversal(query, context, perStrategyLimit).catch(err => {
+        graphFn.catch(err => {
           logger.warn('Graph traversal failed', { error: err instanceof Error ? err.message : 'Unknown' });
           return [];
         })
       );
-      strategyNames.push('graph');
+      strategyNames.push(usePPR ? 'graph_ppr' : 'graph');
     }
 
     if (opts.enableCommunity) {
@@ -113,6 +226,16 @@ export class HybridRetriever {
         })
       );
       strategyNames.push('bm25');
+    }
+
+    if (opts.enableEventAware) {
+      strategies.push(
+        this.eventAwareSearch(query, context, perStrategyLimit).catch(err => {
+          logger.warn('Event-aware search failed', { error: err instanceof Error ? err.message : 'Unknown' });
+          return [];
+        })
+      );
+      strategyNames.push('event_aware');
     }
 
     const allResults = await Promise.all(strategies);
@@ -137,7 +260,21 @@ export class HybridRetriever {
       strategies: strategyNames,
       totalResults: merged.length,
       duration_ms: duration,
+      ...(dmemRoute !== null
+        ? {
+            dmem_route: dmemRoute,
+            dmem_difficulty: dmemDifficulty,
+          }
+        : {}),
     });
+
+    // Record search hits for event subgraph (fire-and-forget)
+    for (const result of merged.slice(0, 3)) {
+      recordEvent(context, 'search_hit', 'system:rag', {
+        targetEntityId: result.id,
+        payload: { source: result.source, score: result.score, query: query.substring(0, 100) },
+      }).catch(() => {});
+    }
 
     return merged;
   }
@@ -283,6 +420,142 @@ export class HybridRetriever {
   }
 
   // ===========================================
+  // Strategy: Graph Traversal — PPR variant (Phase H2.1)
+  // ===========================================
+
+  /**
+   * Replacement for `graphTraversal` when `enablePPR` is true. Runs
+   * Personalized PageRank over a 2-hop Hebbian subgraph anchored at the
+   * query-matched entities, then maps the top-ranked entities back to
+   * source ideas.
+   *
+   * Same input contract, same output shape (`source: 'graph'`) — the
+   * downstream merge / dedup / rerank stages do not need to change.
+   * Failures fall back to an empty result (caller-handled).
+   */
+  private async pprGraphTraversal(
+    query: string,
+    context: AIContext,
+    limit: number,
+    pprAlpha?: number,
+  ): Promise<HybridRetrievalResult[]> {
+    // Step 1: Extract entities from query (same as graphTraversal).
+    const queryEntities = await this.extractQueryEntities(query);
+    if (queryEntities.length === 0) return [];
+
+    // Step 2: Find matching knowledge_entities (exact, then fuzzy).
+    const matchingEntities = await queryContext(
+      context,
+      `SELECT id, name FROM knowledge_entities
+       WHERE LOWER(name) = ANY($1::text[])
+       LIMIT 10`,
+      [queryEntities.map((e) => e.toLowerCase())],
+    );
+    if (matchingEntities.rows.length === 0) {
+      const fuzzyResult = await queryContext(
+        context,
+        `SELECT id, name FROM knowledge_entities
+         WHERE LOWER(name) LIKE ANY($1::text[])
+         LIMIT 10`,
+        [queryEntities.map((e) => `%${e.toLowerCase()}%`)],
+      );
+      if (fuzzyResult.rows.length === 0) return [];
+      matchingEntities.rows.push(...fuzzyResult.rows);
+    }
+    const seedIds = matchingEntities.rows.map(
+      (r: Record<string, unknown>) => r.id as string,
+    );
+
+    // Step 3: Load 2-hop subgraph and run PPR.
+    const subgraph = await loadHebbianSubgraphForPPR(context, seedIds);
+    if (!subgraph) return [];
+
+    const pprResult = personalizedPageRank(subgraph.graph, subgraph.validSeeds, {
+      alpha: pprAlpha,
+      // Defensive bounds — power-iteration on small subgraphs converges fast.
+      maxIterations: 100,
+      convergenceTol: 1e-6,
+    });
+
+    // Step 4: Top-K entities, excluding seeds (we want the EXPANDED
+    // relevant set, not the seeds themselves which the user already
+    // mentioned in the query).
+    const topEntities = topKByPageRank(pprResult, Math.max(limit * 3, 30), {
+      excludeSeeds: true,
+      seeds: subgraph.validSeeds,
+    });
+
+    if (topEntities.length === 0) return [];
+
+    // Step 5: Map ranked entities back to ideas via source_ids.
+    const entityIds = topEntities.map((t) => t.nodeId);
+    const ideaResult = await queryContext(
+      context,
+      `WITH ranked_entities AS (
+         SELECT UNNEST($1::uuid[]) AS entity_id,
+                generate_series(1, array_length($1::uuid[], 1)) AS rank
+       ),
+       entity_ideas AS (
+         SELECT re.rank,
+                UNNEST(ke.source_ids) AS idea_id,
+                ke.importance::float AS entity_importance
+         FROM knowledge_entities ke
+         JOIN ranked_entities re ON ke.id = re.entity_id
+         WHERE ke.source_ids IS NOT NULL
+           AND array_length(ke.source_ids, 1) > 0
+       )
+       SELECT i.id, i.title, COALESCE(i.summary, '') AS content,
+              MIN(ei.rank) AS best_rank,
+              MAX(ei.entity_importance) AS importance
+       FROM ideas i
+       JOIN entity_ideas ei ON i.id = ei.idea_id
+       WHERE i.is_archived = FALSE
+       GROUP BY i.id, i.title, i.summary
+       ORDER BY MIN(ei.rank) ASC
+       LIMIT $2`,
+      [entityIds, limit],
+    );
+
+    // Build a rank → PPR-score lookup so we can recover a meaningful
+    // score from the entity ranking. Top-rank node gets the highest
+    // PPR score in the subgraph.
+    const rankToScore = new Map<number, number>();
+    topEntities.forEach((t, idx) => rankToScore.set(idx + 1, t.score));
+    const maxPPR = topEntities[0]?.score ?? 1;
+
+    const baseResults = ideaResult.rows.map(
+      (row: Record<string, unknown>) => {
+        const rank = parseInt(row.best_rank as string, 10) || 1;
+        const rawScore = rankToScore.get(rank) ?? 0;
+        const importance = parseFloat(row.importance as string) || 0;
+        // Normalise PPR mass into [0, 1] using the top-rank value as
+        // anchor; blend with entity importance for a smoother score.
+        const norm = maxPPR > 0 ? rawScore / maxPPR : 0;
+        const blended = 0.7 * norm + 0.3 * Math.min(importance / 10, 1);
+        return {
+          id: row.id as string,
+          title: row.title as string,
+          content: row.content as string,
+          score: Math.max(0.0001, Math.min(1, blended)),
+          source: 'graph' as const,
+          metadata: {
+            traversalType: 'ppr',
+            pprAlpha: pprAlpha ?? 0.15,
+            subgraphNodes: subgraph.stats.nodes,
+            subgraphRelEdges: subgraph.stats.relationEdges,
+            subgraphCoactEdges: subgraph.stats.coactivationEdges,
+            converged: pprResult.converged,
+            iterations: pprResult.iterations,
+            seedCount: subgraph.validSeeds.length,
+          },
+        };
+      },
+    );
+
+    return baseResults;
+  }
+
+  // ===========================================
   // Strategy: Community Search
   // ===========================================
 
@@ -365,10 +638,11 @@ export class HybridRetriever {
 
     // Weight factors per source
     const sourceWeights: Record<string, number> = {
-      vector: 0.35,
-      graph: 0.30,
+      vector: 0.30,
+      graph: 0.25,
       community: 0.15,
-      bm25: 0.20,
+      bm25: 0.15,
+      event_aware: 0.15,
     };
 
     for (const results of allResults) {
@@ -441,6 +715,76 @@ export class HybridRetriever {
       });
       return results;
     }
+  }
+
+  // ===========================================
+  // Strategy: Event-Aware Search (Layer 1)
+  // ===========================================
+
+  /**
+   * Event-aware search: finds entities matching the query semantically,
+   * then boosts results based on recent event activity (Layer 1).
+   */
+  private async eventAwareSearch(
+    query: string,
+    context: AIContext,
+    limit: number
+  ): Promise<HybridRetrievalResult[]> {
+    const embedding = await generateEmbedding(query);
+    if (!embedding || embedding.length === 0) {return [];}
+
+    // Find entities matching the query semantically
+    const entityResult = await queryContext(
+      context,
+      `SELECT id, name, source_ids
+       FROM knowledge_entities
+       WHERE embedding IS NOT NULL
+       ORDER BY embedding <=> $1::vector
+       LIMIT 10`,
+      [`[${embedding.join(',')}]`]
+    );
+
+    if (entityResult.rows.length === 0) {return [];}
+
+    // Get activity scores for matched entities
+    const scoredIdeas: Map<string, number> = new Map();
+
+    for (const entity of entityResult.rows) {
+      const activity = await getEntityActivityScore(context, entity.id as string, 7);
+      const eventScore = activity.recencyScore * 0.3 +
+        Math.min(1, Math.log(activity.totalEvents + 1) / Math.log(50)) * 0.2;
+
+      // Distribute event score to source ideas
+      const sourceIds = (entity.source_ids as string[]) || [];
+      for (const sourceId of sourceIds.slice(0, 5)) {
+        const existing = scoredIdeas.get(sourceId) || 0;
+        scoredIdeas.set(sourceId, Math.max(existing, eventScore));
+      }
+    }
+
+    if (scoredIdeas.size === 0) {return [];}
+
+    // Fetch idea details for scored IDs
+    const ideaIds = Array.from(scoredIdeas.keys()).slice(0, limit);
+    const ideaResult = await queryContext(
+      context,
+      `SELECT id, title, COALESCE(summary, '') as content
+       FROM ideas
+       WHERE id = ANY($1::uuid[]) AND is_archived = FALSE`,
+      [ideaIds]
+    );
+
+    return ideaResult.rows
+      .map((row: Record<string, unknown>) => ({
+        id: row.id as string,
+        title: row.title as string,
+        content: row.content as string,
+        score: scoredIdeas.get(row.id as string) || 0,
+        source: 'event_aware' as const,
+        metadata: { strategy: 'event_aware' },
+      }))
+      .sort((a, b) => b.score - a.score)
+      .slice(0, limit);
   }
 
   // ===========================================

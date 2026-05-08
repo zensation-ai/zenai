@@ -8,8 +8,9 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { logger } from '../../utils/logger';
 import { getClaudeClient, executeWithProtection, CLAUDE_MODEL } from './client';
-import type { ToolUseOptions, ToolUseResult, ToolCall, ToolResult } from './tool-use';
-import { toolRegistry } from './tool-use';
+import type { ToolUseOptions, ToolUseResult, ToolCall, ToolResult } from './tool-types';
+import { toolRegistry } from './tool-types';
+import { recordEvent } from '../knowledge-graph/event-subgraph';
 
 // ===========================================
 // Core Tool Use Functions
@@ -34,7 +35,7 @@ export async function executeWithTools(
     systemPrompt,
     temperature = 0.7,
     toolChoice = { type: 'auto' },
-    executionContext = { aiContext: 'personal' },
+    executionContext = { aiContext: 'operations' },
   } = options;
 
   // Get tool definitions
@@ -122,6 +123,11 @@ export async function executeWithTools(
           input: call.input,
           result,
         });
+
+        // Record tool invocation event for GraphRAG (fire-and-forget)
+        recordEvent(executionContext.aiContext as any, 'tool_invocation', `tool:${call.name}`, {
+          payload: { toolName: call.name, inputKeys: Object.keys(call.input) },
+        }).catch(() => {});
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : 'Unknown error';
         logger.warn('Tool execution failed', { name: call.name, error: errorMessage });

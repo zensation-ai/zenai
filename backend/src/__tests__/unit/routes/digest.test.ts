@@ -22,7 +22,7 @@ jest.mock('../../../utils/logger', () => ({
 const mockQueryContext = jest.fn();
 jest.mock('../../../utils/database-context', () => ({
   queryContext: (...args: unknown[]) => mockQueryContext(...args),
-  isValidContext: jest.fn((ctx: string) => ['personal', 'work', 'learning', 'creative'].includes(ctx)),
+  isValidContext: jest.fn((ctx: string) => ['operations', 'finance', 'people', 'strategy'].includes(ctx)),
   AIContext: {},
 }));
 
@@ -61,7 +61,7 @@ describe('Digest Routes', () => {
       });
 
       const res = await request(app)
-        .post('/api/personal/digest/generate/daily')
+        .post('/api/operations/digest/generate/daily')
         .send({});
 
       expect(res.status).toBe(200);
@@ -76,7 +76,7 @@ describe('Digest Routes', () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [] });
 
       const res = await request(app)
-        .post('/api/personal/digest/generate/daily')
+        .post('/api/operations/digest/generate/daily')
         .send({});
 
       expect(res.status).toBe(200);
@@ -104,7 +104,7 @@ describe('Digest Routes', () => {
       });
 
       const res = await request(app)
-        .post('/api/personal/digest/generate/daily')
+        .post('/api/operations/digest/generate/daily')
         .send({});
 
       expect(res.status).toBe(200);
@@ -133,7 +133,7 @@ describe('Digest Routes', () => {
         }],
       });
 
-      const res = await request(app).get('/api/personal/digest/history');
+      const res = await request(app).get('/api/operations/digest/history');
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
@@ -153,7 +153,7 @@ describe('Digest Routes', () => {
         }],
       });
 
-      const res = await request(app).get('/api/personal/digest/latest');
+      const res = await request(app).get('/api/operations/digest/latest');
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
@@ -163,7 +163,7 @@ describe('Digest Routes', () => {
     it('should return null when no digest exists', async () => {
       mockQueryContext.mockResolvedValue({ rows: [] });
 
-      const res = await request(app).get('/api/personal/digest/latest');
+      const res = await request(app).get('/api/operations/digest/latest');
 
       expect(res.status).toBe(200);
       expect(res.body.data).toBeNull();
@@ -176,7 +176,7 @@ describe('Digest Routes', () => {
         rows: [{ id: 1, daily_ideas_target: 5, weekly_ideas_target: 25, focus_categories: ['tech'], enabled_insights: true, digest_time: '09:00' }],
       });
 
-      const res = await request(app).get('/api/personal/digest/goals');
+      const res = await request(app).get('/api/operations/digest/goals');
 
       expect(res.status).toBe(200);
       expect(res.body.data.dailyIdeasTarget).toBe(5);
@@ -187,7 +187,7 @@ describe('Digest Routes', () => {
         .mockResolvedValueOnce({ rows: [] })
         .mockResolvedValueOnce({ rows: [] });
 
-      const res = await request(app).get('/api/personal/digest/goals');
+      const res = await request(app).get('/api/operations/digest/goals');
 
       expect(res.status).toBe(200);
       expect(res.body.data.dailyIdeasTarget).toBe(3);
@@ -199,7 +199,7 @@ describe('Digest Routes', () => {
       mockQueryContext.mockResolvedValue({ rows: [] });
 
       const res = await request(app)
-        .put('/api/personal/digest/goals')
+        .put('/api/operations/digest/goals')
         .send({ dailyIdeasTarget: 10 });
 
       expect(res.status).toBe(200);

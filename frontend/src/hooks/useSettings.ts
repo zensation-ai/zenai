@@ -9,7 +9,6 @@ export interface AppSettings {
   proactiveSuggestions: boolean;
   memorySystem: boolean;
   dataProcessing: boolean;
-  cockpitMode: boolean;
 }
 
 const STORAGE_KEY = 'zenai-settings';
@@ -22,7 +21,6 @@ const DEFAULTS: AppSettings = {
   proactiveSuggestions: true,
   memorySystem: true,
   dataProcessing: true,
-  cockpitMode: false,
 };
 
 function loadSettings(): AppSettings {

@@ -33,7 +33,7 @@ describe('On-Device AI Routes', () => {
   });
 
   it('GET /:context/on-device-ai/status — returns cloud status', async () => {
-    const res = await request(app).get('/api/personal/on-device-ai/status');
+    const res = await request(app).get('/api/operations/on-device-ai/status');
 
     expect(res.status).toBe(200);
     expect(res.body.success).toBe(true);
@@ -43,7 +43,7 @@ describe('On-Device AI Routes', () => {
   });
 
   it('GET /:context/on-device-ai/status — works for all contexts', async () => {
-    for (const ctx of ['personal', 'work', 'learning', 'creative']) {
+    for (const ctx of ['operations', 'finance', 'people', 'strategy']) {
       const res = await request(app).get(`/api/${ctx}/on-device-ai/status`);
       expect(res.status).toBe(200);
     }
@@ -51,7 +51,7 @@ describe('On-Device AI Routes', () => {
 
   it('POST /:context/on-device-ai/sync-vocab — syncs vocabulary', async () => {
     const res = await request(app)
-      .post('/api/personal/on-device-ai/sync-vocab')
+      .post('/api/operations/on-device-ai/sync-vocab')
       .send({ vocabulary: [{ term: 'test', df: 1, idf: 0.5 }] });
 
     expect(res.status).toBe(200);
@@ -61,7 +61,7 @@ describe('On-Device AI Routes', () => {
 
   it('POST /:context/on-device-ai/sync-vocab — rejects non-array vocabulary', async () => {
     const res = await request(app)
-      .post('/api/personal/on-device-ai/sync-vocab')
+      .post('/api/operations/on-device-ai/sync-vocab')
       .send({ vocabulary: 'not-an-array' });
 
     expect(res.status).toBe(400);
@@ -70,7 +70,7 @@ describe('On-Device AI Routes', () => {
 
   it('POST /:context/on-device-ai/sync-vocab — handles empty array', async () => {
     const res = await request(app)
-      .post('/api/personal/on-device-ai/sync-vocab')
+      .post('/api/operations/on-device-ai/sync-vocab')
       .send({ vocabulary: [] });
 
     expect(res.status).toBe(200);
@@ -78,7 +78,7 @@ describe('On-Device AI Routes', () => {
   });
 
   it('GET /:context/on-device-ai/config — returns recommended config', async () => {
-    const res = await request(app).get('/api/personal/on-device-ai/config');
+    const res = await request(app).get('/api/operations/on-device-ai/config');
 
     expect(res.status).toBe(200);
     expect(res.body.data.recommendedComplexityThreshold).toBe(0.5);
@@ -87,7 +87,7 @@ describe('On-Device AI Routes', () => {
   });
 
   it('GET /:context/on-device-ai/config — includes cache TTL', async () => {
-    const res = await request(app).get('/api/work/on-device-ai/config');
+    const res = await request(app).get('/api/finance/on-device-ai/config');
 
     expect(res.status).toBe(200);
     expect(res.body.data.cacheTTLMs).toBe(30 * 60 * 1000);

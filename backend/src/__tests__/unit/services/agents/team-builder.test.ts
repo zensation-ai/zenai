@@ -272,7 +272,7 @@ describe('selectTeamForGoal', () => {
     });
 
     it('selects debate workflow for creative approach', () => {
-      const team = selectTeamForGoal('Entwickle eine kreative Strategie', 'creative');
+      const team = selectTeamForGoal('Entwickle eine kreative Strategie', 'strategy');
       expect(team.workflow).toBe('debate');
     });
 
@@ -282,7 +282,7 @@ describe('selectTeamForGoal', () => {
     });
 
     it('includes writer for creative approach', () => {
-      const team = selectTeamForGoal('Schreibe einen Blog-Artikel über KI Trends', 'creative');
+      const team = selectTeamForGoal('Schreibe einen Blog-Artikel über KI Trends', 'strategy');
       const roles = team.members.map((m) => m.role);
       expect(roles).toContain('writer');
     });

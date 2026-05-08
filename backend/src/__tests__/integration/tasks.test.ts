@@ -27,7 +27,7 @@ jest.mock('../../services/tasks', () => ({
 
 jest.mock('../../utils/database-context', () => ({
   queryContext: jest.fn(),
-  isValidContext: jest.fn((ctx: string) => ['personal', 'work', 'learning', 'creative'].includes(ctx)),
+  isValidContext: jest.fn((ctx: string) => ['operations', 'finance', 'people', 'strategy'].includes(ctx)),
   AIContext: {},
 }));
 
@@ -85,7 +85,7 @@ const sampleTask = {
   due_date: '2026-02-15T10:00:00Z',
   start_date: '2026-02-12T10:00:00Z',
   sort_order: 0,
-  context: 'work',
+  context: 'finance',
   labels: ['testing'],
   metadata: {},
   created_at: new Date().toISOString(),
@@ -122,7 +122,7 @@ describe('Tasks API Integration Tests', () => {
     it('should return list of tasks', async () => {
       mockGetTasks.mockResolvedValueOnce([sampleTask] as any);
 
-      const res = await request(app).get('/api/work/tasks');
+      const res = await request(app).get('/api/finance/tasks');
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
@@ -135,10 +135,10 @@ describe('Tasks API Integration Tests', () => {
       mockGetTasks.mockResolvedValueOnce([] as any);
 
       await request(app)
-        .get('/api/personal/tasks')
+        .get('/api/operations/tasks')
         .query({ status: 'todo', priority: 'high', project_id: UUID_2, limit: '50', offset: '10' });
 
-      expect(mockGetTasks).toHaveBeenCalledWith('personal', expect.objectContaining({
+      expect(mockGetTasks).toHaveBeenCalledWith('operations', expect.objectContaining({
         status: 'todo',
         priority: 'high',
         project_id: UUID_2,
@@ -150,9 +150,9 @@ describe('Tasks API Integration Tests', () => {
     it('should cap limit at 500', async () => {
       mockGetTasks.mockResolvedValueOnce([] as any);
 
-      await request(app).get('/api/work/tasks').query({ limit: '9999' });
+      await request(app).get('/api/finance/tasks').query({ limit: '9999' });
 
-      expect(mockGetTasks).toHaveBeenCalledWith('work', expect.objectContaining({ limit: 500 }), '00000000-0000-0000-0000-000000000001');
+      expect(mockGetTasks).toHaveBeenCalledWith('finance', expect.objectContaining({ limit: 500 }), '00000000-0000-0000-0000-000000000001');
     });
 
     it('should reject invalid context', async () => {
@@ -164,7 +164,7 @@ describe('Tasks API Integration Tests', () => {
     it('should return empty array when no tasks', async () => {
       mockGetTasks.mockResolvedValueOnce([] as any);
 
-      const res = await request(app).get('/api/learning/tasks');
+      const res = await request(app).get('/api/people/tasks');
 
       expect(res.status).toBe(200);
       expect(res.body.data).toHaveLength(0);
@@ -180,7 +180,7 @@ describe('Tasks API Integration Tests', () => {
     it('should return gantt tasks', async () => {
       mockGetTasksForGantt.mockResolvedValueOnce([sampleTask] as any);
 
-      const res = await request(app).get('/api/work/tasks/gantt');
+      const res = await request(app).get('/api/finance/tasks/gantt');
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
@@ -190,17 +190,17 @@ describe('Tasks API Integration Tests', () => {
     it('should pass project_id filter', async () => {
       mockGetTasksForGantt.mockResolvedValueOnce([] as any);
 
-      await request(app).get('/api/work/tasks/gantt').query({ project_id: UUID_2 });
+      await request(app).get('/api/finance/tasks/gantt').query({ project_id: UUID_2 });
 
-      expect(mockGetTasksForGantt).toHaveBeenCalledWith('work', { project_id: UUID_2 }, '00000000-0000-0000-0000-000000000001');
+      expect(mockGetTasksForGantt).toHaveBeenCalledWith('finance', { project_id: UUID_2 }, '00000000-0000-0000-0000-000000000001');
     });
 
     it('should call without filters when no project_id', async () => {
       mockGetTasksForGantt.mockResolvedValueOnce([] as any);
 
-      await request(app).get('/api/work/tasks/gantt');
+      await request(app).get('/api/finance/tasks/gantt');
 
-      expect(mockGetTasksForGantt).toHaveBeenCalledWith('work', undefined, '00000000-0000-0000-0000-000000000001');
+      expect(mockGetTasksForGantt).toHaveBeenCalledWith('finance', undefined, '00000000-0000-0000-0000-000000000001');
     });
   });
 
@@ -212,7 +212,7 @@ describe('Tasks API Integration Tests', () => {
     it('should return a single task', async () => {
       mockGetTask.mockResolvedValueOnce(sampleTask as any);
 
-      const res = await request(app).get(`/api/work/tasks/${UUID_1}`);
+      const res = await request(app).get(`/api/finance/tasks/${UUID_1}`);
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
@@ -222,13 +222,13 @@ describe('Tasks API Integration Tests', () => {
     it('should return 404 when task not found', async () => {
       mockGetTask.mockResolvedValueOnce(null as any);
 
-      const res = await request(app).get(`/api/work/tasks/${UUID_1}`);
+      const res = await request(app).get(`/api/finance/tasks/${UUID_1}`);
 
       expect(res.status).toBe(404);
     });
 
     it('should reject invalid UUID', async () => {
-      const res = await request(app).get('/api/work/tasks/not-a-uuid');
+      const res = await request(app).get('/api/finance/tasks/not-a-uuid');
 
       expect(res.status).toBe(400);
       expect(res.body.success).toBe(false);
@@ -244,7 +244,7 @@ describe('Tasks API Integration Tests', () => {
       mockCreateTask.mockResolvedValueOnce(sampleTask as any);
 
       const res = await request(app)
-        .post('/api/work/tasks')
+        .post('/api/finance/tasks')
         .send({ title: 'Write tests', priority: 'high', project_id: UUID_2 });
 
       expect(res.status).toBe(201);
@@ -254,7 +254,7 @@ describe('Tasks API Integration Tests', () => {
 
     it('should require title', async () => {
       const res = await request(app)
-        .post('/api/work/tasks')
+        .post('/api/finance/tasks')
         .send({ description: 'No title' });
 
       expect(res.status).toBe(400);
@@ -262,7 +262,7 @@ describe('Tasks API Integration Tests', () => {
 
     it('should reject empty title', async () => {
       const res = await request(app)
-        .post('/api/work/tasks')
+        .post('/api/finance/tasks')
         .send({ title: '   ' });
 
       expect(res.status).toBe(400);
@@ -272,10 +272,10 @@ describe('Tasks API Integration Tests', () => {
       mockCreateTask.mockResolvedValueOnce(sampleTask as any);
 
       await request(app)
-        .post('/api/personal/tasks')
+        .post('/api/operations/tasks')
         .send({ title: '  Write tests  ' });
 
-      expect(mockCreateTask).toHaveBeenCalledWith('personal', expect.objectContaining({
+      expect(mockCreateTask).toHaveBeenCalledWith('operations', expect.objectContaining({
         title: 'Write tests',
       }), '00000000-0000-0000-0000-000000000001');
     });
@@ -284,7 +284,7 @@ describe('Tasks API Integration Tests', () => {
       mockCreateTask.mockResolvedValueOnce(sampleTask as any);
 
       await request(app)
-        .post('/api/work/tasks')
+        .post('/api/finance/tasks')
         .send({
           title: 'Full task',
           description: 'Desc',
@@ -299,7 +299,7 @@ describe('Tasks API Integration Tests', () => {
           metadata: { sprint: 1 },
         });
 
-      expect(mockCreateTask).toHaveBeenCalledWith('work', expect.objectContaining({
+      expect(mockCreateTask).toHaveBeenCalledWith('finance', expect.objectContaining({
         title: 'Full task',
         description: 'Desc',
         status: 'in_progress',
@@ -320,7 +320,7 @@ describe('Tasks API Integration Tests', () => {
       mockUpdateTask.mockResolvedValueOnce(updated as any);
 
       const res = await request(app)
-        .put(`/api/work/tasks/${UUID_1}`)
+        .put(`/api/finance/tasks/${UUID_1}`)
         .send({ status: 'done' });
 
       expect(res.status).toBe(200);
@@ -332,7 +332,7 @@ describe('Tasks API Integration Tests', () => {
       mockUpdateTask.mockResolvedValueOnce(null as any);
 
       const res = await request(app)
-        .put(`/api/work/tasks/${UUID_1}`)
+        .put(`/api/finance/tasks/${UUID_1}`)
         .send({ title: 'Updated' });
 
       expect(res.status).toBe(404);
@@ -340,7 +340,7 @@ describe('Tasks API Integration Tests', () => {
 
     it('should reject invalid UUID', async () => {
       const res = await request(app)
-        .put('/api/work/tasks/bad-id')
+        .put('/api/finance/tasks/bad-id')
         .send({ title: 'Updated' });
 
       expect(res.status).toBe(400);
@@ -355,7 +355,7 @@ describe('Tasks API Integration Tests', () => {
     it('should cancel a task', async () => {
       mockDeleteTask.mockResolvedValueOnce(true as any);
 
-      const res = await request(app).delete(`/api/work/tasks/${UUID_1}`);
+      const res = await request(app).delete(`/api/finance/tasks/${UUID_1}`);
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
@@ -365,13 +365,13 @@ describe('Tasks API Integration Tests', () => {
     it('should return 404 when task not found', async () => {
       mockDeleteTask.mockResolvedValueOnce(false as any);
 
-      const res = await request(app).delete(`/api/work/tasks/${UUID_1}`);
+      const res = await request(app).delete(`/api/finance/tasks/${UUID_1}`);
 
       expect(res.status).toBe(404);
     });
 
     it('should reject invalid UUID', async () => {
-      const res = await request(app).delete('/api/work/tasks/bad');
+      const res = await request(app).delete('/api/finance/tasks/bad');
 
       expect(res.status).toBe(400);
     });
@@ -386,17 +386,17 @@ describe('Tasks API Integration Tests', () => {
       mockReorderTasks.mockResolvedValueOnce(undefined as any);
 
       const res = await request(app)
-        .post('/api/work/tasks/reorder')
+        .post('/api/finance/tasks/reorder')
         .send({ status: 'todo', taskIds: [UUID_1, UUID_2, UUID_3] });
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
-      expect(mockReorderTasks).toHaveBeenCalledWith('work', 'todo', [UUID_1, UUID_2, UUID_3], '00000000-0000-0000-0000-000000000001');
+      expect(mockReorderTasks).toHaveBeenCalledWith('finance', 'todo', [UUID_1, UUID_2, UUID_3], '00000000-0000-0000-0000-000000000001');
     });
 
     it('should reject invalid status', async () => {
       const res = await request(app)
-        .post('/api/work/tasks/reorder')
+        .post('/api/finance/tasks/reorder')
         .send({ status: 'invalid', taskIds: [UUID_1] });
 
       expect(res.status).toBe(400);
@@ -404,7 +404,7 @@ describe('Tasks API Integration Tests', () => {
 
     it('should reject empty taskIds', async () => {
       const res = await request(app)
-        .post('/api/work/tasks/reorder')
+        .post('/api/finance/tasks/reorder')
         .send({ status: 'todo', taskIds: [] });
 
       expect(res.status).toBe(400);
@@ -412,7 +412,7 @@ describe('Tasks API Integration Tests', () => {
 
     it('should reject missing taskIds', async () => {
       const res = await request(app)
-        .post('/api/work/tasks/reorder')
+        .post('/api/finance/tasks/reorder')
         .send({ status: 'todo' });
 
       expect(res.status).toBe(400);
@@ -428,27 +428,27 @@ describe('Tasks API Integration Tests', () => {
       mockConvertIdeaToTask.mockResolvedValueOnce(sampleTask as any);
 
       const res = await request(app)
-        .post(`/api/work/tasks/from-idea/${UUID_2}`)
+        .post(`/api/finance/tasks/from-idea/${UUID_2}`)
         .send({});
 
       expect(res.status).toBe(201);
       expect(res.body.success).toBe(true);
-      expect(mockConvertIdeaToTask).toHaveBeenCalledWith('work', UUID_2, undefined, '00000000-0000-0000-0000-000000000001');
+      expect(mockConvertIdeaToTask).toHaveBeenCalledWith('finance', UUID_2, undefined, '00000000-0000-0000-0000-000000000001');
     });
 
     it('should pass project_id to service', async () => {
       mockConvertIdeaToTask.mockResolvedValueOnce(sampleTask as any);
 
       await request(app)
-        .post(`/api/work/tasks/from-idea/${UUID_2}`)
+        .post(`/api/finance/tasks/from-idea/${UUID_2}`)
         .send({ project_id: UUID_3 });
 
-      expect(mockConvertIdeaToTask).toHaveBeenCalledWith('work', UUID_2, UUID_3, '00000000-0000-0000-0000-000000000001');
+      expect(mockConvertIdeaToTask).toHaveBeenCalledWith('finance', UUID_2, UUID_3, '00000000-0000-0000-0000-000000000001');
     });
 
     it('should reject invalid idea UUID', async () => {
       const res = await request(app)
-        .post('/api/work/tasks/from-idea/bad-id')
+        .post('/api/finance/tasks/from-idea/bad-id')
         .send({});
 
       expect(res.status).toBe(400);
@@ -463,7 +463,7 @@ describe('Tasks API Integration Tests', () => {
     it('should return task dependencies', async () => {
       mockGetTaskDependencies.mockResolvedValueOnce([sampleDependency] as any);
 
-      const res = await request(app).get(`/api/work/tasks/${UUID_1}/dependencies`);
+      const res = await request(app).get(`/api/finance/tasks/${UUID_1}/dependencies`);
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
@@ -471,7 +471,7 @@ describe('Tasks API Integration Tests', () => {
     });
 
     it('should reject invalid task UUID', async () => {
-      const res = await request(app).get('/api/work/tasks/bad/dependencies');
+      const res = await request(app).get('/api/finance/tasks/bad/dependencies');
       expect(res.status).toBe(400);
     });
   });
@@ -481,17 +481,17 @@ describe('Tasks API Integration Tests', () => {
       mockAddDependency.mockResolvedValueOnce(sampleDependency as any);
 
       const res = await request(app)
-        .post(`/api/work/tasks/${UUID_1}/dependencies`)
+        .post(`/api/finance/tasks/${UUID_1}/dependencies`)
         .send({ depends_on_id: UUID_2, dependency_type: 'finish_to_start' });
 
       expect(res.status).toBe(201);
       expect(res.body.success).toBe(true);
-      expect(mockAddDependency).toHaveBeenCalledWith('work', UUID_1, UUID_2, 'finish_to_start', '00000000-0000-0000-0000-000000000001');
+      expect(mockAddDependency).toHaveBeenCalledWith('finance', UUID_1, UUID_2, 'finish_to_start', '00000000-0000-0000-0000-000000000001');
     });
 
     it('should reject missing depends_on_id', async () => {
       const res = await request(app)
-        .post(`/api/work/tasks/${UUID_1}/dependencies`)
+        .post(`/api/finance/tasks/${UUID_1}/dependencies`)
         .send({});
 
       expect(res.status).toBe(400);
@@ -499,7 +499,7 @@ describe('Tasks API Integration Tests', () => {
 
     it('should reject self-dependency', async () => {
       const res = await request(app)
-        .post(`/api/work/tasks/${UUID_1}/dependencies`)
+        .post(`/api/finance/tasks/${UUID_1}/dependencies`)
         .send({ depends_on_id: UUID_1 });
 
       expect(res.status).toBe(400);
@@ -507,7 +507,7 @@ describe('Tasks API Integration Tests', () => {
 
     it('should reject invalid depends_on_id UUID', async () => {
       const res = await request(app)
-        .post(`/api/work/tasks/${UUID_1}/dependencies`)
+        .post(`/api/finance/tasks/${UUID_1}/dependencies`)
         .send({ depends_on_id: 'not-uuid' });
 
       expect(res.status).toBe(400);
@@ -518,7 +518,7 @@ describe('Tasks API Integration Tests', () => {
     it('should remove a dependency', async () => {
       mockRemoveDependency.mockResolvedValueOnce(true as any);
 
-      const res = await request(app).delete(`/api/work/tasks/${UUID_1}/dependencies/${UUID_3}`);
+      const res = await request(app).delete(`/api/finance/tasks/${UUID_1}/dependencies/${UUID_3}`);
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
@@ -527,13 +527,13 @@ describe('Tasks API Integration Tests', () => {
     it('should return 404 for non-existent dependency', async () => {
       mockRemoveDependency.mockResolvedValueOnce(false as any);
 
-      const res = await request(app).delete(`/api/work/tasks/${UUID_1}/dependencies/${UUID_3}`);
+      const res = await request(app).delete(`/api/finance/tasks/${UUID_1}/dependencies/${UUID_3}`);
 
       expect(res.status).toBe(404);
     });
 
     it('should reject invalid dependency UUID', async () => {
-      const res = await request(app).delete(`/api/work/tasks/${UUID_1}/dependencies/bad`);
+      const res = await request(app).delete(`/api/finance/tasks/${UUID_1}/dependencies/bad`);
       expect(res.status).toBe(400);
     });
   });
@@ -543,7 +543,7 @@ describe('Tasks API Integration Tests', () => {
   // ===========================================
 
   describe('Context validation', () => {
-    it.each(['personal', 'work', 'learning', 'creative'])('should accept context "%s"', async (ctx) => {
+    it.each(['operations', 'finance', 'people', 'strategy'])('should accept context "%s"', async (ctx) => {
       mockGetTasks.mockResolvedValueOnce([] as any);
 
       const res = await request(app).get(`/api/${ctx}/tasks`);

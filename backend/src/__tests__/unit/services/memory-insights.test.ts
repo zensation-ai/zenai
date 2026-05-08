@@ -46,7 +46,7 @@ describe('Memory Insights Service', () => {
         .mockResolvedValueOnce({ rows: [{ date: '2026-03-01', count: 8 }] })
         .mockResolvedValueOnce({ rows: [{ date: '2026-03-01', count: 12 }] });
 
-      const result = await getMemoryTimeline('personal', '2026-03-01', '2026-03-31');
+      const result = await getMemoryTimeline('operations', '2026-03-01', '2026-03-31');
       expect(result.length).toBe(4);
       expect(result[0].layer).toBe('working');
       expect(result[0].count).toBe(5);
@@ -57,7 +57,7 @@ describe('Memory Insights Service', () => {
 
     test('handles empty results', async () => {
       mockQueryContext.mockResolvedValue({ rows: [] });
-      const result = await getMemoryTimeline('personal', '2026-03-01', '2026-03-31');
+      const result = await getMemoryTimeline('operations', '2026-03-01', '2026-03-31');
       expect(result).toEqual([]);
     });
 
@@ -68,7 +68,7 @@ describe('Memory Insights Service', () => {
         .mockResolvedValueOnce({ rows: [] })
         .mockResolvedValueOnce({ rows: [] });
 
-      const result = await getMemoryTimeline('personal', '2026-03-01', '2026-03-31');
+      const result = await getMemoryTimeline('operations', '2026-03-01', '2026-03-31');
       expect(result.length).toBe(2);
       expect(result[0].date).toContain('2026-03-01');
       expect(result[1].date).toContain('2026-03-05');
@@ -76,7 +76,7 @@ describe('Memory Insights Service', () => {
 
     test('handles table-not-found errors gracefully', async () => {
       mockQueryContext.mockRejectedValue(new Error('relation "working_memory" does not exist'));
-      const result = await getMemoryTimeline('learning', '2026-03-01', '2026-03-31');
+      const result = await getMemoryTimeline('people', '2026-03-01', '2026-03-31');
       expect(result).toEqual([]);
     });
   });
@@ -88,7 +88,7 @@ describe('Memory Insights Service', () => {
   describe('detectConflicts', () => {
     test('returns empty array on no conflicts', async () => {
       mockQueryContext.mockResolvedValue({ rows: [] });
-      const result = await detectConflicts('personal');
+      const result = await detectConflicts('operations');
       expect(result).toEqual([]);
     });
 
@@ -106,7 +106,7 @@ describe('Memory Insights Service', () => {
         .mockResolvedValueOnce({ rows: [] })
         .mockResolvedValueOnce({ rows: [] }); // outdated
 
-      const result = await detectConflicts('personal');
+      const result = await detectConflicts('operations');
       expect(result.length).toBeGreaterThanOrEqual(1);
       expect(result[0].conflictType).toBe('duplicate');
       expect(result[0].confidence).toBe(0.8);
@@ -114,7 +114,7 @@ describe('Memory Insights Service', () => {
 
     test('respects limit parameter', async () => {
       mockQueryContext.mockResolvedValue({ rows: [] });
-      const result = await detectConflicts('personal', 5);
+      const result = await detectConflicts('operations', 5);
       expect(result.length).toBeLessThanOrEqual(5);
     });
   });
@@ -132,7 +132,7 @@ describe('Memory Insights Service', () => {
         .mockResolvedValueOnce({ rows: [] })  // promote
         .mockResolvedValueOnce({ rows: [] }); // delete
 
-      const result = await getCurationSuggestions('personal');
+      const result = await getCurationSuggestions('operations');
       expect(result.length).toBe(1);
       expect(result[0].suggestion).toBe('archive');
       expect(result[0].layer).toBe('working');
@@ -149,7 +149,7 @@ describe('Memory Insights Service', () => {
         })
         .mockResolvedValueOnce({ rows: [] }); // delete
 
-      const result = await getCurationSuggestions('personal');
+      const result = await getCurationSuggestions('operations');
       expect(result.length).toBe(1);
       expect(result[0].suggestion).toBe('promote');
       expect(result[0].layer).toBe('short_term');
@@ -163,7 +163,7 @@ describe('Memory Insights Service', () => {
           rows: [{ id: 'lt1', content: 'outdated info', created_at: '2025-01-01', strength: 0.1 }],
         });
 
-      const result = await getCurationSuggestions('personal');
+      const result = await getCurationSuggestions('operations');
       expect(result.length).toBe(1);
       expect(result[0].suggestion).toBe('delete');
     });
@@ -181,7 +181,7 @@ describe('Memory Insights Service', () => {
         })
         .mockResolvedValueOnce({ rows: [] });
 
-      const result = await getCurationSuggestions('personal');
+      const result = await getCurationSuggestions('operations');
       expect(result.length).toBe(2);
       // Promote (priority 8) before archive (priority 7)
       expect(result[0].suggestion).toBe('promote');
@@ -190,7 +190,7 @@ describe('Memory Insights Service', () => {
 
     test('handles missing tables gracefully', async () => {
       mockQueryContext.mockRejectedValue(new Error('relation does not exist'));
-      const result = await getCurationSuggestions('learning');
+      const result = await getCurationSuggestions('people');
       expect(result).toEqual([]);
     });
   });
@@ -210,7 +210,7 @@ describe('Memory Insights Service', () => {
         })
         .mockResolvedValueOnce({ rows: [] }); // episodic
 
-      const result = await getMemoryImpact('personal', 10);
+      const result = await getMemoryImpact('operations', 10);
       expect(result.length).toBe(1);
       expect(result[0].layer).toBe('long_term');
       expect(result[0].influenceScore).toBeGreaterThan(0);
@@ -226,7 +226,7 @@ describe('Memory Insights Service', () => {
           }],
         });
 
-      const result = await getMemoryImpact('personal', 10);
+      const result = await getMemoryImpact('operations', 10);
       expect(result.length).toBe(1);
       expect(result[0].layer).toBe('episodic');
       expect(result[0].influenceScore).toBe(0.75);
@@ -247,14 +247,14 @@ describe('Memory Insights Service', () => {
           }],
         });
 
-      const result = await getMemoryImpact('personal', 10);
+      const result = await getMemoryImpact('operations', 10);
       expect(result.length).toBe(2);
       expect(result[0].influenceScore).toBeGreaterThan(result[1].influenceScore);
     });
 
     test('handles missing tables gracefully', async () => {
       mockQueryContext.mockRejectedValue(new Error('relation does not exist'));
-      const result = await getMemoryImpact('creative', 10);
+      const result = await getMemoryImpact('strategy', 10);
       expect(result).toEqual([]);
     });
   });
@@ -282,7 +282,7 @@ describe('Memory Insights Service', () => {
         .mockResolvedValueOnce({ rows: [{ count: 4 }] })
         .mockResolvedValueOnce({ rows: [{ count: 3 }] });
 
-      const result = await getMemoryStats('personal');
+      const result = await getMemoryStats('operations');
       expect(result.totalMemories).toBe(43);
       expect(result.byLayer.working).toBe(5);
       expect(result.byLayer.episodic).toBe(10);
@@ -295,7 +295,7 @@ describe('Memory Insights Service', () => {
 
     test('handles missing tables gracefully', async () => {
       mockQueryContext.mockRejectedValue(new Error('relation does not exist'));
-      const result = await getMemoryStats('learning');
+      const result = await getMemoryStats('people');
       expect(result.totalMemories).toBe(0);
       expect(result.byLayer).toBeDefined();
       expect(result.oldestMemory).toBeNull();
@@ -304,7 +304,7 @@ describe('Memory Insights Service', () => {
 
     test('handles empty database', async () => {
       mockQueryContext.mockResolvedValue({ rows: [{ count: 0 }] });
-      const result = await getMemoryStats('personal');
+      const result = await getMemoryStats('operations');
       expect(result.totalMemories).toBe(0);
     });
   });

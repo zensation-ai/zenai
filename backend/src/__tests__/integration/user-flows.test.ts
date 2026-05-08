@@ -15,7 +15,7 @@ import { ideasRouter } from '../../routes/ideas';
 // Mock all external dependencies
 jest.mock('../../utils/database-context', () => ({
   queryContext: jest.fn(),
-  isValidContext: jest.fn((ctx: string) => ['personal', 'work', 'learning', 'creative'].includes(ctx)),
+  isValidContext: jest.fn((ctx: string) => ['operations', 'finance', 'people', 'strategy'].includes(ctx)),
   isValidUUID: jest.fn((id: string) =>
     /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id),
   ),
@@ -82,7 +82,7 @@ function createMockIdea(overrides: Record<string, unknown> = {}) {
     context_needed: '["Context A"]',
     keywords: '["test", "idea"]',
     raw_transcript: 'Original transcript',
-    context: 'personal',
+    context: 'operations',
     created_at: NOW,
     updated_at: NOW,
     ...overrides,
@@ -121,7 +121,7 @@ describe('Phase 8.1: Critical User Flow Integration Tests', () => {
 
       const listRes = await request(app)
         .get('/api/ideas')
-        .set('x-ai-context', 'personal');
+        .set('x-ai-context', 'operations');
       expect(listRes.status).toBe(200);
       expect(listRes.body).toHaveProperty('ideas');
 
@@ -133,7 +133,7 @@ describe('Phase 8.1: Critical User Flow Integration Tests', () => {
 
       const getRes = await request(app)
         .get(`/api/ideas/${TEST_UUID}`)
-        .set('x-ai-context', 'personal');
+        .set('x-ai-context', 'operations');
       expect(getRes.status).toBe(200);
       expect(getRes.body).toHaveProperty('success', true);
       expect(getRes.body.idea).toHaveProperty('id', TEST_UUID);
@@ -147,7 +147,7 @@ describe('Phase 8.1: Critical User Flow Integration Tests', () => {
 
       const updateRes = await request(app)
         .put(`/api/ideas/${TEST_UUID}`)
-        .set('x-ai-context', 'personal')
+        .set('x-ai-context', 'operations')
         .send({ title: 'Updated Idea', priority: 'high' });
       expect(updateRes.status).toBe(200);
 
@@ -160,7 +160,7 @@ describe('Phase 8.1: Critical User Flow Integration Tests', () => {
 
       const archiveRes = await request(app)
         .put(`/api/ideas/${TEST_UUID}/archive`)
-        .set('x-ai-context', 'personal');
+        .set('x-ai-context', 'operations');
       expect(archiveRes.status).toBe(200);
       expect(archiveRes.body).toHaveProperty('success', true);
 
@@ -173,7 +173,7 @@ describe('Phase 8.1: Critical User Flow Integration Tests', () => {
 
       const restoreRes = await request(app)
         .put(`/api/ideas/${TEST_UUID}/restore`)
-        .set('x-ai-context', 'personal');
+        .set('x-ai-context', 'operations');
       expect(restoreRes.status).toBe(200);
       expect(restoreRes.body).toHaveProperty('success', true);
 
@@ -186,7 +186,7 @@ describe('Phase 8.1: Critical User Flow Integration Tests', () => {
 
       const deleteRes = await request(app)
         .delete(`/api/ideas/${TEST_UUID}`)
-        .set('x-ai-context', 'personal');
+        .set('x-ai-context', 'operations');
       expect(deleteRes.status).toBe(200);
       expect(deleteRes.body).toHaveProperty('success', true);
     });
@@ -196,7 +196,7 @@ describe('Phase 8.1: Critical User Flow Integration Tests', () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any);
       const getRes = await request(app)
         .get(`/api/ideas/${TEST_UUID}`)
-        .set('x-ai-context', 'personal');
+        .set('x-ai-context', 'operations');
       expect(getRes.status).toBe(404);
 
       // PUT non-existent
@@ -204,7 +204,7 @@ describe('Phase 8.1: Critical User Flow Integration Tests', () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any);
       const putRes = await request(app)
         .put(`/api/ideas/${TEST_UUID}`)
-        .set('x-ai-context', 'personal')
+        .set('x-ai-context', 'operations')
         .send({ title: 'Updated' });
       expect(putRes.status).toBe(404);
 
@@ -213,7 +213,7 @@ describe('Phase 8.1: Critical User Flow Integration Tests', () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any);
       const delRes = await request(app)
         .delete(`/api/ideas/${TEST_UUID}`)
-        .set('x-ai-context', 'personal');
+        .set('x-ai-context', 'operations');
       expect(delRes.status).toBe(404);
     });
   });
@@ -234,7 +234,7 @@ describe('Phase 8.1: Critical User Flow Integration Tests', () => {
 
       const triageRes = await request(app)
         .get('/api/ideas/triage')
-        .set('x-ai-context', 'personal');
+        .set('x-ai-context', 'operations');
       expect(triageRes.status).toBe(200);
       expect(triageRes.body).toHaveProperty('ideas');
 
@@ -247,7 +247,7 @@ describe('Phase 8.1: Critical User Flow Integration Tests', () => {
 
       const swipeRes = await request(app)
         .post(`/api/ideas/${TEST_UUID}/swipe`)
-        .set('x-ai-context', 'personal')
+        .set('x-ai-context', 'operations')
         .send({ action: 'archive' });
       expect(swipeRes.status).toBe(200);
       expect(swipeRes.body).toHaveProperty('success', true);
@@ -263,7 +263,7 @@ describe('Phase 8.1: Critical User Flow Integration Tests', () => {
 
       const priorityRes = await request(app)
         .put(`/api/ideas/${TEST_UUID_2}/priority`)
-        .set('x-ai-context', 'personal')
+        .set('x-ai-context', 'operations')
         .send({ priority: 'high' });
       expect(priorityRes.status).toBe(200);
       expect(priorityRes.body).toHaveProperty('success', true);
@@ -281,7 +281,7 @@ describe('Phase 8.1: Critical User Flow Integration Tests', () => {
 
         const res = await request(app)
           .post(`/api/ideas/${TEST_UUID}/triage`)
-          .set('x-ai-context', 'personal')
+          .set('x-ai-context', 'operations')
           .send({ action });
         expect(res.status).toBe(200);
         expect(res.body).toHaveProperty('success', true);
@@ -308,7 +308,7 @@ describe('Phase 8.1: Critical User Flow Integration Tests', () => {
 
       const listRes = await request(app)
         .get('/api/ideas?limit=10&offset=0&priority=high&type=idea')
-        .set('x-ai-context', 'personal');
+        .set('x-ai-context', 'operations');
       expect(listRes.status).toBe(200);
       expect(listRes.body).toHaveProperty('ideas');
     });
@@ -326,7 +326,7 @@ describe('Phase 8.1: Critical User Flow Integration Tests', () => {
 
       const searchRes = await request(app)
         .post('/api/ideas/search')
-        .set('x-ai-context', 'personal')
+        .set('x-ai-context', 'operations')
         .send({ query: 'machine learning', limit: 10 });
       expect(searchRes.status).toBe(200);
       expect(searchRes.body).toHaveProperty('ideas');
@@ -339,8 +339,8 @@ describe('Phase 8.1: Critical User Flow Integration Tests', () => {
 
   describe('Flow: Context Switching', () => {
     it('should isolate ideas between personal and work contexts', async () => {
-      const personalIdea = createMockIdea({ context: 'personal', title: 'Personal Idea' });
-      const workIdea = createMockIdea({ context: 'work', title: 'Work Idea' });
+      const personalIdea = createMockIdea({ context: 'operations', title: 'Personal Idea' });
+      const workIdea = createMockIdea({ context: 'finance', title: 'Work Idea' });
 
       // List personal ideas (list first, then count)
       mockQueryContext
@@ -349,7 +349,7 @@ describe('Phase 8.1: Critical User Flow Integration Tests', () => {
 
       const personalRes = await request(app)
         .get('/api/ideas')
-        .set('x-ai-context', 'personal');
+        .set('x-ai-context', 'operations');
       expect(personalRes.status).toBe(200);
 
       // List work ideas (list first, then count)
@@ -360,12 +360,12 @@ describe('Phase 8.1: Critical User Flow Integration Tests', () => {
 
       const workRes = await request(app)
         .get('/api/ideas')
-        .set('x-ai-context', 'work');
+        .set('x-ai-context', 'finance');
       expect(workRes.status).toBe(200);
 
       // Verify context parameter is passed to queryContext
       expect(mockQueryContext).toHaveBeenCalledWith(
-        'work',
+        'finance',
         expect.any(String),
         expect.any(Array),
       );
@@ -382,18 +382,18 @@ describe('Phase 8.1: Critical User Flow Integration Tests', () => {
 
       const getRes = await request(app)
         .get(`/api/ideas/${invalidId}`)
-        .set('x-ai-context', 'personal');
+        .set('x-ai-context', 'operations');
       expect(getRes.status).toBe(400);
 
       const putRes = await request(app)
         .put(`/api/ideas/${invalidId}`)
-        .set('x-ai-context', 'personal')
+        .set('x-ai-context', 'operations')
         .send({ title: 'Updated' });
       expect(putRes.status).toBe(400);
 
       const delRes = await request(app)
         .delete(`/api/ideas/${invalidId}`)
-        .set('x-ai-context', 'personal');
+        .set('x-ai-context', 'operations');
       expect(delRes.status).toBe(400);
     });
 
@@ -402,7 +402,7 @@ describe('Phase 8.1: Critical User Flow Integration Tests', () => {
 
       const res = await request(app)
         .get('/api/ideas')
-        .set('x-ai-context', 'personal');
+        .set('x-ai-context', 'operations');
       // Should return 500 without crashing the server
       expect(res.status).toBe(500);
     });

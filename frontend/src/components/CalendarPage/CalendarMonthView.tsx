@@ -3,9 +3,13 @@
  * CSS Grid-based month view with event pills.
  */
 
-import { useMemo } from 'react';
+import { useMemo, type CSSProperties } from 'react';
+import { Calendar } from 'lucide-react';
 import type { CalendarEvent } from './types';
 import { EVENT_TYPE_COLORS } from './types';
+import { DashboardSkeleton } from '../skeletons/PageSkeletons';
+import { Button } from '@/components/ui/button';
+import { EmptyState } from '@/components/ui/empty-state';
 
 interface Props {
   currentDate: Date;
@@ -67,7 +71,27 @@ export function CalendarMonthView({ currentDate, events, loading, onEventClick, 
   }, [events]);
 
   if (loading) {
-    return <div className="calendar-loading">Lade Kalender...</div>;
+    return <DashboardSkeleton />;
+  }
+
+  const hasEvents = cells.some(cell => {
+    const dayEvents = eventsByDate.get(cell.date.toDateString()) || [];
+    return cell.isCurrentMonth && dayEvents.length > 0;
+  });
+
+  if (!hasEvents && events.length === 0) {
+    return (
+      <EmptyState
+        icon={<Calendar size={40} strokeWidth={1.5} />}
+        title="Keine Termine in diesem Monat"
+        description="Erstelle einen neuen Termin, um diesen Monat zu befüllen."
+        action={
+          <Button variant="default" size="sm" onClick={() => onDateClick(new Date())}>
+            Termin erstellen
+          </Button>
+        }
+      />
+    );
   }
 
   return (
@@ -100,8 +124,8 @@ export function CalendarMonthView({ currentDate, events, loading, onEventClick, 
                 {visibleEvents.map(event => (
                   <div
                     key={event.id}
-                    className="calendar-event-pill"
-                    style={{ backgroundColor: event.color || EVENT_TYPE_COLORS[event.event_type] || '#4A90D9' }}
+                    className="calendar-event-pill bg-[var(--bg)]"
+                    style={{ '--bg': event.color || EVENT_TYPE_COLORS[event.event_type] || '#4A90D9' } as CSSProperties}
                     onClick={(e) => { e.stopPropagation(); onEventClick(event); }}
                     title={event.title}
                   >

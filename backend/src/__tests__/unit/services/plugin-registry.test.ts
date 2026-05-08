@@ -51,17 +51,17 @@ describe('Plugin Registry', () => {
   describe('installPlugin', () => {
     test('inserts plugin and returns instance', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [sampleRow] });
-      const result = await installPlugin('personal', sampleManifest);
+      const result = await installPlugin('operations', sampleManifest);
       expect(result.pluginId).toBe('test-plugin');
       expect(result.status).toBe('inactive');
-      expect(mockQueryContext).toHaveBeenCalledWith('personal', expect.stringContaining('INSERT'), expect.any(Array));
+      expect(mockQueryContext).toHaveBeenCalledWith('operations', expect.stringContaining('INSERT'), expect.any(Array));
     });
   });
 
   describe('activatePlugin', () => {
     test('updates status to active', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [{ ...sampleRow, status: 'active' }] });
-      const result = await activatePlugin('personal', 'test-plugin');
+      const result = await activatePlugin('operations', 'test-plugin');
       expect(result.status).toBe('active');
     });
   });
@@ -69,7 +69,7 @@ describe('Plugin Registry', () => {
   describe('deactivatePlugin', () => {
     test('updates status to inactive', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [{ ...sampleRow, status: 'inactive' }] });
-      const result = await deactivatePlugin('personal', 'test-plugin');
+      const result = await deactivatePlugin('operations', 'test-plugin');
       expect(result.status).toBe('inactive');
     });
   });
@@ -79,29 +79,29 @@ describe('Plugin Registry', () => {
       mockQueryContext.mockResolvedValueOnce({
         rows: [sampleRow, { ...sampleRow, id: 'uuid-2', plugin_id: 'p2', name: 'P2' }],
       });
-      const result = await listPlugins('personal');
+      const result = await listPlugins('operations');
       expect(result).toHaveLength(2);
     });
 
     test('filters by status', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [{ ...sampleRow, status: 'active' }] });
-      const result = await listPlugins('personal', 'active');
+      const result = await listPlugins('operations', 'active');
       expect(result).toHaveLength(1);
-      expect(mockQueryContext).toHaveBeenCalledWith('personal', expect.stringContaining('status'), expect.arrayContaining(['active']));
+      expect(mockQueryContext).toHaveBeenCalledWith('operations', expect.stringContaining('status'), expect.arrayContaining(['active']));
     });
   });
 
   describe('getPlugin', () => {
     test('returns plugin if found', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [sampleRow] });
-      const result = await getPlugin('personal', 'test-plugin');
+      const result = await getPlugin('operations', 'test-plugin');
       expect(result).not.toBeNull();
       expect(result!.pluginId).toBe('test-plugin');
     });
 
     test('returns null if not found', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [] });
-      const result = await getPlugin('personal', 'nonexistent');
+      const result = await getPlugin('operations', 'nonexistent');
       expect(result).toBeNull();
     });
   });
@@ -109,15 +109,15 @@ describe('Plugin Registry', () => {
   describe('uninstallPlugin', () => {
     test('deletes plugin', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [{ plugin_id: 'test-plugin', name: 'Test Plugin' }] });
-      await uninstallPlugin('personal', 'test-plugin');
-      expect(mockQueryContext).toHaveBeenCalledWith('personal', expect.stringContaining('DELETE'), ['test-plugin']);
+      await uninstallPlugin('operations', 'test-plugin');
+      expect(mockQueryContext).toHaveBeenCalledWith('operations', expect.stringContaining('DELETE'), ['test-plugin']);
     });
   });
 
   describe('updatePluginConfig', () => {
     test('updates config', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [{ ...sampleRow, config: { key: 'value' } }] });
-      const result = await updatePluginConfig('personal', 'test-plugin', { key: 'value' });
+      const result = await updatePluginConfig('operations', 'test-plugin', { key: 'value' });
       expect(result.config).toEqual({ key: 'value' });
     });
   });

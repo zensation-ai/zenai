@@ -18,7 +18,7 @@ import { RetrievalResult } from '../../../services/agentic-rag';
 
 jest.mock('../../../utils/database-context', () => ({
   queryContext: jest.fn(),
-  isValidContext: jest.fn((ctx: string) => ['personal', 'work', 'learning', 'creative'].includes(ctx)),
+  isValidContext: jest.fn((ctx: string) => ['operations', 'finance', 'people', 'strategy'].includes(ctx)),
 }));
 
 jest.mock('../../../services/ai', () => ({
@@ -139,7 +139,7 @@ describe('denseRetrieve', () => {
       ],
     });
 
-    const results = await denseRetrieve('test query', 'personal');
+    const results = await denseRetrieve('test query', 'operations');
     expect(results).toHaveLength(1);
     expect(results[0].id).toBe('1');
     expect(results[0].score).toBeCloseTo(0.85);
@@ -148,13 +148,13 @@ describe('denseRetrieve', () => {
 
   test('returns empty array when embedding fails', async () => {
     mockGenerateEmbedding.mockResolvedValueOnce([]);
-    const results = await denseRetrieve('test', 'personal');
+    const results = await denseRetrieve('test', 'operations');
     expect(results).toEqual([]);
   });
 
   test('returns empty array on database error', async () => {
     mockQueryContext.mockRejectedValueOnce(new Error('DB error'));
-    const results = await denseRetrieve('test', 'personal');
+    const results = await denseRetrieve('test', 'operations');
     expect(results).toEqual([]);
   });
 });
@@ -175,20 +175,20 @@ describe('sparseRetrieve', () => {
       ],
     });
 
-    const results = await sparseRetrieve('keyword test query', 'work');
+    const results = await sparseRetrieve('keyword test query', 'finance');
     expect(results).toHaveLength(1);
     expect(results[0].id).toBe('2');
     expect(results[0].strategy).toBe('keyword');
   });
 
   test('returns empty array for very short queries', async () => {
-    const results = await sparseRetrieve('ab', 'personal');
+    const results = await sparseRetrieve('ab', 'operations');
     expect(results).toEqual([]);
   });
 
   test('returns empty array on database error', async () => {
     mockQueryContext.mockRejectedValueOnce(new Error('DB error'));
-    const results = await sparseRetrieve('test query here', 'personal');
+    const results = await sparseRetrieve('test query here', 'operations');
     expect(results).toEqual([]);
   });
 });
@@ -273,7 +273,7 @@ describe('hybridRetrieve', () => {
       ],
     });
 
-    const results = await hybridRetrieve('test query here', 'personal');
+    const results = await hybridRetrieve('test query here', 'operations');
     expect(results.length).toBe(2);
     // All results should be 'hybrid' strategy
     for (const r of results) {
@@ -298,7 +298,7 @@ describe('retrieve', () => {
       ],
     });
 
-    const result = await retrieve('What is machine learning?', 'personal');
+    const result = await retrieve('What is machine learning?', 'operations');
     expect(result.strategyUsed).toBeDefined();
     expect(result.strategyUsed.strategy).toBeDefined();
     expect(result.timing.total).toBeGreaterThanOrEqual(0);
@@ -309,7 +309,7 @@ describe('retrieve', () => {
   test('uses forced strategy when specified', async () => {
     mockQueryContext.mockResolvedValueOnce({ rows: [] });
 
-    const result = await retrieve('test', 'personal', { forceStrategy: 'sparse' });
+    const result = await retrieve('test', 'operations', { forceStrategy: 'sparse' });
     expect(result.strategyUsed.strategy).toBe('sparse');
     expect(result.strategyUsed.confidence).toBe(1.0);
   });
@@ -322,7 +322,7 @@ describe('retrieve', () => {
       ],
     });
 
-    const result = await retrieve('What is this?', 'personal', { minScore: 0.5 });
+    const result = await retrieve('What is this?', 'operations', { minScore: 0.5 });
     expect(result.results.every(r => r.score >= 0.5)).toBe(true);
   });
 
@@ -330,7 +330,7 @@ describe('retrieve', () => {
     // Sparse retrieval finds no matching documents
     mockQueryContext.mockResolvedValueOnce({ rows: [] });
 
-    const result = await retrieve('test query here', 'personal', { forceStrategy: 'sparse' });
+    const result = await retrieve('test query here', 'operations', { forceStrategy: 'sparse' });
     expect(result.strategyUsed.strategy).toBe('sparse');
     expect(result.results).toEqual([]);
   });
@@ -339,7 +339,7 @@ describe('retrieve', () => {
     // Embedding returns empty -> dense returns []
     mockGenerateEmbedding.mockResolvedValueOnce([]);
 
-    const result = await retrieve('What is machine learning?', 'personal', { forceStrategy: 'dense' });
+    const result = await retrieve('What is machine learning?', 'operations', { forceStrategy: 'dense' });
     expect(result.results).toEqual([]);
     expect(result.strategyUsed.strategy).toBe('dense');
   });
@@ -348,7 +348,7 @@ describe('retrieve', () => {
     // DB error is caught inside sparseRetrieve, returns []
     mockQueryContext.mockRejectedValueOnce(new Error('Connection lost'));
 
-    const result = await retrieve('test query here', 'personal', { forceStrategy: 'sparse' });
+    const result = await retrieve('test query here', 'operations', { forceStrategy: 'sparse' });
     expect(result.results).toEqual([]);
     expect(result.strategyUsed.strategy).toBe('sparse');
   });

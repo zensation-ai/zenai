@@ -9,7 +9,7 @@ import request from 'supertest';
 jest.mock('../../../utils/database-context', () => ({
   queryContext: jest.fn(),
   isValidContext: (ctx: string) =>
-    ['personal', 'work', 'learning', 'creative'].includes(ctx),
+    ['operations', 'finance', 'people', 'strategy'].includes(ctx),
 }));
 
 jest.mock('../../../utils/logger', () => ({
@@ -23,6 +23,11 @@ jest.mock('../../../utils/logger', () => ({
 
 jest.mock('../../../middleware/auth', () => ({
   apiKeyAuth: (_req: any, _res: any, next: any) => next(),
+  requireScope: () => (_req: any, _res: any, next: any) => next(),
+}));
+
+jest.mock('../../../middleware/plan-gate', () => ({
+  requirePlan: () => (_req: any, _res: any, next: any) => next(),
 }));
 
 jest.mock('../../../services/voice/voice-pipeline', () => ({
@@ -85,7 +90,7 @@ describe('POST /api/:context/voice/session/start', () => {
     });
 
     const res = await request(app)
-      .post('/api/personal/voice/session/start')
+      .post('/api/operations/voice/session/start')
       .send({});
 
     expect(res.status).toBe(200);
@@ -101,7 +106,7 @@ describe('POST /api/:context/voice/session/start', () => {
     });
 
     const res = await request(app)
-      .post('/api/work/voice/session/start')
+      .post('/api/finance/voice/session/start')
       .send({
         ttsVoice: 'de-DE-KatjaNeural',
         language: 'de-DE',
@@ -109,7 +114,7 @@ describe('POST /api/:context/voice/session/start', () => {
       });
 
     expect(res.status).toBe(200);
-    expect(mockStartSession).toHaveBeenCalledWith('work', expect.objectContaining({
+    expect(mockStartSession).toHaveBeenCalledWith('finance', expect.objectContaining({
       ttsVoice: 'de-DE-KatjaNeural',
     }));
   });
@@ -124,7 +129,7 @@ describe('POST /api/:context/voice/session/start', () => {
 
   it('should reject invalid silenceThreshold', async () => {
     const res = await request(app)
-      .post('/api/personal/voice/session/start')
+      .post('/api/operations/voice/session/start')
       .send({ silenceThreshold_ms: 100 }); // below 500 minimum
 
     expect(res.status).toBe(400);
@@ -136,7 +141,7 @@ describe('POST /api/:context/voice/session/:id/end', () => {
     mockEndSession.mockResolvedValue(undefined);
 
     const res = await request(app)
-      .post('/api/personal/voice/session/session-123/end')
+      .post('/api/operations/voice/session/session-123/end')
       .send();
 
     expect(res.status).toBe(200);
@@ -154,7 +159,7 @@ describe('GET /api/:context/voice/session/:id/status', () => {
     });
 
     const res = await request(app)
-      .get('/api/personal/voice/session/session-123/status');
+      .get('/api/operations/voice/session/session-123/status');
 
     expect(res.status).toBe(200);
     expect(res.body.data.active).toBe(true);
@@ -165,7 +170,7 @@ describe('GET /api/:context/voice/session/:id/status', () => {
     mockGetSessionStatus.mockReturnValue(null);
 
     const res = await request(app)
-      .get('/api/personal/voice/session/unknown/status');
+      .get('/api/operations/voice/session/unknown/status');
 
     expect(res.status).toBe(404);
   });
@@ -176,7 +181,7 @@ describe('POST /api/:context/voice/tts', () => {
     mockTextToSpeech.mockResolvedValue(Buffer.from('audio-data'));
 
     const res = await request(app)
-      .post('/api/personal/voice/tts')
+      .post('/api/operations/voice/tts')
       .send({ text: 'Hello World' });
 
     expect(res.status).toBe(200);
@@ -185,7 +190,7 @@ describe('POST /api/:context/voice/tts', () => {
 
   it('should reject empty text', async () => {
     const res = await request(app)
-      .post('/api/personal/voice/tts')
+      .post('/api/operations/voice/tts')
       .send({ text: '' });
 
     expect(res.status).toBe(400);
@@ -193,7 +198,7 @@ describe('POST /api/:context/voice/tts', () => {
 
   it('should reject missing text', async () => {
     const res = await request(app)
-      .post('/api/personal/voice/tts')
+      .post('/api/operations/voice/tts')
       .send({});
 
     expect(res.status).toBe(400);
@@ -207,7 +212,7 @@ describe('GET /api/:context/voice/voices', () => {
     ]);
 
     const res = await request(app)
-      .get('/api/personal/voice/voices');
+      .get('/api/operations/voice/voices');
 
     expect(res.status).toBe(200);
     expect(res.body.data.voices).toHaveLength(1);
@@ -231,7 +236,7 @@ describe('GET /api/:context/voice/settings', () => {
     } as any);
 
     const res = await request(app)
-      .get('/api/personal/voice/settings');
+      .get('/api/operations/voice/settings');
 
     expect(res.status).toBe(200);
     expect(res.body.data.tts_voice).toBe('de-DE-ConradNeural');
@@ -241,7 +246,7 @@ describe('GET /api/:context/voice/settings', () => {
     mockQueryContext.mockResolvedValue({ rows: [], rowCount: 0 } as any);
 
     const res = await request(app)
-      .get('/api/personal/voice/settings');
+      .get('/api/operations/voice/settings');
 
     expect(res.status).toBe(200);
     expect(res.body.data.stt_provider).toBe('whisper');
@@ -264,7 +269,7 @@ describe('PUT /api/:context/voice/settings', () => {
       } as any); // INSERT
 
     const res = await request(app)
-      .put('/api/personal/voice/settings')
+      .put('/api/operations/voice/settings')
       .send({ tts_voice: 'de-DE-KatjaNeural' });
 
     expect(res.status).toBe(200);
@@ -280,7 +285,7 @@ describe('PUT /api/:context/voice/settings', () => {
       } as any); // UPDATE
 
     const res = await request(app)
-      .put('/api/personal/voice/settings')
+      .put('/api/operations/voice/settings')
       .send({ tts_voice: 'de-DE-KatjaNeural' });
 
     expect(res.status).toBe(200);
@@ -288,7 +293,7 @@ describe('PUT /api/:context/voice/settings', () => {
 
   it('should reject invalid vad_sensitivity', async () => {
     const res = await request(app)
-      .put('/api/personal/voice/settings')
+      .put('/api/operations/voice/settings')
       .send({ vad_sensitivity: 1.5 }); // above 1
 
     expect(res.status).toBe(400);
@@ -298,7 +303,7 @@ describe('PUT /api/:context/voice/settings', () => {
 describe('GET /api/:context/voice/providers', () => {
   it('should return available providers', async () => {
     const res = await request(app)
-      .get('/api/personal/voice/providers');
+      .get('/api/operations/voice/providers');
 
     expect(res.status).toBe(200);
     expect(res.body.data.stt.available).toContain('whisper');

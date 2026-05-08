@@ -47,7 +47,7 @@ interactionsRouter.post(
     const { entity_type, entity_id, interaction_type, metadata, session_id, duration_ms } = req.body;
 
     if (!isValidContext(context)) {
-      throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
+      throw new ValidationError('Invalid context. Use "operations", "finance", "people", or "strategy".');
     }
 
     // Validate entity_type
@@ -92,7 +92,7 @@ interactionsRouter.post(
     const { entity_type, entity_id, duration_ms, session_id } = req.body;
 
     if (!isValidContext(context)) {
-      throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
+      throw new ValidationError('Invalid context. Use "operations", "finance", "people", or "strategy".');
     }
 
     if (!entity_type || !entity_id) {
@@ -123,7 +123,7 @@ interactionsRouter.post(
     const { query, result_id, position, session_id } = req.body;
 
     if (!isValidContext(context)) {
-      throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
+      throw new ValidationError('Invalid context. Use "operations", "finance", "people", or "strategy".');
     }
 
     if (!query || !result_id) {
@@ -154,7 +154,7 @@ interactionsRouter.post(
     const { entity_type, entity_id, is_positive, comment, session_id } = req.body;
 
     if (!isValidContext(context)) {
-      throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
+      throw new ValidationError('Invalid context. Use "operations", "finance", "people", or "strategy".');
     }
 
     if (!entity_type || !entity_id || is_positive === undefined) {
@@ -191,7 +191,7 @@ interactionsRouter.post(
     const { idea_id, field, old_value, new_value, weight } = req.body;
 
     if (!isValidContext(context)) {
-      throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
+      throw new ValidationError('Invalid context. Use "operations", "finance", "people", or "strategy".');
     }
 
     if (!idea_id || !field || old_value === undefined || new_value === undefined) {
@@ -234,7 +234,7 @@ interactionsRouter.get(
     const { context, ideaId } = req.params;
 
     if (!isValidContext(context)) {
-      throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
+      throw new ValidationError('Invalid context. Use "operations", "finance", "people", or "strategy".');
     }
 
     const corrections = await getIdeaCorrectionHistory(context as AIContext, ideaId);
@@ -259,7 +259,7 @@ interactionsRouter.post(
     const { content, current_values } = req.body;
 
     if (!isValidContext(context)) {
-      throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
+      throw new ValidationError('Invalid context. Use "operations", "finance", "people", or "strategy".');
     }
 
     if (!content) {
@@ -296,7 +296,7 @@ interactionsRouter.post(
     const { session_token, client_info } = req.body;
 
     if (!isValidContext(context)) {
-      throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
+      throw new ValidationError('Invalid context. Use "operations", "finance", "people", or "strategy".');
     }
 
     if (!session_token) {
@@ -350,7 +350,7 @@ interactionsRouter.get(
     const { context } = req.params;
 
     if (!isValidContext(context)) {
-      throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
+      throw new ValidationError('Invalid context. Use "operations", "finance", "people", or "strategy".');
     }
 
     const stats = await getInteractionStats(context as AIContext);
@@ -373,7 +373,7 @@ interactionsRouter.get(
     const { context } = req.params;
 
     if (!isValidContext(context)) {
-      throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
+      throw new ValidationError('Invalid context. Use "operations", "finance", "people", or "strategy".');
     }
 
     const stats = await getCorrectionStatsByField(context as AIContext);
@@ -397,7 +397,7 @@ interactionsRouter.get(
     const { field } = req.query;
 
     if (!isValidContext(context)) {
-      throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
+      throw new ValidationError('Invalid context. Use "operations", "finance", "people", or "strategy".');
     }
 
     const patterns = await getActivePatterns(

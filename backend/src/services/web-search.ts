@@ -12,11 +12,11 @@
  * @module services/web-search
  */
 
-import axios from 'axios';
 import { logger } from '../utils/logger';
 import { fetchUrl, FetchedContent } from './url-fetch';
 import { TIMEOUTS } from '../config/timeouts';
 import { CircuitBreaker } from '../utils/circuit-breaker';
+import { checkedAxiosGet, checkedAxiosPost } from '../utils/checked-http';
 
 // ===========================================
 // Types
@@ -250,7 +250,17 @@ interface BraveSearchOptions {
 }
 
 async function searchWithBrave(query: string, options: BraveSearchOptions): Promise<SearchResult[]> {
-  const response = await axios.get(BRAVE_API_URL, {
+  const response = await checkedAxiosGet<{
+    web?: {
+      results?: Array<{
+        title?: string;
+        url?: string;
+        description?: string;
+        page_age?: string;
+        extra_snippets?: string[];
+      }>;
+    };
+  }>(BRAVE_API_URL, {
     params: {
       q: query,
       count: options.count,
@@ -296,7 +306,7 @@ interface DuckDuckGoOptions {
 
 async function searchWithDuckDuckGo(query: string, options: DuckDuckGoOptions): Promise<SearchResult[]> {
   // DuckDuckGo HTML endpoint (no API key needed)
-  const response = await axios.post(DUCKDUCKGO_URL, new URLSearchParams({ q: query }), {
+  const response = await checkedAxiosPost<string>(DUCKDUCKGO_URL, new URLSearchParams({ q: query }), {
     headers: {
       'Content-Type': 'application/x-www-form-urlencoded',
       'User-Agent': 'ZenAI/1.0 (Web Search; +https://zensation.ai)',

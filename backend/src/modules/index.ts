@@ -46,6 +46,9 @@ import { CuriosityModule } from './curiosity';
 import { PredictionsModule } from './predictions';
 import { FeedbackAdaptiveModule } from './feedback-adaptive';
 import { IntegrationsModule } from './integrations';
+import { OrganizationsModule } from './organizations';
+import { BillingModule } from './billing';
+import { SocialModule } from './social';
 
 /**
  * All modules in registration order.
@@ -64,6 +67,7 @@ export const modules: Module[] = [
   // Routes that must come before context-aware routes (to avoid /:context conflicts)
   new ObservabilityModule(),
   new AuthModule(),
+  new OrganizationsModule(),
   new SearchModule(),
   new CodeModule(),
   new DocumentsModule(),       // documentAnalysisRouter before context-aware documentsRouter
@@ -79,6 +83,9 @@ export const modules: Module[] = [
 
   // Integration framework (must be before CoreRoutesModule to avoid /:context conflicts)
   new IntegrationsModule(),
+
+  // Billing: Stripe checkout, portal, subscription status, webhook
+  new BillingModule(),
 
   // Core legacy routes (health, ideas, meetings, profile, webhooks, sync, analytics, etc.)
   new CoreRoutesModule(),
@@ -115,4 +122,5 @@ export const modules: Module[] = [
   new CuriosityModule(),
   new PredictionsModule(),
   new FeedbackAdaptiveModule(),
+  new SocialModule(),
 ];

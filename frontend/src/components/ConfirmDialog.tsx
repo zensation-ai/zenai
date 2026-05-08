@@ -1,8 +1,5 @@
 import { useState, useCallback, useEffect, useRef, createContext, useContext, ReactNode } from 'react';
 import { createPortal } from 'react-dom';
-import '../neurodesign.css';
-import './ConfirmDialog.css';
-
 // ===========================================
 // Types
 // ===========================================

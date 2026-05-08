@@ -11,12 +11,12 @@ import { errorHandler } from '../../middleware/errorHandler';
 // Mock all dependencies
 const mockQueryContext = jest.fn();
 const mockIsValidContext = jest.fn().mockReturnValue(true);
-const mockValidateContextParam = jest.fn().mockReturnValue('personal');
+const mockValidateContextParam = jest.fn().mockReturnValue('operations');
 
 jest.mock('../../utils/database-context', () => ({
   queryContext: (...args: any[]) => mockQueryContext(...args),
   isValidContext: (...args: any[]) => mockIsValidContext(...args),
-  AIContext: 'personal',
+  AIContext: 'operations',
 }));
 
 jest.mock('../../utils/validation', () => ({
@@ -35,6 +35,10 @@ jest.mock('../../utils/logger', () => ({
 jest.mock('../../middleware/auth', () => ({
   apiKeyAuth: jest.fn((_req: any, _res: any, next: any) => next()),
   requireScope: () => jest.fn((_req: any, _res: any, next: any) => next()),
+}));
+
+jest.mock('../../middleware/plan-gate', () => ({
+  requirePlan: () => jest.fn((_req: any, _res: any, next: any) => next()),
 }));
 
 jest.mock('../../middleware/validate-params', () => ({
@@ -136,7 +140,7 @@ describe('MCP Connections V2 API', () => {
       mockMcpServerRegistry.list.mockResolvedValueOnce([mockServerRecord]);
       mockMcpClientManager.getStatus.mockReturnValue(null);
 
-      const res = await request(app).get('/api/personal/mcp/servers');
+      const res = await request(app).get('/api/operations/mcp/servers');
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
       expect(res.body.data).toHaveLength(1);
@@ -147,7 +151,7 @@ describe('MCP Connections V2 API', () => {
       mockMcpServerRegistry.list.mockResolvedValueOnce([mockServerRecord]);
       mockMcpClientManager.getStatus.mockReturnValue({ connected: true, healthy: true });
 
-      const res = await request(app).get('/api/personal/mcp/servers');
+      const res = await request(app).get('/api/operations/mcp/servers');
       expect(res.body.data[0].connected).toBe(true);
       expect(res.body.data[0].liveHealthy).toBe(true);
     });
@@ -155,7 +159,7 @@ describe('MCP Connections V2 API', () => {
     it('should return empty array when no servers', async () => {
       mockMcpServerRegistry.list.mockResolvedValueOnce([]);
 
-      const res = await request(app).get('/api/personal/mcp/servers');
+      const res = await request(app).get('/api/operations/mcp/servers');
       expect(res.body.data).toEqual([]);
     });
   });
@@ -169,7 +173,7 @@ describe('MCP Connections V2 API', () => {
       mockMcpServerRegistry.create.mockResolvedValueOnce(mockServerRecord);
 
       const res = await request(app)
-        .post('/api/personal/mcp/servers')
+        .post('/api/operations/mcp/servers')
         .send({ name: 'Test Server', transport: 'streamable-http', url: 'https://example.com/mcp' });
 
       expect(res.status).toBe(201);
@@ -179,7 +183,7 @@ describe('MCP Connections V2 API', () => {
 
     it('should reject without name', async () => {
       const res = await request(app)
-        .post('/api/personal/mcp/servers')
+        .post('/api/operations/mcp/servers')
         .send({ transport: 'streamable-http', url: 'https://example.com/mcp' });
 
       expect(res.status).toBe(400);
@@ -188,7 +192,7 @@ describe('MCP Connections V2 API', () => {
 
     it('should reject without transport', async () => {
       const res = await request(app)
-        .post('/api/personal/mcp/servers')
+        .post('/api/operations/mcp/servers')
         .send({ name: 'Test' });
 
       expect(res.status).toBe(400);
@@ -204,7 +208,7 @@ describe('MCP Connections V2 API', () => {
       mockMcpServerRegistry.update.mockResolvedValueOnce({ ...mockServerRecord, name: 'Updated' });
 
       const res = await request(app)
-        .put('/api/personal/mcp/servers/server-1')
+        .put('/api/operations/mcp/servers/server-1')
         .send({ name: 'Updated' });
 
       expect(res.status).toBe(200);
@@ -215,7 +219,7 @@ describe('MCP Connections V2 API', () => {
       mockMcpServerRegistry.update.mockResolvedValueOnce(null);
 
       const res = await request(app)
-        .put('/api/personal/mcp/servers/non-existent')
+        .put('/api/operations/mcp/servers/non-existent')
         .send({ name: 'Updated' });
 
       expect(res.status).toBe(404);
@@ -230,7 +234,7 @@ describe('MCP Connections V2 API', () => {
     it('should delete a server', async () => {
       mockMcpServerRegistry.delete.mockResolvedValueOnce(true);
 
-      const res = await request(app).delete('/api/personal/mcp/servers/server-1');
+      const res = await request(app).delete('/api/operations/mcp/servers/server-1');
       expect(res.status).toBe(200);
       expect(mockMcpClientManager.disconnect).toHaveBeenCalledWith('server-1');
       expect(mockToolBridge.removeBridgedTools).toHaveBeenCalledWith('server-1');
@@ -239,7 +243,7 @@ describe('MCP Connections V2 API', () => {
     it('should return 404 if not found', async () => {
       mockMcpServerRegistry.delete.mockResolvedValueOnce(false);
 
-      const res = await request(app).delete('/api/personal/mcp/servers/non-existent');
+      const res = await request(app).delete('/api/operations/mcp/servers/non-existent');
       expect(res.status).toBe(404);
     });
   });
@@ -257,7 +261,7 @@ describe('MCP Connections V2 API', () => {
       mockToolBridge.syncServerTools.mockResolvedValueOnce([]);
       mockMcpClientManager.listTools.mockResolvedValueOnce([]);
 
-      const res = await request(app).post('/api/personal/mcp/servers/server-1/connect');
+      const res = await request(app).post('/api/operations/mcp/servers/server-1/connect');
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
     });
@@ -265,7 +269,7 @@ describe('MCP Connections V2 API', () => {
     it('should return 404 if server not found', async () => {
       mockMcpServerRegistry.getById.mockResolvedValueOnce(null);
 
-      const res = await request(app).post('/api/personal/mcp/servers/non-existent/connect');
+      const res = await request(app).post('/api/operations/mcp/servers/non-existent/connect');
       expect(res.status).toBe(404);
     });
   });
@@ -276,7 +280,7 @@ describe('MCP Connections V2 API', () => {
 
   describe('POST /api/:context/mcp/servers/:id/disconnect', () => {
     it('should disconnect from a server', async () => {
-      const res = await request(app).post('/api/personal/mcp/servers/server-1/disconnect');
+      const res = await request(app).post('/api/operations/mcp/servers/server-1/disconnect');
       expect(res.status).toBe(200);
       expect(mockMcpClientManager.disconnect).toHaveBeenCalledWith('server-1');
       expect(mockToolBridge.removeBridgedTools).toHaveBeenCalledWith('server-1');
@@ -295,7 +299,7 @@ describe('MCP Connections V2 API', () => {
       };
       mockMcpClientManager.getClient.mockReturnValueOnce(mockClient);
 
-      const res = await request(app).get('/api/personal/mcp/servers/server-1/tools');
+      const res = await request(app).get('/api/operations/mcp/servers/server-1/tools');
       expect(res.status).toBe(200);
       expect(res.body.data.source).toBe('live');
       expect(res.body.data.tools).toHaveLength(1);
@@ -305,7 +309,7 @@ describe('MCP Connections V2 API', () => {
       mockMcpClientManager.getClient.mockReturnValueOnce(null);
       mockMcpServerRegistry.getTools.mockResolvedValueOnce([]);
 
-      const res = await request(app).get('/api/personal/mcp/servers/server-1/tools');
+      const res = await request(app).get('/api/operations/mcp/servers/server-1/tools');
       expect(res.status).toBe(200);
       expect(res.body.data.source).toBe('cached');
     });
@@ -322,7 +326,7 @@ describe('MCP Connections V2 API', () => {
         connected: true, healthy: true, toolCount: 5, resourceCount: 2, error: null,
       });
 
-      const res = await request(app).get('/api/personal/mcp/servers/server-1/health');
+      const res = await request(app).get('/api/operations/mcp/servers/server-1/health');
       expect(res.status).toBe(200);
       expect(res.body.data.healthy).toBe(true);
     });
@@ -343,7 +347,7 @@ describe('MCP Connections V2 API', () => {
       });
 
       const res = await request(app)
-        .post('/api/personal/mcp/tools/mcp_abc_search/execute')
+        .post('/api/operations/mcp/tools/mcp_abc_search/execute')
         .send({ arguments: { query: 'test' } });
 
       expect(res.status).toBe(200);
@@ -355,7 +359,7 @@ describe('MCP Connections V2 API', () => {
       mockToolBridge.hasTool.mockReturnValueOnce(false);
 
       const res = await request(app)
-        .post('/api/personal/mcp/tools/unknown_tool/execute')
+        .post('/api/operations/mcp/tools/unknown_tool/execute')
         .send({ arguments: {} });
 
       expect(res.status).toBe(404);

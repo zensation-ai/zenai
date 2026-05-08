@@ -1,13 +1,10 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, type CSSProperties } from 'react';
 import axios from 'axios';
 import { showToast } from './Toast';
 import { ExportMenu } from './ExportMenu';
 import type { AIContext } from './ContextSwitcher';
 import { getTimeBasedGreeting } from '../utils/aiPersonality';
 import { logError } from '../utils/errors';
-import '../neurodesign.css';
-import './ExportDashboard.css';
-
 interface ExportHistory {
   id: string;
   format: string;
@@ -171,7 +168,7 @@ export function ExportDashboard({ onBack, context, embedded }: ExportDashboardPr
             ← Zurück
           </button>
           <div className="header-greeting">
-            <h1>{greeting.emoji} Export Center</h1>
+            <h1>{greeting.emoji} Daten-Export</h1>
             <span className="greeting-subtext neuro-subtext-emotional">{greeting.subtext}</span>
           </div>
           <ExportMenu context={context as AIContext} ideasCount={ideasCount} />
@@ -212,8 +209,8 @@ export function ExportDashboard({ onBack, context, embedded }: ExportDashboardPr
               ].map((format, index) => (
                 <button
                   key={format.id}
-                  className={`format-option neuro-hover-lift neuro-stagger-item ${selectedFormat === format.id ? 'active' : ''}`}
-                  style={{ animationDelay: `${index * 50}ms` }}
+                  className={`format-option neuro-hover-lift neuro-stagger-item [animation-delay:var(--delay)] ${selectedFormat === format.id ? 'active' : ''}`}
+                  style={{ '--delay': `${index * 50}ms` } as CSSProperties}
                   onClick={() => setSelectedFormat(format.id)}
                 >
                   <span className="format-icon">{format.icon}</span>
@@ -237,8 +234,8 @@ export function ExportDashboard({ onBack, context, embedded }: ExportDashboardPr
               ].map((content, index) => (
                 <button
                   key={content.id}
-                  className={`content-option neuro-hover-lift neuro-stagger-item ${selectedContent.includes(content.id) ? 'active' : ''}`}
-                  style={{ animationDelay: `${index * 50}ms` }}
+                  className={`content-option neuro-hover-lift neuro-stagger-item [animation-delay:var(--delay)] ${selectedContent.includes(content.id) ? 'active' : ''}`}
+                  style={{ '--delay': `${index * 50}ms` } as CSSProperties}
                   onClick={() => toggleContent(content.id)}
                 >
                   <span className="content-icon">{content.icon}</span>
@@ -301,7 +298,7 @@ export function ExportDashboard({ onBack, context, embedded }: ExportDashboardPr
           ) : (
             <div className="history-list neuro-flow-list">
               {exportHistory.slice(0, 7).map((item, index) => (
-                <div key={item.id} className="history-item liquid-glass neuro-hover-lift neuro-stagger-item" style={{ animationDelay: `${index * 50}ms` }}>
+                <div key={item.id} className="history-item liquid-glass neuro-hover-lift neuro-stagger-item [animation-delay:var(--delay)]" style={{ '--delay': `${index * 50}ms` } as CSSProperties}>
                   <div className="history-icon">
                     {item.format === 'json' && '📄'}
                     {item.format === 'csv' && '📊'}

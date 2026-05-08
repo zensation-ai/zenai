@@ -19,6 +19,7 @@
 
 import { Router, Request, Response } from 'express';
 import { apiKeyAuth, requireScope } from '../middleware/auth';
+import { requirePlan } from '../middleware/plan-gate';
 import { asyncHandler } from '../middleware/errorHandler';
 import { isValidContext } from '../utils/database-context';
 import { validateContextParam } from '../utils/validation';
@@ -84,6 +85,7 @@ mcpConnectionsV2Router.post(
   '/:context/mcp/servers',
   validateContext,
   requireScope('write'),
+  requirePlan('enterprise'),
   asyncHandler(async (req: Request, res: Response) => {
     const context = validateContextParam(req.params.context);
     getUserId(req); // auth check
@@ -177,6 +179,7 @@ mcpConnectionsV2Router.post(
   '/:context/mcp/servers/:id/connect',
   validateContext,
   requireScope('write'),
+  requirePlan('enterprise'),
   requireUUID('id'),
   asyncHandler(async (req: Request, res: Response) => {
     const context = validateContextParam(req.params.context);

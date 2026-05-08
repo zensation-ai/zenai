@@ -33,7 +33,7 @@ router.get(
     getUserId(req); // auth check
     const { context } = req.params;
     if (!isValidContext(context)) {
-      throw new ValidationError('Invalid context. Use: personal, work, learning, or creative.');
+      throw new ValidationError('Invalid context. Use: operations, finance, people, or strategy.');
     }
 
     const limit = parseInt(req.query.limit as string, 10) || 20;
@@ -56,7 +56,7 @@ router.get(
     getUserId(req); // auth check
     const { context, id } = req.params;
     if (!isValidContext(context)) {
-      throw new ValidationError('Invalid context. Use: personal, work, learning, or creative.');
+      throw new ValidationError('Invalid context. Use: operations, finance, people, or strategy.');
     }
 
     const procedure = await proceduralMemory.getProcedure(id, context);
@@ -79,7 +79,7 @@ router.post(
     getUserId(req); // auth check
     const { context } = req.params;
     if (!isValidContext(context)) {
-      throw new ValidationError('Invalid context. Use: personal, work, learning, or creative.');
+      throw new ValidationError('Invalid context. Use: operations, finance, people, or strategy.');
     }
 
     const { triggerDescription, steps, toolsUsed, outcome, durationMs, metadata } = req.body;
@@ -118,7 +118,7 @@ router.post(
     getUserId(req); // auth check
     const { context } = req.params;
     if (!isValidContext(context)) {
-      throw new ValidationError('Invalid context. Use: personal, work, learning, or creative.');
+      throw new ValidationError('Invalid context. Use: operations, finance, people, or strategy.');
     }
 
     const { situation } = req.body;
@@ -144,7 +144,7 @@ router.put(
     getUserId(req); // auth check
     const { context, id } = req.params;
     if (!isValidContext(context)) {
-      throw new ValidationError('Invalid context. Use: personal, work, learning, or creative.');
+      throw new ValidationError('Invalid context. Use: operations, finance, people, or strategy.');
     }
 
     const { success, score } = req.body;
@@ -176,7 +176,7 @@ router.delete(
     getUserId(req); // auth check
     const { context, id } = req.params;
     if (!isValidContext(context)) {
-      throw new ValidationError('Invalid context. Use: personal, work, learning, or creative.');
+      throw new ValidationError('Invalid context. Use: operations, finance, people, or strategy.');
     }
 
     const deleted = await proceduralMemory.deleteProcedure(id, context);
@@ -203,7 +203,7 @@ router.get(
     getUserId(req); // auth check
     const { context } = req.params;
     if (!isValidContext(context)) {
-      throw new ValidationError('Invalid context. Use: personal, work, learning, or creative.');
+      throw new ValidationError('Invalid context. Use: operations, finance, people, or strategy.');
     }
 
     const q = req.query.q as string;
@@ -229,7 +229,7 @@ router.get(
     getUserId(req); // auth check
     const { context } = req.params;
     if (!isValidContext(context)) {
-      throw new ValidationError('Invalid context. Use: personal, work, learning, or creative.');
+      throw new ValidationError('Invalid context. Use: operations, finance, people, or strategy.');
     }
 
     const q = req.query.q as string;
@@ -259,7 +259,7 @@ router.get(
     getUserId(req); // auth check
     const { context, factId } = req.params;
     if (!isValidContext(context)) {
-      throw new ValidationError('Invalid context. Use: personal, work, learning, or creative.');
+      throw new ValidationError('Invalid context. Use: operations, finance, people, or strategy.');
     }
 
     const entities = await entityResolver.getFactEntities(context, factId);

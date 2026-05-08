@@ -105,7 +105,7 @@ async function loadAllFacts(): Promise<PersonalFactRow[]> {
   }
 
   try {
-    const result = await queryContext('personal' as AIContext, `
+    const result = await queryContext('operations' as AIContext, `
       SELECT category, fact_key, fact_value, confidence
       FROM personal_facts
       ORDER BY confidence DESC, updated_at DESC

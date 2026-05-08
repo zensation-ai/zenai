@@ -148,4 +148,53 @@ describe('Sentry Service', () => {
       expect(typeof isSentryInitialized()).toBe('boolean');
     });
   });
+
+  describe('beforeSend filter', () => {
+    it('should filter operational errors with statusCode < 500', () => {
+      process.env.SENTRY_DSN = 'https://test@sentry.io/0';
+      process.env.NODE_ENV = 'production';
+      const Sentry = require('@sentry/node');
+
+      initSentry();
+
+      // Get the beforeSend function from the init call
+      const initCall = Sentry.init.mock.calls[Sentry.init.mock.calls.length - 1][0];
+      const beforeSend = initCall.beforeSend;
+      expect(beforeSend).toBeDefined();
+
+      const event = { event_id: 'test-event' };
+
+      // Operational 4xx error — should be filtered (returns null)
+      const filtered = beforeSend(event, {
+        originalException: { isOperational: true, statusCode: 404 },
+      });
+      expect(filtered).toBeNull();
+
+      // 500 error — should NOT be filtered
+      const kept = beforeSend(event, {
+        originalException: { isOperational: true, statusCode: 500 },
+      });
+      expect(kept).toEqual(event);
+
+      // Non-operational error — should NOT be filtered
+      const nonOp = beforeSend(event, {
+        originalException: new Error('unexpected'),
+      });
+      expect(nonOp).toEqual(event);
+    });
+  });
+
+  describe('release configuration', () => {
+    it('should use SENTRY_RELEASE env var when set', () => {
+      process.env.SENTRY_DSN = 'https://test@sentry.io/0';
+      process.env.SENTRY_RELEASE = 'zenai@abc123';
+      process.env.NODE_ENV = 'production';
+      const Sentry = require('@sentry/node');
+
+      initSentry();
+
+      const initCall = Sentry.init.mock.calls[Sentry.init.mock.calls.length - 1][0];
+      expect(initCall.release).toBe('zenai@abc123');
+    });
+  });
 });

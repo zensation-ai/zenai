@@ -55,7 +55,7 @@ const upload = multer({
 
 /**
  * Helper function to store idea in database
- * Note: This legacy endpoint defaults to 'personal' context for backward compatibility
+ * Note: This legacy endpoint defaults to 'operations' context for backward compatibility
  * Use /api/:context/voice-memo for explicit context selection
  */
 async function storeIdea(
@@ -63,7 +63,7 @@ async function storeIdea(
   structured: StructuredIdea,
   transcript: string,
   embedding: number[],
-  context: AIContext = 'personal',
+  context: AIContext = 'operations',
   userId?: string
 ) {
   const embeddingInt8 = quantizeToInt8(embedding);
@@ -208,7 +208,7 @@ voiceMemoRouter.post('/', apiKeyAuth, requireScope('write'), (req, res, next) =>
     }
     // Apply learned context if LLM didn't suggest one
     if (!structured.suggested_context && learnedSuggestion.suggested_context) {
-      structured.suggested_context = learnedSuggestion.suggested_context as 'personal' | 'work' | 'learning' | 'creative' | 'demo';
+      structured.suggested_context = learnedSuggestion.suggested_context as 'operations' | 'finance' | 'people' | 'strategy' | 'demo';
     }
   }
 
@@ -217,13 +217,13 @@ voiceMemoRouter.post('/', apiKeyAuth, requireScope('write'), (req, res, next) =>
 
   // 3. Store in database
   const ideaId = uuidv4();
-  await storeIdea(ideaId, structured, transcript, embedding, 'personal', userId);
+  await storeIdea(ideaId, structured, transcript, embedding, 'operations', userId);
   const totalTime = Date.now() - startTime;
 
   // CRITICAL: Invalidate cache so new idea appears on refresh
   // Without this, GET /api/personal/ideas returns stale cached data!
   try {
-    await invalidateCacheForContext('personal', 'ideas');
+    await invalidateCacheForContext('operations', 'ideas');
     logger.debug('Ideas cache invalidated after voice-memo', { ideaId });
   } catch {
     logger.warn('Failed to invalidate ideas cache', { ideaId });
@@ -263,7 +263,7 @@ voiceMemoRouter.post('/', apiKeyAuth, requireScope('write'), (req, res, next) =>
     detectedIntents = intentResult.intents;
 
     if (intentResult.intents.length > 0 && intentResult.primary_intent !== 'idea') {
-      const intentContext: AIContext = (structured.suggested_context as AIContext) || 'personal';
+      const intentContext: AIContext = (structured.suggested_context as AIContext) || 'operations';
       const results = await dispatchIntents(intentContext, intentResult.intents, transcript);
       actionsTaken = results
         .filter((r): r is typeof r & { created_resource: NonNullable<typeof r.created_resource> } => r.success && r.created_resource !== undefined && r.created_resource !== null)
@@ -344,11 +344,11 @@ voiceMemoRouter.post('/text', apiKeyAuth, requireScope('write'), validateBody(Vo
   const keywords = structured.keywords || [];
   const suggestedPrio = await suggestPriority(keywords);
 
-  await storeIdea(ideaId, structured, text, embedding, 'personal', userId);
+  await storeIdea(ideaId, structured, text, embedding, 'operations', userId);
 
   // CRITICAL: Invalidate cache so new idea appears on refresh
   try {
-    await invalidateCacheForContext('personal', 'ideas');
+    await invalidateCacheForContext('operations', 'ideas');
     logger.debug('Ideas cache invalidated after text input', { ideaId });
   } catch {
     logger.warn('Failed to invalidate ideas cache', { ideaId });
@@ -388,7 +388,7 @@ voiceMemoRouter.post('/text', apiKeyAuth, requireScope('write'), validateBody(Vo
     detectedIntents = intentResult.intents;
 
     if (intentResult.intents.length > 0 && intentResult.primary_intent !== 'idea') {
-      const intentContext: AIContext = (structured.suggested_context as AIContext) || 'personal';
+      const intentContext: AIContext = (structured.suggested_context as AIContext) || 'operations';
       const results = await dispatchIntents(intentContext, intentResult.intents, text);
       actionsTaken = results
         .filter((r): r is typeof r & { created_resource: NonNullable<typeof r.created_resource> } => r.success && r.created_resource !== undefined && r.created_resource !== null)

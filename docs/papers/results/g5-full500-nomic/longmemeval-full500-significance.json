@@ -1,0 +1,197 @@
+{
+  "meta": {
+    "n_tests": 18,
+    "alpha": 0.05,
+    "alpha_bonferroni": 0.002777777777777778,
+    "n_boot": 10000,
+    "rng_seed": 20260424
+  },
+  "by_judge": {
+    "sonnet": {
+      "zenbrain - letta": {
+        "n": 500,
+        "mean_diff": 0.05440000000000002,
+        "ci_low": 0.029596666666666688,
+        "ci_high": 0.08120000000000002,
+        "cohens_d": 0.18489621968799239,
+        "wilcoxon_p": 1.4617574245753129e-06,
+        "wilcoxon_stat": 10835.5,
+        "bonferroni_significant": true
+      },
+      "zenbrain - a-mem": {
+        "n": 500,
+        "mean_diff": 0.11480000000000001,
+        "ci_low": 0.08413333333333335,
+        "ci_high": 0.14666999999999997,
+        "cohens_d": 0.31957576382515107,
+        "wilcoxon_p": 3.8618123335766244e-14,
+        "wilcoxon_stat": 9937.5,
+        "bonferroni_significant": true
+      },
+      "zenbrain - mem0": {
+        "n": 500,
+        "mean_diff": 0.13360000000000002,
+        "ci_low": 0.10666666666666669,
+        "ci_high": 0.16213666666666665,
+        "cohens_d": 0.4209739706779158,
+        "wilcoxon_p": 1.7018716992574241e-22,
+        "wilcoxon_stat": 5771.0,
+        "bonferroni_significant": true
+      },
+      "letta - a-mem": {
+        "n": 500,
+        "mean_diff": 0.06039999999999999,
+        "ci_low": 0.024399999999999998,
+        "ci_high": 0.09520999999999988,
+        "cohens_d": 0.1504209089924749,
+        "wilcoxon_p": 0.0010567599220075074,
+        "wilcoxon_stat": 8543.5,
+        "bonferroni_significant": true
+      },
+      "letta - mem0": {
+        "n": 500,
+        "mean_diff": 0.0792,
+        "ci_low": 0.04719000000000001,
+        "ci_high": 0.1108,
+        "cohens_d": 0.21688126971306657,
+        "wilcoxon_p": 9.456914459869155e-08,
+        "wilcoxon_stat": 6253.0,
+        "bonferroni_significant": true
+      },
+      "a-mem - mem0": {
+        "n": 500,
+        "mean_diff": 0.0188,
+        "ci_low": -0.018,
+        "ci_high": 0.0556,
+        "cohens_d": 0.04480272362277585,
+        "wilcoxon_p": 0.18628088465017434,
+        "wilcoxon_stat": 12060.5,
+        "bonferroni_significant": false
+      }
+    },
+    "opus": {
+      "zenbrain - letta": {
+        "n": 500,
+        "mean_diff": 0.06226666666666669,
+        "ci_low": 0.03786666666666669,
+        "ci_high": 0.08786666666666669,
+        "cohens_d": 0.22060294086066196,
+        "wilcoxon_p": 1.107266797498305e-07,
+        "wilcoxon_stat": 13516.5,
+        "bonferroni_significant": true
+      },
+      "zenbrain - a-mem": {
+        "n": 500,
+        "mean_diff": 0.1390666666666667,
+        "ci_low": 0.10933333333333335,
+        "ci_high": 0.16960000000000003,
+        "cohens_d": 0.397281133573934,
+        "wilcoxon_p": 5.198400634345126e-19,
+        "wilcoxon_stat": 10305.0,
+        "bonferroni_significant": true
+      },
+      "zenbrain - mem0": {
+        "n": 500,
+        "mean_diff": 0.16066666666666668,
+        "ci_low": 0.1338666666666667,
+        "ci_high": 0.18840000000000004,
+        "cohens_d": 0.5218877633606962,
+        "wilcoxon_p": 6.200947419601403e-31,
+        "wilcoxon_stat": 5648.5,
+        "bonferroni_significant": true
+      },
+      "letta - a-mem": {
+        "n": 500,
+        "mean_diff": 0.07680000000000001,
+        "ci_low": 0.0424,
+        "ci_high": 0.11000000000000001,
+        "cohens_d": 0.1997418236974552,
+        "wilcoxon_p": 3.982716627247602e-06,
+        "wilcoxon_stat": 8723.5,
+        "bonferroni_significant": true
+      },
+      "letta - mem0": {
+        "n": 500,
+        "mean_diff": 0.0984,
+        "ci_low": 0.0656,
+        "ci_high": 0.13,
+        "cohens_d": 0.27164097505528684,
+        "wilcoxon_p": 2.800519800943146e-11,
+        "wilcoxon_stat": 7703.5,
+        "bonferroni_significant": true
+      },
+      "a-mem - mem0": {
+        "n": 500,
+        "mean_diff": 0.021600000000000005,
+        "ci_low": -0.015209999999999994,
+        "ci_high": 0.0584,
+        "cohens_d": 0.05106350122465083,
+        "wilcoxon_p": 0.14173964067052044,
+        "wilcoxon_stat": 15916.5,
+        "bonferroni_significant": false
+      }
+    },
+    "gpt4o": {
+      "zenbrain - letta": {
+        "n": 500,
+        "mean_diff": 0.06293333333333334,
+        "ci_low": 0.03613333333333334,
+        "ci_high": 0.09040000000000001,
+        "cohens_d": 0.20545499538353956,
+        "wilcoxon_p": 2.8118080249299827e-06,
+        "wilcoxon_stat": 5933.0,
+        "bonferroni_significant": true
+      },
+      "zenbrain - a-mem": {
+        "n": 500,
+        "mean_diff": 0.13933333333333334,
+        "ci_low": 0.10773333333333335,
+        "ci_high": 0.17239999999999997,
+        "cohens_d": 0.37340152688031625,
+        "wilcoxon_p": 2.2976233667458196e-15,
+        "wilcoxon_stat": 5356.0,
+        "bonferroni_significant": true
+      },
+      "zenbrain - mem0": {
+        "n": 500,
+        "mean_diff": 0.15693333333333334,
+        "ci_low": 0.12733333333333333,
+        "ci_high": 0.18746999999999997,
+        "cohens_d": 0.459706651596733,
+        "wilcoxon_p": 2.202207945232816e-22,
+        "wilcoxon_stat": 3632.0,
+        "bonferroni_significant": true
+      },
+      "letta - a-mem": {
+        "n": 500,
+        "mean_diff": 0.07640000000000001,
+        "ci_low": 0.04159,
+        "ci_high": 0.1116,
+        "cohens_d": 0.1902372443320678,
+        "wilcoxon_p": 6.693683408526499e-05,
+        "wilcoxon_stat": 5239.5,
+        "bonferroni_significant": true
+      },
+      "letta - mem0": {
+        "n": 500,
+        "mean_diff": 0.094,
+        "ci_low": 0.0588,
+        "ci_high": 0.1276,
+        "cohens_d": 0.2388266358964795,
+        "wilcoxon_p": 2.791491035267757e-07,
+        "wilcoxon_stat": 5527.0,
+        "bonferroni_significant": true
+      },
+      "a-mem - mem0": {
+        "n": 500,
+        "mean_diff": 0.0176,
+        "ci_low": -0.0204,
+        "ci_high": 0.054799999999999995,
+        "cohens_d": 0.04049799335188263,
+        "wilcoxon_p": 0.3637970843631402,
+        "wilcoxon_stat": 10991.0,
+        "bonferroni_significant": false
+      }
+    }
+  }
+}

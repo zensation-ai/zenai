@@ -65,7 +65,7 @@ syncRouter.post('/:context/sync/swipe-actions', apiKeyAuth, requireScope('write'
   const userId = getUserId(req);
 
   if (!isValidContext(context)) {
-    throw new ValidationError('Context must be "personal", "work", "learning", or "creative"');
+    throw new ValidationError('Context must be "operations", "finance", "people", or "strategy"');
   }
 
   const { actions } = req.body as { actions: SwipeAction[] };
@@ -150,7 +150,7 @@ syncRouter.post('/:context/sync/batch', apiKeyAuth, requireScope('write'), async
   const userId = getUserId(req);
 
   if (!isValidContext(context)) {
-    throw new ValidationError('Context must be "personal", "work", "learning", or "creative"');
+    throw new ValidationError('Context must be "operations", "finance", "people", or "strategy"');
   }
 
   const {
@@ -217,7 +217,7 @@ async function processVoiceMemosBatch(
       const result = await queryContext(
         context,
         `INSERT INTO ideas (id, title, summary, raw_transcript, type, category, priority, context, is_archived, created_at, user_id)
-         VALUES (gen_random_uuid(), $1, $2, $2, 'idea', 'personal', 'medium', $3, false, $4, $5)
+         VALUES (gen_random_uuid(), $1, $2, $2, 'idea', 'operations', 'medium', $3, false, $4, $5)
          RETURNING id`,
         [
           memo.text.substring(0, 100), // Title from first 100 chars
@@ -305,7 +305,7 @@ syncRouter.get('/:context/sync/status', apiKeyAuth, asyncHandler(async (req: Req
   const userId = getUserId(req);
 
   if (!isValidContext(context)) {
-    throw new ValidationError('Context must be "personal", "work", "learning", or "creative"');
+    throw new ValidationError('Context must be "operations", "finance", "people", or "strategy"');
   }
 
   // Get pending changes count (items modified in last hour)
@@ -366,7 +366,7 @@ syncRouter.get('/:context/sync/pending', apiKeyAuth, asyncHandler(async (req: Re
   const userId = getUserId(req);
 
   if (!isValidContext(context)) {
-    throw new ValidationError('Context must be "personal", "work", "learning", or "creative"');
+    throw new ValidationError('Context must be "operations", "finance", "people", or "strategy"');
   }
 
   // Get recently modified items that might need sync
@@ -428,7 +428,7 @@ syncRouter.post('/:context/sync/trigger', apiKeyAuth, requireScope('write'), asy
   const userId = getUserId(req);
 
   if (!isValidContext(context)) {
-    throw new ValidationError('Context must be "personal", "work", "learning", or "creative"');
+    throw new ValidationError('Context must be "operations", "finance", "people", or "strategy"');
   }
 
   // Record sync event
@@ -481,7 +481,7 @@ syncRouter.delete('/devices/:deviceId', apiKeyAuth, requireScope('write'), async
   // This works across both contexts since devices are typically global
   let deleted = false;
 
-  for (const ctx of (['personal', 'work', 'learning', 'creative'] as AIContext[])) {
+  for (const ctx of (['operations', 'finance', 'people', 'strategy'] as AIContext[])) {
     try {
       const result = await queryContext(
         ctx,

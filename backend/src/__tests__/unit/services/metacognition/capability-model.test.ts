@@ -283,11 +283,11 @@ describe('recordInteraction', () => {
   it('writes interaction to database', async () => {
     mockQueryContext.mockResolvedValueOnce({ rows: [], rowCount: 1 } as any);
 
-    await recordInteraction('personal', 'finance', true, 4.5);
+    await recordInteraction('operations', 'finance', true, 4.5);
 
     expect(mockQueryContext).toHaveBeenCalledTimes(1);
     expect(mockQueryContext).toHaveBeenCalledWith(
-      'personal',
+      'operations',
       expect.stringContaining('INSERT'),
       expect.arrayContaining(['finance', true, 4.5]),
     );
@@ -297,7 +297,7 @@ describe('recordInteraction', () => {
     mockQueryContext.mockRejectedValueOnce(new Error('DB down'));
 
     await expect(
-      recordInteraction('personal', 'code', false),
+      recordInteraction('operations', 'code', false),
     ).resolves.toBeUndefined();
 
     expect(logger.error).toHaveBeenCalled();
@@ -306,10 +306,10 @@ describe('recordInteraction', () => {
   it('uses null quality when not provided', async () => {
     mockQueryContext.mockResolvedValueOnce({ rows: [], rowCount: 1 } as any);
 
-    await recordInteraction('work', 'science', true);
+    await recordInteraction('finance', 'science', true);
 
     expect(mockQueryContext).toHaveBeenCalledWith(
-      'work',
+      'finance',
       expect.stringContaining('INSERT'),
       expect.arrayContaining(['science', true, null]),
     );
@@ -342,7 +342,7 @@ describe('loadCapabilityProfile', () => {
       rows: [{ quality: '3.0' }, { quality: '3.5' }],
     } as any);
 
-    const profile = await loadCapabilityProfile('personal');
+    const profile = await loadCapabilityProfile('operations');
 
     expect(profile.domains).toHaveProperty('finance');
     expect(profile.domains).toHaveProperty('code');
@@ -359,7 +359,7 @@ describe('loadCapabilityProfile', () => {
     mockQueryContext.mockResolvedValueOnce({ rows: [] } as any);
     mockQueryContext.mockResolvedValueOnce({ rows: [] } as any);
 
-    const profile = await loadCapabilityProfile('personal');
+    const profile = await loadCapabilityProfile('operations');
 
     expect(profile.domains).toEqual({});
     expect(profile.totalInteractions).toBe(0);
@@ -371,7 +371,7 @@ describe('loadCapabilityProfile', () => {
   it('returns default profile on DB error', async () => {
     mockQueryContext.mockRejectedValueOnce(new Error('connection failed'));
 
-    const profile = await loadCapabilityProfile('personal');
+    const profile = await loadCapabilityProfile('operations');
 
     expect(profile.domains).toEqual({});
     expect(profile.totalInteractions).toBe(0);
@@ -393,7 +393,7 @@ describe('evaluateResponse', () => {
     mockQueryContext.mockResolvedValueOnce({ rows: [] } as any);
     mockQueryContext.mockResolvedValueOnce({ rows: [] } as any);
 
-    const result = await evaluateResponse('personal', {
+    const result = await evaluateResponse('operations', {
       domain: 'finance',
       confidence: 0.9,
       hadConflicts: false,
@@ -416,7 +416,7 @@ describe('evaluateResponse', () => {
     mockQueryContext.mockResolvedValueOnce({ rows: [] } as any);
     mockQueryContext.mockResolvedValueOnce({ rows: [] } as any);
 
-    const result = await evaluateResponse('personal', {
+    const result = await evaluateResponse('operations', {
       domain: 'code',
       confidence: 0.3,
       hadConflicts: false,
@@ -437,7 +437,7 @@ describe('evaluateResponse', () => {
     mockQueryContext.mockResolvedValueOnce({ rows: [] } as any);
     mockQueryContext.mockResolvedValueOnce({ rows: [] } as any);
 
-    const result = await evaluateResponse('personal', {
+    const result = await evaluateResponse('operations', {
       domain: 'finance',
       confidence: 0.85,
       hadConflicts: false,
@@ -454,7 +454,7 @@ describe('evaluateResponse', () => {
     mockQueryContext.mockResolvedValueOnce({ rows: [] } as any);
     mockQueryContext.mockResolvedValueOnce({ rows: [] } as any);
 
-    const result = await evaluateResponse('personal', {
+    const result = await evaluateResponse('operations', {
       domain: 'unknown_domain',
       confidence: 0.8,
       hadConflicts: false,

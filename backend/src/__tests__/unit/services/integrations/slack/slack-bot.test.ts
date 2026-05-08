@@ -110,10 +110,10 @@ describe('SlackBot', () => {
         channel: 'C456',
         ts: '1234567890.123456',
       };
-      const result = normalizeSlackEvent(event, 'user-1', 'work');
+      const result = normalizeSlackEvent(event, 'user-1', 'finance');
       expect(result.type).toBe('integration.slack.message_received');
       expect(result.connectorId).toBe('slack');
-      expect(result.targetContext).toBe('work');
+      expect(result.targetContext).toBe('finance');
     });
 
     it('maps DM to integration.slack.dm_received', () => {
@@ -126,7 +126,7 @@ describe('SlackBot', () => {
         channel: 'D456',
         ts: '1234567890.123456',
       };
-      const result = normalizeSlackEvent(event, 'user-1', 'work');
+      const result = normalizeSlackEvent(event, 'user-1', 'finance');
       expect(result.type).toBe('integration.slack.dm_received');
     });
 
@@ -139,7 +139,7 @@ describe('SlackBot', () => {
         channel: 'C456',
         ts: '1234567890.123456',
       };
-      const result = normalizeSlackEvent(event, 'user-1', 'work');
+      const result = normalizeSlackEvent(event, 'user-1', 'finance');
       expect(result.type).toBe('integration.slack.mention');
     });
 
@@ -151,7 +151,7 @@ describe('SlackBot', () => {
         user: 'U123',
         item: { channel: 'C456', ts: '1234567890.123456' },
       };
-      const result = normalizeSlackEvent(event, 'user-1', 'work');
+      const result = normalizeSlackEvent(event, 'user-1', 'finance');
       expect(result.type).toBe('integration.slack.reaction');
     });
   });

@@ -44,7 +44,7 @@ evolutionRouter.get(
     getUserId(req); // auth check
 
     if (!isValidContext(context)) {
-      throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
+      throw new ValidationError('Invalid context. Use "operations", "finance", "people", or "strategy".');
     }
 
     const dashboard = await getEvolutionDashboard(context as AIContext);
@@ -68,7 +68,7 @@ evolutionRouter.get(
     getUserId(req); // auth check
 
     if (!isValidContext(context)) {
-      throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
+      throw new ValidationError('Invalid context. Use "operations", "finance", "people", or "strategy".');
     }
 
     const snapshot = await getLatestSnapshot(context as AIContext);
@@ -105,7 +105,7 @@ evolutionRouter.get(
     const days = Math.min(parseInt(req.query.days as string, 10) || 30, 365);
 
     if (!isValidContext(context)) {
-      throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
+      throw new ValidationError('Invalid context. Use "operations", "finance", "people", or "strategy".');
     }
 
     const snapshots = await getSnapshots(context as AIContext, days);
@@ -131,7 +131,7 @@ evolutionRouter.post(
     getUserId(req); // auth check
 
     if (!isValidContext(context)) {
-      throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
+      throw new ValidationError('Invalid context. Use "operations", "finance", "people", or "strategy".');
     }
 
     const snapshot = await createDailySnapshot(context as AIContext);
@@ -163,7 +163,7 @@ evolutionRouter.get(
     const eventType = req.query.event_type as string | undefined;
 
     if (!isValidContext(context)) {
-      throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
+      throw new ValidationError('Invalid context. Use "operations", "finance", "people", or "strategy".');
     }
 
     let events;
@@ -195,7 +195,7 @@ evolutionRouter.post(
     const { event_type, title, description, impact_score, metadata, icon, color } = req.body;
 
     if (!isValidContext(context)) {
-      throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
+      throw new ValidationError('Invalid context. Use "operations", "finance", "people", or "strategy".');
     }
 
     if (!event_type || !title) {
@@ -244,7 +244,7 @@ evolutionRouter.get(
     const weeks = Math.min(parseInt(req.query.weeks as string, 10) || 12, 52);
 
     if (!isValidContext(context)) {
-      throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
+      throw new ValidationError('Invalid context. Use "operations", "finance", "people", or "strategy".');
     }
 
     const trends = await getAccuracyTrends(context as AIContext, weeks);
@@ -281,7 +281,7 @@ evolutionRouter.get(
     getUserId(req); // auth check
 
     if (!isValidContext(context)) {
-      throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
+      throw new ValidationError('Invalid context. Use "operations", "finance", "people", or "strategy".');
     }
 
     const milestones = await getMilestones(context as AIContext);
@@ -311,7 +311,7 @@ evolutionRouter.post(
     const { current_value } = req.body;
 
     if (!isValidContext(context)) {
-      throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
+      throw new ValidationError('Invalid context. Use "operations", "finance", "people", or "strategy".');
     }
 
     if (current_value === undefined || typeof current_value !== 'number') {
@@ -359,7 +359,7 @@ evolutionRouter.get(
     getUserId(req); // auth check
 
     if (!isValidContext(context)) {
-      throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
+      throw new ValidationError('Invalid context. Use "operations", "finance", "people", or "strategy".');
     }
 
     const snapshot = await getLatestSnapshot(context as AIContext);
@@ -426,7 +426,7 @@ evolutionRouter.get(
     getUserId(req); // auth check
 
     if (!isValidContext(context)) {
-      throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
+      throw new ValidationError('Invalid context. Use "operations", "finance", "people", or "strategy".');
     }
 
     const [dashboard, trends] = await Promise.all([
@@ -498,7 +498,7 @@ evolutionRouter.get(
     const days = Math.min(parseInt(req.query.days as string, 10) || 30, 365);
 
     if (!isValidContext(context)) {
-      throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
+      throw new ValidationError('Invalid context. Use "operations", "finance", "people", or "strategy".');
     }
 
     const learningCurve = await aiEvolutionAnalytics.calculateLearningCurve(
@@ -526,7 +526,7 @@ evolutionRouter.get(
     getUserId(req); // auth check
 
     if (!isValidContext(context)) {
-      throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
+      throw new ValidationError('Invalid context. Use "operations", "finance", "people", or "strategy".');
     }
 
     const domainStrengths = await aiEvolutionAnalytics.analyzeDomainStrengths(
@@ -555,7 +555,7 @@ evolutionRouter.get(
     const days = Math.min(parseInt(req.query.days as string, 10) || 30, 365);
 
     if (!isValidContext(context)) {
-      throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
+      throw new ValidationError('Invalid context. Use "operations", "finance", "people", or "strategy".');
     }
 
     const effectiveness = await aiEvolutionAnalytics.analyzeProactiveEffectiveness(
@@ -583,7 +583,7 @@ evolutionRouter.get(
     getUserId(req); // auth check
 
     if (!isValidContext(context)) {
-      throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
+      throw new ValidationError('Invalid context. Use "operations", "finance", "people", or "strategy".');
     }
 
     const insights = await aiEvolutionAnalytics.getInsights(context as AIContext);
@@ -609,7 +609,7 @@ evolutionRouter.get(
     const days = Math.min(parseInt(req.query.days as string, 10) || 30, 365);
 
     if (!isValidContext(context)) {
-      throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
+      throw new ValidationError('Invalid context. Use "operations", "finance", "people", or "strategy".');
     }
 
     const metrics = await aiEvolutionAnalytics.getEvolutionMetrics(

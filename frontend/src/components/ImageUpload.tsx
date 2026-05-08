@@ -14,8 +14,6 @@
  */
 
 import { useState, useCallback, useRef, useMemo } from 'react';
-import './ImageUpload.css';
-
 interface SelectedImage {
   id: string;
   file: File;
@@ -225,6 +223,7 @@ export function ImageUpload({
           onChange={handleFileChange}
           className="image-upload-input-hidden"
           aria-hidden="true"
+          tabIndex={-1}
         />
 
         {selectedImages.length > 0 && (
@@ -277,6 +276,7 @@ export function ImageUpload({
           onChange={handleFileChange}
           className="image-upload-input-hidden"
           aria-hidden="true"
+          tabIndex={-1}
         />
 
         <div className="image-upload-content">

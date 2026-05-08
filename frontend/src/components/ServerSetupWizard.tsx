@@ -9,8 +9,6 @@
 
 import { useState, useEffect } from 'react';
 import type { AIContext } from './ContextSwitcher';
-import './ServerSetupWizard.css';
-
 const API_URL = import.meta.env.VITE_API_URL || '';
 const API_KEY = import.meta.env.VITE_API_KEY || '';
 
@@ -175,7 +173,7 @@ export function ServerSetupWizard({ context, serverName, onComplete, onCancel }:
         body: JSON.stringify(body),
       });
 
-      setInstallResult('Server erfolgreich hinzugefuegt!');
+      setInstallResult('Server erfolgreich hinzugefügt!');
       setStep(3);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Installation fehlgeschlagen');
@@ -202,7 +200,7 @@ export function ServerSetupWizard({ context, serverName, onComplete, onCancel }:
         <div className="sw-error-panel">
           <p>{error || 'Template nicht gefunden'}</p>
           <button className="sw-btn sw-btn--secondary" onClick={onCancel}>
-            Zurueck
+            Zurück
           </button>
         </div>
       </div>
@@ -235,7 +233,7 @@ export function ServerSetupWizard({ context, serverName, onComplete, onCancel }:
       {error && (
         <div className="sw-error" role="alert">
           <span>{error}</span>
-          <button className="sw-error-dismiss" onClick={() => setError(null)} aria-label="Fehler schliessen">
+          <button className="sw-error-dismiss" onClick={() => setError(null)} aria-label="Fehler schließen">
             x
           </button>
         </div>
@@ -267,7 +265,7 @@ export function ServerSetupWizard({ context, serverName, onComplete, onCancel }:
               )}
               <div className="sw-detail-row">
                 <span className="sw-detail-label">Tools:</span>
-                <span className="sw-detail-value">~{serverInfo.estimatedTools} verfuegbar</span>
+                <span className="sw-detail-value">~{serverInfo.estimatedTools} verfügbar</span>
               </div>
             </div>
 
@@ -306,12 +304,12 @@ export function ServerSetupWizard({ context, serverName, onComplete, onCancel }:
         <div className="sw-content">
           {template.requiredCredentials.length === 0 ? (
             <div className="sw-no-creds">
-              <p>Dieser Server benoetigt keine Zugangsdaten.</p>
+              <p>Dieser Server benötigt keine Zugangsdaten.</p>
             </div>
           ) : (
             <div className="sw-creds-form">
               <p className="sw-creds-info">
-                Gib die benoetigten Zugangsdaten ein. Diese werden sicher als Umgebungsvariablen gespeichert.
+                Gib die benötigten Zugangsdaten ein. Diese werden sicher als Umgebungsvariablen gespeichert.
               </p>
               {template.requiredCredentials.map(field => (
                 <div key={field.key} className="sw-form-group">
@@ -335,7 +333,7 @@ export function ServerSetupWizard({ context, serverName, onComplete, onCancel }:
 
           <div className="sw-actions">
             <button className="sw-btn sw-btn--secondary" onClick={() => setStep(1)}>
-              Zurueck
+              Zurück
             </button>
             <button
               className="sw-btn sw-btn--primary"
@@ -355,7 +353,7 @@ export function ServerSetupWizard({ context, serverName, onComplete, onCancel }:
             <div className="sw-complete-icon">OK</div>
             <h4>{installResult || 'Installation abgeschlossen'}</h4>
             <p>
-              {serverInfo.displayName} wurde als MCP Server hinzugefuegt.
+              {serverInfo.displayName} wurde als MCP Server hinzugefügt.
               Du kannst ihn jetzt im Tab &quot;Server&quot; verbinden.
             </p>
           </div>

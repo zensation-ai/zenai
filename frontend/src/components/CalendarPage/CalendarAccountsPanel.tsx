@@ -5,12 +5,10 @@
  * Slide-out panel with connection form, account management, and calendar toggles.
  */
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, type CSSProperties } from 'react';
 import type { CalendarAccount, CalendarAccountCalendar } from './useCalendarAccounts';
 import { useEscapeKey } from '../../hooks/useClickOutside';
 import { useConfirm } from '../ConfirmDialog';
-import './CalendarAccountsPanel.css';
-
 interface Props {
   accounts: CalendarAccount[];
   loading: boolean;
@@ -163,7 +161,7 @@ export function CalendarAccountsPanel({
             return (
               <div key={account.id} className={`cal-accounts__card ${isSyncing ? 'cal-accounts__card--syncing' : ''}`}>
                 {/* Provider badge */}
-                <div className="cal-accounts__card-badge" style={{ background: info.color }}>
+                <div className="cal-accounts__card-badge bg-[var(--c)]" style={{ '--c': info.color } as CSSProperties}>
                   <span>{info.icon}</span>
                 </div>
 
@@ -177,8 +175,9 @@ export function CalendarAccountsPanel({
                         {info.label} · {account.username}
                       </div>
                     </div>
-                    <div className="cal-accounts__card-status-dot"
-                      style={{ background: account.last_sync_error ? '#D94A4A' : account.last_sync_at ? '#34C759' : '#8E8E93' }}
+                    <div
+                      className="cal-accounts__card-status-dot bg-[var(--c)]"
+                      style={{ '--c': account.last_sync_error ? '#D94A4A' : account.last_sync_at ? '#34C759' : '#8E8E93' } as CSSProperties}
                       title={account.last_sync_error || (account.last_sync_at ? 'Synchronisiert' : 'Nicht synchronisiert')}
                     />
                   </div>
@@ -224,8 +223,8 @@ export function CalendarAccountsPanel({
                             }
                           >
                             <span
-                              className="cal-accounts__calendar-dot"
-                              style={{ background: cal.enabled ? (cal.color || info.color) : 'var(--text-secondary)' }}
+                              className="cal-accounts__calendar-dot bg-[var(--c)]"
+                              style={{ '--c': cal.enabled ? (cal.color || info.color) : 'var(--text-secondary)' } as CSSProperties}
                             />
                             <span className="cal-accounts__calendar-name">{cal.displayName}</span>
                             {isReminders && <span className="cal-accounts__calendar-warn">⚠</span>}
@@ -392,7 +391,7 @@ export function CalendarAccountsPanel({
                     </>
                   ) : (
                     <>
-                      <span style={{ color: providerInfo.color }}>{providerInfo.icon}</span>
+                      <span className="text-[var(--c)]" style={{ '--c': providerInfo.color } as CSSProperties}>{providerInfo.icon}</span>
                       Verbinden
                     </>
                   )}

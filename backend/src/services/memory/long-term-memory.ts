@@ -14,6 +14,10 @@ import { AIContext, queryContext, getPool } from '../../utils/database-context';
 import { logger } from '../../utils/logger';
 import { generateEmbedding } from '../ai';
 import { calculateRetention, updateStability } from './ebbinghaus-decay';
+import {
+  applyVFERetrievalBoost,
+  type RetrievalBoostOptions,
+} from '../../algorithms/surprise-gradient-memory';
 import { calculateContextSimilarity, captureEncodingContext, deserializeContext, serializeContext, type EncodingContext } from './context-enrichment';
 import { tagEmotion, computeEmotionalWeight } from './emotional-tagger';
 import { detectNegation, computeStringSimilarity, stripNegation, safeJsonParse } from './ltm-utils';
@@ -51,87 +55,57 @@ export { getRecentSessions, extractPatterns, extractFacts, inferDecayClass, deca
  * - normal_decay: General knowledge - standard decay
  * - fast_decay: Ephemeral observations (mood, one-time mentions) - rapid decay
  */
-export type DecayClass = 'permanent' | 'slow_decay' | 'normal_decay' | 'fast_decay';
-
-export interface PersonalizationFact {
-  id: string;
-  factType: 'preference' | 'behavior' | 'knowledge' | 'goal' | 'context';
-  content: string;
-  confidence: number;
-  source: 'explicit' | 'inferred' | 'consolidated';
-  firstSeen: Date;
-  lastConfirmed: Date;
-  occurrences: number;
-  embedding?: number[];
-  /** How often this fact has been retrieved and used (for composite scoring) */
-  retrievalCount: number;
-  /** When this fact was last retrieved (for recency scoring) */
-  lastRetrieved: Date | null;
-  /** Graduated decay class controlling decay speed */
-  decayClass: DecayClass;
-}
-
-export interface FrequentPattern {
-  id: string;
-  patternType: 'topic' | 'action' | 'time' | 'style';
-  pattern: string;
-  frequency: number;
-  lastUsed: Date;
-  associatedTopics: string[];
-  confidence: number;
-}
-
-export interface SignificantInteraction {
-  id: string;
-  summary: string;
-  topics: string[];
-  outcome: string;
-  timestamp: Date;
-  significance: number;
-}
-
-export interface LongTermMemory {
-  context: AIContext;
-  facts: PersonalizationFact[];
-  frequentPatterns: FrequentPattern[];
-  significantInteractions: SignificantInteraction[];
-  profileEmbedding: number[];
-  lastConsolidation: Date;
-  consolidationCount: number;
-}
-
-export interface LongTermRetrievalResult {
-  facts: PersonalizationFact[];
-  patterns: FrequentPattern[];
-  relevantInteractions: SignificantInteraction[];
-  contextualMemory: string;
-}
-
-export interface ConsolidationResult {
-  patternsAdded: number;
-  factsAdded: number;
-  factsUpdated: number;
-  interactionsStored: number;
-}
-
-/** Conversation message structure for memory processing */
-export interface ConversationMessage {
-  role: 'user' | 'assistant' | 'system';
-  content: string;
-  timestamp?: string;
-}
-
-/** Session with messages for consolidation */
-export interface SessionWithMessages {
-  id: string;
-  messages: ConversationMessage[];
-  metadata: Record<string, unknown>;
-  summary?: string;
-}
+// Types extracted to ltm-types.ts to break circular dependency with ltm-consolidation.ts and ltm-search.ts
+export type {
+  DecayClass,
+  PersonalizationFact,
+  FrequentPattern,
+  SignificantInteraction,
+  LongTermMemory,
+  LongTermRetrievalResult,
+  ConsolidationResult,
+  ConversationMessage,
+  SessionWithMessages,
+} from './ltm-types';
+import type {
+  DecayClass,
+  PersonalizationFact,
+  FrequentPattern,
+  SignificantInteraction,
+  LongTermMemory,
+  LongTermRetrievalResult,
+  ConsolidationResult,
+  ConversationMessage,
+  SessionWithMessages,
+} from './ltm-types';
 
 // ===========================================
 // Configuration
 // ===========================================
+
+/** Read the H6_VFE_BOOST env flag once at module load (Phase H6.3). */
+const H6_VFE_BOOST_DEFAULT = (() => {
+  const raw = process.env.H6_VFE_BOOST;
+  if (typeof raw !== 'string') return false;
+  return raw === 'true' || raw === '1' || raw.toLowerCase() === 'yes';
+})();
+
+/**
+ * Phase H6.3 binding — Titans VFE-delta retrieval-boost options for
+ * `longTermMemory.retrieve`. When `enableVFEBoost` resolves to true and
+ * `vfeDeltaProvider` is supplied, each fact's compositeScore is boosted
+ * by `applyVFERetrievalBoost(score, providerLookup(factId))`. Production
+ * callers leave both undefined; the eval harness fills the provider
+ * with synthetic per-fact deltas to A/B the Titans surprise signal.
+ */
+export interface RetrieveOptions {
+  /** Per-fact lookup. Returns the stored vfe_delta or undefined. */
+  vfeDeltaProvider?: (factId: string) => number | undefined;
+  /** Per-call override of the env-default. */
+  enableVFEBoost?: boolean;
+  /** Forwarded to `applyVFERetrievalBoost` (alpha coefficient). */
+  vfeBoostOptions?: RetrievalBoostOptions;
+}
 
 const CONFIG = {
   /** Minimum confidence for a fact to be stored */
@@ -747,7 +721,11 @@ class LongTermMemoryService {
   /**
    * Retrieve relevant long-term memories for a query
    */
-  async retrieve(context: AIContext, query: string): Promise<LongTermRetrievalResult> {
+  async retrieve(
+    context: AIContext,
+    query: string,
+    options?: RetrieveOptions,
+  ): Promise<LongTermRetrievalResult> {
     await this.initialize(context);
 
     const memory = this.memories.get(context);
@@ -766,6 +744,11 @@ class LongTermMemoryService {
       // Find relevant facts with composite importance scoring
       // Phase 72: Capture current context for context-dependent retrieval boost
       const currentContext = captureEncodingContext();
+
+      // Phase H6.3 binding: resolve VFE-boost activation once per call.
+      const useVFEBoost =
+        (options?.enableVFEBoost ?? H6_VFE_BOOST_DEFAULT) &&
+        options?.vfeDeltaProvider !== undefined;
 
       const scoredFacts = memory.facts
         .map(fact => {
@@ -786,6 +769,21 @@ class LongTermMemoryService {
             if (encodingCtx) {
               const ctxSim = calculateContextSimilarity(encodingCtx, currentContext);
               compositeScore *= ctxSim.boost;
+            }
+          }
+
+          // Phase H6.3 binding: Titans VFE retrieval-boost.
+          // Surprising memories rank higher; anti-helpful memories
+          // (negative delta) rank lower. Boost is applied AFTER the
+          // context-similarity multiplication so it sees the same scale.
+          if (useVFEBoost) {
+            const vfeDelta = options!.vfeDeltaProvider!(fact.id);
+            if (typeof vfeDelta === 'number' && Number.isFinite(vfeDelta)) {
+              compositeScore = applyVFERetrievalBoost(
+                compositeScore,
+                vfeDelta,
+                options?.vfeBoostOptions,
+              );
             }
           }
 

@@ -3,9 +3,6 @@ import { AIContext } from './ContextSwitcher';
 import { TEXT_PROCESSING_STEPS } from '../utils/aiSteps';
 import { AI_PERSONALITY, AI_AVATAR } from '../utils/aiPersonality';
 import { MAX_TEXT_INPUT_CHARS, CHAR_WARNING_THRESHOLD } from '../constants';
-import '../neurodesign.css';
-import './CommandCenter.css';
-
 export type InputMode = 'voice' | 'chat';
 
 interface CommandCenterProps {

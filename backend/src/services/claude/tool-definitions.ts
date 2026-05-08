@@ -5,7 +5,7 @@
  * Contains all 55+ TOOL_* constant definitions.
  */
 
-import type { ToolDefinition } from './tool-use';
+import type { ToolDefinition } from './tool-types';
 
 // ===========================================
 // Built-in Tool Definitions
@@ -495,6 +495,35 @@ export const TOOL_COMPARE_PERIODS: ToolDefinition = {
 };
 
 // ===========================================
+// Business Intelligence Tools (Stufe 6 — Memory-Connected)
+// ===========================================
+
+export const TOOL_GET_BUSINESS_KPIS: ToolDefinition = {
+  name: 'get_business_kpis',
+  description: 'Ruft alle wichtigen Business-KPIs auf einen Blick ab: MRR, Traffic, SEO-Score, Uptime. Verbindet aktuelle Metriken mit gespeicherten Erinnerungen und Trends. Nutze dies bei allgemeinen Fragen wie "Wie läuft das Geschäft?" oder "Gib mir einen Überblick".',
+  input_schema: { type: 'object', properties: {}, required: [] },
+};
+
+export const TOOL_ANALYZE_BUSINESS_TREND: ToolDefinition = {
+  name: 'analyze_business_trend',
+  description: 'Analysiert einen Business-Trend über einen wählbaren Zeitraum (7d/30d/90d). Kombiniert aktuelle Daten mit historischen Erinnerungen aus dem episodischen Gedächtnis. Nutze dies bei Fragen wie "Wie entwickelt sich unser MRR?" oder "Zeig mir den Traffic-Trend".',
+  input_schema: {
+    type: 'object',
+    properties: {
+      metric: { type: 'string', enum: ['revenue', 'traffic', 'seo', 'uptime'], description: 'Welche Metrik analysiert werden soll' },
+      period: { type: 'string', enum: ['7d', '30d', '90d'], description: 'Analysezeitraum. Standard: 30d' },
+    },
+    required: ['metric'],
+  },
+};
+
+export const TOOL_GET_BUSINESS_ANOMALIES: ToolDefinition = {
+  name: 'get_business_anomalies',
+  description: 'Zeigt aktuelle Business-Anomalien und deren Status an. Enthält Verknüpfungen zu gespeicherten Erinnerungen und früheren ähnlichen Vorfällen. Nutze dies bei Fragen wie "Gibt es Probleme?" oder "Was ist gerade auffällig?".',
+  input_schema: { type: 'object', properties: { severity: { type: 'string', enum: ['all', 'critical', 'warning', 'info'], description: 'Schweregrad-Filter. Standard: all' } }, required: [] },
+};
+
+// ===========================================
 // Phase 35: Calendar, Email Draft & Travel Tools
 // ===========================================
 
@@ -880,5 +909,66 @@ export const TOOL_CORE_MEMORY_APPEND: ToolDefinition = {
       },
     },
     required: ['block_type', 'text'],
+  },
+};
+
+/**
+ * Create document tool — generates PPTX, XLSX, PDF, or DOCX.
+ */
+export const TOOL_CREATE_DOCUMENT: ToolDefinition = {
+  name: 'create_document',
+  description:
+    'Erstellt ein Dokument (Präsentation, Tabelle, PDF oder Word-Dokument). Nutze dies wenn der Benutzer eine Präsentation, einen Bericht, eine Tabelle oder ein Dokument erstellen möchte. Durchsuche vorher relevante Quellen mit prepare_document_context um Inhalte zusammenzustellen. Biete dem Benutzer erst eine Gliederung an und erstelle das Dokument nach Bestätigung.',
+  input_schema: {
+    type: 'object',
+    properties: {
+      type: {
+        type: 'string',
+        enum: ['pptx', 'xlsx', 'pdf', 'docx'],
+        description: 'Dokumenttyp: pptx (Präsentation), xlsx (Tabelle), pdf (PDF), docx (Word)',
+      },
+      title: {
+        type: 'string',
+        description: 'Dokumenttitel',
+      },
+      content: {
+        type: 'string',
+        description:
+          'Inhaltsstruktur als JSON. Für PPTX: Array von {title, subtitle?, bullets?, layout: "title_slide"|"bullet_slide"|"two_column"|"image_slide", speakerNotes?}. Für XLSX: Array von {name, headers, rows, chartType?, chartTitle?}. Für PDF/DOCX: Array von {title?, content, pageBreakAfter?}.',
+      },
+      style: {
+        type: 'string',
+        description: 'Optionale Gestaltung als JSON-Objekt mit primaryColor (Hex), fontFamily, fontSize (Punkte). Beispiel: {"primaryColor":"#1a73e8","fontFamily":"Helvetica","fontSize":12}',
+      },
+    },
+    required: ['type', 'title', 'content'],
+  },
+};
+
+/**
+ * Prepare document context — searches all data sources in parallel.
+ */
+export const TOOL_PREPARE_DOCUMENT_CONTEXT: ToolDefinition = {
+  name: 'prepare_document_context',
+  description:
+    'Durchsucht alle relevanten Datenquellen (Dokumente, Ideen, Erinnerungen, Business-Metriken, Kontakte) parallel und gibt einen strukturierten Kontext zurück. Nutze dies BEVOR du create_document aufrufst, um dem Benutzer eine fundierte Gliederung vorschlagen zu können. Biete dem Benutzer danach einen Brainstorming-Dialog an: Gliederung vorschlagen, Feedback einholen, verfeinern, dann erst generieren.',
+  input_schema: {
+    type: 'object',
+    properties: {
+      topic: {
+        type: 'string',
+        description: 'Thema oder Beschreibung des gewünschten Dokuments (z.B. "Quartalsversammlung Q1 2026")',
+      },
+      type: {
+        type: 'string',
+        enum: ['pptx', 'xlsx', 'pdf', 'docx', 'report', 'briefing'],
+        description: 'Gewünschter Dokumenttyp (beeinflusst Quellenauswahl)',
+      },
+      include_sources: {
+        type: 'string',
+        description: 'JSON-Objekt das steuert welche Quellen durchsucht werden. Keys: documents, ideas, memory, business, contacts (jeweils boolean). Standard: alle true bzw. auto. Beispiel: {"documents":true,"business":false}',
+      },
+    },
+    required: ['topic'],
   },
 };

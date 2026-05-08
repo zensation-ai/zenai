@@ -73,7 +73,7 @@ describe('Graph-Memory Bridge', () => {
         ],
       });
 
-      const result = await getNeighbors('idea-1', 'personal');
+      const result = await getNeighbors('idea-1', 'operations');
 
       expect(result).toHaveLength(2);
       expect(result[0].ideaId).toBe('idea-2');
@@ -100,7 +100,7 @@ describe('Graph-Memory Bridge', () => {
         ],
       });
 
-      const result = await getNeighbors('idea-1', 'personal');
+      const result = await getNeighbors('idea-1', 'operations');
 
       expect(result).toHaveLength(1);
       // 'builds_on' incoming → inverse is 'part_of' → labelDe = 'Teil von'
@@ -110,7 +110,7 @@ describe('Graph-Memory Bridge', () => {
     it('should return empty array on error', async () => {
       mockQueryContext.mockRejectedValue(new Error('DB error'));
 
-      const result = await getNeighbors('idea-1', 'personal');
+      const result = await getNeighbors('idea-1', 'operations');
 
       expect(result).toEqual([]);
     });
@@ -118,11 +118,11 @@ describe('Graph-Memory Bridge', () => {
     it('should respect minStrength parameter', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [] });
 
-      await getNeighbors('idea-1', 'personal', { minStrength: 0.8 });
+      await getNeighbors('idea-1', 'operations', { minStrength: 0.8 });
 
       // Check that the strength threshold was passed to the query
       expect(mockQueryContext).toHaveBeenCalledWith(
-        'personal',
+        'operations',
         expect.any(String),
         expect.arrayContaining([0.8])
       );
@@ -143,7 +143,7 @@ describe('Graph-Memory Bridge', () => {
         }],
       });
 
-      const result = await getNeighbors('idea-1', 'personal');
+      const result = await getNeighbors('idea-1', 'operations');
 
       expect(result[0].summary.length).toBeLessThanOrEqual(200);
     });
@@ -170,7 +170,7 @@ describe('Graph-Memory Bridge', () => {
         ],
       });
 
-      const result = await expandViaGraph(['seed-1'], 'personal');
+      const result = await expandViaGraph(['seed-1'], 'operations');
 
       expect(result.contextParts).toHaveLength(1);
       expect(result.contextParts[0].content).toContain('Unterstützt');
@@ -205,7 +205,7 @@ describe('Graph-Memory Bridge', () => {
         ],
       }).mockResolvedValueOnce({ rows: [] }); // For seed-2
 
-      const result = await expandViaGraph(['seed-1', 'seed-2'], 'personal');
+      const result = await expandViaGraph(['seed-1', 'seed-2'], 'operations');
 
       // Only 'new-idea' should be in results (seed-2 is excluded)
       expect(result.contextParts).toHaveLength(1);
@@ -213,7 +213,7 @@ describe('Graph-Memory Bridge', () => {
     });
 
     it('should return empty for no seed ideas', async () => {
-      const result = await expandViaGraph([], 'personal');
+      const result = await expandViaGraph([], 'operations');
 
       expect(result.contextParts).toEqual([]);
       expect(result.serendipityHints).toEqual([]);
@@ -247,7 +247,7 @@ describe('Graph-Memory Bridge', () => {
         }],
       });
 
-      const result = await expandViaGraph(['seed-1'], 'personal', {
+      const result = await expandViaGraph(['seed-1'], 'operations', {
         enableSerendipity: true,
       });
 
@@ -260,7 +260,7 @@ describe('Graph-Memory Bridge', () => {
       const seeds = Array.from({ length: 10 }, (_, i) => `seed-${i}`);
       mockQueryContext.mockResolvedValue({ rows: [] });
 
-      await expandViaGraph(seeds, 'personal');
+      await expandViaGraph(seeds, 'operations');
 
       // Should only call getNeighbors for first 5 seeds
       expect(mockQueryContext).toHaveBeenCalledTimes(5);

@@ -142,10 +142,10 @@ export function OverviewTab({ data, handleRespondToSuggestion, handleViewResearc
       )}
 
       {!hasContent && (
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '48px 24px', textAlign: 'center', color: 'var(--text-secondary)' }}>
-          <GraduationCap size={40} strokeWidth={1.5} style={{ marginBottom: '16px', opacity: 0.6 }} />
-          <h3 style={{ margin: '0 0 8px', fontSize: '18px', color: 'var(--text-primary)' }}>Lernreise beginnen</h3>
-          <p style={{ margin: '0 0 16px', fontSize: '14px', maxWidth: '360px' }}>Die KI erkennt Wissenslucken und schlaegt Lernpfade vor.</p>
+        <div className="flex flex-col items-center justify-center px-6 py-12 text-center text-[var(--text-secondary)]">
+          <GraduationCap size={40} strokeWidth={1.5} className="mb-4 opacity-60" />
+          <h3 className="m-0 mb-2 text-lg text-[var(--text-primary)]">Lernreise beginnen</h3>
+          <p className="m-0 mb-4 text-sm max-w-[360px]">Die KI erkennt Wissenslucken und schlaegt Lernpfade vor.</p>
           {onExploreTopic && (
             <button className="ds-button ds-button--primary ds-button--sm" type="button" onClick={onExploreTopic}>
               Thema erkunden

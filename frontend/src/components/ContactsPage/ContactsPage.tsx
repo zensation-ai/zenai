@@ -31,8 +31,6 @@ import { useBreakpoint } from '../../hooks/useBreakpoint';
 import { useTabNavigation } from '../../hooks/useTabNavigation';
 import type { AIContext } from '../ContextSwitcher';
 import type { Contact, Organization } from './types';
-import './ContactsPage.css';
-
 type ContactTab = 'all' | 'favorites' | 'organizations';
 
 interface ContactsPageProps {
@@ -165,11 +163,11 @@ export function ContactsPage({ context, initialTab = 'all', onBack }: ContactsPa
   const headerActions = (
     <>
       {activeTab === 'organizations' ? (
-        <button type="button" className="btn-primary" onClick={() => setShowOrgForm(true)}>
+        <button type="button" className="btn-primary active:scale-[0.97] transition-transform duration-100" onClick={() => setShowOrgForm(true)}>
           + Organisation
         </button>
       ) : (
-        <button type="button" className="btn-primary" onClick={() => { setEditingContact(null); setShowForm(true); }}>
+        <button type="button" className="btn-primary active:scale-[0.97] transition-transform duration-100" onClick={() => { setEditingContact(null); setShowForm(true); }}>
           + Kontakt
         </button>
       )}
@@ -186,7 +184,7 @@ export function ContactsPage({ context, initialTab = 'all', onBack }: ContactsPa
         activeTab={activeTab}
         onTabChange={handleTabChange}
         onBack={onBack}
-        context={context as 'personal' | 'work' | 'learning' | 'creative'}
+        context={context as 'operations' | 'finance' | 'people' | 'strategy'}
         headerActions={headerActions}
       >
         {/* Error state */}
@@ -200,7 +198,7 @@ export function ContactsPage({ context, initialTab = 'all', onBack }: ContactsPa
         {/* Follow-up Suggestions */}
         {followUps.length > 0 && activeTab !== 'organizations' && (
           <div className="contacts-follow-ups">
-            <h3>Follow-up Vorschlaege</h3>
+            <h3>Follow-up Vorschläge</h3>
             <div className="follow-up-list">
               {followUps.slice(0, 5).map(contact => (
                 <button
@@ -235,6 +233,7 @@ export function ContactsPage({ context, initialTab = 'all', onBack }: ContactsPa
               }}
               onSearch={(q: string) => setOrgSearch(q || undefined)}
               onDelete={handleDeleteOrg}
+              onAdd={() => setShowOrgForm(true)}
             />
           ) : (
             <ContactList
@@ -246,6 +245,7 @@ export function ContactsPage({ context, initialTab = 'all', onBack }: ContactsPa
               onFilterRelationship={handleFilterRelationship}
               onToggleFavorite={handleToggleFavorite}
               onDelete={handleDeleteContact}
+              onAdd={() => { setEditingContact(null); setShowForm(true); }}
             />
           )}
         </div>
@@ -288,7 +288,7 @@ export function ContactsPage({ context, initialTab = 'all', onBack }: ContactsPa
               <button type="button" className="btn-secondary" onClick={() => { setShowOrgForm(false); setOrgName(''); setOrgIndustry(''); }}>
                 Abbrechen
               </button>
-              <button type="button" className="btn-primary" onClick={handleSubmitOrg} disabled={!orgName.trim()}>
+              <button type="button" className="btn-primary active:scale-[0.97] transition-transform duration-100" onClick={handleSubmitOrg} disabled={!orgName.trim()}>
                 Erstellen
               </button>
             </div>

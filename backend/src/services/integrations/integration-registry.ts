@@ -62,7 +62,7 @@ export class IntegrationRegistry {
   async install(
     userId: string,
     connectorId: string,
-    config: IntegrationConfig = { targetContext: 'personal', syncEnabled: true },
+    config: IntegrationConfig = { targetContext: 'operations', syncEnabled: true },
   ): Promise<void> {
     const connector = this.connectors.get(connectorId);
     if (!connector) {

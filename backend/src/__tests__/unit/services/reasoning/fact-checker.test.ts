@@ -31,7 +31,7 @@ const mockQueryContext = jest.fn();
 jest.mock('../../../../utils/database-context', () => ({
   queryContext: (...args: unknown[]) => mockQueryContext(...args),
   isValidContext: (ctx: string) =>
-    ['personal', 'work', 'learning', 'creative'].includes(ctx),
+    ['operations', 'finance', 'people', 'strategy'].includes(ctx),
 }));
 
 jest.mock('../../../../utils/logger', () => ({
@@ -216,7 +216,7 @@ describe('checkFactContradictions', () => {
       ]),
     );
 
-    const result = await checkFactContradictions('personal', statements);
+    const result = await checkFactContradictions('operations', statements);
     expect(result.length).toBeGreaterThanOrEqual(1);
     const c = result[0];
     expect(c.factId).toBe('fact-1');
@@ -236,7 +236,7 @@ describe('checkFactContradictions', () => {
       ]),
     );
 
-    const result = await checkFactContradictions('personal', statements);
+    const result = await checkFactContradictions('operations', statements);
     expect(result.length).toBeGreaterThanOrEqual(1);
     expect(result[0].factId).toBe('fact-2');
   });
@@ -245,7 +245,7 @@ describe('checkFactContradictions', () => {
     const statements = ['The sky is blue on a clear day.'];
     mockQueryContext.mockResolvedValue(makeRows([]));
 
-    const result = await checkFactContradictions('personal', statements);
+    const result = await checkFactContradictions('operations', statements);
     expect(result).toEqual([]);
   });
 
@@ -260,7 +260,7 @@ describe('checkFactContradictions', () => {
     // limit = 3 means we check at most 3 facts per statement
     mockQueryContext.mockResolvedValue(makeRows(manyFacts.slice(0, 3)));
 
-    const result = await checkFactContradictions('personal', statements, 3);
+    const result = await checkFactContradictions('operations', statements, 3);
     // DB was called with limit 3
     const callArgs = mockQueryContext.mock.calls[0];
     expect(callArgs).toBeDefined();
@@ -281,7 +281,7 @@ describe('checkFactContradictions', () => {
       ]),
     );
 
-    const result = await checkFactContradictions('personal', statements);
+    const result = await checkFactContradictions('operations', statements);
     // Exact same content is not a contradiction
     expect(result.length).toBe(0);
   });
@@ -299,7 +299,7 @@ describe('checkFactContradictions', () => {
       )
       .mockResolvedValueOnce(makeRows([]));
 
-    const result = await checkFactContradictions('personal', statements);
+    const result = await checkFactContradictions('operations', statements);
     expect(result.length).toBe(1);
     expect(result[0].factId).toBe('fact-4');
   });
@@ -319,7 +319,7 @@ describe('identifyNewFactCandidates', () => {
     const statements = ['Alexander invented a new sorting algorithm called ZenSort.'];
     mockQueryContext.mockResolvedValue(makeRows([]));
 
-    const result = await identifyNewFactCandidates('personal', statements);
+    const result = await identifyNewFactCandidates('operations', statements);
     expect(result).toContain(statements[0]);
   });
 
@@ -329,7 +329,7 @@ describe('identifyNewFactCandidates', () => {
       makeRows([{ id: 'fact-5', content: 'Paris capital France europe.', confidence: 0.9 }]),
     );
 
-    const result = await identifyNewFactCandidates('personal', statements);
+    const result = await identifyNewFactCandidates('operations', statements);
     expect(result).not.toContain(statements[0]);
   });
 
@@ -340,12 +340,12 @@ describe('identifyNewFactCandidates', () => {
     );
     mockQueryContext.mockResolvedValue(makeRows([]));
 
-    const result = await identifyNewFactCandidates('personal', statements);
+    const result = await identifyNewFactCandidates('operations', statements);
     expect(result.length).toBeLessThanOrEqual(5);
   });
 
   it('handles empty statements array', async () => {
-    const result = await identifyNewFactCandidates('personal', []);
+    const result = await identifyNewFactCandidates('operations', []);
     expect(result).toEqual([]);
     expect(mockQueryContext).not.toHaveBeenCalled();
   });
@@ -359,7 +359,7 @@ describe('identifyNewFactCandidates', () => {
       )
       .mockResolvedValueOnce(makeRows([]));
 
-    const result = await identifyNewFactCandidates('personal', [known, novel]);
+    const result = await identifyNewFactCandidates('operations', [known, novel]);
     expect(result).not.toContain(known);
     expect(result).toContain(novel);
   });
@@ -378,7 +378,7 @@ describe('runFactCheck', () => {
   it('returns a FactCheckResult with the correct shape', async () => {
     mockQueryContext.mockResolvedValue(makeRows([]));
     const result = await runFactCheck(
-      'personal',
+      'operations',
       'The Eiffel Tower is located in Paris, France, and was built in 1889.',
     );
 
@@ -408,7 +408,7 @@ describe('runFactCheck', () => {
       ]),
     );
 
-    const result = await runFactCheck('personal', responseText);
+    const result = await runFactCheck('operations', responseText);
     expect(result.hasContradictions).toBe(true);
     expect(result.contradictions.length).toBeGreaterThanOrEqual(1);
   });
@@ -416,7 +416,7 @@ describe('runFactCheck', () => {
   it('reports hasContradictions = false when no contradictions are found', async () => {
     mockQueryContext.mockResolvedValue(makeRows([]));
     const result = await runFactCheck(
-      'personal',
+      'operations',
       'Quantum computing uses qubits to perform computations exponentially faster than classical computers.',
     );
     expect(result.hasContradictions).toBe(false);
@@ -424,13 +424,13 @@ describe('runFactCheck', () => {
 
   it('measures checkDuration in milliseconds', async () => {
     mockQueryContext.mockResolvedValue(makeRows([]));
-    const result = await runFactCheck('personal', 'Test statement about something meaningful.');
+    const result = await runFactCheck('operations', 'Test statement about something meaningful.');
     expect(result.checkDuration).toBeGreaterThanOrEqual(0);
   });
 
   it('returns empty result gracefully when a DB error occurs', async () => {
     mockQueryContext.mockRejectedValue(new Error('DB connection failed'));
-    const result = await runFactCheck('personal', 'The server is down due to maintenance.');
+    const result = await runFactCheck('operations', 'The server is down due to maintenance.');
 
     expect(result.hasContradictions).toBe(false);
     expect(result.contradictions).toEqual([]);
@@ -440,7 +440,7 @@ describe('runFactCheck', () => {
 
   it('returns empty result for empty responseText', async () => {
     mockQueryContext.mockResolvedValue(makeRows([]));
-    const result = await runFactCheck('personal', '');
+    const result = await runFactCheck('operations', '');
 
     expect(result.hasContradictions).toBe(false);
     expect(result.contradictions).toEqual([]);
@@ -449,7 +449,7 @@ describe('runFactCheck', () => {
   it('handles response containing only code blocks', async () => {
     mockQueryContext.mockResolvedValue(makeRows([]));
     const result = await runFactCheck(
-      'personal',
+      'operations',
       '```\nconst x = 1;\nconst y = 2;\nconsole.log(x + y);\n```',
     );
 

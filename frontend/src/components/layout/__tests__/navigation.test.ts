@@ -25,7 +25,7 @@ describe('Navigation 7+1 Structure (Phase 105)', () => {
       'Ideen',
       'Planer',
       'Inbox',
-      'Wissen',
+      'Wissensbasis',
       'Cockpit',
       'Meine KI',
       'System',
@@ -49,7 +49,7 @@ describe('Navigation 7+1 Structure (Phase 105)', () => {
       'documents',  // Wissen -> existing /documents
       'business',   // Cockpit -> existing /business (intermediary for Business+Finance+Insights)
       'my-ai',      // Meine KI -> existing /my-ai
-      'settings',   // System -> existing /settings
+      'settings-user',   // System -> existing /system/benutzer
     ]);
   });
 
@@ -71,10 +71,10 @@ describe('Navigation 7+1 Structure (Phase 105)', () => {
     expect(getPageLabel('ideas')).toBe('Ideen');
     expect(getPageLabel('calendar')).toBe('Planer');
     expect(getPageLabel('email')).toBe('Inbox');
-    expect(getPageLabel('documents')).toBe('Wissen');
+    expect(getPageLabel('documents')).toBe('Wissensbasis');
     expect(getPageLabel('business')).toBe('Cockpit');
     expect(getPageLabel('my-ai')).toBe('Meine KI');
-    expect(getPageLabel('settings')).toBe('System');
+    expect(getPageLabel('settings-user')).toBe('System');
   });
 
   it('getNavItemByPage finds items for subPages too', () => {
@@ -85,7 +85,7 @@ describe('Navigation 7+1 Structure (Phase 105)', () => {
 
   it('getPageLabel returns parent label for sub-pages', () => {
     expect(getPageLabel('tasks')).toBe('Planer');
-    expect(getPageLabel('canvas')).toBe('Wissen');
+    expect(getPageLabel('canvas')).toBe('Wissensbasis');
     expect(getPageLabel('finance')).toBe('Cockpit');
     expect(getPageLabel('voice-chat')).toBe('Meine KI');
     expect(getPageLabel('system-admin')).toBe('System');

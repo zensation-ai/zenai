@@ -4,6 +4,7 @@
  * Extracted from ProceduralMemoryPanel.tsx (Phase 121).
  */
 
+import type { CSSProperties } from 'react';
 import type { Procedure } from './types';
 import { OUTCOME_STYLES } from './types';
 
@@ -17,116 +18,75 @@ interface ProcedureDetailProps {
 
 export function ProcedureDetail({ procedure, loading, feedbackSent, onFeedback, onDelete }: ProcedureDetailProps) {
   if (loading) {
-    return <div style={{ textAlign: 'center', padding: '2rem', opacity: 0.5 }}>Laden...</div>;
+    return <div className="text-center p-8 opacity-50">Laden...</div>;
   }
 
   return (
     <>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.75rem' }}>
-        <h3 style={{ margin: 0, fontSize: '1.1rem' }}>{procedure.name}</h3>
-        <div style={{ display: 'flex', gap: '0.375rem' }}>
+      <div className="flex justify-between items-start mb-3">
+        <h3 className="m-0 text-[1.1rem]">{procedure.name}</h3>
+        <div className="flex gap-1.5">
           {!feedbackSent ? (
             <>
               <button
                 onClick={() => onFeedback(procedure.id, true)}
                 title="Positives Feedback"
-                style={{
-                  padding: '0.25rem 0.5rem',
-                  background: 'rgba(34,197,94,0.1)',
-                  border: '1px solid rgba(34,197,94,0.3)',
-                  borderRadius: '4px',
-                  color: '#22c55e',
-                  cursor: 'pointer',
-                  fontSize: '0.85rem',
-                }}
+                className="py-1 px-2 bg-green-500/10 border border-green-500/30 rounded text-green-500 cursor-pointer text-[0.85rem]"
               >
                 +1
               </button>
               <button
                 onClick={() => onFeedback(procedure.id, false)}
                 title="Negatives Feedback"
-                style={{
-                  padding: '0.25rem 0.5rem',
-                  background: 'rgba(239,68,68,0.1)',
-                  border: '1px solid rgba(239,68,68,0.3)',
-                  borderRadius: '4px',
-                  color: '#ef4444',
-                  cursor: 'pointer',
-                  fontSize: '0.85rem',
-                }}
+                className="py-1 px-2 bg-red-500/10 border border-red-500/30 rounded text-red-500 cursor-pointer text-[0.85rem]"
               >
                 -1
               </button>
             </>
           ) : (
-            <span style={{ fontSize: '0.75rem', opacity: 0.5, padding: '0.25rem 0.5rem' }}>
+            <span className="text-xs opacity-50 py-1 px-2">
               Feedback gesendet
             </span>
           )}
           <button
             onClick={() => onDelete(procedure.id)}
-            style={{
-              padding: '0.25rem 0.5rem',
-              background: 'rgba(239,68,68,0.1)',
-              border: '1px solid rgba(239,68,68,0.3)',
-              borderRadius: '4px',
-              color: '#ef4444',
-              cursor: 'pointer',
-              fontSize: '0.75rem',
-            }}
+            className="py-1 px-2 bg-red-500/10 border border-red-500/30 rounded text-red-500 cursor-pointer text-xs"
           >
-            Loeschen
+            Löschen
           </button>
         </div>
       </div>
 
-      <div style={{ marginBottom: '1rem' }}>
-        <div style={{ fontSize: '0.75rem', opacity: 0.5, marginBottom: '0.25rem' }}>Trigger</div>
-        <div style={{
-          padding: '0.5rem',
-          borderRadius: '6px',
-          background: 'rgba(255,255,255,0.04)',
-          fontSize: '0.85rem',
-        }}>
+      <div className="mb-4">
+        <div className="text-xs opacity-50 mb-1">Trigger</div>
+        <div className="p-2 rounded-md bg-white/[0.04] text-[0.85rem]">
           {procedure.trigger}
         </div>
       </div>
 
-      <div style={{ marginBottom: '1rem' }}>
-        <div style={{ fontSize: '0.75rem', opacity: 0.5, marginBottom: '0.25rem' }}>
+      <div className="mb-4">
+        <div className="text-xs opacity-50 mb-1">
           Schritte ({procedure.steps?.length || 0})
         </div>
         {procedure.steps?.map((step, idx) => (
           <div
             key={idx}
-            style={{
-              padding: '0.375rem 0.5rem',
-              marginBottom: '0.25rem',
-              borderRadius: '4px',
-              background: 'rgba(255,255,255,0.04)',
-              fontSize: '0.8rem',
-            }}
+            className="py-1.5 px-2 mb-1 rounded bg-white/[0.04] text-[0.8rem]"
           >
-            <span style={{ opacity: 0.4, marginRight: '0.5rem' }}>{idx + 1}.</span>
+            <span className="opacity-40 mr-2">{idx + 1}.</span>
             {step}
           </div>
         ))}
       </div>
 
       {procedure.tools_used?.length > 0 && (
-        <div style={{ marginBottom: '1rem' }}>
-          <div style={{ fontSize: '0.75rem', opacity: 0.5, marginBottom: '0.25rem' }}>Tools</div>
-          <div style={{ display: 'flex', gap: '0.375rem', flexWrap: 'wrap' }}>
+        <div className="mb-4">
+          <div className="text-xs opacity-50 mb-1">Tools</div>
+          <div className="flex gap-1.5 flex-wrap">
             {procedure.tools_used.map(tool => (
               <span
                 key={tool}
-                style={{
-                  padding: '0.15rem 0.5rem',
-                  borderRadius: '4px',
-                  background: 'rgba(139,92,246,0.15)',
-                  color: '#a78bfa',
-                  fontSize: '0.75rem',
-                }}
+                className="py-[0.15rem] px-2 rounded bg-violet-500/15 text-[#3da5b8] text-xs"
               >
                 {tool}
               </span>
@@ -135,29 +95,29 @@ export function ProcedureDetail({ procedure, loading, feedbackSent, onFeedback, 
         </div>
       )}
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', fontSize: '0.8rem' }}>
+      <div className="grid grid-cols-2 gap-2 text-[0.8rem]">
         <div>
-          <span style={{ opacity: 0.5 }}>Erfolgsrate: </span>
-          <span style={{ fontWeight: 500 }}>{(procedure.success_rate * 100).toFixed(0)}%</span>
+          <span className="opacity-50">Erfolgsrate: </span>
+          <span className="font-medium">{(procedure.success_rate * 100).toFixed(0)}%</span>
         </div>
         <div>
-          <span style={{ opacity: 0.5 }}>Ausfuehrungen: </span>
-          <span style={{ fontWeight: 500 }}>{procedure.execution_count}</span>
+          <span className="opacity-50">Ausführungen: </span>
+          <span className="font-medium">{procedure.execution_count}</span>
         </div>
         <div>
-          <span style={{ opacity: 0.5 }}>Feedback: </span>
-          <span style={{ fontWeight: 500 }}>
+          <span className="opacity-50">Feedback: </span>
+          <span className="font-medium">
             {procedure.feedback_score !== null
               ? procedure.feedback_score.toFixed(2)
               : 'Keins'}
           </span>
         </div>
         <div>
-          <span style={{ opacity: 0.5 }}>Outcome: </span>
-          <span style={{
-            fontWeight: 500,
-            color: (OUTCOME_STYLES[procedure.outcome] || OUTCOME_STYLES.partial).color,
-          }}>
+          <span className="opacity-50">Outcome: </span>
+          <span
+            className="font-medium text-[var(--c)]"
+            style={{ '--c': (OUTCOME_STYLES[procedure.outcome] || OUTCOME_STYLES.partial).color } as CSSProperties}
+          >
             {(OUTCOME_STYLES[procedure.outcome] || OUTCOME_STYLES.partial).label}
           </span>
         </div>

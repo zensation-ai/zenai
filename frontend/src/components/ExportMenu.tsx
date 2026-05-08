@@ -201,7 +201,7 @@ export function ExportMenu({ context, ideasCount }: ExportMenuProps) {
           <div className="export-header">
             <h3 id="export-menu-title">Exportieren</h3>
             <span className="export-context" aria-label={`Aktueller Kontext: ${context}`}>
-              <span aria-hidden="true">{context === 'personal' ? '🏠' : '💼'}</span> {context}
+              <span aria-hidden="true">{context === 'operations' ? '⚙️' : '💰'}</span> {context}
             </span>
           </div>
 

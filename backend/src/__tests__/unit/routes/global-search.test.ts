@@ -60,10 +60,10 @@ describe('Global Search Routes', () => {
 
     it('should accept context filter', async () => {
       mockSearch.mockResolvedValue({ query: 'test', totalResults: 0, results: [] });
-      const res = await request(app).post('/api/search/global').send({ query: 'test', contexts: ['personal', 'work'] });
+      const res = await request(app).post('/api/search/global').send({ query: 'test', contexts: ['operations', 'finance'] });
       expect(res.status).toBe(200);
       expect(mockSearch).toHaveBeenCalledWith(
-        expect.objectContaining({ contexts: ['personal', 'work'] })
+        expect.objectContaining({ contexts: ['operations', 'finance'] })
       );
     });
 

@@ -1,7 +1,7 @@
 /**
  * AIWorkshop - KI-Werkstatt
  *
- * Tabs: Vorschlaege, Entwicklung, Agenten
+ * Tabs: Vorschläge, Entwicklung, Agenten
  */
 
 import React, { Suspense, lazy, memo } from 'react';
@@ -9,8 +9,6 @@ import { AIContext } from './ContextSwitcher';
 import { HubPage, type TabDef } from './HubPage';
 import { SkeletonLoader } from './SkeletonLoader';
 import { useTabNavigation } from '../hooks/useTabNavigation';
-import './AIWorkshop.css';
-
 const ProactiveDashboard = lazy(() => import('./ProactiveDashboard').then(m => ({ default: m.ProactiveDashboard })));
 const EvolutionDashboard = lazy(() => import('./EvolutionDashboard').then(m => ({ default: m.EvolutionDashboard })));
 const AgentTeamsPage = lazy(() => import('./AgentTeamsPage').then(m => ({ default: m.AgentTeamsPage })));
@@ -46,7 +44,7 @@ const AIWorkshopComponent: React.FC<AIWorkshopProps> = ({
     initialTab,
     validTabs: ['proactive', 'evolution', 'agent-teams', 'automations'],
     defaultTab: 'proactive',
-    basePath: '/workshop',
+    basePath: '/ideen/workshop',
   });
 
   const renderTabContent = () => {

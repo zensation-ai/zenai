@@ -94,7 +94,7 @@ export const SPECIALIST_LIBRARY: SpecialistProfile[] = [
       'task',
       'schedule',
     ],
-    domains: ['personal', 'work'],
+    domains: ['operations', 'finance'],
   },
   {
     role: 'finance_advisor',
@@ -206,11 +206,11 @@ const DURATION_MAP: Record<number, string> = {
  * Dynamically select and compose an agent team for the given goal.
  *
  * @param goal   Natural-language description of what needs to be done
- * @param approach  'fast' (≤2 agents), 'thorough' (≤3 agents), 'creative' (2 agents + Writer debate)
+ * @param approach  'fast' (≤2 agents), 'thorough' (≤3 agents), 'strategy' (2 agents + Writer debate)
  */
 export function selectTeamForGoal(
   goal: string,
-  approach: 'fast' | 'thorough' | 'creative' = 'fast',
+  approach: 'fast' | 'thorough' | 'strategy' = 'fast',
 ): TeamComposition {
   logger.info('[TeamBuilder] Selecting team', { goal: goal.slice(0, 80), approach });
 
@@ -227,7 +227,7 @@ export function selectTeamForGoal(
   // --- Build selected specialists ---
   const selectedProfiles: Array<SpecialistProfile | AgentRole> = [];
 
-  if (approach === 'creative') {
+  if (approach === 'strategy') {
     // Creative: best matching specialist (if any) + Writer for debate
     if (scored.length > 0) {
       selectedProfiles.push(scored[0].specialist);
@@ -255,7 +255,7 @@ export function selectTeamForGoal(
 
   // --- Determine workflow ---
   const workflow: TeamComposition['workflow'] =
-    approach === 'creative' ? 'debate' : 'sequential';
+    approach === 'strategy' ? 'debate' : 'sequential';
 
   // --- Build reasoning string ---
   const matchedRoles = members.map((m) => m.role).join(', ');

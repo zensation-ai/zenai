@@ -12,7 +12,7 @@ import request from 'supertest';
 jest.mock('../../../utils/database-context', () => ({
   queryContext: jest.fn(),
   isValidContext: (ctx: string) =>
-    ['personal', 'work', 'learning', 'creative'].includes(ctx),
+    ['operations', 'finance', 'people', 'strategy'].includes(ctx),
 }));
 
 jest.mock('../../../utils/logger', () => ({
@@ -98,7 +98,7 @@ describe('Memory Procedures Routes', () => {
     it('should list procedures', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [mockProcedure], rowCount: 1 } as any);
 
-      const res = await request(app).get('/api/personal/memory/procedures');
+      const res = await request(app).get('/api/operations/memory/procedures');
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
@@ -108,11 +108,11 @@ describe('Memory Procedures Routes', () => {
     it('should filter by outcome', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any);
 
-      const res = await request(app).get('/api/personal/memory/procedures?outcome=success');
+      const res = await request(app).get('/api/operations/memory/procedures?outcome=success');
 
       expect(res.status).toBe(200);
       expect(mockQueryContext).toHaveBeenCalledWith(
-        'personal',
+        'operations',
         expect.stringContaining('WHERE outcome'),
         expect.any(Array)
       );
@@ -132,7 +132,7 @@ describe('Memory Procedures Routes', () => {
     it('should return a single procedure', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [mockProcedure], rowCount: 1 } as any);
 
-      const res = await request(app).get('/api/personal/memory/procedures/proc-001');
+      const res = await request(app).get('/api/operations/memory/procedures/proc-001');
 
       expect(res.status).toBe(200);
       expect(res.body.data.id).toBe('proc-001');
@@ -141,7 +141,7 @@ describe('Memory Procedures Routes', () => {
     it('should return 404 when not found', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any);
 
-      const res = await request(app).get('/api/personal/memory/procedures/non-existent');
+      const res = await request(app).get('/api/operations/memory/procedures/non-existent');
 
       expect(res.status).toBe(404);
     });
@@ -155,7 +155,7 @@ describe('Memory Procedures Routes', () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [mockProcedure], rowCount: 1 } as any);
 
       const res = await request(app)
-        .post('/api/personal/memory/procedures')
+        .post('/api/operations/memory/procedures')
         .send({
           triggerDescription: 'Send email to user',
           steps: ['Parse', 'Draft', 'Send'],
@@ -170,7 +170,7 @@ describe('Memory Procedures Routes', () => {
 
     it('should reject missing triggerDescription', async () => {
       const res = await request(app)
-        .post('/api/personal/memory/procedures')
+        .post('/api/operations/memory/procedures')
         .send({
           steps: ['step1'],
           outcome: 'success',
@@ -181,7 +181,7 @@ describe('Memory Procedures Routes', () => {
 
     it('should reject missing steps', async () => {
       const res = await request(app)
-        .post('/api/personal/memory/procedures')
+        .post('/api/operations/memory/procedures')
         .send({
           triggerDescription: 'test',
           outcome: 'success',
@@ -192,7 +192,7 @@ describe('Memory Procedures Routes', () => {
 
     it('should reject empty steps array', async () => {
       const res = await request(app)
-        .post('/api/personal/memory/procedures')
+        .post('/api/operations/memory/procedures')
         .send({
           triggerDescription: 'test',
           steps: [],
@@ -204,7 +204,7 @@ describe('Memory Procedures Routes', () => {
 
     it('should reject invalid outcome', async () => {
       const res = await request(app)
-        .post('/api/personal/memory/procedures')
+        .post('/api/operations/memory/procedures')
         .send({
           triggerDescription: 'test',
           steps: ['step1'],
@@ -237,7 +237,7 @@ describe('Memory Procedures Routes', () => {
         .mockResolvedValueOnce({ rows: [], rowCount: 0 } as any); // usage update
 
       const res = await request(app)
-        .post('/api/personal/memory/procedures/recall')
+        .post('/api/operations/memory/procedures/recall')
         .send({ situation: 'I need to send an email' });
 
       expect(res.status).toBe(200);
@@ -246,7 +246,7 @@ describe('Memory Procedures Routes', () => {
 
     it('should reject missing situation', async () => {
       const res = await request(app)
-        .post('/api/personal/memory/procedures/recall')
+        .post('/api/operations/memory/procedures/recall')
         .send({});
 
       expect(res.status).toBe(400);
@@ -263,7 +263,7 @@ describe('Memory Procedures Routes', () => {
         .mockResolvedValueOnce({ rows: [mockProcedure], rowCount: 1 } as any);
 
       const res = await request(app)
-        .put('/api/personal/memory/procedures/proc-001/feedback')
+        .put('/api/operations/memory/procedures/proc-001/feedback')
         .send({ success: true, score: 4.5 });
 
       expect(res.status).toBe(200);
@@ -271,7 +271,7 @@ describe('Memory Procedures Routes', () => {
 
     it('should reject missing success field', async () => {
       const res = await request(app)
-        .put('/api/personal/memory/procedures/proc-001/feedback')
+        .put('/api/operations/memory/procedures/proc-001/feedback')
         .send({ score: 4.5 });
 
       expect(res.status).toBe(400);
@@ -281,7 +281,7 @@ describe('Memory Procedures Routes', () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any);
 
       const res = await request(app)
-        .put('/api/personal/memory/procedures/non-existent/feedback')
+        .put('/api/operations/memory/procedures/non-existent/feedback')
         .send({ success: true });
 
       expect(res.status).toBe(404);
@@ -295,7 +295,7 @@ describe('Memory Procedures Routes', () => {
     it('should delete a procedure', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [], rowCount: 1 } as any);
 
-      const res = await request(app).delete('/api/personal/memory/procedures/proc-001');
+      const res = await request(app).delete('/api/operations/memory/procedures/proc-001');
 
       expect(res.status).toBe(200);
     });
@@ -303,7 +303,7 @@ describe('Memory Procedures Routes', () => {
     it('should return 404 when not found', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any);
 
-      const res = await request(app).delete('/api/personal/memory/procedures/non-existent');
+      const res = await request(app).delete('/api/operations/memory/procedures/non-existent');
 
       expect(res.status).toBe(404);
     });
@@ -319,20 +319,20 @@ describe('Memory Procedures Routes', () => {
         rowCount: 1,
       } as any);
 
-      const res = await request(app).get('/api/personal/memory/bm25?q=test');
+      const res = await request(app).get('/api/operations/memory/bm25?q=test');
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
     });
 
     it('should reject missing query', async () => {
-      const res = await request(app).get('/api/personal/memory/bm25');
+      const res = await request(app).get('/api/operations/memory/bm25');
 
       expect(res.status).toBe(400);
     });
 
     it('should reject empty query', async () => {
-      const res = await request(app).get('/api/personal/memory/bm25?q=');
+      const res = await request(app).get('/api/operations/memory/bm25?q=');
 
       expect(res.status).toBe(400);
     });
@@ -348,14 +348,14 @@ describe('Memory Procedures Routes', () => {
       // Semantic results
       mockQueryContext.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any);
 
-      const res = await request(app).get('/api/personal/memory/hybrid-search?q=test');
+      const res = await request(app).get('/api/operations/memory/hybrid-search?q=test');
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
     });
 
     it('should reject missing query', async () => {
-      const res = await request(app).get('/api/personal/memory/hybrid-search');
+      const res = await request(app).get('/api/operations/memory/hybrid-search');
 
       expect(res.status).toBe(400);
     });
@@ -373,7 +373,7 @@ describe('Memory Procedures Routes', () => {
         rowCount: 1,
       } as any);
 
-      const res = await request(app).get('/api/personal/memory/entity-links/fact-001');
+      const res = await request(app).get('/api/operations/memory/entity-links/fact-001');
 
       expect(res.status).toBe(200);
       expect(res.body.data).toHaveLength(1);
@@ -382,7 +382,7 @@ describe('Memory Procedures Routes', () => {
     it('should return empty array when no links', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any);
 
-      const res = await request(app).get('/api/personal/memory/entity-links/fact-no-links');
+      const res = await request(app).get('/api/operations/memory/entity-links/fact-no-links');
 
       expect(res.status).toBe(200);
       expect(res.body.data).toEqual([]);

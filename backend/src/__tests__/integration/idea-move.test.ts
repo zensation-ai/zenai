@@ -12,7 +12,7 @@ import request from 'supertest';
 // Mock all external dependencies
 jest.mock('../../utils/database-context', () => ({
   queryContext: jest.fn(),
-  isValidContext: jest.fn((ctx: string) => ['personal', 'work', 'learning', 'creative'].includes(ctx)),
+  isValidContext: jest.fn((ctx: string) => ['operations', 'finance', 'people', 'strategy'].includes(ctx)),
   isValidUUID: jest.fn((id: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id)),
   AIContext: {},
   getPool: jest.fn(() => ({ query: jest.fn() })),
@@ -109,7 +109,7 @@ describe('Idea Move API Integration Tests', () => {
     it('returns 400 for invalid source context', async () => {
       const res = await request(app)
         .post(`/api/invalid/ideas/${VALID_UUID}/move`)
-        .send({ targetContext: 'work' });
+        .send({ targetContext: 'finance' });
 
       expect(res.status).toBe(400);
       expect(res.body.success).toBe(false);
@@ -117,7 +117,7 @@ describe('Idea Move API Integration Tests', () => {
 
     it('returns 400 for invalid target context', async () => {
       const res = await request(app)
-        .post(`/api/personal/ideas/${VALID_UUID}/move`)
+        .post(`/api/operations/ideas/${VALID_UUID}/move`)
         .send({ targetContext: 'invalid' });
 
       expect(res.status).toBe(400);
@@ -126,8 +126,8 @@ describe('Idea Move API Integration Tests', () => {
 
     it('returns 400 when source equals target context', async () => {
       const res = await request(app)
-        .post(`/api/personal/ideas/${VALID_UUID}/move`)
-        .send({ targetContext: 'personal' });
+        .post(`/api/operations/ideas/${VALID_UUID}/move`)
+        .send({ targetContext: 'operations' });
 
       expect(res.status).toBe(400);
       expect(res.body.success).toBe(false);
@@ -135,8 +135,8 @@ describe('Idea Move API Integration Tests', () => {
 
     it('returns 400 for invalid UUID format', async () => {
       const res = await request(app)
-        .post('/api/personal/ideas/not-a-uuid/move')
-        .send({ targetContext: 'work' });
+        .post('/api/operations/ideas/not-a-uuid/move')
+        .send({ targetContext: 'finance' });
 
       expect(res.status).toBe(400);
       expect(res.body.success).toBe(false);
@@ -144,7 +144,7 @@ describe('Idea Move API Integration Tests', () => {
 
     it('returns 400 when targetContext is missing', async () => {
       const res = await request(app)
-        .post(`/api/personal/ideas/${VALID_UUID}/move`)
+        .post(`/api/operations/ideas/${VALID_UUID}/move`)
         .send({});
 
       expect(res.status).toBe(400);
@@ -158,20 +158,20 @@ describe('Idea Move API Integration Tests', () => {
         success: true,
         ideaId: VALID_UUID,
         newIdeaId: NEW_UUID,
-        sourceContext: 'personal',
-        targetContext: 'work',
+        sourceContext: 'operations',
+        targetContext: 'finance',
       });
 
       const res = await request(app)
-        .post(`/api/personal/ideas/${VALID_UUID}/move`)
-        .send({ targetContext: 'work' });
+        .post(`/api/operations/ideas/${VALID_UUID}/move`)
+        .send({ targetContext: 'finance' });
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
       expect(res.body.movedId).toBe(VALID_UUID);
       expect(res.body.newIdeaId).toBe(NEW_UUID);
-      expect(res.body.from).toBe('personal');
-      expect(res.body.to).toBe('work');
+      expect(res.body.from).toBe('operations');
+      expect(res.body.to).toBe('finance');
     });
 
     it('invalidates cache for both source and target contexts', async () => {
@@ -179,16 +179,16 @@ describe('Idea Move API Integration Tests', () => {
         success: true,
         ideaId: VALID_UUID,
         newIdeaId: NEW_UUID,
-        sourceContext: 'personal',
-        targetContext: 'work',
+        sourceContext: 'operations',
+        targetContext: 'finance',
       });
 
       await request(app)
-        .post(`/api/personal/ideas/${VALID_UUID}/move`)
-        .send({ targetContext: 'work' });
+        .post(`/api/operations/ideas/${VALID_UUID}/move`)
+        .send({ targetContext: 'finance' });
 
-      expect(mockInvalidateCache).toHaveBeenCalledWith('personal', 'ideas');
-      expect(mockInvalidateCache).toHaveBeenCalledWith('work', 'ideas');
+      expect(mockInvalidateCache).toHaveBeenCalledWith('operations', 'ideas');
+      expect(mockInvalidateCache).toHaveBeenCalledWith('finance', 'ideas');
     });
 
     it('moves idea between any valid context pair', async () => {
@@ -196,17 +196,17 @@ describe('Idea Move API Integration Tests', () => {
         success: true,
         ideaId: VALID_UUID,
         newIdeaId: NEW_UUID,
-        sourceContext: 'learning',
-        targetContext: 'creative',
+        sourceContext: 'people',
+        targetContext: 'strategy',
       });
 
       const res = await request(app)
-        .post(`/api/learning/ideas/${VALID_UUID}/move`)
-        .send({ targetContext: 'creative' });
+        .post(`/api/people/ideas/${VALID_UUID}/move`)
+        .send({ targetContext: 'strategy' });
 
       expect(res.status).toBe(200);
-      expect(res.body.from).toBe('learning');
-      expect(res.body.to).toBe('creative');
+      expect(res.body.from).toBe('people');
+      expect(res.body.to).toBe('strategy');
     });
   });
 
@@ -215,8 +215,8 @@ describe('Idea Move API Integration Tests', () => {
       mockMoveIdea.mockRejectedValueOnce(new Error('IDEA_NOT_FOUND'));
 
       const res = await request(app)
-        .post(`/api/personal/ideas/${VALID_UUID}/move`)
-        .send({ targetContext: 'work' });
+        .post(`/api/operations/ideas/${VALID_UUID}/move`)
+        .send({ targetContext: 'finance' });
 
       expect(res.status).toBe(404);
       expect(res.body.success).toBe(false);
@@ -226,8 +226,8 @@ describe('Idea Move API Integration Tests', () => {
       mockMoveIdea.mockRejectedValueOnce(new Error('SCHEMA_MISMATCH'));
 
       const res = await request(app)
-        .post(`/api/personal/ideas/${VALID_UUID}/move`)
-        .send({ targetContext: 'work' });
+        .post(`/api/operations/ideas/${VALID_UUID}/move`)
+        .send({ targetContext: 'finance' });
 
       expect(res.status).toBe(500);
       expect(res.body.success).toBe(false);
@@ -237,8 +237,8 @@ describe('Idea Move API Integration Tests', () => {
       mockMoveIdea.mockRejectedValueOnce(new Error('foreign key violation'));
 
       const res = await request(app)
-        .post(`/api/personal/ideas/${VALID_UUID}/move`)
-        .send({ targetContext: 'work' });
+        .post(`/api/operations/ideas/${VALID_UUID}/move`)
+        .send({ targetContext: 'finance' });
 
       expect(res.status).toBe(500);
     });

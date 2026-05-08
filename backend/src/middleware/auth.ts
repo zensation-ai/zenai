@@ -496,6 +496,7 @@ const ENDPOINT_LIMITS: Record<string, { limit: number; windowMs: number }> = {
   'POST:/api/auth/refresh': { limit: 20, windowMs: 60 * 1000 }, // 20/min - token refresh
   'POST:/api/auth/mfa/verify': { limit: 5, windowMs: 60 * 1000 }, // 5/min - MFA verification
   'POST:/api/auth/change-password': { limit: 3, windowMs: 60 * 1000 }, // 3/min - password change
+  'POST:/api/auth/demo': { limit: 10, windowMs: 60 * 1000 }, // 10/min - demo token generation
 
   // AI Chat endpoints - moderate limits to prevent abuse
   'POST:/api/chat/sessions': { limit: 10, windowMs: 60 * 1000 }, // 10/min - session creation
@@ -559,12 +560,12 @@ async function ensureRateLimitsTable(): Promise<void> {
     return;
   }
 
-  // NOTE: Rate limits are stored in the 'personal' schema as a convention.
+  // NOTE: Rate limits are stored in the 'operations' schema as a convention.
   // Rate limiting operates at the API-key level (pre-context), so the schema
-  // choice is arbitrary. 'personal' is always available and serves as the
+  // choice is arbitrary. 'operations' is always available and serves as the
   // shared storage location for global rate limit counters.
   try {
-    await queryContext('personal', `
+    await queryContext('operations', `
       CREATE TABLE IF NOT EXISTS rate_limits (
         id SERIAL PRIMARY KEY,
         key VARCHAR(255) NOT NULL,
@@ -573,7 +574,7 @@ async function ensureRateLimitsTable(): Promise<void> {
         UNIQUE(key, window_start)
       )
     `);
-    await queryContext('personal', `
+    await queryContext('operations', `
       CREATE INDEX IF NOT EXISTS idx_rate_limits_key ON rate_limits(key, window_start)
     `);
     rateLimitsTableInitialized = true;
@@ -627,7 +628,7 @@ export async function rateLimiter(req: Request, res: Response, next: NextFunctio
     // FIXED: Column name is 'key' not 'identifier' (matches schema in init-db.ts)
     // Uses queryContext to ensure correct schema
     const result = await queryContext(
-      'personal',
+      'operations',
       `INSERT INTO rate_limits (key, window_start, request_count)
        VALUES ($1, $2, 1)
        ON CONFLICT (key, window_start)
@@ -758,7 +759,7 @@ export async function optionalAuth(req: Request, res: Response, next: NextFuncti
 export async function cleanupRateLimits() {
   try {
     const result = await queryContext(
-      'personal',
+      'operations',
       `DELETE FROM rate_limits
        WHERE window_start < NOW() - INTERVAL '1 hour'`
     );

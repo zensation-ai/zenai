@@ -61,9 +61,9 @@ describe('InboxToolbar', () => {
 
   it('shows batch actions in selection mode', () => {
     render(<InboxToolbar {...defaultProps} selectionMode={true} selectedCount={3} />);
-    expect(screen.getByText('3 ausgewaehlt')).toBeInTheDocument();
+    expect(screen.getByText('3 ausgewählt')).toBeInTheDocument();
     expect(screen.getByLabelText('Archivieren')).toBeInTheDocument();
-    expect(screen.getByLabelText('Loeschen')).toBeInTheDocument();
+    expect(screen.getByLabelText('Löschen')).toBeInTheDocument();
   });
 
   it('hides search and compose in selection mode', () => {
@@ -86,7 +86,7 @@ describe('InboxToolbar', () => {
     );
     fireEvent.click(screen.getByLabelText('Archivieren'));
     expect(onBatchArchive).toHaveBeenCalled();
-    fireEvent.click(screen.getByLabelText('Loeschen'));
+    fireEvent.click(screen.getByLabelText('Löschen'));
     expect(onBatchDelete).toHaveBeenCalled();
   });
 

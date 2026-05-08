@@ -1,0 +1,1460 @@
+{
+  "wilcoxon": {
+    "all": {
+      "precision_at_k_vs_mem0": {
+        "n_pairs": 537,
+        "W": 58539.5,
+        "z": -4.290460299339696,
+        "p_two_sided": 1.7830316050293504e-05,
+        "zen_mean": 0.08126888217522658,
+        "other_mean": 0.07059415911379657,
+        "delta": 0.010674723061430011,
+        "direction": "zen>other"
+      },
+      "precision_at_k_vs_letta": {
+        "n_pairs": 264,
+        "W": 10374.0,
+        "z": -6.50523557020851,
+        "p_two_sided": 7.757172681976954e-11,
+        "zen_mean": 0.08126888217522658,
+        "other_mean": 0.09254783484390736,
+        "delta": -0.011278952668680772,
+        "direction": "other>zen"
+      },
+      "precision_at_k_vs_a-mem": {
+        "n_pairs": 574,
+        "W": 31957.5,
+        "z": -14.383595362061131,
+        "p_two_sided": 0.0,
+        "zen_mean": 0.08126888217522658,
+        "other_mean": 0.04420946626384693,
+        "delta": 0.03705941591137965,
+        "direction": "zen>other"
+      },
+      "recall_at_k_vs_mem0": {
+        "n_pairs": 537,
+        "W": 61880.5,
+        "z": -3.072995623397893,
+        "p_two_sided": 0.002119215957735676,
+        "zen_mean": 0.35136047838782775,
+        "other_mean": 0.3155220776399913,
+        "delta": 0.03583840074783645,
+        "direction": "zen>other"
+      },
+      "recall_at_k_vs_letta": {
+        "n_pairs": 264,
+        "W": 9666.5,
+        "z": -6.607085801666843,
+        "p_two_sided": 3.9195757750576377e-11,
+        "zen_mean": 0.35136047838782775,
+        "other_mean": 0.4009286678351712,
+        "delta": -0.04956818944734348,
+        "direction": "other>zen"
+      },
+      "recall_at_k_vs_a-mem": {
+        "n_pairs": 574,
+        "W": 31288.5,
+        "z": -13.845051486737816,
+        "p_two_sided": 0.0,
+        "zen_mean": 0.35136047838782775,
+        "other_mean": 0.19295531542288252,
+        "delta": 0.15840516296494522,
+        "direction": "zen>other"
+      },
+      "mrr_vs_mem0": {
+        "n_pairs": 990,
+        "W": 221859.5,
+        "z": -2.6042705846465646,
+        "p_two_sided": 0.00920700366449334,
+        "zen_mean": 0.26380496811010407,
+        "other_mean": 0.2384171526257264,
+        "delta": 0.025387815484377657,
+        "direction": "zen>other"
+      },
+      "mrr_vs_letta": {
+        "n_pairs": 512,
+        "W": 37642.0,
+        "z": -8.386788425031096,
+        "p_two_sided": 0.0,
+        "zen_mean": 0.26380496811010407,
+        "other_mean": 0.3070745216515609,
+        "delta": -0.04326955354145684,
+        "direction": "other>zen"
+      },
+      "mrr_vs_a-mem": {
+        "n_pairs": 745,
+        "W": 53557.0,
+        "z": -14.619490708581557,
+        "p_two_sided": 0.0,
+        "zen_mean": 0.26380496811010407,
+        "other_mean": 0.12819738167170192,
+        "delta": 0.13560758643840215,
+        "direction": "zen>other"
+      },
+      "ndcg_at_k_vs_mem0": {
+        "n_pairs": 783,
+        "W": 128425.5,
+        "z": -3.9623585072267398,
+        "p_two_sided": 7.421298955767597e-05,
+        "zen_mean": 0.2744839314450237,
+        "other_mean": 0.2372304339424563,
+        "delta": 0.0372534975025674,
+        "direction": "zen>other"
+      },
+      "ndcg_at_k_vs_letta": {
+        "n_pairs": 540,
+        "W": 40488.5,
+        "z": -8.97938154155036,
+        "p_two_sided": 0.0,
+        "zen_mean": 0.2744839314450237,
+        "other_mean": 0.3199166429758662,
+        "delta": -0.045432711530842496,
+        "direction": "other>zen"
+      },
+      "ndcg_at_k_vs_a-mem": {
+        "n_pairs": 752,
+        "W": 53500.5,
+        "z": -14.820690439684919,
+        "p_two_sided": 0.0,
+        "zen_mean": 0.2744839314450237,
+        "other_mean": 0.1396222449874896,
+        "delta": 0.1348616864575341,
+        "direction": "zen>other"
+      },
+      "judge_opus_vs_mem0": {
+        "n_pairs": 1237,
+        "W": 357122.5,
+        "z": -2.1042614978821605,
+        "p_two_sided": 0.03535564264992508,
+        "zen_mean": 2.2547834843907353,
+        "other_mean": 2.3434038267875126,
+        "delta": -0.0886203423967773,
+        "direction": "other>zen"
+      },
+      "judge_opus_vs_letta": {
+        "n_pairs": 946,
+        "W": 199772.5,
+        "z": -3.0605478188700976,
+        "p_two_sided": 0.0022093247784820136,
+        "zen_mean": 2.264044943820225,
+        "other_mean": 2.3227783452502555,
+        "delta": -0.058733401430030696,
+        "direction": "other>zen"
+      },
+      "judge_opus_vs_a-mem": {
+        "n_pairs": 1353,
+        "W": 201178.5,
+        "z": -18.186338025622195,
+        "p_two_sided": 0.0,
+        "zen_mean": 2.2547834843907353,
+        "other_mean": 1.5473313192346425,
+        "delta": 0.7074521651560928,
+        "direction": "zen>other"
+      },
+      "judge_sonnet_vs_mem0": {
+        "n_pairs": 1264,
+        "W": 342675.0,
+        "z": -4.505229621212836,
+        "p_two_sided": 6.630120957140662e-06,
+        "zen_mean": 1.9687819856704196,
+        "other_mean": 2.1361310133060387,
+        "delta": -0.1673490276356191,
+        "direction": "other>zen"
+      },
+      "judge_sonnet_vs_letta": {
+        "n_pairs": 959,
+        "W": 215053.5,
+        "z": -1.8352671877246,
+        "p_two_sided": 0.06646611030542471,
+        "zen_mean": 1.9947997919916796,
+        "other_mean": 2.0390015600624025,
+        "delta": -0.04420176807072296,
+        "direction": "other>zen"
+      },
+      "judge_sonnet_vs_a-mem": {
+        "n_pairs": 1261,
+        "W": 193617.0,
+        "z": -16.05936407307572,
+        "p_two_sided": 0.0,
+        "zen_mean": 1.9919657204070702,
+        "other_mean": 1.3379753615425818,
+        "delta": 0.6539903588644884,
+        "direction": "zen>other"
+      }
+    },
+    "excl_adv": {
+      "precision_at_k_vs_mem0": {
+        "n_pairs": 411,
+        "W": 27603.0,
+        "z": -6.854838844928038,
+        "p_two_sided": 7.139178137549607e-12,
+        "zen_mean": 0.08324675324675325,
+        "other_mean": 0.06363636363636364,
+        "delta": 0.019610389610389606,
+        "direction": "zen>other"
+      },
+      "precision_at_k_vs_letta": {
+        "n_pairs": 204,
+        "W": 6624.0,
+        "z": -5.138611100533537,
+        "p_two_sided": 2.7677653635649335e-07,
+        "zen_mean": 0.08324675324675325,
+        "other_mean": 0.09350649350649351,
+        "delta": -0.01025974025974026,
+        "direction": "other>zen"
+      },
+      "precision_at_k_vs_a-mem": {
+        "n_pairs": 448,
+        "W": 15957.5,
+        "z": -14.08483012788536,
+        "p_two_sided": 0.0,
+        "zen_mean": 0.08324675324675325,
+        "other_mean": 0.041168831168831174,
+        "delta": 0.042077922077922075,
+        "direction": "zen>other"
+      },
+      "recall_at_k_vs_mem0": {
+        "n_pairs": 411,
+        "W": 28321.5,
+        "z": -6.1413787802145015,
+        "p_two_sided": 8.180824906389716e-10,
+        "zen_mean": 0.34759864290793885,
+        "other_mean": 0.2724849650604043,
+        "delta": 0.07511367784753453,
+        "direction": "zen>other"
+      },
+      "recall_at_k_vs_letta": {
+        "n_pairs": 204,
+        "W": 6238.0,
+        "z": -5.18478310635374,
+        "p_two_sided": 2.1626639878924436e-07,
+        "zen_mean": 0.34759864290793885,
+        "other_mean": 0.3904183989095131,
+        "delta": -0.04281975600157423,
+        "direction": "other>zen"
+      },
+      "recall_at_k_vs_a-mem": {
+        "n_pairs": 448,
+        "W": 14459.5,
+        "z": -13.876562221318403,
+        "p_two_sided": 0.0,
+        "zen_mean": 0.34759864290793885,
+        "other_mean": 0.17123977690249653,
+        "delta": 0.17635886600544232,
+        "direction": "zen>other"
+      },
+      "mrr_vs_mem0": {
+        "n_pairs": 755,
+        "W": 105949.5,
+        "z": -6.134641564910838,
+        "p_two_sided": 8.535141482468589e-10,
+        "zen_mean": 0.26696969696969697,
+        "other_mean": 0.2038282844422274,
+        "delta": 0.06314141252746958,
+        "direction": "zen>other"
+      },
+      "mrr_vs_letta": {
+        "n_pairs": 395,
+        "W": 23669.0,
+        "z": -6.815762125021334,
+        "p_two_sided": 9.376499576774222e-12,
+        "zen_mean": 0.26696969696969697,
+        "other_mean": 0.30677489177489176,
+        "delta": -0.03980519480519479,
+        "direction": "other>zen"
+      },
+      "mrr_vs_a-mem": {
+        "n_pairs": 573,
+        "W": 26818.5,
+        "z": -14.066825022947974,
+        "p_two_sided": 0.0,
+        "zen_mean": 0.26696969696969697,
+        "other_mean": 0.1172077922077922,
+        "delta": 0.14976190476190476,
+        "direction": "zen>other"
+      },
+      "ndcg_at_k_vs_mem0": {
+        "n_pairs": 597,
+        "W": 57543.5,
+        "z": -7.531304979372124,
+        "p_two_sided": 5.0182080713057076e-14,
+        "zen_mean": 0.27303393187515657,
+        "other_mean": 0.19904693094046866,
+        "delta": 0.07398700093468791,
+        "direction": "zen>other"
+      },
+      "ndcg_at_k_vs_letta": {
+        "n_pairs": 422,
+        "W": 26497.5,
+        "z": -7.236268549919376,
+        "p_two_sided": 4.6118664442929e-13,
+        "zen_mean": 0.27303393187515657,
+        "other_mean": 0.3141405306501204,
+        "delta": -0.04110659877496381,
+        "direction": "other>zen"
+      },
+      "ndcg_at_k_vs_a-mem": {
+        "n_pairs": 580,
+        "W": 25690.5,
+        "z": -14.542656093122606,
+        "p_two_sided": 0.0,
+        "zen_mean": 0.27303393187515657,
+        "other_mean": 0.12510565460125178,
+        "delta": 0.14792827727390478,
+        "direction": "zen>other"
+      },
+      "judge_opus_vs_mem0": {
+        "n_pairs": 955,
+        "W": 226594.0,
+        "z": -0.19880446216320766,
+        "p_two_sided": 0.8424157053651273,
+        "zen_mean": 2.288961038961039,
+        "other_mean": 2.3155844155844156,
+        "delta": -0.02662337662337677,
+        "direction": "other>zen"
+      },
+      "judge_opus_vs_letta": {
+        "n_pairs": 726,
+        "W": 122336.0,
+        "z": -1.8053883830381199,
+        "p_two_sided": 0.07101392774343229,
+        "zen_mean": 2.288961038961039,
+        "other_mean": 2.3253246753246755,
+        "delta": -0.0363636363636366,
+        "direction": "other>zen"
+      },
+      "judge_opus_vs_a-mem": {
+        "n_pairs": 1073,
+        "W": 116809.0,
+        "z": -17.171495941018257,
+        "p_two_sided": 0.0,
+        "zen_mean": 2.288961038961039,
+        "other_mean": 1.5220779220779221,
+        "delta": 0.7668831168831167,
+        "direction": "zen>other"
+      },
+      "judge_sonnet_vs_mem0": {
+        "n_pairs": 981,
+        "W": 215351.5,
+        "z": -2.9401425839989432,
+        "p_two_sided": 0.0032806124370652334,
+        "zen_mean": 2.029081295439524,
+        "other_mean": 2.1480502313284866,
+        "delta": -0.11896893588896251,
+        "direction": "other>zen"
+      },
+      "judge_sonnet_vs_letta": {
+        "n_pairs": 757,
+        "W": 139236.5,
+        "z": -0.7312037576839265,
+        "p_two_sided": 0.4646547052889878,
+        "zen_mean": 2.0495646349631613,
+        "other_mean": 2.069658405894173,
+        "delta": -0.020093770931011612,
+        "direction": "other>zen"
+      },
+      "judge_sonnet_vs_a-mem": {
+        "n_pairs": 994,
+        "W": 107634.0,
+        "z": -15.67856298563155,
+        "p_two_sided": 0.0,
+        "zen_mean": 2.0497925311203318,
+        "other_mean": 1.3174273858921162,
+        "delta": 0.7323651452282156,
+        "direction": "zen>other"
+      }
+    },
+    "reasoning": {
+      "precision_at_k_vs_mem0": {
+        "n_pairs": 176,
+        "W": 4070.0,
+        "z": -5.993329486769424,
+        "p_two_sided": 2.0558772462209163e-09,
+        "zen_mean": 0.08689883913764511,
+        "other_mean": 0.05572139303482587,
+        "delta": 0.031177446102819237,
+        "direction": "zen>other"
+      },
+      "precision_at_k_vs_letta": {
+        "n_pairs": 75,
+        "W": 987.5,
+        "z": -2.5817219577088912,
+        "p_two_sided": 0.009830875227406777,
+        "zen_mean": 0.08689883913764511,
+        "other_mean": 0.0955223880597015,
+        "delta": -0.008623548922056384,
+        "direction": "other>zen"
+      },
+      "precision_at_k_vs_a-mem": {
+        "n_pairs": 187,
+        "W": 2292.5,
+        "z": -9.643226682217488,
+        "p_two_sided": 0.0,
+        "zen_mean": 0.08689883913764511,
+        "other_mean": 0.03548922056384743,
+        "delta": 0.05140961857379768,
+        "direction": "zen>other"
+      },
+      "recall_at_k_vs_mem0": {
+        "n_pairs": 176,
+        "W": 3778.5,
+        "z": -6.047859587126891,
+        "p_two_sided": 1.4678278592583638e-09,
+        "zen_mean": 0.2987317469511761,
+        "other_mean": 0.1921103357670522,
+        "delta": 0.10662141118412391,
+        "direction": "zen>other"
+      },
+      "recall_at_k_vs_letta": {
+        "n_pairs": 75,
+        "W": 928.0,
+        "z": -2.6476136690766636,
+        "p_two_sided": 0.008106210284597681,
+        "zen_mean": 0.2987317469511761,
+        "other_mean": 0.3243410740530405,
+        "delta": -0.02560932710186442,
+        "direction": "other>zen"
+      },
+      "recall_at_k_vs_a-mem": {
+        "n_pairs": 187,
+        "W": 1870.0,
+        "z": -9.586775588846622,
+        "p_two_sided": 0.0,
+        "zen_mean": 0.2987317469511761,
+        "other_mean": 0.11744129281442714,
+        "delta": 0.18129045413674896,
+        "direction": "zen>other"
+      },
+      "mrr_vs_mem0": {
+        "n_pairs": 293,
+        "W": 11338.5,
+        "z": -7.029470139697643,
+        "p_two_sided": 2.0732304761850173e-12,
+        "zen_mean": 0.27100608070757326,
+        "other_mean": 0.15401745814600273,
+        "delta": 0.11698862256157053,
+        "direction": "zen>other"
+      },
+      "mrr_vs_letta": {
+        "n_pairs": 140,
+        "W": 3367.5,
+        "z": -3.267100065657821,
+        "p_two_sided": 0.00108655267303015,
+        "zen_mean": 0.27100608070757326,
+        "other_mean": 0.302294085129906,
+        "delta": -0.03128800442233276,
+        "direction": "other>zen"
+      },
+      "mrr_vs_a-mem": {
+        "n_pairs": 226,
+        "W": 3345.0,
+        "z": -9.72348554111435,
+        "p_two_sided": 0.0,
+        "zen_mean": 0.27100608070757326,
+        "other_mean": 0.09637921503593146,
+        "delta": 0.17462686567164182,
+        "direction": "zen>other"
+      },
+      "ndcg_at_k_vs_mem0": {
+        "n_pairs": 238,
+        "W": 6136.5,
+        "z": -7.61002540416165,
+        "p_two_sided": 2.7533531010703882e-14,
+        "zen_mean": 0.2507885663458183,
+        "other_mean": 0.13661100190541867,
+        "delta": 0.11417756444039964,
+        "direction": "zen>other"
+      },
+      "ndcg_at_k_vs_letta": {
+        "n_pairs": 160,
+        "W": 4428.5,
+        "z": -3.4276098455563053,
+        "p_two_sided": 0.0006089198995387068,
+        "zen_mean": 0.2507885663458183,
+        "other_mean": 0.2799429485768608,
+        "delta": -0.029154382231042497,
+        "direction": "other>zen"
+      },
+      "ndcg_at_k_vs_a-mem": {
+        "n_pairs": 231,
+        "W": 3242.5,
+        "z": -10.0122428251717,
+        "p_two_sided": 0.0,
+        "zen_mean": 0.2507885663458183,
+        "other_mean": 0.09120960796099718,
+        "delta": 0.1595789583848211,
+        "direction": "zen>other"
+      },
+      "judge_opus_vs_mem0": {
+        "n_pairs": 374,
+        "W": 33831.0,
+        "z": -0.6073592046757357,
+        "p_two_sided": 0.5436125556379305,
+        "zen_mean": 1.9187396351575456,
+        "other_mean": 1.8938640132669984,
+        "delta": 0.02487562189054726,
+        "direction": "zen>other"
+      },
+      "judge_opus_vs_letta": {
+        "n_pairs": 271,
+        "W": 18145.0,
+        "z": -0.23364932608474706,
+        "p_two_sided": 0.8152572307511816,
+        "zen_mean": 1.9187396351575456,
+        "other_mean": 1.900497512437811,
+        "delta": 0.018242122719734688,
+        "direction": "zen>other"
+      },
+      "judge_opus_vs_a-mem": {
+        "n_pairs": 427,
+        "W": 19345.5,
+        "z": -10.550732733498426,
+        "p_two_sided": 0.0,
+        "zen_mean": 1.9187396351575456,
+        "other_mean": 1.207296849087894,
+        "delta": 0.7114427860696517,
+        "direction": "zen>other"
+      },
+      "judge_sonnet_vs_mem0": {
+        "n_pairs": 376,
+        "W": 31756.5,
+        "z": -1.7924962190125615,
+        "p_two_sided": 0.07305351430055174,
+        "zen_mean": 1.6786324786324787,
+        "other_mean": 1.7777777777777777,
+        "delta": -0.09914529914529902,
+        "direction": "other>zen"
+      },
+      "judge_sonnet_vs_letta": {
+        "n_pairs": 270,
+        "W": 17375.5,
+        "z": -0.754707971079151,
+        "p_two_sided": 0.45042422270255433,
+        "zen_mean": 1.6973913043478261,
+        "other_mean": 1.6678260869565218,
+        "delta": 0.029565217391304355,
+        "direction": "zen>other"
+      },
+      "judge_sonnet_vs_a-mem": {
+        "n_pairs": 380,
+        "W": 15978.0,
+        "z": -9.635798342276777,
+        "p_two_sided": 0.0,
+        "zen_mean": 1.6935483870967742,
+        "other_mean": 1.028673835125448,
+        "delta": 0.6648745519713262,
+        "direction": "zen>other"
+      }
+    },
+    "adversarial_only": {
+      "precision_at_k_vs_mem0": {
+        "n_pairs": 126,
+        "W": 2583.0,
+        "z": -3.962029078465307,
+        "p_two_sided": 7.431548663605625e-05,
+        "zen_mean": 0.07443946188340808,
+        "other_mean": 0.09461883408071749,
+        "delta": -0.020179372197309406,
+        "direction": "other>zen"
+      },
+      "precision_at_k_vs_letta": {
+        "n_pairs": 60,
+        "W": 420.0,
+        "z": -4.157609203101499,
+        "p_two_sided": 3.215955563207196e-05,
+        "zen_mean": 0.07443946188340808,
+        "other_mean": 0.08923766816143498,
+        "delta": -0.014798206278026901,
+        "direction": "other>zen"
+      },
+      "precision_at_k_vs_a-mem": {
+        "n_pairs": 126,
+        "W": 2603.5,
+        "z": -3.919831548048891,
+        "p_two_sided": 8.861088252087868e-05,
+        "zen_mean": 0.07443946188340808,
+        "other_mean": 0.0547085201793722,
+        "delta": 0.01973094170403588,
+        "direction": "zen>other"
+      },
+      "recall_at_k_vs_mem0": {
+        "n_pairs": 126,
+        "W": 2554.0,
+        "z": -3.9578071369759837,
+        "p_two_sided": 7.564099255308321e-05,
+        "zen_mean": 0.36434977578475336,
+        "other_mean": 0.4641255605381166,
+        "delta": -0.09977578475336324,
+        "direction": "other>zen"
+      },
+      "recall_at_k_vs_letta": {
+        "n_pairs": 60,
+        "W": 396.0,
+        "z": -4.213719492495749,
+        "p_two_sided": 2.511992343379177e-05,
+        "zen_mean": 0.36434977578475336,
+        "other_mean": 0.437219730941704,
+        "delta": -0.07286995515695066,
+        "direction": "other>zen"
+      },
+      "recall_at_k_vs_a-mem": {
+        "n_pairs": 126,
+        "W": 2622.5,
+        "z": -3.809321486960224,
+        "p_two_sided": 0.00013934867327569656,
+        "zen_mean": 0.36434977578475336,
+        "other_mean": 0.2679372197309417,
+        "delta": 0.09641255605381166,
+        "direction": "zen>other"
+      },
+      "mrr_vs_mem0": {
+        "n_pairs": 235,
+        "W": 8270.0,
+        "z": -5.372554226262441,
+        "p_two_sided": 7.76290733917051e-08,
+        "zen_mean": 0.25287742899850524,
+        "other_mean": 0.3578495674297365,
+        "delta": -0.10497213843123127,
+        "direction": "other>zen"
+      },
+      "mrr_vs_letta": {
+        "n_pairs": 117,
+        "W": 1612.5,
+        "z": -5.012104079592188,
+        "p_two_sided": 5.3838068581058e-07,
+        "zen_mean": 0.25287742899850524,
+        "other_mean": 0.30810911808669655,
+        "delta": -0.055231689088191316,
+        "direction": "other>zen"
+      },
+      "mrr_vs_a-mem": {
+        "n_pairs": 172,
+        "W": 4420.0,
+        "z": -4.638575445275759,
+        "p_two_sided": 3.5081887226340314e-06,
+        "zen_mean": 0.25287742899850524,
+        "other_mean": 0.16614349775784754,
+        "delta": 0.0867339312406577,
+        "direction": "zen>other"
+      },
+      "ndcg_at_k_vs_mem0": {
+        "n_pairs": 186,
+        "W": 5173.5,
+        "z": -4.8043647830224065,
+        "p_two_sided": 1.5524357199758754e-06,
+        "zen_mean": 0.2794906564172107,
+        "other_mean": 0.3690748165053732,
+        "delta": -0.0895841600881625,
+        "direction": "other>zen"
+      },
+      "ndcg_at_k_vs_letta": {
+        "n_pairs": 118,
+        "W": 1501.0,
+        "z": -5.404064148081864,
+        "p_two_sided": 6.514762818099484e-08,
+        "zen_mean": 0.2794906564172107,
+        "other_mean": 0.3398610667015356,
+        "delta": -0.06037041028432488,
+        "direction": "other>zen"
+      },
+      "ndcg_at_k_vs_a-mem": {
+        "n_pairs": 172,
+        "W": 4595.0,
+        "z": -4.363132123517125,
+        "p_two_sided": 1.2821345623637015e-05,
+        "zen_mean": 0.2794906564172107,
+        "other_mean": 0.18974679475162917,
+        "delta": 0.08974386166558154,
+        "direction": "zen>other"
+      },
+      "judge_opus_vs_mem0": {
+        "n_pairs": 282,
+        "W": 14490.5,
+        "z": -4.110848806609168,
+        "p_two_sided": 3.9420727810934864e-05,
+        "zen_mean": 2.1367713004484306,
+        "other_mean": 2.4394618834080717,
+        "delta": -0.30269058295964113,
+        "direction": "other>zen"
+      },
+      "judge_opus_vs_letta": {
+        "n_pairs": 220,
+        "W": 9382.5,
+        "z": -3.137550337946457,
+        "p_two_sided": 0.0017036601750577418,
+        "zen_mean": 2.172248803827751,
+        "other_mean": 2.313397129186603,
+        "delta": -0.1411483253588517,
+        "direction": "other>zen"
+      },
+      "judge_opus_vs_a-mem": {
+        "n_pairs": 280,
+        "W": 11222.0,
+        "z": -6.343651539551694,
+        "p_two_sided": 2.243820684810771e-10,
+        "zen_mean": 2.1367713004484306,
+        "other_mean": 1.6345291479820627,
+        "delta": 0.5022421524663678,
+        "direction": "zen>other"
+      },
+      "judge_sonnet_vs_mem0": {
+        "n_pairs": 283,
+        "W": 14714.0,
+        "z": -4.010723477283345,
+        "p_two_sided": 6.053297350328002e-05,
+        "zen_mean": 1.7619047619047619,
+        "other_mean": 2.0952380952380953,
+        "delta": -0.3333333333333335,
+        "direction": "other>zen"
+      },
+      "judge_sonnet_vs_letta": {
+        "n_pairs": 202,
+        "W": 8243.0,
+        "z": -2.5020574162157363,
+        "p_two_sided": 0.012347389856834257,
+        "zen_mean": 1.8046511627906976,
+        "other_mean": 1.9325581395348836,
+        "delta": -0.12790697674418605,
+        "direction": "other>zen"
+      },
+      "judge_sonnet_vs_a-mem": {
+        "n_pairs": 267,
+        "W": 12222.0,
+        "z": -4.571030183760618,
+        "p_two_sided": 4.853323624542938e-06,
+        "zen_mean": 1.7933491686460807,
+        "other_mean": 1.4085510688836105,
+        "delta": 0.38479809976247026,
+        "direction": "zen>other"
+      }
+    },
+    "single-hop": {
+      "precision_at_k_vs_mem0": {
+        "n_pairs": 220,
+        "W": 9392.5,
+        "z": -3.3709993123162105,
+        "p_two_sided": 0.0007489604476389466,
+        "zen_mean": 0.08585017835909632,
+        "other_mean": 0.07395957193816885,
+        "delta": 0.011890606420927471,
+        "direction": "zen>other"
+      },
+      "precision_at_k_vs_letta": {
+        "n_pairs": 122,
+        "W": 2299.0,
+        "z": -4.243003712437747,
+        "p_two_sided": 2.2054778579860823e-05,
+        "zen_mean": 0.08585017835909632,
+        "other_mean": 0.09726516052318669,
+        "delta": -0.01141498216409037,
+        "direction": "other>zen"
+      },
+      "precision_at_k_vs_a-mem": {
+        "n_pairs": 247,
+        "W": 5513.5,
+        "z": -9.998593487520738,
+        "p_two_sided": 0.0,
+        "zen_mean": 0.08585017835909632,
+        "other_mean": 0.04780023781212842,
+        "delta": 0.0380499405469679,
+        "direction": "zen>other"
+      },
+      "recall_at_k_vs_mem0": {
+        "n_pairs": 220,
+        "W": 9636.5,
+        "z": -2.975379864331639,
+        "p_two_sided": 0.0029262594234051864,
+        "zen_mean": 0.40626238604835513,
+        "other_mean": 0.35216012683313513,
+        "delta": 0.054102259215219994,
+        "direction": "zen>other"
+      },
+      "recall_at_k_vs_letta": {
+        "n_pairs": 122,
+        "W": 2097.0,
+        "z": -4.606053691761612,
+        "p_two_sided": 4.103824710721682e-06,
+        "zen_mean": 0.40626238604835513,
+        "other_mean": 0.4643281807372176,
+        "delta": -0.05806579468886247,
+        "direction": "other>zen"
+      },
+      "recall_at_k_vs_a-mem": {
+        "n_pairs": 247,
+        "W": 5263.5,
+        "z": -9.95343338573714,
+        "p_two_sided": 0.0,
+        "zen_mean": 0.40626238604835513,
+        "other_mean": 0.2227506936187079,
+        "delta": 0.18351169242964724,
+        "direction": "zen>other"
+      },
+      "mrr_vs_mem0": {
+        "n_pairs": 437,
+        "W": 42380.5,
+        "z": -2.0729150775764063,
+        "p_two_sided": 0.03818018357658515,
+        "zen_mean": 0.281252477209671,
+        "other_mean": 0.2516710830975325,
+        "delta": 0.029581394112138504,
+        "direction": "zen>other"
+      },
+      "mrr_vs_letta": {
+        "n_pairs": 245,
+        "W": 8274.5,
+        "z": -6.135816403728883,
+        "p_two_sided": 8.472296197936657e-10,
+        "zen_mean": 0.281252477209671,
+        "other_mean": 0.3308957590170432,
+        "delta": -0.04964328180737221,
+        "direction": "other>zen"
+      },
+      "mrr_vs_a-mem": {
+        "n_pairs": 329,
+        "W": 9930.0,
+        "z": -10.021687973763695,
+        "p_two_sided": 0.0,
+        "zen_mean": 0.281252477209671,
+        "other_mean": 0.13927863654379707,
+        "delta": 0.14197384066587393,
+        "direction": "zen>other"
+      },
+      "ndcg_at_k_vs_mem0": {
+        "n_pairs": 341,
+        "W": 22925.0,
+        "z": -3.4277789983594396,
+        "p_two_sided": 0.000608540639578381,
+        "zen_mean": 0.3073927722240332,
+        "other_mean": 0.2575915447391942,
+        "delta": 0.049801227484839006,
+        "direction": "zen>other"
+      },
+      "ndcg_at_k_vs_letta": {
+        "n_pairs": 250,
+        "W": 8409.5,
+        "z": -6.367878746079179,
+        "p_two_sided": 1.9166046527629987e-10,
+        "zen_mean": 0.3073927722240332,
+        "other_mean": 0.3607047912758802,
+        "delta": -0.05331201905184696,
+        "direction": "other>zen"
+      },
+      "ndcg_at_k_vs_a-mem": {
+        "n_pairs": 331,
+        "W": 9574.0,
+        "z": -10.307855463442348,
+        "p_two_sided": 0.0,
+        "zen_mean": 0.3073927722240332,
+        "other_mean": 0.15837285576859253,
+        "delta": 0.1490199164554407,
+        "direction": "zen>other"
+      },
+      "judge_opus_vs_mem0": {
+        "n_pairs": 528,
+        "W": 67188.0,
+        "z": -0.7703461010675543,
+        "p_two_sided": 0.4410946165207692,
+        "zen_mean": 2.6432818073721758,
+        "other_mean": 2.708680142687277,
+        "delta": -0.06539833531510109,
+        "direction": "other>zen"
+      },
+      "judge_opus_vs_letta": {
+        "n_pairs": 406,
+        "W": 35861.0,
+        "z": -2.434108736623518,
+        "p_two_sided": 0.014928509691594982,
+        "zen_mean": 2.6432818073721758,
+        "other_mean": 2.721759809750297,
+        "delta": -0.0784780023781213,
+        "direction": "other>zen"
+      },
+      "judge_opus_vs_a-mem": {
+        "n_pairs": 585,
+        "W": 31574.5,
+        "z": -13.429481089502161,
+        "p_two_sided": 0.0,
+        "zen_mean": 2.6432818073721758,
+        "other_mean": 1.78359096313912,
+        "delta": 0.8596908442330558,
+        "direction": "zen>other"
+      },
+      "judge_sonnet_vs_mem0": {
+        "n_pairs": 542,
+        "W": 67363.5,
+        "z": -1.7398613768207527,
+        "p_two_sided": 0.08188336203423408,
+        "zen_mean": 2.375598086124402,
+        "other_mean": 2.4844497607655502,
+        "delta": -0.10885167464114831,
+        "direction": "other>zen"
+      },
+      "judge_sonnet_vs_letta": {
+        "n_pairs": 440,
+        "W": 46065.0,
+        "z": -0.9502191365269148,
+        "p_two_sided": 0.342000916968636,
+        "zen_mean": 2.3995157384987893,
+        "other_mean": 2.4382566585956416,
+        "delta": -0.03874092009685226,
+        "direction": "other>zen"
+      },
+      "judge_sonnet_vs_a-mem": {
+        "n_pairs": 560,
+        "W": 30438.0,
+        "z": -12.724623456483448,
+        "p_two_sided": 0.0,
+        "zen_mean": 2.4025,
+        "other_mean": 1.54,
+        "delta": 0.8624999999999998,
+        "direction": "zen>other"
+      }
+    },
+    "multi-hop": {
+      "precision_at_k_vs_mem0": {
+        "n_pairs": 80,
+        "W": 820.0,
+        "z": -4.037322180930314,
+        "p_two_sided": 5.406479623037974e-05,
+        "zen_mean": 0.07872340425531915,
+        "other_mean": 0.04468085106382979,
+        "delta": 0.03404255319148936,
+        "direction": "zen>other"
+      },
+      "precision_at_k_vs_letta": {
+        "n_pairs": 43,
+        "W": 352.5,
+        "z": -1.5939829772879945,
+        "p_two_sided": 0.11093984766290665,
+        "zen_mean": 0.07872340425531915,
+        "other_mean": 0.08865248226950355,
+        "delta": -0.009929078014184398,
+        "direction": "other>zen"
+      },
+      "precision_at_k_vs_a-mem": {
+        "n_pairs": 74,
+        "W": 353.0,
+        "z": -5.8879118714051115,
+        "p_two_sided": 3.911055701522059e-09,
+        "zen_mean": 0.07872340425531915,
+        "other_mean": 0.029078014184397163,
+        "delta": 0.04964539007092199,
+        "direction": "zen>other"
+      },
+      "recall_at_k_vs_mem0": {
+        "n_pairs": 80,
+        "W": 962.0,
+        "z": -3.1851477892980404,
+        "p_two_sided": 0.0014468010042467672,
+        "zen_mean": 0.131685260324678,
+        "other_mean": 0.07922883853734917,
+        "delta": 0.05245642178732883,
+        "direction": "zen>other"
+      },
+      "recall_at_k_vs_letta": {
+        "n_pairs": 43,
+        "W": 317.5,
+        "z": -1.8901322724580505,
+        "p_two_sided": 0.058740271884879736,
+        "zen_mean": 0.131685260324678,
+        "other_mean": 0.14980260397393655,
+        "delta": -0.018117343649258544,
+        "direction": "other>zen"
+      },
+      "recall_at_k_vs_a-mem": {
+        "n_pairs": 74,
+        "W": 477.0,
+        "z": -4.939023643644209,
+        "p_two_sided": 7.851469332464944e-07,
+        "zen_mean": 0.131685260324678,
+        "other_mean": 0.05047434834668877,
+        "delta": 0.08121091197798924,
+        "direction": "zen>other"
+      },
+      "mrr_vs_mem0": {
+        "n_pairs": 111,
+        "W": 1584.5,
+        "z": -4.485652835940284,
+        "p_two_sided": 7.269101780726928e-06,
+        "zen_mean": 0.19148936170212766,
+        "other_mean": 0.09726310284862093,
+        "delta": 0.09422625885350673,
+        "direction": "zen>other"
+      },
+      "mrr_vs_letta": {
+        "n_pairs": 62,
+        "W": 676.0,
+        "z": -2.112657486690787,
+        "p_two_sided": 0.03463009452732324,
+        "zen_mean": 0.19148936170212766,
+        "other_mean": 0.21944444444444444,
+        "delta": -0.027955082742316784,
+        "direction": "other>zen"
+      },
+      "mrr_vs_a-mem": {
+        "n_pairs": 82,
+        "W": 348.5,
+        "z": -6.296591427192759,
+        "p_two_sided": 3.0426194896904235e-10,
+        "zen_mean": 0.19148936170212766,
+        "other_mean": 0.05614657210401891,
+        "delta": 0.13534278959810875,
+        "direction": "zen>other"
+      },
+      "ndcg_at_k_vs_mem0": {
+        "n_pairs": 94,
+        "W": 1044.5,
+        "z": -4.480778241444435,
+        "p_two_sided": 7.437135429944064e-06,
+        "zen_mean": 0.12787840359330163,
+        "other_mean": 0.06287036716680401,
+        "delta": 0.06500803642649762,
+        "direction": "zen>other"
+      },
+      "ndcg_at_k_vs_letta": {
+        "n_pairs": 79,
+        "W": 1076.0,
+        "z": -2.46351701552794,
+        "p_two_sided": 0.013758136496239137,
+        "zen_mean": 0.12787840359330163,
+        "other_mean": 0.1486303703725442,
+        "delta": -0.02075196677924257,
+        "direction": "other>zen"
+      },
+      "ndcg_at_k_vs_a-mem": {
+        "n_pairs": 86,
+        "W": 462.0,
+        "z": -6.067197791649705,
+        "p_two_sided": 1.301612151394238e-09,
+        "zen_mean": 0.12787840359330163,
+        "other_mean": 0.03973042050837474,
+        "delta": 0.08814798308492688,
+        "direction": "zen>other"
+      },
+      "judge_opus_vs_mem0": {
+        "n_pairs": 178,
+        "W": 7627.0,
+        "z": -0.5072983804792135,
+        "p_two_sided": 0.611945474756663,
+        "zen_mean": 1.8865248226950355,
+        "other_mean": 1.8581560283687943,
+        "delta": 0.028368794326241176,
+        "direction": "zen>other"
+      },
+      "judge_opus_vs_letta": {
+        "n_pairs": 142,
+        "W": 4815.0,
+        "z": -0.5697368889121894,
+        "p_two_sided": 0.568856166206883,
+        "zen_mean": 1.8865248226950355,
+        "other_mean": 1.9113475177304964,
+        "delta": -0.024822695035460862,
+        "direction": "other>zen"
+      },
+      "judge_opus_vs_a-mem": {
+        "n_pairs": 195,
+        "W": 3679.5,
+        "z": -7.634080478453541,
+        "p_two_sided": 2.2648549702353193e-14,
+        "zen_mean": 1.8865248226950355,
+        "other_mean": 1.1808510638297873,
+        "delta": 0.7056737588652482,
+        "direction": "zen>other"
+      },
+      "judge_sonnet_vs_mem0": {
+        "n_pairs": 195,
+        "W": 8783.0,
+        "z": -1.0075369511708931,
+        "p_two_sided": 0.3136768099621654,
+        "zen_mean": 1.6798561151079137,
+        "other_mean": 1.7553956834532374,
+        "delta": -0.07553956834532372,
+        "direction": "other>zen"
+      },
+      "judge_sonnet_vs_letta": {
+        "n_pairs": 144,
+        "W": 4412.0,
+        "z": -1.702558718062526,
+        "p_two_sided": 0.08865068114127683,
+        "zen_mean": 1.7032967032967032,
+        "other_mean": 1.6007326007326008,
+        "delta": 0.10256410256410242,
+        "direction": "zen>other"
+      },
+      "judge_sonnet_vs_a-mem": {
+        "n_pairs": 178,
+        "W": 3099.5,
+        "z": -7.213502454086641,
+        "p_two_sided": 5.453415496958769e-13,
+        "zen_mean": 1.6879699248120301,
+        "other_mean": 0.9548872180451128,
+        "delta": 0.7330827067669173,
+        "direction": "zen>other"
+      }
+    },
+    "temporal": {
+      "precision_at_k_vs_mem0": {
+        "n_pairs": 96,
+        "W": 1235.5,
+        "z": -4.552794763099861,
+        "p_two_sided": 5.293791212057641e-06,
+        "zen_mean": 0.0940809968847352,
+        "other_mean": 0.06542056074766356,
+        "delta": 0.028660436137071643,
+        "direction": "zen>other"
+      },
+      "precision_at_k_vs_letta": {
+        "n_pairs": 32,
+        "W": 165.0,
+        "z": -2.1213203435596424,
+        "p_two_sided": 0.03389485352468924,
+        "zen_mean": 0.0940809968847352,
+        "other_mean": 0.1015576323987539,
+        "delta": -0.007476635514018698,
+        "direction": "other>zen"
+      },
+      "precision_at_k_vs_a-mem": {
+        "n_pairs": 113,
+        "W": 841.0,
+        "z": -7.787958075749166,
+        "p_two_sided": 6.8833827526759706e-15,
+        "zen_mean": 0.0940809968847352,
+        "other_mean": 0.041121495327102804,
+        "delta": 0.0529595015576324,
+        "direction": "zen>other"
+      },
+      "recall_at_k_vs_mem0": {
+        "n_pairs": 96,
+        "W": 937.5,
+        "z": -5.622606607613759,
+        "p_two_sided": 1.8809741320069406e-08,
+        "zen_mean": 0.4454828660436137,
+        "other_mean": 0.29127725856697817,
+        "delta": 0.15420560747663553,
+        "direction": "zen>other"
+      },
+      "recall_at_k_vs_letta": {
+        "n_pairs": 32,
+        "W": 174.5,
+        "z": -1.8084498794886286,
+        "p_two_sided": 0.0705365107686744,
+        "zen_mean": 0.4454828660436137,
+        "other_mean": 0.47767393561786087,
+        "delta": -0.032191069574247166,
+        "direction": "other>zen"
+      },
+      "recall_at_k_vs_a-mem": {
+        "n_pairs": 113,
+        "W": 529.0,
+        "z": -8.55080767368866,
+        "p_two_sided": 0.0,
+        "zen_mean": 0.4454828660436137,
+        "other_mean": 0.17627206645898236,
+        "delta": 0.26921079958463134,
+        "direction": "zen>other"
+      },
+      "mrr_vs_mem0": {
+        "n_pairs": 182,
+        "W": 4434.5,
+        "z": -5.4730973322668,
+        "p_two_sided": 4.422370536438791e-08,
+        "zen_mean": 0.3408618899273105,
+        "other_mean": 0.2038764244820204,
+        "delta": 0.13698546544529008,
+        "direction": "zen>other"
+      },
+      "mrr_vs_letta": {
+        "n_pairs": 78,
+        "W": 1033.5,
+        "z": -2.530512319919725,
+        "p_two_sided": 0.01138960849828008,
+        "zen_mean": 0.3408618899273105,
+        "other_mean": 0.3750778816199377,
+        "delta": -0.034215991692627234,
+        "direction": "other>zen"
+      },
+      "mrr_vs_a-mem": {
+        "n_pairs": 144,
+        "W": 1526.0,
+        "z": -7.448330008786253,
+        "p_two_sided": 9.459100169806334e-14,
+        "zen_mean": 0.3408618899273105,
+        "other_mean": 0.13172377985462097,
+        "delta": 0.2091381100726895,
+        "direction": "zen>other"
+      },
+      "ndcg_at_k_vs_mem0": {
+        "n_pairs": 144,
+        "W": 2122.5,
+        "z": -6.197414363183296,
+        "p_two_sided": 5.739824171513419e-10,
+        "zen_mean": 0.35876571867045914,
+        "other_mean": 0.20139249410569693,
+        "delta": 0.15737322456476222,
+        "direction": "zen>other"
+      },
+      "ndcg_at_k_vs_letta": {
+        "n_pairs": 81,
+        "W": 1098.5,
+        "z": -2.6488740349877022,
+        "p_two_sided": 0.008076042679830087,
+        "zen_mean": 0.35876571867045914,
+        "other_mean": 0.3953016621395315,
+        "delta": -0.03653594346907235,
+        "direction": "other>zen"
+      },
+      "ndcg_at_k_vs_a-mem": {
+        "n_pairs": 145,
+        "W": 1235.0,
+        "z": -8.079173567560252,
+        "p_two_sided": 6.661338147750939e-16,
+        "zen_mean": 0.35876571867045914,
+        "other_mean": 0.1364343146950767,
+        "delta": 0.22233140397538245,
+        "direction": "zen>other"
+      },
+      "judge_opus_vs_mem0": {
+        "n_pairs": 196,
+        "W": 9383.0,
+        "z": -0.35031284060095297,
+        "p_two_sided": 0.7261039296744305,
+        "zen_mean": 1.9470404984423677,
+        "other_mean": 1.925233644859813,
+        "delta": 0.02180685358255463,
+        "direction": "zen>other"
+      },
+      "judge_opus_vs_letta": {
+        "n_pairs": 129,
+        "W": 3833.5,
+        "z": -0.8958707168906436,
+        "p_two_sided": 0.370321815462999,
+        "zen_mean": 1.9470404984423677,
+        "other_mean": 1.8909657320872275,
+        "delta": 0.05607476635514019,
+        "direction": "zen>other"
+      },
+      "judge_opus_vs_a-mem": {
+        "n_pairs": 232,
+        "W": 6117.0,
+        "z": -7.367916371164982,
+        "p_two_sided": 1.7319479184152442e-13,
+        "zen_mean": 1.9470404984423677,
+        "other_mean": 1.2305295950155763,
+        "delta": 0.7165109034267914,
+        "direction": "zen>other"
+      },
+      "judge_sonnet_vs_mem0": {
+        "n_pairs": 181,
+        "W": 7199.0,
+        "z": -1.5039419498357842,
+        "p_two_sided": 0.1325963143540192,
+        "zen_mean": 1.6775244299674268,
+        "other_mean": 1.798045602605863,
+        "delta": -0.12052117263843631,
+        "direction": "other>zen"
+      },
+      "judge_sonnet_vs_letta": {
+        "n_pairs": 126,
+        "W": 3723.0,
+        "z": -0.7139877538121027,
+        "p_two_sided": 0.4752347520034652,
+        "zen_mean": 1.6920529801324504,
+        "other_mean": 1.728476821192053,
+        "delta": -0.0364238410596025,
+        "direction": "other>zen"
+      },
+      "judge_sonnet_vs_a-mem": {
+        "n_pairs": 202,
+        "W": 5017.5,
+        "z": -6.428304530109206,
+        "p_two_sided": 1.2903500490324404e-10,
+        "zen_mean": 1.6986301369863013,
+        "other_mean": 1.095890410958904,
+        "delta": 0.6027397260273972,
+        "direction": "zen>other"
+      }
+    },
+    "open-domain": {
+      "precision_at_k_vs_mem0": {
+        "n_pairs": 15,
+        "W": 35.5,
+        "z": -1.5068009731138456,
+        "p_two_sided": 0.1318616800760457,
+        "zen_mean": 0.037500000000000006,
+        "other_mean": 0.02291666666666667,
+        "delta": 0.014583333333333337,
+        "direction": "zen>other"
+      },
+      "precision_at_k_vs_letta": {
+        "n_pairs": 7,
+        "W": 4.5,
+        "z": -1.7166650155199774,
+        "p_two_sided": 0.08604039578456768,
+        "zen_mean": 0.037500000000000006,
+        "other_mean": 0.04791666666666667,
+        "delta": -0.010416666666666664,
+        "direction": "other>zen"
+      },
+      "precision_at_k_vs_a-mem": {
+        "n_pairs": 14,
+        "W": 21.0,
+        "z": -2.182820625326997,
+        "p_two_sided": 0.029049022161940607,
+        "zen_mean": 0.037500000000000006,
+        "other_mean": 0.018750000000000003,
+        "delta": 0.018750000000000003,
+        "direction": "zen>other"
+      },
+      "recall_at_k_vs_mem0": {
+        "n_pairs": 15,
+        "W": 28.5,
+        "z": -1.8336124696050777,
+        "p_two_sided": 0.06671153990126943,
+        "zen_mean": 0.140625,
+        "other_mean": 0.07935049019607843,
+        "delta": 0.06127450980392157,
+        "direction": "zen>other"
+      },
+      "recall_at_k_vs_letta": {
+        "n_pairs": 7,
+        "W": 7.0,
+        "z": -1.2071657179658353,
+        "p_two_sided": 0.22736833004414247,
+        "zen_mean": 0.140625,
+        "other_mean": 0.1579861111111111,
+        "delta": -0.017361111111111105,
+        "direction": "other>zen"
+      },
+      "recall_at_k_vs_a-mem": {
+        "n_pairs": 14,
+        "W": 10.0,
+        "z": -2.729889191418097,
+        "p_two_sided": 0.006335561686168889,
+        "zen_mean": 0.140625,
+        "other_mean": 0.057904411764705885,
+        "delta": 0.08272058823529412,
+        "direction": "zen>other"
+      },
+      "mrr_vs_mem0": {
+        "n_pairs": 25,
+        "W": 146.0,
+        "z": -0.44489102730028285,
+        "p_two_sided": 0.6563985072361509,
+        "zen_mean": 0.11649305555555556,
+        "other_mean": 0.09757968639547587,
+        "delta": 0.018913369160079685,
+        "direction": "zen>other"
+      },
+      "mrr_vs_letta": {
+        "n_pairs": 10,
+        "W": 21.0,
+        "z": -0.6642689693998749,
+        "p_two_sided": 0.5065181778238972,
+        "zen_mean": 0.11649305555555556,
+        "other_mean": 0.12361111111111112,
+        "delta": -0.007118055555555558,
+        "direction": "other>zen"
+      },
+      "mrr_vs_a-mem": {
+        "n_pairs": 18,
+        "W": 42.0,
+        "z": -1.9053125274710523,
+        "p_two_sided": 0.056739457997161846,
+        "zen_mean": 0.11649305555555556,
+        "other_mean": 0.0546875,
+        "delta": 0.06180555555555556,
+        "direction": "zen>other"
+      },
+      "ndcg_at_k_vs_mem0": {
+        "n_pairs": 18,
+        "W": 57.0,
+        "z": -1.242954466580108,
+        "p_two_sided": 0.21388461298488615,
+        "zen_mean": 0.1117648764666741,
+        "other_mean": 0.07834739972595796,
+        "delta": 0.03341747674071614,
+        "direction": "zen>other"
+      },
+      "ndcg_at_k_vs_letta": {
+        "n_pairs": 12,
+        "W": 25.0,
+        "z": -1.0982503567738306,
+        "p_two_sided": 0.272095182736126,
+        "zen_mean": 0.1117648764666741,
+        "other_mean": 0.12102176819086481,
+        "delta": -0.00925689172419071,
+        "direction": "other>zen"
+      },
+      "ndcg_at_k_vs_a-mem": {
+        "n_pairs": 18,
+        "W": 27.0,
+        "z": -2.5513275892960112,
+        "p_two_sided": 0.010731340500990116,
+        "zen_mean": 0.1117648764666741,
+        "other_mean": 0.04658065400062654,
+        "delta": 0.06518422246604756,
+        "direction": "zen>other"
+      },
+      "judge_opus_vs_mem0": {
+        "n_pairs": 53,
+        "W": 713.5,
+        "z": -0.01819328657414535,
+        "p_two_sided": 0.9854846582892023,
+        "zen_mean": 1.5104166666666667,
+        "other_mean": 1.5208333333333333,
+        "delta": -0.010416666666666519,
+        "direction": "other>zen"
+      },
+      "judge_opus_vs_letta": {
+        "n_pairs": 49,
+        "W": 578.5,
+        "z": -0.3630450761714394,
+        "p_two_sided": 0.7165712122244923,
+        "zen_mean": 1.5104166666666667,
+        "other_mean": 1.5208333333333333,
+        "delta": -0.010416666666666519,
+        "direction": "other>zen"
+      },
+      "judge_opus_vs_a-mem": {
+        "n_pairs": 61,
+        "W": 679.0,
+        "z": -1.9627249660173989,
+        "p_two_sided": 0.04967814054359465,
+        "zen_mean": 1.5104166666666667,
+        "other_mean": 1.2083333333333333,
+        "delta": 0.3020833333333335,
+        "direction": "zen>other"
+      },
+      "judge_sonnet_vs_mem0": {
+        "n_pairs": 63,
+        "W": 678.5,
+        "z": -2.3292472816519565,
+        "p_two_sided": 0.019845969422722876,
+        "zen_mean": 1.108695652173913,
+        "other_mean": 1.4456521739130435,
+        "delta": -0.3369565217391304,
+        "direction": "other>zen"
+      },
+      "judge_sonnet_vs_letta": {
+        "n_pairs": 47,
+        "W": 427.5,
+        "z": -1.5063115001737717,
+        "p_two_sided": 0.13198722730230483,
+        "zen_mean": 1.108695652173913,
+        "other_mean": 1.2717391304347827,
+        "delta": -0.16304347826086962,
+        "direction": "other>zen"
+      },
+      "judge_sonnet_vs_a-mem": {
+        "n_pairs": 54,
+        "W": 722.0,
+        "z": -0.18132985735634402,
+        "p_two_sided": 0.8561086716910555,
+        "zen_mean": 1.1022727272727273,
+        "other_mean": 1.125,
+        "delta": -0.022727272727272707,
+        "direction": "other>zen"
+      }
+    }
+  }
+}

@@ -1,0 +1,43 @@
+# LDNOOBW English source — ZenAI Tier-1 moderation
+# Format: <pattern>|<severity>   (severity: block|soft)
+# Curated from LDNOOBW project; slurs and graphic sexual terms omitted from this repo
+# snapshot. Tier-2 (OpenAI Moderation) catches residuals.
+
+# --- Historic seed (Sprint 1.2 regression baseline) ---
+kill yourself|block
+child porn|block
+cp (video|material)|block
+how to make a bomb|block
+suicide pact|block
+
+# --- Self-harm / violence against self ---
+commit suicide|block
+hang yourself|block
+end your life|block
+slit your wrists|block
+
+# --- Violence against others / terrorism / weapons ---
+mass shooting|block
+school shooting|block
+make a pipe bomb|block
+homemade explosive|block
+build a gun|block
+bioweapon synthesis|block
+
+# --- Child sexual abuse material ---
+csam|block
+underage porn|block
+loli porn|block
+minor nudes|block
+
+# --- Hate / dehumanization patterns (structural, not slurs) ---
+gas the (jews|blacks|asians)|block
+lynch the|block
+exterminate (jews|blacks|muslims)|block
+
+# --- Soft flags (Tier-2 decides) ---
+fuck you|soft
+piss off|soft
+screw you|soft
+wanker|soft
+bastard|soft

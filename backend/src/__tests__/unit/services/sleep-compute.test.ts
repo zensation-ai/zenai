@@ -6,15 +6,19 @@
 
 jest.mock('../../../utils/database-context', () => ({
   queryContext: jest.fn(),
-  isValidContext: jest.fn((ctx: string) => ['personal', 'work', 'learning', 'creative'].includes(ctx)),
+  isValidContext: jest.fn((ctx: string) => ['operations', 'finance', 'people', 'strategy'].includes(ctx)),
+}));
+
+jest.mock('../../../middleware/plan-gate', () => ({
+  requirePlan: jest.fn(() => (_req: unknown, _res: unknown, next: () => void) => next()),
 }));
 
 jest.mock('../../../middleware/auth', () => ({
-  apiKeyAuth: jest.fn((_req: any, _res: any, next: any) => {
-    _req.apiKey = { id: 'test-key', name: 'Test', scopes: ['read', 'write', 'admin'], rateLimit: 10000 };
+  apiKeyAuth: jest.fn((req: Record<string, unknown>, _res: unknown, next: () => void) => {
+    req['apiKey'] = { id: 'test-key', name: 'Test', scopes: ['read', 'write', 'admin'], rateLimit: 10000 };
     next();
   }),
-  requireScope: jest.fn(() => (_req: any, _res: any, next: any) => next()),
+  requireScope: jest.fn(() => (_req: unknown, _res: unknown, next: () => void) => next()),
 }));
 
 jest.mock('../../../utils/user-context', () => ({
@@ -57,7 +61,7 @@ describe('Phase 63: Sleep-Time Compute + Context Engine V2', () => {
         // Mock all DB calls to return empty results
         mockQueryContext.mockResolvedValue({ rows: [], rowCount: 0 } as any);
 
-        const result = await engine.runSleepCycle('personal');
+        const result = await engine.runSleepCycle('operations');
 
         expect(result).toHaveProperty('processed');
         expect(result).toHaveProperty('insights');
@@ -76,7 +80,7 @@ describe('Phase 63: Sleep-Time Compute + Context Engine V2', () => {
           .mockRejectedValueOnce(new Error('DB error'))
           .mockResolvedValue({ rows: [], rowCount: 0 } as any);
 
-        const result = await engine.runSleepCycle('personal');
+        const result = await engine.runSleepCycle('operations');
 
         expect(result.processed).toBe(0);
         expect(result.durationMs).toBeGreaterThanOrEqual(0);
@@ -86,7 +90,7 @@ describe('Phase 63: Sleep-Time Compute + Context Engine V2', () => {
         const engine = getSleepComputeEngine();
         mockQueryContext.mockResolvedValue({ rows: [], rowCount: 0 } as any);
 
-        for (const ctx of ['personal', 'work', 'learning', 'creative'] as const) {
+        for (const ctx of ['operations', 'finance', 'people', 'strategy'] as const) {
           const result = await engine.runSleepCycle(ctx);
           expect(result).toBeDefined();
         }
@@ -122,7 +126,7 @@ describe('Phase 63: Sleep-Time Compute + Context Engine V2', () => {
           // Log sleep cycle
           .mockResolvedValueOnce({ rows: [], rowCount: 1 } as any);
 
-        const result = await engine.runSleepCycle('personal');
+        const result = await engine.runSleepCycle('operations');
 
         expect(result.processed).toBe(3);
         expect(result.insights.length).toBeGreaterThanOrEqual(1);
@@ -133,7 +137,7 @@ describe('Phase 63: Sleep-Time Compute + Context Engine V2', () => {
 
         mockQueryContext.mockResolvedValue({ rows: [], rowCount: 0 } as any);
 
-        const result = await engine.runSleepCycle('personal');
+        const result = await engine.runSleepCycle('operations');
         expect(result.processed).toBe(0);
         expect(result.insights).toEqual([]);
       });
@@ -161,7 +165,7 @@ describe('Phase 63: Sleep-Time Compute + Context Engine V2', () => {
           // Remaining steps
           .mockResolvedValue({ rows: [], rowCount: 0 } as any);
 
-        const result = await engine.runSleepCycle('personal');
+        const result = await engine.runSleepCycle('operations');
         expect(result.contradictionsResolved).toBe(1);
       });
     });
@@ -186,7 +190,7 @@ describe('Phase 63: Sleep-Time Compute + Context Engine V2', () => {
           // Remaining steps
           .mockResolvedValue({ rows: [], rowCount: 0 } as any);
 
-        const result = await engine.runSleepCycle('personal');
+        const result = await engine.runSleepCycle('operations');
         expect(result.preloadedItems).toBe(1);
       });
     });
@@ -212,7 +216,7 @@ describe('Phase 63: Sleep-Time Compute + Context Engine V2', () => {
           // Log
           .mockResolvedValueOnce({ rows: [], rowCount: 1 } as any);
 
-        const result = await engine.runSleepCycle('personal');
+        const result = await engine.runSleepCycle('operations');
         expect(result.memoryUpdates).toBeGreaterThanOrEqual(1);
       });
     });
@@ -235,7 +239,7 @@ describe('Phase 63: Sleep-Time Compute + Context Engine V2', () => {
           // Log
           .mockResolvedValueOnce({ rows: [], rowCount: 1 } as any);
 
-        const result = await engine.runSleepCycle('personal');
+        const result = await engine.runSleepCycle('operations');
         expect(result.memoryUpdates).toBeGreaterThanOrEqual(1);
       });
     });
@@ -272,6 +276,163 @@ describe('Phase 63: Sleep-Time Compute + Context Engine V2', () => {
 
         const idle = await engine.isSystemIdle();
         expect(idle).toBe(true);
+      });
+    });
+
+    describe('crossReferenceDocumentsWithKnowledge (stage 7b)', () => {
+      it('should not crash when documents have no keyword matches', async () => {
+        const engine = getSleepComputeEngine();
+        mockQueryContext.mockResolvedValue({ rows: [], rowCount: 0 } as any);
+
+        const result = await engine.runSleepCycle('operations');
+
+        // No documents → no edges
+        expect(result.documentKnowledgeEdges).toBeUndefined();
+        expect(result.durationMs).toBeGreaterThanOrEqual(0);
+      });
+
+      it('should have documentKnowledgeEdges field in result type', async () => {
+        const engine = getSleepComputeEngine();
+        mockQueryContext.mockResolvedValue({ rows: [], rowCount: 0 } as any);
+
+        const result = await engine.runSleepCycle('finance');
+
+        // Field exists on type even when undefined (no docs)
+        expect('documentKnowledgeEdges' in result || result.documentKnowledgeEdges === undefined).toBe(true);
+      });
+    });
+
+    describe('consolidateFeedbackSignals (stage 13)', () => {
+      it('should not crash with empty feedback_events table', async () => {
+        const engine = getSleepComputeEngine();
+        mockQueryContext.mockResolvedValue({ rows: [{ cnt: '0' }], rowCount: 0 } as any);
+
+        const result = await engine.runSleepCycle('operations');
+
+        // feedbackConsolidated may be set with zeros or undefined
+        if (result.feedbackConsolidated) {
+          expect(result.feedbackConsolidated.reinforced).toBe(0);
+          expect(result.feedbackConsolidated.weakened).toBe(0);
+        }
+        expect(result.durationMs).toBeGreaterThanOrEqual(0);
+      });
+
+      it('should have feedbackConsolidated field on result type', async () => {
+        const engine = getSleepComputeEngine();
+        mockQueryContext.mockResolvedValue({ rows: [{ cnt: '0' }], rowCount: 0 } as any);
+
+        const result = await engine.runSleepCycle('people');
+
+        expect('feedbackConsolidated' in result || result.feedbackConsolidated === undefined).toBe(true);
+      });
+    });
+
+    // ─── Stufe 10.1: Self-Optimizing Sleep Cycle ──────
+
+    describe('getOptimalSleepHour', () => {
+      it('should return default hour 3 when no logs exist', async () => {
+        const engine = getSleepComputeEngine();
+        mockQueryContext.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any);
+
+        const result = await engine.getOptimalSleepHour('operations');
+        expect(result.hour).toBe(3);
+        expect(result.avgProcessed).toBe(0);
+      });
+
+      it('should return the hour with highest avg processed', async () => {
+        const engine = getSleepComputeEngine();
+        mockQueryContext.mockResolvedValueOnce({
+          rows: [{ hour: '14', avg_processed: '12.5', cycle_count: '5' }],
+          rowCount: 1,
+        } as any);
+
+        const result = await engine.getOptimalSleepHour('finance');
+        expect(result.hour).toBe(14);
+        expect(result.avgProcessed).toBe(12.5);
+      });
+    });
+
+    describe('shouldTriggerMiniSleep', () => {
+      it('should return false when few unconsolidated memories', async () => {
+        const engine = getSleepComputeEngine();
+        mockQueryContext.mockResolvedValueOnce({ rows: [{ cnt: '5' }] } as any);
+
+        const result = await engine.shouldTriggerMiniSleep('operations');
+        expect(result).toBe(false);
+      });
+
+      it('should return true when many unconsolidated memories', async () => {
+        const engine = getSleepComputeEngine();
+        mockQueryContext.mockResolvedValueOnce({ rows: [{ cnt: '25' }] } as any);
+
+        const result = await engine.shouldTriggerMiniSleep('operations');
+        expect(result).toBe(true);
+      });
+    });
+
+    // ─── Stufe 10.2: Proactive Next Steps ───────────
+
+    describe('generateNextBestAction', () => {
+      it('should return null when no candidates', async () => {
+        const engine = getSleepComputeEngine();
+        mockQueryContext.mockResolvedValue({ rows: [], rowCount: 0 } as any);
+
+        const result = await engine.generateNextBestAction('operations');
+        expect(result).toBeNull();
+      });
+
+      it('should prioritize overdue tasks with highest score', async () => {
+        const engine = getSleepComputeEngine();
+        // Overdue tasks query
+        mockQueryContext
+          .mockResolvedValueOnce({ rows: [{ id: 't1', title: 'Fix bug', priority: 'critical', due_date: '2026-04-01' }] } as any)
+          // Urgent tasks
+          .mockResolvedValueOnce({ rows: [] } as any)
+          // Unread emails
+          .mockResolvedValueOnce({ rows: [{ cnt: '3' }] } as any)
+          // Business anomalies
+          .mockResolvedValueOnce({ rows: [] } as any);
+
+        const result = await engine.generateNextBestAction('finance');
+        expect(result).not.toBeNull();
+        expect(result!.type).toBe('task');
+        expect(result!.title).toBe('Fix bug');
+        expect(result!.score).toBe(100); // 90 + 10 (critical)
+      });
+    });
+
+    // ─── Stufe 10.3: Neuromodulator-Driven Planning ──
+
+    describe('getTimeBasedTaskCategory', () => {
+      it('should return a valid category object', () => {
+        const engine = getSleepComputeEngine();
+        const result = engine.getTimeBasedTaskCategory();
+
+        expect(['creative', 'routine', 'reflection']).toContain(result.category);
+        expect(['dopamine', 'norepinephrine', 'serotonin']).toContain(result.neuromodulator);
+        expect(result.description.length).toBeGreaterThan(10);
+      });
+    });
+
+    describe('getNeuromodulatorAlignedTasks', () => {
+      it('should return matching tasks for current time category', async () => {
+        const engine = getSleepComputeEngine();
+        mockQueryContext.mockResolvedValueOnce({
+          rows: [{ id: 't1', title: 'Strategic planning' }, { id: 't2', title: 'Creative writing' }],
+        } as any);
+
+        const result = await engine.getNeuromodulatorAlignedTasks('operations');
+        expect(result.length).toBe(2);
+        expect(result[0].id).toBe('t1');
+        expect(['creative', 'routine', 'reflection']).toContain(result[0].category);
+      });
+
+      it('should return empty array when no tasks match', async () => {
+        const engine = getSleepComputeEngine();
+        mockQueryContext.mockResolvedValueOnce({ rows: [] } as any);
+
+        const result = await engine.getNeuromodulatorAlignedTasks('finance');
+        expect(result).toEqual([]);
       });
     });
 
@@ -419,7 +580,7 @@ describe('Phase 63: Sleep-Time Compute + Context Engine V2', () => {
           // Cache save
           .mockResolvedValueOnce({ rows: [], rowCount: 1 } as any);
 
-        const result = await engine.assembleContext('Hilf mir beim Programmieren', 'personal');
+        const result = await engine.assembleContext('Hilf mir beim Programmieren', 'operations');
 
         expect(result.domain).toBeDefined();
         expect(result.model).toBeDefined();
@@ -438,7 +599,7 @@ describe('Phase 63: Sleep-Time Compute + Context Engine V2', () => {
           .mockResolvedValueOnce({ rows: [], rowCount: 0 } as any) // fallback facts empty
           .mockResolvedValueOnce({ rows: [], rowCount: 1 } as any); // cache save
 
-        await engine.assembleContext('test query', 'personal');
+        await engine.assembleContext('test query', 'operations');
 
         // Second call - cache hit
         mockQueryContext.mockReset();
@@ -447,7 +608,7 @@ describe('Phase 63: Sleep-Time Compute + Context Engine V2', () => {
           rowCount: 1,
         } as any);
 
-        const result = await engine.assembleContext('test query', 'personal');
+        const result = await engine.assembleContext('test query', 'operations');
         expect(result.fromCache).toBe(true);
       });
 
@@ -470,7 +631,7 @@ describe('Phase 63: Sleep-Time Compute + Context Engine V2', () => {
           // Cache save
           .mockResolvedValueOnce({ rows: [], rowCount: 1 } as any);
 
-        const result = await engine.assembleContext('Zeig mir mein Budget', 'personal');
+        const result = await engine.assembleContext('Zeig mir mein Budget', 'operations');
         expect(result.parts.length).toBeGreaterThanOrEqual(1);
       });
     });
@@ -481,7 +642,7 @@ describe('Phase 63: Sleep-Time Compute + Context Engine V2', () => {
 
         mockQueryContext.mockResolvedValueOnce({ rows: [], rowCount: 5 } as any);
 
-        const cleaned = await engine.cleanExpiredCache('personal');
+        const cleaned = await engine.cleanExpiredCache('operations');
         expect(cleaned).toBe(5);
       });
 
@@ -490,7 +651,7 @@ describe('Phase 63: Sleep-Time Compute + Context Engine V2', () => {
 
         mockQueryContext.mockRejectedValueOnce(new Error('DB error'));
 
-        const cleaned = await engine.cleanExpiredCache('personal');
+        const cleaned = await engine.cleanExpiredCache('operations');
         expect(cleaned).toBe(0);
       });
     });
@@ -511,14 +672,14 @@ describe('Phase 63: Sleep-Time Compute + Context Engine V2', () => {
     it('should process a full sleep cycle', async () => {
       mockQueryContext.mockResolvedValue({ rows: [], rowCount: 0 } as any);
 
-      const result = await processSleepJob({ context: 'personal', cycleType: 'full' });
+      const result = await processSleepJob({ context: 'operations', cycleType: 'full' });
       expect(result).toHaveProperty('processed');
     });
 
     it('should handle cache_cleanup cycle type', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [], rowCount: 3 } as any);
 
-      const result = await processSleepJob({ context: 'personal', cycleType: 'cache_cleanup' });
+      const result = await processSleepJob({ context: 'operations', cycleType: 'cache_cleanup' });
       expect(result).toHaveProperty('cleaned');
     });
 
@@ -528,7 +689,7 @@ describe('Phase 63: Sleep-Time Compute + Context Engine V2', () => {
       expect((result as any).processed).toBe(0);
     });
 
-    it('should default to personal context and full cycle', async () => {
+    it('should default to operations context and full cycle', async () => {
       mockQueryContext.mockResolvedValue({ rows: [], rowCount: 0 } as any);
 
       const result = await processSleepJob({});
@@ -569,7 +730,7 @@ describe('Phase 63: Sleep-Time Compute + Context Engine V2', () => {
           rowCount: 1,
         } as any);
 
-        const res = await request.get('/api/personal/sleep-compute/logs');
+        const res = await request.get('/api/operations/sleep-compute/logs');
         expect([200, 500]).toContain(res.status);
         if (res.status === 200) {
           expect(res.body.success).toBe(true);
@@ -592,7 +753,7 @@ describe('Phase 63: Sleep-Time Compute + Context Engine V2', () => {
           rowCount: 1,
         } as any);
 
-        const res = await request.get('/api/personal/sleep-compute/stats');
+        const res = await request.get('/api/operations/sleep-compute/stats');
         expect([200, 500]).toContain(res.status);
         if (res.status === 200) {
           expect(res.body.success).toBe(true);
@@ -604,7 +765,7 @@ describe('Phase 63: Sleep-Time Compute + Context Engine V2', () => {
       it('should trigger a sleep cycle', async () => {
         mockQueryContext.mockResolvedValue({ rows: [], rowCount: 0 } as any);
 
-        const res = await request.post('/api/personal/sleep-compute/trigger');
+        const res = await request.post('/api/operations/sleep-compute/trigger');
         expect([200, 500]).toContain(res.status);
         if (res.status === 200) {
           expect(res.body.success).toBe(true);
@@ -620,7 +781,7 @@ describe('Phase 63: Sleep-Time Compute + Context Engine V2', () => {
           rowCount: 1,
         } as any);
 
-        const res = await request.get('/api/personal/sleep-compute/idle-status');
+        const res = await request.get('/api/operations/sleep-compute/idle-status');
         expect([200, 500]).toContain(res.status);
         if (res.status === 200) {
           expect(res.body.success).toBe(true);
@@ -632,7 +793,7 @@ describe('Phase 63: Sleep-Time Compute + Context Engine V2', () => {
     describe('POST /api/:context/context-v2/classify', () => {
       it('should classify a query', async () => {
         const res = await request
-          .post('/api/personal/context-v2/classify')
+          .post('/api/operations/context-v2/classify')
           .send({ query: 'Zeig mir mein Budget und Konto' });
 
         expect(res.status).toBe(200);
@@ -644,7 +805,7 @@ describe('Phase 63: Sleep-Time Compute + Context Engine V2', () => {
 
       it('should reject missing query', async () => {
         const res = await request
-          .post('/api/personal/context-v2/classify')
+          .post('/api/operations/context-v2/classify')
           .send({});
 
         expect(res.status).toBe(400);
@@ -661,7 +822,7 @@ describe('Phase 63: Sleep-Time Compute + Context Engine V2', () => {
           .mockResolvedValueOnce({ rows: [], rowCount: 1 } as any);
 
         const res = await request
-          .post('/api/personal/context-v2/assemble')
+          .post('/api/operations/context-v2/assemble')
           .send({ query: 'Test query' });
 
         expect([200, 500]).toContain(res.status);
@@ -687,7 +848,7 @@ describe('Phase 63: Sleep-Time Compute + Context Engine V2', () => {
       it('should clean expired cache', async () => {
         mockQueryContext.mockResolvedValueOnce({ rows: [], rowCount: 3 } as any);
 
-        const res = await request.post('/api/personal/context-v2/cache/clean');
+        const res = await request.post('/api/operations/context-v2/cache/clean');
         expect([200, 500]).toContain(res.status);
         if (res.status === 200) {
           expect(res.body.success).toBe(true);

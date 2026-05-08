@@ -12,7 +12,8 @@ import { apiKeyAuth, requireScope } from '../middleware/auth';
 import { asyncHandler, ValidationError } from '../middleware/errorHandler';
 import { sendData, sendSuccess } from '../utils/response';
 import { getUserId } from '../utils/user-context';
-import { getUnifiedInbox, getUnifiedInboxCounts, InboxItemType } from '../services/unified-inbox';
+import { getUnifiedInbox, getUnifiedInboxCounts, InboxItemType, InboxItem } from '../services/unified-inbox';
+import { decodeCursor, encodeCursor } from '../utils/cursor-pagination';
 
 export const unifiedInboxRouter = Router();
 
@@ -38,7 +39,7 @@ unifiedInboxRouter.get(
     getUserId(req); // auth check - userId passed to DB via request context
 
     if (!isValidContext(context)) {
-      throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
+      throw new ValidationError('Invalid context. Use "operations", "finance", "people", or "strategy".');
     }
 
     const typesParam = req.query.types as string | undefined;
@@ -56,9 +57,62 @@ unifiedInboxRouter.get(
     const parsedLimit = parseInt(req.query.limit as string, 10);
     const limit = Number.isNaN(parsedLimit) ? 50 : Math.min(Math.max(parsedLimit, 1), 100);
 
-    const result = await getUnifiedInbox(context as AIContext, { types, limit });
+    const cursorParam = req.query.cursor as string | undefined;
 
-    sendData(res, result);
+    if (cursorParam) {
+      // Cursor mode: fetch all items and apply cursor filtering in-memory
+      // (unified inbox aggregates from multiple sources, so cursor is applied post-aggregation)
+      const decoded = decodeCursor(cursorParam);
+
+      // Fetch enough items to satisfy pagination (fetch more to account for cursor filtering)
+      const fetchLimit = limit + 1;
+      const result = await getUnifiedInbox(context as AIContext, { types, limit: 1000 });
+
+      // Apply cursor filter: keep items that come after the cursor position
+      // Items are sorted by priority then timestamp DESC — cursor tracks timestamp + id
+      let items: InboxItem[] = result.items;
+      if (decoded) {
+        const cursorTime = new Date(decoded.t).getTime();
+        const cursorId = decoded.i;
+        // Find the position after the cursor item in the sorted list
+        const cursorIdx = items.findIndex(
+          item => item.id === cursorId && item.timestamp === decoded.t
+        );
+        if (cursorIdx !== -1) {
+          items = items.slice(cursorIdx + 1);
+        } else {
+          // Fallback: keep only items with timestamp strictly less than cursor
+          items = items.filter(item => {
+            const itemTime = new Date(item.timestamp).getTime();
+            if (itemTime < cursorTime) return true;
+            if (itemTime === cursorTime && item.id < cursorId) return true;
+            return false;
+          });
+        }
+      }
+
+      const hasMore = items.length > limit;
+      const pageItems = hasMore ? items.slice(0, limit) : items;
+
+      let nextCursor: string | null = null;
+      if (hasMore && pageItems.length > 0) {
+        const last = pageItems[pageItems.length - 1];
+        nextCursor = encodeCursor(last.timestamp, last.id);
+      }
+
+      sendData(res, {
+        items: pageItems,
+        counts: result.counts,
+        total: result.total,
+        generated_at: result.generated_at,
+        nextCursor,
+        hasMore,
+      });
+    } else {
+      // Offset mode (legacy): pass limit directly to service
+      const result = await getUnifiedInbox(context as AIContext, { types, limit });
+      sendData(res, result);
+    }
   })
 );
 
@@ -75,7 +129,7 @@ unifiedInboxRouter.get(
     getUserId(req); // auth check - userId passed to DB via request context
 
     if (!isValidContext(context)) {
-      throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
+      throw new ValidationError('Invalid context. Use "operations", "finance", "people", or "strategy".');
     }
 
     const result = await getUnifiedInboxCounts(context as AIContext);

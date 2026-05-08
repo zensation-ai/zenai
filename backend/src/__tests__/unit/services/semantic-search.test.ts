@@ -25,8 +25,8 @@ import type { SearchEntityType, UnifiedSearchOptions } from '../../../services/s
 const mockQueryContext = jest.fn();
 jest.mock('../../../utils/database-context', () => ({
   queryContext: (...args: unknown[]) => mockQueryContext(...args),
-  isValidContext: (ctx: string) => ['personal', 'work', 'learning', 'creative'].includes(ctx),
-  VALID_CONTEXTS: ['personal', 'work', 'learning', 'creative'],
+  isValidContext: (ctx: string) => ['operations', 'finance', 'people', 'strategy'].includes(ctx),
+  VALID_CONTEXTS: ['operations', 'finance', 'people', 'strategy'],
 }));
 
 jest.mock('../../../utils/logger', () => ({
@@ -206,7 +206,7 @@ describe('scoreResult', () => {
 describe('unifiedSearch', () => {
   const baseOptions: UnifiedSearchOptions = {
     query: 'test',
-    context: 'personal' as const,
+    context: 'operations' as const,
     userId: 'user-123',
     limit: 20,
   };
@@ -359,19 +359,19 @@ describe('getSearchSuggestions', () => {
       rows: [{ query: 'test query' }, { query: 'test search' }],
     });
 
-    const suggestions = await getSearchSuggestions('personal', 'user-1', 'te');
+    const suggestions = await getSearchSuggestions('operations', 'user-1', 'te');
     expect(suggestions).toEqual(['test query', 'test search']);
   });
 
   it('should return empty for short prefix', async () => {
-    const suggestions = await getSearchSuggestions('personal', 'user-1', 'a');
+    const suggestions = await getSearchSuggestions('operations', 'user-1', 'a');
     expect(suggestions).toEqual([]);
     expect(mockQueryContext).not.toHaveBeenCalled();
   });
 
   it('should handle database errors gracefully', async () => {
     mockQueryContext.mockRejectedValue(new Error('DB Error'));
-    const suggestions = await getSearchSuggestions('personal', 'user-1', 'test');
+    const suggestions = await getSearchSuggestions('operations', 'user-1', 'test');
     expect(suggestions).toEqual([]);
   });
 });
@@ -384,7 +384,7 @@ describe('recordSearchHistory', () => {
   it('should insert search history entry', async () => {
     mockQueryContext.mockResolvedValue({ rows: [] });
 
-    await recordSearchHistory('personal', 'user-1', 'test query', 5);
+    await recordSearchHistory('operations', 'user-1', 'test query', 5);
     expect(mockQueryContext).toHaveBeenCalled();
     const insertCall = mockQueryContext.mock.calls.find(c =>
       (c[1] as string).includes('INSERT INTO search_history')
@@ -395,7 +395,7 @@ describe('recordSearchHistory', () => {
   it('should trim old history entries', async () => {
     mockQueryContext.mockResolvedValue({ rows: [] });
 
-    await recordSearchHistory('personal', 'user-1', 'test', 3);
+    await recordSearchHistory('operations', 'user-1', 'test', 3);
     const deleteCall = mockQueryContext.mock.calls.find(c =>
       (c[1] as string).includes('DELETE FROM search_history')
     );
@@ -405,14 +405,14 @@ describe('recordSearchHistory', () => {
   it('should handle errors silently', async () => {
     mockQueryContext.mockRejectedValue(new Error('DB Error'));
     // Should not throw
-    await recordSearchHistory('personal', 'user-1', 'test', 0);
+    await recordSearchHistory('operations', 'user-1', 'test', 0);
   });
 
   it('should store selected result as JSON', async () => {
     mockQueryContext.mockResolvedValue({ rows: [] });
     const selected = { type: 'ideas', id: '123' };
 
-    await recordSearchHistory('personal', 'user-1', 'test', 1, selected);
+    await recordSearchHistory('operations', 'user-1', 'test', 1, selected);
     const insertCall = mockQueryContext.mock.calls.find(c =>
       (c[1] as string).includes('INSERT INTO search_history')
     );
@@ -429,21 +429,21 @@ describe('getSearchHistory', () => {
     ];
     mockQueryContext.mockResolvedValue({ rows: entries });
 
-    const history = await getSearchHistory('personal', 'user-1');
+    const history = await getSearchHistory('operations', 'user-1');
     expect(history).toEqual(entries);
   });
 
   it('should respect limit parameter', async () => {
     mockQueryContext.mockResolvedValue({ rows: [] });
 
-    await getSearchHistory('personal', 'user-1', 10);
+    await getSearchHistory('operations', 'user-1', 10);
     const params = mockQueryContext.mock.calls[0][2] as unknown[];
     expect(params[1]).toBe(10);
   });
 
   it('should handle database errors gracefully', async () => {
     mockQueryContext.mockRejectedValue(new Error('DB Error'));
-    const history = await getSearchHistory('personal', 'user-1');
+    const history = await getSearchHistory('operations', 'user-1');
     expect(history).toEqual([]);
   });
 });
@@ -452,9 +452,9 @@ describe('clearSearchHistory', () => {
   it('should delete all search history for user', async () => {
     mockQueryContext.mockResolvedValue({ rows: [] });
 
-    await clearSearchHistory('personal', 'user-1');
+    await clearSearchHistory('operations', 'user-1');
     expect(mockQueryContext).toHaveBeenCalledWith(
-      'personal',
+      'operations',
       expect.stringContaining('DELETE FROM search_history'),
       ['user-1']
     );
@@ -469,7 +469,7 @@ describe('getSearchFacets', () => {
   it('should return type counts', async () => {
     mockQueryContext.mockResolvedValue({ rows: [{ count: '42' }] });
 
-    const facets = await getSearchFacets('personal', 'user-1');
+    const facets = await getSearchFacets('operations', 'user-1');
     expect(facets.types).toBeDefined();
     expect(Array.isArray(facets.types)).toBe(true);
   });
@@ -480,14 +480,14 @@ describe('getSearchFacets', () => {
       .mockResolvedValueOnce({ rows: [{ count: '10' }] })
       .mockRejectedValue(new Error('DB Error'));
 
-    const facets = await getSearchFacets('personal', 'user-1');
+    const facets = await getSearchFacets('operations', 'user-1');
     expect(facets.types.length).toBeGreaterThanOrEqual(1);
   });
 
   it('should exclude types with zero count', async () => {
     mockQueryContext.mockResolvedValue({ rows: [{ count: '0' }] });
 
-    const facets = await getSearchFacets('personal', 'user-1');
+    const facets = await getSearchFacets('operations', 'user-1');
     const nonZero = facets.types.filter(t => t.count > 0);
     expect(nonZero.length).toBe(0);
   });

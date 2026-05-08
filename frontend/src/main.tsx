@@ -1,3 +1,4 @@
+// Build cache buster: 2026-03-28T21:30
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
@@ -5,8 +6,7 @@ import axios from 'axios';
 import App from './App';
 import './styles/tailwind.css';
 import './styles/animations.css';
-import './styles/micro-interactions.css';
-import './index.css';
+import './styles/vendor-overrides.css';
 import { safeLocalStorage } from './utils/storage';
 import { ConfirmProvider } from './components/ConfirmDialog';
 import { ThemeProvider } from './contexts/ThemeContext';

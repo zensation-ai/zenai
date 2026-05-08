@@ -14,8 +14,6 @@ import axios from 'axios';
 import type { Page } from '../types';
 import type { AIContext } from './ContextSwitcher';
 import { logError } from '../utils/errors';
-import './ProactiveDigest.css';
-
 // ============================================
 // Types
 // ============================================

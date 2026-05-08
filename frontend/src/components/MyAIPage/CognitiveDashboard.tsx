@@ -9,8 +9,6 @@
 
 import { useState, Suspense, lazy } from 'react';
 import type { AIContext } from '../ContextSwitcher';
-import './CognitiveDashboard.css';
-
 // Lazy-loaded sub-components
 const CognitiveOverview = lazy(() =>
   import('./CognitiveOverview').then(m => ({ default: m.CognitiveOverview }))
@@ -35,10 +33,10 @@ interface CognitiveDashboardProps {
 type CognitiveSection = 'overview' | 'curiosity' | 'predictions' | 'memory' | 'improvement';
 
 const SECTIONS: { id: CognitiveSection; label: string; icon: string }[] = [
-  { id: 'overview', label: 'Uebersicht', icon: '\u{1F4CA}' },
+  { id: 'overview', label: 'Übersicht', icon: '\u{1F4CA}' },
   { id: 'curiosity', label: 'Neugier', icon: '\u{1F50D}' },
   { id: 'predictions', label: 'Vorhersagen', icon: '\u{1F52E}' },
-  { id: 'memory', label: 'Gedaechtnis', icon: '\u{1F9E0}' },
+  { id: 'memory', label: 'Gedächtnis', icon: '\u{1F9E0}' },
   { id: 'improvement', label: 'Verbesserung', icon: '\u{1F4C8}' },
 ];
 

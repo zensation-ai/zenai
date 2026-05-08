@@ -3,9 +3,6 @@ import { createPortal } from 'react-dom';
 import { useConfirm } from '../ConfirmDialog';
 import { showToast } from '../Toast';
 import axios from 'axios';
-import '../../neurodesign.css';
-import '../AutomationFormModal.css';
-
 import {
   TriggerType,
   ActionType,

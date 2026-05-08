@@ -9,7 +9,7 @@
  * - Hybrid retrieval test
  */
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, type CSSProperties } from 'react';
 import axios from 'axios';
 
 const ENTITY_TYPES = [
@@ -79,7 +79,7 @@ interface GraphRAGPanelProps {
 
 const TYPE_COLORS: Record<EntityType, string> = {
   person: '#3b82f6',
-  organization: '#8b5cf6',
+  organization: '#1a6b7a',
   concept: '#06b6d4',
   technology: '#22c55e',
   location: '#f59e0b',
@@ -144,13 +144,13 @@ export function GraphRAGPanel({ context }: GraphRAGPanelProps) {
   }, [context]);
 
   const deleteEntity = useCallback(async (id: string) => {
-    if (!confirm('Entity wirklich loeschen?')) return;
+    if (!confirm('Entity wirklich löschen?')) return;
     try {
       await axios.delete(`/api/${context}/graphrag/entities/${id}`);
       setEntities(prev => prev.filter(e => e.id !== id));
       if (selectedEntity?.id === id) setSelectedEntity(null);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Fehler beim Loeschen');
+      setError(err instanceof Error ? err.message : 'Fehler beim Löschen');
     }
   }, [context, selectedEntity]);
 
@@ -234,25 +234,17 @@ export function GraphRAGPanel({ context }: GraphRAGPanelProps) {
   }, [entitySearch, entityTypeFilter]);
 
   return (
-    <div style={{ padding: '1rem' }}>
-      <h2 style={{ margin: '0 0 1rem', fontSize: '1.25rem', fontWeight: 600 }}>
+    <div className="p-4">
+      <h2 className="m-0 mb-4 text-xl font-semibold">
         Knowledge Graph (GraphRAG)
       </h2>
 
       {error && (
-        <div style={{
-          padding: '0.75rem 1rem',
-          marginBottom: '1rem',
-          background: 'rgba(239,68,68,0.1)',
-          border: '1px solid rgba(239,68,68,0.3)',
-          borderRadius: '8px',
-          color: '#ef4444',
-          fontSize: '0.875rem',
-        }}>
+        <div className="py-3 px-4 mb-4 bg-red-500/10 border border-red-500/30 rounded-lg text-red-500 text-sm">
           {error}
           <button
             onClick={() => setError(null)}
-            style={{ float: 'right', background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer' }}
+            className="float-right bg-transparent border-0 text-red-500 cursor-pointer"
           >
             x
           </button>
@@ -260,7 +252,7 @@ export function GraphRAGPanel({ context }: GraphRAGPanelProps) {
       )}
 
       {/* Tabs */}
-      <div style={{ display: 'flex', gap: '0.25rem', marginBottom: '1rem', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
+      <div className="flex gap-1 mb-4 border-b border-white/10">
         {([
           ['entities', 'Entities'],
           ['communities', 'Communities'],
@@ -270,16 +262,11 @@ export function GraphRAGPanel({ context }: GraphRAGPanelProps) {
           <button
             key={key}
             onClick={() => setActiveTab(key)}
-            style={{
-              padding: '0.5rem 1rem',
-              background: activeTab === key ? 'rgba(59,130,246,0.15)' : 'transparent',
-              border: 'none',
-              borderBottom: activeTab === key ? '2px solid #3b82f6' : '2px solid transparent',
-              color: activeTab === key ? '#3b82f6' : 'inherit',
-              cursor: 'pointer',
-              fontSize: '0.875rem',
-              fontWeight: activeTab === key ? 600 : 400,
-            }}
+            className={`px-4 py-2 border-0 cursor-pointer text-sm ${
+              activeTab === key
+                ? 'bg-blue-500/15 border-b-2 border-b-blue-500 text-blue-500 font-semibold'
+                : 'bg-transparent border-b-2 border-b-transparent text-inherit font-normal'
+            }`}
           >
             {label}
           </button>
@@ -289,34 +276,18 @@ export function GraphRAGPanel({ context }: GraphRAGPanelProps) {
       {/* Entities Tab */}
       {activeTab === 'entities' && (
         <div>
-          <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem', flexWrap: 'wrap' }}>
+          <div className="flex gap-2 mb-4 flex-wrap">
             <input
               type="text"
               placeholder="Entities suchen..."
               value={entitySearch}
               onChange={e => setEntitySearch(e.target.value)}
-              style={{
-                flex: 1,
-                minWidth: '200px',
-                padding: '0.5rem 0.75rem',
-                borderRadius: '6px',
-                border: '1px solid rgba(255,255,255,0.15)',
-                background: 'rgba(255,255,255,0.05)',
-                color: 'inherit',
-                fontSize: '0.875rem',
-              }}
+              className="flex-1 min-w-[200px] py-2 px-3 rounded-md border border-white/15 bg-white/5 text-inherit text-sm"
             />
             <select
               value={entityTypeFilter}
               onChange={e => setEntityTypeFilter(e.target.value as EntityType | '')}
-              style={{
-                padding: '0.5rem 0.75rem',
-                borderRadius: '6px',
-                border: '1px solid rgba(255,255,255,0.15)',
-                background: 'rgba(255,255,255,0.05)',
-                color: 'inherit',
-                fontSize: '0.875rem',
-              }}
+              className="py-2 px-3 rounded-md border border-white/15 bg-white/5 text-inherit text-sm"
             >
               <option value="">Alle Typen</option>
               {ENTITY_TYPES.map(t => (
@@ -326,13 +297,13 @@ export function GraphRAGPanel({ context }: GraphRAGPanelProps) {
           </div>
 
           {entitiesLoading ? (
-            <div style={{ textAlign: 'center', padding: '2rem', opacity: 0.5 }}>Laden...</div>
+            <div className="text-center p-8 opacity-50">Laden...</div>
           ) : (
-            <div style={{ display: 'flex', gap: '1rem' }}>
+            <div className="flex gap-4">
               {/* Entity list */}
-              <div style={{ flex: 1, maxHeight: '500px', overflowY: 'auto' }}>
+              <div className="flex-1 max-h-[500px] overflow-y-auto">
                 {entities.length === 0 ? (
-                  <div style={{ textAlign: 'center', padding: '2rem', opacity: 0.5 }}>
+                  <div className="text-center p-8 opacity-50">
                     Keine Entities gefunden
                   </div>
                 ) : (
@@ -340,44 +311,32 @@ export function GraphRAGPanel({ context }: GraphRAGPanelProps) {
                     <div
                       key={entity.id}
                       onClick={() => loadEntityDetail(entity.id)}
-                      style={{
-                        padding: '0.75rem',
-                        marginBottom: '0.5rem',
-                        borderRadius: '8px',
-                        border: selectedEntity?.id === entity.id
-                          ? '1px solid #3b82f6'
-                          : '1px solid rgba(255,255,255,0.08)',
-                        background: selectedEntity?.id === entity.id
-                          ? 'rgba(59,130,246,0.08)'
-                          : 'rgba(255,255,255,0.03)',
-                        cursor: 'pointer',
-                        transition: 'background 0.15s',
-                      }}
+                      className={`p-3 mb-2 rounded-lg cursor-pointer transition-colors duration-150 ${
+                        selectedEntity?.id === entity.id
+                          ? 'border border-blue-500 bg-blue-500/[0.08]'
+                          : 'border border-white/[0.08] bg-white/[0.03]'
+                      }`}
                     >
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
+                      <div className="flex items-center gap-2 mb-1">
                         <span
+                          className="text-[0.7rem] py-[0.1rem] px-[0.4rem] rounded font-semibold uppercase bg-[var(--tc-bg)] text-[var(--tc)]"
                           style={{
-                            fontSize: '0.7rem',
-                            padding: '0.1rem 0.4rem',
-                            borderRadius: '4px',
-                            background: TYPE_COLORS[entity.type] + '22',
-                            color: TYPE_COLORS[entity.type],
-                            fontWeight: 600,
-                            textTransform: 'uppercase',
-                          }}
+                            '--tc': TYPE_COLORS[entity.type],
+                            '--tc-bg': TYPE_COLORS[entity.type] + '22',
+                          } as CSSProperties}
                         >
                           {entity.type}
                         </span>
-                        <span style={{ fontWeight: 500, fontSize: '0.9rem' }}>{entity.name}</span>
+                        <span className="font-medium text-[0.9rem]">{entity.name}</span>
                       </div>
                       {entity.description && (
-                        <div style={{ fontSize: '0.8rem', opacity: 0.6, marginTop: '0.25rem' }}>
+                        <div className="text-[0.8rem] opacity-60 mt-1">
                           {entity.description.slice(0, 100)}
                           {entity.description.length > 100 ? '...' : ''}
                         </div>
                       )}
-                      <div style={{ fontSize: '0.75rem', opacity: 0.4, marginTop: '0.25rem' }}>
-                        {entity.mention_count} Erwaehnung{entity.mention_count !== 1 ? 'en' : ''}
+                      <div className="text-xs opacity-40 mt-1">
+                        {entity.mention_count} Erwähnung{entity.mention_count !== 1 ? 'en' : ''}
                       </div>
                     </div>
                   ))
@@ -386,85 +345,59 @@ export function GraphRAGPanel({ context }: GraphRAGPanelProps) {
 
               {/* Entity detail */}
               {selectedEntity && (
-                <div style={{
-                  flex: 1,
-                  padding: '1rem',
-                  borderRadius: '8px',
-                  border: '1px solid rgba(255,255,255,0.1)',
-                  background: 'rgba(255,255,255,0.03)',
-                  maxHeight: '500px',
-                  overflowY: 'auto',
-                }}>
+                <div className="flex-1 p-4 rounded-lg border border-white/10 bg-white/[0.03] max-h-[500px] overflow-y-auto">
                   {entityDetailLoading ? (
-                    <div style={{ textAlign: 'center', padding: '2rem', opacity: 0.5 }}>Laden...</div>
+                    <div className="text-center p-8 opacity-50">Laden...</div>
                   ) : (
                     <>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.75rem' }}>
+                      <div className="flex justify-between items-start mb-3">
                         <div>
-                          <h3 style={{ margin: 0, fontSize: '1.1rem' }}>{selectedEntity.name}</h3>
+                          <h3 className="m-0 text-[1.1rem]">{selectedEntity.name}</h3>
                           <span
+                            className="text-[0.7rem] py-[0.1rem] px-[0.4rem] rounded font-semibold uppercase bg-[var(--tc-bg)] text-[var(--tc)]"
                             style={{
-                              fontSize: '0.7rem',
-                              padding: '0.1rem 0.4rem',
-                              borderRadius: '4px',
-                              background: TYPE_COLORS[selectedEntity.type] + '22',
-                              color: TYPE_COLORS[selectedEntity.type],
-                              fontWeight: 600,
-                              textTransform: 'uppercase',
-                            }}
+                              '--tc': TYPE_COLORS[selectedEntity.type],
+                              '--tc-bg': TYPE_COLORS[selectedEntity.type] + '22',
+                            } as CSSProperties}
                           >
                             {selectedEntity.type}
                           </span>
                         </div>
                         <button
                           onClick={() => deleteEntity(selectedEntity.id)}
-                          style={{
-                            padding: '0.25rem 0.5rem',
-                            background: 'rgba(239,68,68,0.1)',
-                            border: '1px solid rgba(239,68,68,0.3)',
-                            borderRadius: '4px',
-                            color: '#ef4444',
-                            cursor: 'pointer',
-                            fontSize: '0.75rem',
-                          }}
+                          className="py-1 px-2 bg-red-500/10 border border-red-500/30 rounded text-red-500 cursor-pointer text-xs"
                         >
-                          Loeschen
+                          Löschen
                         </button>
                       </div>
 
                       {selectedEntity.description && (
-                        <p style={{ fontSize: '0.875rem', opacity: 0.8, margin: '0 0 1rem' }}>
+                        <p className="text-sm opacity-80 m-0 mb-4">
                           {selectedEntity.description}
                         </p>
                       )}
 
-                      <h4 style={{ margin: '0 0 0.5rem', fontSize: '0.9rem', opacity: 0.7 }}>
+                      <h4 className="m-0 mb-2 text-[0.9rem] opacity-70">
                         Relationen ({selectedEntity.relations?.length || 0})
                       </h4>
                       {(!selectedEntity.relations || selectedEntity.relations.length === 0) ? (
-                        <div style={{ fontSize: '0.8rem', opacity: 0.4 }}>Keine Relationen</div>
+                        <div className="text-[0.8rem] opacity-40">Keine Relationen</div>
                       ) : (
                         selectedEntity.relations.map(rel => (
                           <div
                             key={rel.id}
-                            style={{
-                              padding: '0.5rem',
-                              marginBottom: '0.375rem',
-                              borderRadius: '6px',
-                              background: 'rgba(255,255,255,0.04)',
-                              fontSize: '0.8rem',
-                            }}
+                            className="p-2 mb-[0.375rem] rounded-md bg-white/[0.04] text-[0.8rem]"
                           >
-                            <span style={{ opacity: 0.6 }}>
+                            <span className="opacity-60">
                               {rel.source_name || rel.source_id}
                             </span>
-                            <span style={{ margin: '0 0.5rem', color: '#3b82f6', fontWeight: 500 }}>
+                            <span className="mx-2 text-blue-500 font-medium">
                               {rel.relation_type}
                             </span>
-                            <span style={{ opacity: 0.6 }}>
+                            <span className="opacity-60">
                               {rel.target_name || rel.target_id}
                             </span>
-                            <span style={{ float: 'right', opacity: 0.4 }}>
+                            <span className="float-right opacity-40">
                               w: {rel.weight?.toFixed(2) || '1.00'}
                             </span>
                           </div>
@@ -482,53 +415,40 @@ export function GraphRAGPanel({ context }: GraphRAGPanelProps) {
       {/* Communities Tab */}
       {activeTab === 'communities' && (
         <div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-            <span style={{ fontSize: '0.875rem', opacity: 0.6 }}>
+          <div className="flex justify-between items-center mb-4">
+            <span className="text-sm opacity-60">
               {communities.length} Communities
             </span>
             <button
               onClick={refreshCommunities}
               disabled={refreshingCommunities}
-              style={{
-                padding: '0.4rem 0.75rem',
-                borderRadius: '6px',
-                border: '1px solid rgba(59,130,246,0.3)',
-                background: 'rgba(59,130,246,0.1)',
-                color: '#3b82f6',
-                cursor: refreshingCommunities ? 'not-allowed' : 'pointer',
-                fontSize: '0.8rem',
-                opacity: refreshingCommunities ? 0.5 : 1,
-              }}
+              className={`py-[0.4rem] px-3 rounded-md border border-blue-500/30 bg-blue-500/10 text-blue-500 text-[0.8rem] ${
+                refreshingCommunities ? 'cursor-not-allowed opacity-50' : 'cursor-pointer opacity-100'
+              }`}
             >
               {refreshingCommunities ? 'Aktualisiere...' : 'Aktualisieren'}
             </button>
           </div>
 
           {communitiesLoading ? (
-            <div style={{ textAlign: 'center', padding: '2rem', opacity: 0.5 }}>Laden...</div>
+            <div className="text-center p-8 opacity-50">Laden...</div>
           ) : communities.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '2rem', opacity: 0.5 }}>
+            <div className="text-center p-8 opacity-50">
               Keine Communities gefunden. Indexierung starten um Communities zu generieren.
             </div>
           ) : (
             communities.map(community => (
               <div
                 key={community.id}
-                style={{
-                  padding: '1rem',
-                  marginBottom: '0.75rem',
-                  borderRadius: '8px',
-                  border: '1px solid rgba(255,255,255,0.08)',
-                  background: 'rgba(255,255,255,0.03)',
-                }}
+                className="p-4 mb-3 rounded-lg border border-white/[0.08] bg-white/[0.03]"
               >
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-                  <h4 style={{ margin: 0, fontSize: '0.95rem' }}>{community.name}</h4>
-                  <span style={{ fontSize: '0.75rem', opacity: 0.5 }}>
+                <div className="flex justify-between items-center mb-2">
+                  <h4 className="m-0 text-[0.95rem]">{community.name}</h4>
+                  <span className="text-xs opacity-50">
                     {community.entity_count} Entities | Level {community.level}
                   </span>
                 </div>
-                <p style={{ margin: 0, fontSize: '0.85rem', opacity: 0.7, lineHeight: 1.5 }}>
+                <p className="m-0 text-[0.85rem] opacity-70 leading-normal">
                   {community.summary}
                 </p>
               </div>
@@ -540,34 +460,19 @@ export function GraphRAGPanel({ context }: GraphRAGPanelProps) {
       {/* Retrieval Tab */}
       {activeTab === 'retrieval' && (
         <div>
-          <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem' }}>
+          <div className="flex gap-2 mb-4">
             <input
               type="text"
               placeholder="Suchanfrage eingeben..."
               value={retrievalQuery}
               onChange={e => setRetrievalQuery(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && runRetrieval()}
-              style={{
-                flex: 1,
-                padding: '0.5rem 0.75rem',
-                borderRadius: '6px',
-                border: '1px solid rgba(255,255,255,0.15)',
-                background: 'rgba(255,255,255,0.05)',
-                color: 'inherit',
-                fontSize: '0.875rem',
-              }}
+              className="flex-1 py-2 px-3 rounded-md border border-white/15 bg-white/5 text-inherit text-sm"
             />
             <select
               value={retrievalStrategy}
               onChange={e => setRetrievalStrategy(e.target.value)}
-              style={{
-                padding: '0.5rem 0.75rem',
-                borderRadius: '6px',
-                border: '1px solid rgba(255,255,255,0.15)',
-                background: 'rgba(255,255,255,0.05)',
-                color: 'inherit',
-                fontSize: '0.875rem',
-              }}
+              className="py-2 px-3 rounded-md border border-white/15 bg-white/5 text-inherit text-sm"
             >
               <option value="hybrid">Hybrid</option>
               <option value="vector">Vector</option>
@@ -578,16 +483,9 @@ export function GraphRAGPanel({ context }: GraphRAGPanelProps) {
             <button
               onClick={runRetrieval}
               disabled={retrievalLoading || !retrievalQuery.trim()}
-              style={{
-                padding: '0.5rem 1rem',
-                borderRadius: '6px',
-                border: 'none',
-                background: '#3b82f6',
-                color: '#fff',
-                cursor: retrievalLoading ? 'not-allowed' : 'pointer',
-                fontSize: '0.875rem',
-                opacity: retrievalLoading || !retrievalQuery.trim() ? 0.5 : 1,
-              }}
+              className={`py-2 px-4 rounded-md border-0 bg-blue-500 text-white text-sm ${
+                retrievalLoading || !retrievalQuery.trim() ? 'cursor-not-allowed opacity-50' : 'cursor-pointer opacity-100'
+              }`}
             >
               {retrievalLoading ? 'Suche...' : 'Suchen'}
             </button>
@@ -595,35 +493,23 @@ export function GraphRAGPanel({ context }: GraphRAGPanelProps) {
 
           {retrievalResults.length > 0 && (
             <div>
-              <div style={{ fontSize: '0.8rem', opacity: 0.5, marginBottom: '0.75rem' }}>
+              <div className="text-[0.8rem] opacity-50 mb-3">
                 {retrievalResults.length} Ergebnis{retrievalResults.length !== 1 ? 'se' : ''}
               </div>
               {retrievalResults.map((result, idx) => (
                 <div
                   key={result.id || idx}
-                  style={{
-                    padding: '0.75rem',
-                    marginBottom: '0.5rem',
-                    borderRadius: '8px',
-                    border: '1px solid rgba(255,255,255,0.08)',
-                    background: 'rgba(255,255,255,0.03)',
-                  }}
+                  className="p-3 mb-2 rounded-lg border border-white/[0.08] bg-white/[0.03]"
                 >
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.375rem' }}>
-                    <span style={{ fontSize: '0.75rem', opacity: 0.5, textTransform: 'uppercase' }}>
+                  <div className="flex justify-between mb-[0.375rem]">
+                    <span className="text-xs opacity-50 uppercase">
                       {result.source}
                     </span>
-                    <span style={{
-                      fontSize: '0.75rem',
-                      padding: '0.1rem 0.4rem',
-                      borderRadius: '4px',
-                      background: 'rgba(34,197,94,0.15)',
-                      color: '#22c55e',
-                    }}>
+                    <span className="text-xs py-[0.1rem] px-[0.4rem] rounded bg-green-500/15 text-green-500">
                       Score: {result.score?.toFixed(3) || 'N/A'}
                     </span>
                   </div>
-                  <p style={{ margin: 0, fontSize: '0.85rem', lineHeight: 1.5 }}>
+                  <p className="m-0 text-[0.85rem] leading-normal">
                     {result.content?.slice(0, 300)}
                     {(result.content?.length || 0) > 300 ? '...' : ''}
                   </p>
@@ -633,7 +519,7 @@ export function GraphRAGPanel({ context }: GraphRAGPanelProps) {
           )}
 
           {!retrievalLoading && retrievalResults.length === 0 && retrievalQuery && (
-            <div style={{ textAlign: 'center', padding: '2rem', opacity: 0.4, fontSize: '0.875rem' }}>
+            <div className="text-center p-8 opacity-40 text-sm">
               Enter drucken oder Suchen klicken um Ergebnisse zu laden
             </div>
           )}
@@ -643,31 +529,25 @@ export function GraphRAGPanel({ context }: GraphRAGPanelProps) {
       {/* Indexing Tab */}
       {activeTab === 'indexing' && (
         <div>
-          <div style={{
-            padding: '1rem',
-            borderRadius: '8px',
-            border: '1px solid rgba(255,255,255,0.08)',
-            background: 'rgba(255,255,255,0.03)',
-            marginBottom: '1rem',
-          }}>
-            <h4 style={{ margin: '0 0 0.75rem', fontSize: '0.95rem' }}>Index-Status</h4>
+          <div className="p-4 rounded-lg border border-white/[0.08] bg-white/[0.03] mb-4">
+            <h4 className="m-0 mb-3 text-[0.95rem]">Index-Status</h4>
             {indexStatus ? (
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+              <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <div style={{ fontSize: '0.75rem', opacity: 0.5 }}>Status</div>
-                  <div style={{ fontSize: '0.9rem', fontWeight: 500 }}>
+                  <div className="text-xs opacity-50">Status</div>
+                  <div className="text-[0.9rem] font-medium">
                     {indexStatus.status}
                   </div>
                 </div>
                 <div>
-                  <div style={{ fontSize: '0.75rem', opacity: 0.5 }}>Indexiert</div>
-                  <div style={{ fontSize: '0.9rem', fontWeight: 500 }}>
+                  <div className="text-xs opacity-50">Indexiert</div>
+                  <div className="text-[0.9rem] font-medium">
                     {indexStatus.indexed} / {indexStatus.total}
                   </div>
                 </div>
-                <div style={{ gridColumn: '1 / -1' }}>
-                  <div style={{ fontSize: '0.75rem', opacity: 0.5 }}>Letzter Lauf</div>
-                  <div style={{ fontSize: '0.9rem' }}>
+                <div className="col-span-full">
+                  <div className="text-xs opacity-50">Letzter Lauf</div>
+                  <div className="text-[0.9rem]">
                     {indexStatus.last_run
                       ? new Date(indexStatus.last_run).toLocaleString('de-DE')
                       : 'Noch nie'}
@@ -675,39 +555,23 @@ export function GraphRAGPanel({ context }: GraphRAGPanelProps) {
                 </div>
               </div>
             ) : (
-              <div style={{ fontSize: '0.85rem', opacity: 0.5 }}>Status nicht verfuegbar</div>
+              <div className="text-[0.85rem] opacity-50">Status nicht verfügbar</div>
             )}
           </div>
 
-          <div style={{ display: 'flex', gap: '0.75rem' }}>
+          <div className="flex gap-3">
             <button
               onClick={triggerIndex}
               disabled={indexing}
-              style={{
-                padding: '0.5rem 1.25rem',
-                borderRadius: '6px',
-                border: 'none',
-                background: '#22c55e',
-                color: '#fff',
-                cursor: indexing ? 'not-allowed' : 'pointer',
-                fontSize: '0.875rem',
-                fontWeight: 500,
-                opacity: indexing ? 0.5 : 1,
-              }}
+              className={`py-2 px-5 rounded-md border-0 bg-green-500 text-white text-sm font-medium ${
+                indexing ? 'cursor-not-allowed opacity-50' : 'cursor-pointer opacity-100'
+              }`}
             >
               {indexing ? 'Wird indexiert...' : 'Indexierung starten'}
             </button>
             <button
               onClick={loadIndexStatus}
-              style={{
-                padding: '0.5rem 1rem',
-                borderRadius: '6px',
-                border: '1px solid rgba(255,255,255,0.15)',
-                background: 'transparent',
-                color: 'inherit',
-                cursor: 'pointer',
-                fontSize: '0.875rem',
-              }}
+              className="py-2 px-4 rounded-md border border-white/15 bg-transparent text-inherit cursor-pointer text-sm"
             >
               Status aktualisieren
             </button>

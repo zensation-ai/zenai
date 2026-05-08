@@ -118,7 +118,7 @@ Keine wesentlichen Widersprüche gefunden.
 - Regulatorische Rahmenbedingungen nicht abgedeckt` }],
       });
 
-      const result = await synthesizeKnowledge('KI im Gesundheitswesen', 'personal');
+      const result = await synthesizeKnowledge('KI im Gesundheitswesen', 'operations');
 
       expect(result.synthesis).toContain('Synthese');
       expect(result.synthesis).toContain('KI in der Medizin');
@@ -137,7 +137,7 @@ Keine wesentlichen Widersprüche gefunden.
       // Mock RAG returning empty
       mockRetrieve.mockResolvedValue({ results: [], confidence: 0, methodsUsed: [], timing: { total: 50 } });
 
-      const result = await synthesizeKnowledge('Quantenphysik', 'personal');
+      const result = await synthesizeKnowledge('Quantenphysik', 'operations');
 
       expect(result.sources).toHaveLength(0);
       expect(result.synthesis).toContain('keine relevanten Ideen');
@@ -168,7 +168,7 @@ Keine wesentlichen Widersprüche gefunden.
         content: [{ type: 'text', text: '## Synthese\nTest synthesis output.\n\n## Wissenslücken\n- More data needed' }],
       });
 
-      const result = await synthesizeKnowledge('Test topic', 'personal');
+      const result = await synthesizeKnowledge('Test topic', 'operations');
 
       // Should still work with just original query
       expect(result.queryVariants).toContain('Test topic');
@@ -196,7 +196,7 @@ Keine wesentlichen Widersprüche gefunden.
         content: [{ type: 'text', text: '## Synthese\nResult without graph.\n\n## Wissenslücken\nNone' }],
       });
 
-      const result = await synthesizeKnowledge('Topic', 'personal');
+      const result = await synthesizeKnowledge('Topic', 'operations');
 
       expect(result.synthesis).toContain('Result without graph');
     });
@@ -226,7 +226,7 @@ Keine wesentlichen Widersprüche gefunden.
         content: [{ type: 'text', text: '## Synthese\nDeduplicated.\n\n## Wissenslücken\nNone' }],
       });
 
-      const result = await synthesizeKnowledge('Topic', 'personal');
+      const result = await synthesizeKnowledge('Topic', 'operations');
 
       // RRF should merge duplicate IDs, so only 1 unique source
       expect(result.sources.length).toBe(1);
@@ -239,7 +239,7 @@ Keine wesentlichen Widersprüche gefunden.
 
       mockRetrieve.mockResolvedValue({ results: [], confidence: 0, methodsUsed: [], timing: { total: 50 } });
 
-      const result = await synthesizeKnowledge('AI topic', 'personal', { language: 'en' });
+      const result = await synthesizeKnowledge('AI topic', 'operations', { language: 'en' });
 
       expect(result.synthesis).toContain('No relevant ideas found');
     });

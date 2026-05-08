@@ -62,10 +62,10 @@ export const BusinessReports: React.FC = () => {
         <div className="business-empty-icon">📋</div>
         <div className="business-empty-title">Noch keine Berichte</div>
         <div className="business-empty-text">
-          Berichte werden automatisch generiert, sobald genuegend Daten gesammelt wurden.
+          Berichte werden automatisch generiert, sobald genügend Daten gesammelt wurden.
           Stelle sicher, dass mindestens ein Connector konfiguriert ist.
         </div>
-        <div style={{ marginTop: '1rem', display: 'flex', gap: '0.5rem', justifyContent: 'center' }}>
+        <div className="mt-4 flex gap-2 justify-center">
           <button type="button" className="business-btn primary" onClick={() => generateReport('weekly')} disabled={generating}>
             {generating ? 'Wird generiert...' : '📊 Wochenbericht generieren'}
           </button>
@@ -75,10 +75,10 @@ export const BusinessReports: React.FC = () => {
   }
 
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: '280px 1fr', gap: '1.5rem' }}>
+    <div className="grid grid-cols-[280px_1fr] gap-6">
       {/* Report List */}
-      <div className="business-section" style={{ marginBottom: 0 }}>
-        <div className="business-section-title" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <div className="business-section mb-0">
+        <div className="business-section-title flex justify-between items-center">
           <span>📋 Berichte</span>
           <button type="button" className="business-btn" onClick={() => generateReport('weekly')} disabled={generating}>
             {generating ? '...' : '+ Neu'}
@@ -91,19 +91,16 @@ export const BusinessReports: React.FC = () => {
             tabIndex={0}
             onClick={() => setSelectedReport(report)}
             onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setSelectedReport(report); }}
+            className="p-3 mb-2 rounded-[var(--radius-md)] cursor-pointer border bg-[var(--bg)] border-[color:var(--bc)]"
             style={{
-              padding: '0.75rem',
-              marginBottom: '0.5rem',
-              borderRadius: 'var(--radius-md)',
-              cursor: 'pointer',
-              background: selectedReport?.id === report.id ? 'rgba(129, 140, 248, 0.15)' : 'transparent',
-              border: `1px solid ${selectedReport?.id === report.id ? 'rgba(129, 140, 248, 0.3)' : 'transparent'}`,
-            }}
+              '--bg': selectedReport?.id === report.id ? 'rgba(129, 140, 248, 0.15)' : 'transparent',
+              '--bc': selectedReport?.id === report.id ? 'rgba(129, 140, 248, 0.3)' : 'transparent',
+            } as React.CSSProperties}
           >
-            <div style={{ fontWeight: 600, fontSize: '0.9rem', color: 'rgba(255,255,255,0.9)' }}>
+            <div className="font-semibold text-[0.9rem] text-white/90">
               {report.report_type === 'weekly' ? 'Wochenbericht' : 'Monatsbericht'}
             </div>
-            <div style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.5)' }}>
+            <div className="text-[0.8rem] text-white/50">
               {new Date(report.period_start).toLocaleDateString('de-DE')} - {new Date(report.period_end).toLocaleDateString('de-DE')}
             </div>
           </div>
@@ -111,26 +108,26 @@ export const BusinessReports: React.FC = () => {
       </div>
 
       {/* Report Detail */}
-      <div className="business-section" style={{ marginBottom: 0 }}>
+      <div className="business-section mb-0">
         {selectedReport ? (
           <>
             <div className="business-section-title">
               {selectedReport.report_type === 'weekly' ? '📊 Wochenbericht' : '📊 Monatsbericht'}
             </div>
-            <div style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.5)', marginBottom: '1rem' }}>
+            <div className="text-[0.85rem] text-white/50 mb-4">
               {new Date(selectedReport.period_start).toLocaleDateString('de-DE')} - {new Date(selectedReport.period_end).toLocaleDateString('de-DE')}
             </div>
 
             {selectedReport.summary && (
-              <div style={{ marginBottom: '1.5rem' }}>
-                <h4 style={{ color: 'rgba(255,255,255,0.8)', marginBottom: '0.5rem' }}>Zusammenfassung</h4>
-                <p style={{ color: 'rgba(255,255,255,0.7)', lineHeight: 1.6 }}>{selectedReport.summary}</p>
+              <div className="mb-6">
+                <h4 className="text-white/80 mb-2">Zusammenfassung</h4>
+                <p className="text-white/70 leading-relaxed">{selectedReport.summary}</p>
               </div>
             )}
 
             {selectedReport.recommendations && selectedReport.recommendations.length > 0 && (
               <div>
-                <h4 style={{ color: 'rgba(255,255,255,0.8)', marginBottom: '0.5rem' }}>Empfehlungen</h4>
+                <h4 className="text-white/80 mb-2">Empfehlungen</h4>
                 {selectedReport.recommendations.map((rec, i) => (
                   <div key={i} className="business-insight-card info">
                     <div className="business-insight-desc">💡 {rec}</div>
@@ -140,7 +137,7 @@ export const BusinessReports: React.FC = () => {
             )}
           </>
         ) : (
-          <div className="business-empty-text">Waehle einen Bericht aus.</div>
+          <div className="business-empty-text">Wähle einen Bericht aus.</div>
         )}
       </div>
     </div>

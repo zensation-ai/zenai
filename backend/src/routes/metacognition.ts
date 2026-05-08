@@ -9,6 +9,7 @@
 
 import { Router } from 'express';
 import { asyncHandler } from '../middleware/errorHandler';
+import { apiKeyAuth } from '../middleware/auth';
 import { queryContext } from '../utils/database-context';
 import type { AIContext } from '../types/context';
 import { getRecentStates, recordEvaluation, buildMetacognitiveState } from '../services/metacognition/state-vector';
@@ -17,6 +18,9 @@ import { loadCapabilityProfile, recordInteraction } from '../services/metacognit
 import { computeCognitiveHealth } from '../services/metacognition/cognitive-health';
 
 const router = Router();
+
+// Sprint 1.5 Item 4 — blanket auth for all metacognition routes.
+router.use(apiKeyAuth);
 
 // ─── Metacognitive State ─────────────────────────────────────────────────────
 
@@ -88,7 +92,7 @@ router.get('/:context/metacognition/overview', asyncHandler(async (req, res) => 
   const ctx = context as AIContext;
 
   // Run all queries in parallel for speed
-  const [calibration, capabilities, recentStates, hypothesesRes, gapsRes, curiosityRes, predAccRes] = await Promise.allSettled([
+  const [calibration, capabilities, recentStates, hypothesesRes, gapsRes, curiosityRes, predAccRes, feedbackRes, fsrsRes] = await Promise.allSettled([
     loadCalibrationReport(context),
     loadCapabilityProfile(context),
     getRecentStates(context, 10),
@@ -112,6 +116,12 @@ router.get('/:context/metacognition/overview', asyncHandler(async (req, res) => 
         COUNT(*) FILTER (WHERE was_correct = true) as correct
        FROM prediction_history
        WHERE created_at > NOW() - INTERVAL '30 days'`),
+    queryContext(ctx,
+      `SELECT COUNT(*) FILTER (WHERE rating > 0)::float / NULLIF(COUNT(*), 0) as positivity
+       FROM feedback_events WHERE created_at > NOW() - INTERVAL '30 days'`),
+    queryContext(ctx,
+      `SELECT 1.0 - (EXTRACT(EPOCH FROM AVG(NOW() - last_review)) / 86400.0 / 30.0) as currency
+       FROM fsrs_cards WHERE status = 'active' AND last_review IS NOT NULL`),
   ]);
 
   // Extract values with fallbacks
@@ -189,13 +199,21 @@ router.get('/:context/metacognition/overview', asyncHandler(async (req, res) => 
     predictionAccuracy = total > 0 ? correct / total : 0;
   }
 
+  // --- Feedback & FSRS real values (fall back to 0.5 if tables missing) ---
+  const feedbackPositivity = feedbackRes.status === 'fulfilled'
+    ? parseFloat((feedbackRes.value.rows[0] as Record<string, unknown>)?.positivity as string ?? '0.5') || 0.5
+    : 0.5;
+  const fsrsCurrency = fsrsRes.status === 'fulfilled'
+    ? Math.max(0, Math.min(1, parseFloat((fsrsRes.value.rows[0] as Record<string, unknown>)?.currency as string ?? '0.5'))) || 0.5
+    : 0.5;
+
   // --- Health score ---
   const healthScore = computeCognitiveHealth({
     calibrationScore,
     coverageScore: avgCoverage,
     predictionAccuracy,
-    feedbackPositivity: 0.5, // placeholder — would need feedback aggregation
-    fsrsCurrency: 0.5, // placeholder — would need FSRS stats
+    feedbackPositivity,
+    fsrsCurrency,
   });
 
   res.json({

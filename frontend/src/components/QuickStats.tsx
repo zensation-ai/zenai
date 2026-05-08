@@ -8,9 +8,6 @@
  */
 
 import { useMemo, memo } from 'react';
-import '../neurodesign.css';
-import './QuickStats.css';
-
 interface Idea {
   type: string;
   category: string;
@@ -27,7 +24,7 @@ const TYPE_CONFIG: Record<string, { icon: string; label: string; color: string }
   idea: { icon: '💡', label: 'Ideen', color: '#f59e0b' },
   problem: { icon: '⚠️', label: 'Probleme', color: '#ef4444' },
   insight: { icon: '🔍', label: 'Erkenntnisse', color: '#3b82f6' },
-  question: { icon: '❓', label: 'Fragen', color: '#8b5cf6' },
+  question: { icon: '❓', label: 'Fragen', color: '#1a6b7a' },
 };
 
 const PRIORITY_CONFIG: Record<string, { icon: string; label: string; color: string }> = {

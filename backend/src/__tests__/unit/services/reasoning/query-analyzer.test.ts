@@ -190,12 +190,12 @@ describe('QueryAnalyzer', () => {
 
     test('detects personal domain (DE: mein)', () => {
       const result = analyzeQuery('Mein Urlaub nächsten Monat steht an');
-      expect(result.domain).toBe('personal');
+      expect(result.domain).toBe('operations');
     });
 
     test('detects personal domain (EN: family)', () => {
       const result = analyzeQuery('I need to plan a birthday party for my family');
-      expect(result.domain).toBe('personal');
+      expect(result.domain).toBe('operations');
     });
 
     test('defaults to general domain', () => {

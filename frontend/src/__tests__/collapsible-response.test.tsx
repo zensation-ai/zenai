@@ -20,7 +20,7 @@ describe('CollapsibleResponse', () => {
         <p>{longContent}</p>
       </CollapsibleResponse>
     );
-    expect(screen.getByText('Vollstaendig anzeigen')).toBeDefined();
+    expect(screen.getByText('Vollständig anzeigen')).toBeDefined();
   });
 
   test('toggle expands and collapses', () => {
@@ -29,7 +29,7 @@ describe('CollapsibleResponse', () => {
         <p>{longContent}</p>
       </CollapsibleResponse>
     );
-    const toggle = screen.getByText('Vollstaendig anzeigen');
+    const toggle = screen.getByText('Vollständig anzeigen');
     fireEvent.click(toggle);
     expect(screen.getByText('Weniger anzeigen')).toBeDefined();
   });

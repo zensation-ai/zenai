@@ -138,7 +138,7 @@ export const SeoDashboard: React.FC = () => {
                   contentStyle={{ background: 'rgba(20,30,42,0.95)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8 }}
                   labelStyle={{ color: 'rgba(255,255,255,0.7)' }}
                 />
-                <Line type="monotone" dataKey="impressions" stroke="#818cf8" strokeWidth={2} dot={false} name="Impressionen" />
+                <Line type="monotone" dataKey="impressions" stroke="#2d8a9e" strokeWidth={2} dot={false} name="Impressionen" />
                 <Line type="monotone" dataKey="clicks" stroke="#34d399" strokeWidth={2} dot={false} name="Klicks" />
               </LineChart>
             </ResponsiveContainer>

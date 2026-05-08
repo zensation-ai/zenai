@@ -297,10 +297,10 @@ export function validateRequired(
  * Validate context parameter
  */
 export function validateContext(context: string): void {
-  if (!['personal', 'work', 'learning', 'creative'].includes(context)) {
+  if (!['operations', 'finance', 'people', 'strategy'].includes(context)) {
     throw new ValidationError(
-      'Invalid context. Use "personal", "work", "learning", or "creative".',
-      { context: 'must be "personal", "work", "learning", or "creative"' }
+      'Invalid context. Use "operations", "finance", "people", or "strategy".',
+      { context: 'must be "operations", "finance", "people", or "strategy"' }
     );
   }
 }

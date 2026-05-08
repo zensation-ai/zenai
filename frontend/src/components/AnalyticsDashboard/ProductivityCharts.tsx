@@ -67,7 +67,7 @@ function mergeIdeasAndTasks(
 }
 
 const CHART_COLORS = {
-  ideas: '#ff6b35',   // Orange (brand)
+  ideas: 'var(--primary)',   // Orange (brand)
   tasks: '#22c55e',   // Green
   chats: '#3b82f6',   // Blue
   grid: 'rgba(255,255,255,0.06)',
@@ -200,7 +200,7 @@ export const ProductivityCharts: React.FC<ProductivityChartsProps> = ({
 
       {mergedData.length === 0 && chatData.length === 0 && (
         <div className="av2-empty-charts">
-          <p>Keine Daten im ausgewaehlten Zeitraum vorhanden.</p>
+          <p>Keine Daten im ausgewählten Zeitraum vorhanden.</p>
         </div>
       )}
     </div>

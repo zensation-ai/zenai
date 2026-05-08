@@ -13,8 +13,6 @@ import { AIContext } from './ContextSwitcher';
 import { HubPage, type TabDef } from './HubPage';
 import { SkeletonLoader } from './SkeletonLoader';
 import { useTabNavigation } from '../hooks/useTabNavigation';
-import './InsightsDashboard.css';
-
 const AnalyticsDashboard = lazy(() => import('./AnalyticsDashboard/AnalyticsDashboard').then(m => ({ default: m.AnalyticsDashboardV2 })));
 const DigestDashboard = lazy(() => import('./DigestDashboard').then(m => ({ default: m.DigestDashboard })));
 const KnowledgeGraphPage = lazy(() => import('./KnowledgeGraph/KnowledgeGraphPage'));
@@ -36,8 +34,8 @@ const TABS: TabDef<InsightsTab>[] = [
   { id: 'analytics', label: 'Statistiken', icon: '📈', description: 'Analysen, Trends und Produktivität' },
   { id: 'digest', label: 'Zusammenfassung', icon: '📊', description: 'Tägliche und wöchentliche Digests' },
   { id: 'connections', label: 'Verbindungen', icon: '🕸️', description: 'Wissens-Graph und Beziehungen' },
-  { id: 'graphrag', label: 'GraphRAG', icon: '🔬', description: 'Entitaeten, Communities und Hybrid-Retrieval' },
-  { id: 'sleep', label: 'KI-Nacht', icon: '🌙', description: 'Naechtliche Erkenntnisse und Memory-Konsolidierung' },
+  { id: 'graphrag', label: 'GraphRAG', icon: '🔬', description: 'Entitäten, Communities und Hybrid-Retrieval' },
+  { id: 'sleep', label: 'KI-Nacht', icon: '🌙', description: 'Nächtliche Erkenntnisse und Memory-Konsolidierung' },
   { id: 'ai-traces', label: 'KI-Traces', icon: '🔍', description: 'KI-Aufrufe, Kosten und Performance-Metriken' },
 ];
 
@@ -57,7 +55,7 @@ const InsightsDashboardComponent: React.FC<InsightsDashboardProps> = ({
     initialTab,
     validTabs: ['analytics', 'digest', 'connections', 'graphrag', 'sleep', 'ai-traces'],
     defaultTab: 'analytics',
-    basePath: '/insights',
+    basePath: '/cockpit/trends',
   });
 
   const renderTabContent = () => {
@@ -122,7 +120,7 @@ const InsightsDashboardComponent: React.FC<InsightsDashboardProps> = ({
 
   return (
     <HubPage
-      title="Insights"
+      title="Einblicke"
       icon="📊"
       subtitle="Deine Gedanken im Überblick"
       tabs={TABS}

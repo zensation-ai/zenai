@@ -26,7 +26,7 @@ const mockQueryContext = jest.fn();
 
 jest.mock('../../../utils/database-context', () => ({
   queryContext: (...args: unknown[]) => mockQueryContext(...args),
-  isValidContext: jest.fn((ctx: string) => ['personal', 'work', 'learning', 'creative'].includes(ctx)),
+  isValidContext: jest.fn((ctx: string) => ['operations', 'finance', 'people', 'strategy'].includes(ctx)),
   AIContext: {},
 }));
 
@@ -65,7 +65,7 @@ describe('Analytics Advanced Routes', () => {
         .mockResolvedValueOnce({ rows: [{ hour: '10', count: '8' }] })
         .mockResolvedValueOnce({ rows: [] });
 
-      const res = await request(app).get('/api/personal/analytics/dashboard');
+      const res = await request(app).get('/api/operations/analytics/dashboard');
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
@@ -91,7 +91,7 @@ describe('Analytics Advanced Routes', () => {
         .mockResolvedValueOnce({ rows: [] })
         .mockResolvedValueOnce({ rows: [] });
 
-      const res = await request(app).get('/api/work/analytics/dashboard');
+      const res = await request(app).get('/api/finance/analytics/dashboard');
 
       expect(res.status).toBe(200);
       expect(res.body.summary.total).toBe(0);
@@ -99,7 +99,7 @@ describe('Analytics Advanced Routes', () => {
     });
 
     it('should work with all valid contexts', async () => {
-      for (const ctx of ['personal', 'work', 'learning', 'creative']) {
+      for (const ctx of ['operations', 'finance', 'people', 'strategy']) {
         mockQueryContext.mockReset();
         mockQueryContext
           .mockResolvedValueOnce({ rows: [{ total: '1', today: '0', this_week: '0', this_month: '1', high_priority: '0' }] })
@@ -127,7 +127,7 @@ describe('Analytics Advanced Routes', () => {
         .mockResolvedValueOnce({ rows: [] })
         .mockResolvedValueOnce({ rows: [] });
 
-      const res = await request(app).get('/api/personal/analytics/dashboard');
+      const res = await request(app).get('/api/operations/analytics/dashboard');
 
       expect(res.status).toBe(200);
       expect(res.body.generatedAt).toBeDefined();

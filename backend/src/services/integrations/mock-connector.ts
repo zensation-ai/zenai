@@ -23,7 +23,7 @@ export class MockConnector implements Connector {
     requiredScopes: ['mock.read'],
     webhookSupported: true,
     syncSupported: true,
-    defaultContext: 'personal',
+    defaultContext: 'operations',
     description: 'A mock connector for testing the integration framework',
   };
 
@@ -65,7 +65,7 @@ export class MockConnector implements Connector {
       connectorId: 'mock',
       userId: body.userId as string,
       type: 'test.event',
-      targetContext: 'personal',
+      targetContext: 'operations',
       payload: body as Record<string, unknown>,
       timestamp: new Date(),
     };

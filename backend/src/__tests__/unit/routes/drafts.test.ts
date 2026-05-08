@@ -21,7 +21,7 @@ jest.mock('../../../utils/logger', () => ({
 }));
 
 jest.mock('../../../utils/database-context', () => ({
-  isValidContext: jest.fn((ctx: string) => ['personal', 'work', 'learning', 'creative'].includes(ctx)),
+  isValidContext: jest.fn((ctx: string) => ['operations', 'finance', 'people', 'strategy'].includes(ctx)),
   AIContext: {},
 }));
 
@@ -90,7 +90,7 @@ describe('Drafts Routes', () => {
       });
       mockMarkDraftViewed.mockResolvedValue(undefined);
 
-      const res = await request(app).get(`/api/personal/ideas/${VALID_UUID}/draft`);
+      const res = await request(app).get(`/api/operations/ideas/${VALID_UUID}/draft`);
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
@@ -100,7 +100,7 @@ describe('Drafts Routes', () => {
     it('should return null draft when not found', async () => {
       mockGetDraftForIdea.mockResolvedValue(null);
 
-      const res = await request(app).get(`/api/personal/ideas/${VALID_UUID}/draft`);
+      const res = await request(app).get(`/api/operations/ideas/${VALID_UUID}/draft`);
 
       expect(res.status).toBe(200);
       expect(res.body.draft).toBeNull();
@@ -113,7 +113,7 @@ describe('Drafts Routes', () => {
         { id: 'd1', ideaId: 'i1', draftType: 'email', content: 'Short content', wordCount: 2, status: 'ready' },
       ]);
 
-      const res = await request(app).get('/api/personal/drafts');
+      const res = await request(app).get('/api/operations/drafts');
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
@@ -130,7 +130,7 @@ describe('Drafts Routes', () => {
     it('should discard a draft', async () => {
       mockDiscardDraft.mockResolvedValue(undefined);
 
-      const res = await request(app).delete('/api/personal/drafts/d1');
+      const res = await request(app).delete('/api/operations/drafts/d1');
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
@@ -142,7 +142,7 @@ describe('Drafts Routes', () => {
       mockSaveDraftFeedback.mockResolvedValue(undefined);
 
       const res = await request(app)
-        .put('/api/personal/drafts/d1/feedback')
+        .put('/api/operations/drafts/d1/feedback')
         .send({ rating: 4, feedback: 'Good draft' });
 
       expect(res.status).toBe(200);
@@ -151,7 +151,7 @@ describe('Drafts Routes', () => {
 
     it('should reject invalid rating', async () => {
       const res = await request(app)
-        .put('/api/personal/drafts/d1/feedback')
+        .put('/api/operations/drafts/d1/feedback')
         .send({ rating: 10 });
 
       expect(res.status).toBe(400);
@@ -163,7 +163,7 @@ describe('Drafts Routes', () => {
       mockQuickFeedback.mockResolvedValue(true);
 
       const res = await request(app)
-        .post('/api/personal/drafts/d1/feedback/quick')
+        .post('/api/operations/drafts/d1/feedback/quick')
         .send({ isPositive: true });
 
       expect(res.status).toBe(200);
@@ -172,7 +172,7 @@ describe('Drafts Routes', () => {
 
     it('should reject non-boolean isPositive', async () => {
       const res = await request(app)
-        .post('/api/personal/drafts/d1/feedback/quick')
+        .post('/api/operations/drafts/d1/feedback/quick')
         .send({ isPositive: 'yes' });
 
       expect(res.status).toBe(400);
@@ -183,7 +183,7 @@ describe('Drafts Routes', () => {
     it('should return feedback analytics', async () => {
       mockGetFeedbackAnalytics.mockResolvedValue({ avgRating: 3.8, totalFeedback: 20 });
 
-      const res = await request(app).get('/api/personal/drafts/analytics');
+      const res = await request(app).get('/api/operations/drafts/analytics');
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
@@ -196,7 +196,7 @@ describe('Drafts Routes', () => {
       mockDetectDraftNeed.mockResolvedValue({ detected: true, draftType: 'email', confidence: 0.9 });
 
       const res = await request(app)
-        .post('/api/personal/drafts/debug-detect')
+        .post('/api/operations/drafts/debug-detect')
         .send({ text: 'Write an email to the team' });
 
       expect(res.status).toBe(200);
@@ -205,7 +205,7 @@ describe('Drafts Routes', () => {
 
     it('should reject missing text', async () => {
       const res = await request(app)
-        .post('/api/personal/drafts/debug-detect')
+        .post('/api/operations/drafts/debug-detect')
         .send({});
 
       expect(res.status).toBe(400);

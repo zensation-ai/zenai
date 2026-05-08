@@ -115,7 +115,7 @@ class AgentRuntime {
   async start(): Promise<void> {
     if (this.started) {return;}
 
-    const contexts: AIContext[] = ['personal', 'work', 'learning', 'creative'];
+    const contexts: AIContext[] = ['operations', 'finance', 'people', 'strategy'];
     let totalLoaded = 0;
 
     for (const context of contexts) {

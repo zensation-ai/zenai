@@ -8,10 +8,7 @@ import axios from 'axios';
 import { showToast } from '../Toast';
 import { useConfirm } from '../ConfirmDialog';
 import { getRandomReward } from '../../utils/aiPersonality';
-import '../../neurodesign.css';
 import { logError } from '../../utils/errors';
-import './IntegrationsPage.css';
-
 import type { Integration, ApiKey, Webhook, IntegrationsPageProps } from './types';
 import { getErrorMessage } from './types';
 import { IntegrationsTab } from './IntegrationsTab';

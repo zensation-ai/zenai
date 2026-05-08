@@ -1,6 +1,10 @@
 import { logError } from '../../utils/errors';
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, type CSSProperties } from 'react';
+import { Network } from 'lucide-react';
 import type { AIContext } from '../ContextSwitcher';
+import { DashboardSkeleton } from '../skeletons/PageSkeletons';
+import { Button } from '@/components/ui/button';
+import { EmptyState } from '@/components/ui/empty-state';
 import ReactFlow, {
   Node,
   Edge,
@@ -16,8 +20,6 @@ import 'reactflow/dist/style.css';
 import axios from 'axios';
 import { showToast } from '../Toast';
 import { getRandomReward } from '../../utils/aiPersonality';
-import './KnowledgeGraphPage.css';
-import '../../neurodesign.css';
 
 interface GraphNode {
   id: string;
@@ -71,7 +73,7 @@ interface KnowledgeGraphPageProps {
 const typeColors: Record<string, string> = {
   idea: '#60a5fa',
   task: '#34d399',
-  insight: '#a78bfa',
+  insight: '#3da5b8',
   problem: '#f87171',
   question: '#fbbf24',
 };
@@ -81,7 +83,7 @@ const edgeColors: Record<string, string> = {
   similar_to: '#60a5fa',
   builds_on: '#34d399',
   contradicts: '#f87171',
-  supports: '#a78bfa',
+  supports: '#3da5b8',
   enables: '#fbbf24',
   part_of: '#f472b6',
   related_tech: '#06b6d4',
@@ -239,11 +241,30 @@ export default function KnowledgeGraphPage({ onBack, onSelectIdea, context }: Kn
   if (loading) {
     return (
       <div className="knowledge-graph-page neuro-page-enter">
-        <div className="neuro-loading-contextual">
-          <div className="neuro-loading-spinner" />
-          <p className="neuro-loading-message">Lade Knowledge Graph...</p>
-          <p className="neuro-loading-submessage">Verbindungen werden analysiert</p>
-        </div>
+        <DashboardSkeleton />
+      </div>
+    );
+  }
+
+  if (!graphData || graphData.nodes.length === 0) {
+    return (
+      <div className="knowledge-graph-page neuro-page-enter">
+        <header className="graph-header">
+          <button type="button" className="back-button" onClick={onBack} aria-label="Zurück zu Insights">
+            ← Zurück
+          </button>
+          <h1>Knowledge Graph</h1>
+        </header>
+        <EmptyState
+          icon={<Network size={40} strokeWidth={1.5} />}
+          title="Kein Wissensgraph"
+          description="Erstelle Ideen und entdecke Verbindungen zwischen ihnen."
+          action={
+            <Button variant="default" size="sm" onClick={handleDiscoverRelationships} disabled={discovering}>
+              Entitäten extrahieren
+            </Button>
+          }
+        />
       </div>
     );
   }
@@ -304,11 +325,9 @@ export default function KnowledgeGraphPage({ onBack, onSelectIdea, context }: Kn
               <button
                 type="button"
                 key={topic.id}
-                className={`topic-chip ${selectedTopic === topic.id ? 'active' : ''}`}
+                className={`topic-chip ${selectedTopic === topic.id ? 'active' : ''} [border-color:var(--bc)]`}
                 onClick={() => setSelectedTopic(topic.id === selectedTopic ? null : topic.id)}
-                style={{
-                  borderColor: selectedTopic === topic.id ? topic.color : 'transparent',
-                }}
+                style={{ '--bc': selectedTopic === topic.id ? topic.color : 'transparent' } as CSSProperties}
               >
                 <span className="topic-icon">{topic.icon}</span>
                 <span className="topic-name">{topic.name}</span>
@@ -335,8 +354,8 @@ export default function KnowledgeGraphPage({ onBack, onSelectIdea, context }: Kn
               {Object.entries(relationLabels).map(([key, label]) => (
                 <div key={key} className="legend-item">
                   <span
-                    className="legend-color"
-                    style={{ backgroundColor: edgeColors[key] }}
+                    className="legend-color bg-[var(--c)]"
+                    style={{ '--c': edgeColors[key] } as CSSProperties}
                   ></span>
                   <span className="legend-label">{label}</span>
                 </div>
@@ -364,7 +383,7 @@ export default function KnowledgeGraphPage({ onBack, onSelectIdea, context }: Kn
             <MiniMap
               nodeColor={(node) => node.data.topicColor || typeColors[node.data.type] || '#60a5fa'}
               maskColor="rgba(10, 21, 32, 0.8)"
-              style={{ backgroundColor: '#0f1f2e' }}
+              className="bg-[#0f1f2e]"
             />
 
             <Panel position="top-right" className="graph-panel">
@@ -405,8 +424,8 @@ export default function KnowledgeGraphPage({ onBack, onSelectIdea, context }: Kn
                 <div className="detail-row">
                   <span className="detail-label">Thema:</span>
                   <span
-                    className="topic-badge"
-                    style={{ backgroundColor: selectedNode.topicColor || '#60a5fa' }}
+                    className="topic-badge bg-[var(--c)]"
+                    style={{ '--c': selectedNode.topicColor || '#60a5fa' } as CSSProperties}
                   >
                     {selectedNode.topicName}
                   </span>

@@ -9,7 +9,7 @@ describe('Email Digest Service', () => {
     it('should format daily digest', () => {
       const result = formatDigestForChat({
         period: 'daily',
-        context: 'work',
+        context: 'finance',
         generated_at: '2026-03-09T08:00:00Z',
         stats: {
           total_received: 12,
@@ -47,7 +47,7 @@ describe('Email Digest Service', () => {
     it('should format weekly digest', () => {
       const result = formatDigestForChat({
         period: 'weekly',
-        context: 'personal',
+        context: 'operations',
         generated_at: '2026-03-09T08:00:00Z',
         stats: {
           total_received: 45,
@@ -69,7 +69,7 @@ describe('Email Digest Service', () => {
     it('should handle empty digest gracefully', () => {
       const result = formatDigestForChat({
         period: 'daily',
-        context: 'work',
+        context: 'finance',
         generated_at: '2026-03-09T08:00:00Z',
         stats: {
           total_received: 0,
@@ -90,7 +90,7 @@ describe('Email Digest Service', () => {
     it('should show high priority with orange emoji', () => {
       const result = formatDigestForChat({
         period: 'daily',
-        context: 'work',
+        context: 'finance',
         generated_at: '2026-03-09T08:00:00Z',
         stats: {
           total_received: 1,

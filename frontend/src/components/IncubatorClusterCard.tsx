@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type CSSProperties } from 'react';
 import type { ThoughtCluster } from './IncubatorTypes';
 import { getClusterMood, getMoodClass, getStatusColor, getStatusLabel, getTypeIcon, getDaysSinceUpdate, formatDate } from './IncubatorTypes';
 
@@ -29,7 +29,7 @@ export function IncubatorClusterCard({
         style={{ '--stagger-index': index } as React.CSSProperties}
       >
         <div className="cluster-header">
-          <span className="cluster-status" style={{ background: getStatusColor(cluster.status) }} aria-label={`Status: ${getStatusLabel(cluster.status)}`}>
+          <span className="cluster-status bg-[var(--sc)]" style={{ '--sc': getStatusColor(cluster.status) } as CSSProperties} aria-label={`Status: ${getStatusLabel(cluster.status)}`}>
             {getStatusLabel(cluster.status)}
           </span>
           <span className="thought-count">{cluster.thought_count} Gedanken</span>
@@ -42,7 +42,7 @@ export function IncubatorClusterCard({
           ))}
         </div>
         <div className="cluster-progress neuro-progress-indicator" role="progressbar" aria-valuenow={Math.round(cluster.maturity_score * 100)} aria-valuemin={0} aria-valuemax={100}>
-          <div className="progress-bar neuro-progress-bar" style={{ width: `${cluster.maturity_score * 100}%` }} />
+          <div className="progress-bar neuro-progress-bar w-[var(--prog-w)]" style={{ '--prog-w': `${cluster.maturity_score * 100}%` } as CSSProperties} />
           <span className="progress-label">{Math.round(cluster.maturity_score * 100)}% Reife</span>
         </div>
       </article>
@@ -57,7 +57,7 @@ export function IncubatorClusterCard({
       aria-labelledby={`cluster-title-${cluster.id}`}
     >
       <div className="cluster-header">
-        <span className="cluster-status" style={{ background: getStatusColor(cluster.status) }} aria-label={`Status: ${getStatusLabel(cluster.status)}`}>
+        <span className="cluster-status bg-[var(--sc)]" style={{ '--sc': getStatusColor(cluster.status) } as CSSProperties} aria-label={`Status: ${getStatusLabel(cluster.status)}`}>
           {getStatusLabel(cluster.status)}
         </span>
         <span className="thought-count">{cluster.thought_count} Gedanken</span>

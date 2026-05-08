@@ -7,8 +7,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { NarrativeCard } from './NarrativeCard';
 import { KPICard } from './KPICard';
-import './BusinessNarrative.css';
-
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 const API_KEY = import.meta.env.VITE_API_KEY || '';
 
@@ -335,7 +333,7 @@ const KPICreateModal: React.FC<KPICreateModalProps> = ({ onClose, onCreate }) =>
         <form onSubmit={handleSubmit}>
           <div className="bn-form-group">
             <label>Name</label>
-            <input value={name} onChange={e => setName(e.target.value)} placeholder="z.B. Woechentlicher Umsatz" required />
+            <input value={name} onChange={e => setName(e.target.value)} placeholder="z.B. Wöchentlicher Umsatz" required />
           </div>
           <div className="bn-form-group">
             <label>Beschreibung</label>

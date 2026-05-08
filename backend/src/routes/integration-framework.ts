@@ -157,7 +157,7 @@ export function createIntegrationFrameworkRouter(
       }
 
       const config = {
-        targetContext: targetContext as 'personal' | 'work' | 'learning' | 'creative',
+        targetContext: targetContext as 'operations' | 'finance' | 'people' | 'strategy',
         syncEnabled,
         syncIntervalMinutes,
       };

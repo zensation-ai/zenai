@@ -18,6 +18,10 @@ jest.mock('../../middleware/auth', () => ({
   requireScope: jest.fn(() => (_req: unknown, _res: unknown, next: () => void) => next()),
 }));
 
+jest.mock('../../middleware/plan-gate', () => ({
+  requirePlan: () => jest.fn((_req: unknown, _res: unknown, next: () => void) => next()),
+}));
+
 jest.mock('../../utils/logger', () => ({
   logger: { debug: jest.fn(), info: jest.fn(), warn: jest.fn(), error: jest.fn() },
 }));

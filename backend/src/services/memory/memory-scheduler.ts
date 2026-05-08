@@ -80,7 +80,7 @@ const CONFIG = {
   ENABLE_FOCUS_RESEARCH: process.env.ENABLE_FOCUS_RESEARCH !== 'false',
 
   /** Contexts to process (all by default) */
-  CONTEXTS: ['personal', 'work', 'learning', 'creative'] as AIContext[],
+  CONTEXTS: ['operations', 'finance', 'people', 'strategy'] as AIContext[],
 };
 
 // ===========================================

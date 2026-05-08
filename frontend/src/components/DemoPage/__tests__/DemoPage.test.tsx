@@ -10,6 +10,6 @@ test('renders demo page with CTA button', () => {
 
 test('renders feature highlight cards', () => {
   render(<DemoPage onDemoStart={vi.fn()} onNavigateToAuth={vi.fn()} />);
-  expect(screen.getByText('4-Layer Memory')).toBeInTheDocument();
-  expect(screen.getByText('55 AI Tools')).toBeInTheDocument();
+  expect(screen.getByText('7-Layer Memory')).toBeInTheDocument();
+  expect(screen.getByText('60+ AI Tools')).toBeInTheDocument();
 });

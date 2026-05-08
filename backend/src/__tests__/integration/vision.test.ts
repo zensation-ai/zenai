@@ -228,7 +228,7 @@ describe('Vision API Integration Tests', () => {
       const response = await request(app)
         .post('/api/vision/extract-ideas')
         .attach('image', createTestImageBuffer(), 'whiteboard.png')
-        .field('context', 'work')
+        .field('context', 'finance')
         .expect(200);
 
       expect(response.body.success).toBe(true);
@@ -237,7 +237,7 @@ describe('Vision API Integration Tests', () => {
       expect(response.body.count).toBeGreaterThan(0);
     });
 
-    it('should default to personal context', async () => {
+    it('should default to operations context', async () => {
       const response = await request(app)
         .post('/api/vision/extract-ideas')
         .attach('image', createTestImageBuffer(), 'notes.png')

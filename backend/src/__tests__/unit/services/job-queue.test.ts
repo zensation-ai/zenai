@@ -103,7 +103,7 @@ describe('QueueService', () => {
       const service = getQueueService();
       await service.initialize();
       const allStats = await service.getAllStats();
-      expect(allStats.length).toBe(10);
+      expect(allStats.length).toBe(11);
       allStats.forEach(s => {
         expect(s.active).toBe(0);
       });
@@ -140,7 +140,7 @@ describe('QueueService', () => {
       await service.initialize();
 
       const { Queue } = await import('bullmq');
-      expect(Queue).toHaveBeenCalledTimes(10);
+      expect(Queue).toHaveBeenCalledTimes(11);
     });
 
     it('should return correct queue names', () => {
@@ -162,9 +162,9 @@ describe('QueueService', () => {
 
     it('should enqueue a job and return job ID', async () => {
       const service = getQueueService();
-      const jobId = await service.enqueue('memory-consolidation', 'consolidate', { context: 'personal' });
+      const jobId = await service.enqueue('memory-consolidation', 'consolidate', { context: 'operations' });
       expect(jobId).toBe('job-123');
-      expect(mockAdd).toHaveBeenCalledWith('consolidate', { context: 'personal' }, expect.any(Object));
+      expect(mockAdd).toHaveBeenCalledWith('consolidate', { context: 'operations' }, expect.any(Object));
     });
 
     it('should record queue metric on enqueue', async () => {
@@ -256,7 +256,7 @@ describe('QueueService', () => {
     it('should return stats for all queues', async () => {
       const service = getQueueService();
       const allStats = await service.getAllStats();
-      expect(allStats.length).toBe(10);
+      expect(allStats.length).toBe(11);
       expect(allStats[0].name).toBe('memory-consolidation');
     });
   });

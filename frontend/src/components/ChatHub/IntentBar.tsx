@@ -9,8 +9,6 @@
 import { useCallback, useRef, useEffect } from 'react';
 import type { AIContext } from '../ContextSwitcher';
 import { Send, Mic, Paperclip } from 'lucide-react';
-import './IntentBar.css';
-
 export type ThinkingDepth = 'fast' | 'thorough' | 'deep';
 
 interface IntentBarProps {
@@ -30,7 +28,7 @@ interface IntentBarProps {
 
 const THINKING_MODES = [
   { value: 'fast' as const, label: 'Schnell', ariaLabel: 'Schnell' },
-  { value: 'thorough' as const, label: 'Gruendlich', ariaLabel: 'Gruendlich' },
+  { value: 'thorough' as const, label: 'Gründlich', ariaLabel: 'Gründlich' },
   { value: 'deep' as const, label: 'Tief', ariaLabel: 'Tief' },
 ] as const;
 
@@ -96,7 +94,7 @@ export function IntentBar({
         <button
           className="intent-bar__icon-btn"
           onClick={onFileClick}
-          aria-label="Datei anhaengen"
+          aria-label="Datei anhängen"
           type="button"
         >
           <Paperclip size={18} />

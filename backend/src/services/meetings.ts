@@ -100,7 +100,7 @@ export async function createMeeting(data: {
   context?: AIContext;
 }): Promise<Meeting> {
   const id = uuidv4();
-  const ctx = data.context || 'work';
+  const ctx = data.context || 'finance';
 
   // SECURITY: Explicit column selection instead of RETURNING *
   const result = await queryContext(ctx,
@@ -109,7 +109,7 @@ export async function createMeeting(data: {
      RETURNING id, company_id, title, date, duration_minutes, participants, location, meeting_type, status, created_at, updated_at`,
     [
       id,
-      data.company_id || 'personal',
+      data.company_id || 'operations',
       data.title,
       data.date,
       data.duration_minutes || null,
@@ -161,7 +161,7 @@ export async function getMeetings(filters?: {
 
   const limit = filters?.limit || 20;
   const offset = filters?.offset || 0;
-  const ctx = filters?.context || 'work';
+  const ctx = filters?.context || 'finance';
 
   const needsAudioJoin = filters?.has_audio;
   const fromClause = needsAudioJoin
@@ -191,7 +191,7 @@ export async function getMeetings(filters?: {
 /**
  * Get a single meeting by ID
  */
-export async function getMeeting(id: string, context: AIContext = 'work'): Promise<Meeting | null> {
+export async function getMeeting(id: string, context: AIContext = 'finance'): Promise<Meeting | null> {
   // SECURITY: Explicit column selection instead of SELECT *
   const result = await queryContext(context,
     `SELECT id, company_id, title, date, duration_minutes, participants, location, meeting_type, status, created_at, updated_at
@@ -204,7 +204,7 @@ export async function getMeeting(id: string, context: AIContext = 'work'): Promi
 /**
  * Update meeting status
  */
-export async function updateMeetingStatus(id: string, status: Meeting['status'], context: AIContext = 'work'): Promise<Meeting | null> {
+export async function updateMeetingStatus(id: string, status: Meeting['status'], context: AIContext = 'finance'): Promise<Meeting | null> {
   // SECURITY: Explicit column selection instead of RETURNING *
   const result = await queryContext(context,
     `UPDATE meetings SET status = $2, updated_at = NOW() WHERE id = $1
@@ -220,7 +220,7 @@ export async function updateMeetingStatus(id: string, status: Meeting['status'],
 export async function processMeetingNotes(
   meetingId: string,
   transcript: string,
-  context: AIContext = 'work',
+  context: AIContext = 'finance',
   audioMeta?: AudioMeta
 ): Promise<MeetingNotes> {
   const id = uuidv4();
@@ -319,7 +319,7 @@ STRUKTURIERTE NOTIZEN:`;
 /**
  * Get notes for a meeting (including audio metadata)
  */
-export async function getMeetingNotes(meetingId: string, context: AIContext = 'work'): Promise<MeetingNotes | null> {
+export async function getMeetingNotes(meetingId: string, context: AIContext = 'finance'): Promise<MeetingNotes | null> {
   const result = await queryContext(context,
     `SELECT id, meeting_id, raw_transcript, structured_summary, key_decisions, action_items,
             topics_discussed, follow_ups, sentiment,
@@ -339,7 +339,7 @@ export async function getMeetingNotes(meetingId: string, context: AIContext = 'w
 export async function searchMeetings(
   searchQuery: string,
   limit: number = 10,
-  context: AIContext = 'work'
+  context: AIContext = 'finance'
 ): Promise<MeetingSearchResult[]> {
   const embedding = await generateEmbedding(searchQuery);
 
@@ -377,7 +377,7 @@ export async function searchMeetings(
 export async function searchMeetingsFullText(
   searchQuery: string,
   limit: number = 10,
-  context: AIContext = 'work'
+  context: AIContext = 'finance'
 ): Promise<MeetingSearchResult[]> {
   const result = await queryContext(context,
     `SELECT
@@ -411,7 +411,7 @@ export async function searchMeetingsFullText(
 export async function searchMeetingsHybrid(
   searchQuery: string,
   limit: number = 10,
-  context: AIContext = 'work'
+  context: AIContext = 'finance'
 ): Promise<MeetingSearchResult[]> {
   const K = 60; // RRF constant
 
@@ -465,7 +465,7 @@ export async function getAllActionItems(filters?: {
   let whereClause = 'WHERE 1=1';
   const params: string[] = [];
   let paramIndex = 1;
-  const ctx = filters?.context || 'work';
+  const ctx = filters?.context || 'finance';
 
   if (filters?.company_id) {
     whereClause += ` AND m.company_id = $${paramIndex++}`;

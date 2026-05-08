@@ -9,13 +9,12 @@
  * keyboard navigation, Escape to close).
  */
 
-import { useState, useEffect, useCallback, useRef, memo } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo, memo } from 'react';
 import { createPortal } from 'react-dom';
 import axios from 'axios';
 import type { AIContext } from './ContextSwitcher';
+import { ALL_NAVIGABLE_ITEMS } from '../navigation';
 import { logError } from '../utils/errors';
-import './GlobalSearch.css';
-
 // ============================================
 // Types
 // ============================================
@@ -29,7 +28,7 @@ interface GlobalSearchProps {
 
 interface SearchResult {
   id: string;
-  type: 'idea' | 'document' | 'voice_memo' | 'meeting' | 'ai_fact' | 'chat';
+  type: 'idea' | 'document' | 'voice_memo' | 'meeting' | 'ai_fact' | 'fact' | 'chat' | 'contact' | 'email' | 'calendar_event' | 'transaction' | 'screen_capture';
   title: string;
   snippet: string;
   relevance: number;
@@ -52,7 +51,19 @@ const TYPE_CONFIG: Record<string, { icon: string; label: string; page: string }>
   voice_memo: { icon: '🎤', label: 'Sprachnotiz', page: 'documents' },
   meeting: { icon: '📋', label: 'Meeting', page: 'documents' },
   ai_fact: { icon: '🧠', label: 'KI-Wissen', page: 'my-ai' },
+  fact: { icon: '🧠', label: 'KI-Wissen', page: 'my-ai' },
   chat: { icon: '💬', label: 'Chat', page: 'chat' },
+  contact: { icon: '👤', label: 'Kontakt', page: 'contacts' },
+  email: { icon: '✉️', label: 'E-Mail', page: 'email' },
+  calendar_event: { icon: '📅', label: 'Termin', page: 'calendar' },
+  transaction: { icon: '💰', label: 'Transaktion', page: 'finance' },
+  screen_capture: { icon: '📸', label: 'Screenshot', page: 'screen-memory' },
+};
+
+// Navigation icons for instant page search
+const NAV_SEARCH_ICONS: Record<string, string> = {
+  hub: '💬', ideas: '💡', calendar: '📋', email: '✉️',
+  documents: '📚', business: '💼', 'my-ai': '🤖', 'settings-user': '⚙️',
 };
 
 // ============================================
@@ -76,6 +87,26 @@ const GlobalSearchComponent: React.FC<GlobalSearchProps> = ({
   const listRef = useRef<HTMLDivElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>();
   const abortRef = useRef<AbortController>();
+
+  // Build local navigation items for instant search
+  const navItems = useMemo(() => ALL_NAVIGABLE_ITEMS.map(item => ({
+    page: item.page,
+    label: item.label,
+    description: item.description ?? '',
+    icon: NAV_SEARCH_ICONS[item.page] ?? '📄',
+    keywords: [item.label.toLowerCase(), item.page, ...(item.subPages ?? []).map(s => String(s))],
+  })), []);
+
+  // Local navigation matches (instant, no API call needed)
+  const navMatches = useMemo(() => {
+    if (query.length < 2) return [];
+    const q = query.toLowerCase();
+    return navItems.filter(item =>
+      item.label.toLowerCase().includes(q) ||
+      item.description.toLowerCase().includes(q) ||
+      item.keywords.some(k => k.includes(q))
+    );
+  }, [query, navItems]);
 
   // Focus input when opened
   useEffect(() => {
@@ -142,28 +173,39 @@ const GlobalSearchComponent: React.FC<GlobalSearchProps> = ({
     return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
   }, [query, performSearch]);
 
+  // Combined result count for keyboard navigation (nav matches + API results)
+  const totalResultCount = navMatches.length + results.length;
+
   // Keyboard navigation
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     switch (e.key) {
       case 'ArrowDown':
         e.preventDefault();
-        if (results.length > 0) {
-          setSelectedIndex(prev => Math.min(prev + 1, results.length - 1));
+        if (totalResultCount > 0) {
+          setSelectedIndex(prev => Math.min(prev + 1, totalResultCount - 1));
         }
         break;
       case 'ArrowUp':
         e.preventDefault();
-        if (results.length > 0) {
+        if (totalResultCount > 0) {
           setSelectedIndex(prev => Math.max(prev - 1, 0));
         }
         break;
       case 'Enter':
         e.preventDefault();
-        if (results[selectedIndex]) {
-          const r = results[selectedIndex];
-          const config = TYPE_CONFIG[r.type];
-          if (config) onNavigate(config.page);
+        // Nav matches come first, then API results
+        if (selectedIndex < navMatches.length) {
+          const nav = navMatches[selectedIndex];
+          onNavigate(nav.page);
           onClose();
+        } else {
+          const apiIndex = selectedIndex - navMatches.length;
+          const r = results[apiIndex];
+          if (r) {
+            const config = TYPE_CONFIG[r.type];
+            if (config) onNavigate(config.page);
+            onClose();
+          }
         }
         break;
       case 'Escape':
@@ -171,7 +213,7 @@ const GlobalSearchComponent: React.FC<GlobalSearchProps> = ({
         onClose();
         break;
     }
-  }, [results, selectedIndex, onNavigate, onClose]);
+  }, [totalResultCount, navMatches, results, selectedIndex, onNavigate, onClose]);
 
   // Scroll selected item into view
   useEffect(() => {
@@ -242,22 +284,52 @@ const GlobalSearchComponent: React.FC<GlobalSearchProps> = ({
             </div>
           )}
 
-          {query.length >= 2 && !loading && results.length === 0 && (
+          {/* Navigation matches (instant, local) */}
+          {navMatches.length > 0 && (
+            <>
+              <div className="gsearch-section-label">Seiten</div>
+              {navMatches.map((nav, index) => (
+                <button
+                  key={`nav-${nav.page}`}
+                  type="button"
+                  className={`gsearch-result ${index === selectedIndex ? 'selected' : ''}`}
+                  onClick={() => { onNavigate(nav.page); onClose(); }}
+                  onMouseEnter={() => setSelectedIndex(index)}
+                >
+                  <span className="gsearch-result-icon" aria-hidden="true">{nav.icon}</span>
+                  <div className="gsearch-result-content">
+                    <span className="gsearch-result-title">{nav.label}</span>
+                    <span className="gsearch-result-snippet">{nav.description}</span>
+                  </div>
+                  <div className="gsearch-result-meta">
+                    <span className="gsearch-result-type">Seite</span>
+                  </div>
+                </button>
+              ))}
+            </>
+          )}
+
+          {query.length >= 2 && !loading && results.length === 0 && navMatches.length === 0 && (
             <div className="gsearch-empty">
               <span aria-hidden="true">🤷</span>
               <p>Keine Ergebnisse für &quot;{query}&quot;</p>
             </div>
           )}
 
+          {/* API search results (content search) */}
+          {results.length > 0 && navMatches.length > 0 && (
+            <div className="gsearch-section-label">Inhalte</div>
+          )}
           {results.map((result, index) => {
+            const combinedIndex = navMatches.length + index;
             const config = TYPE_CONFIG[result.type] || { icon: '📎', label: result.type, page: 'home' };
             return (
               <button
                 key={`${result.type}-${result.id}`}
                 type="button"
-                className={`gsearch-result ${index === selectedIndex ? 'selected' : ''}`}
+                className={`gsearch-result ${combinedIndex === selectedIndex ? 'selected' : ''}`}
                 onClick={() => handleResultClick(result)}
-                onMouseEnter={() => setSelectedIndex(index)}
+                onMouseEnter={() => setSelectedIndex(combinedIndex)}
               >
                 <span className="gsearch-result-icon" aria-hidden="true">{config.icon}</span>
                 <div className="gsearch-result-content">

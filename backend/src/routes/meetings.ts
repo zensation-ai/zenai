@@ -22,12 +22,13 @@ import { validateBody } from '../utils/schemas';
 import { CreateMeetingSchema, MeetingSearchSchema } from '../utils/schemas';
 import { isValidContext, AIContext } from '../utils/database-context';
 import { getUserId } from '../utils/user-context';
+import { meetingTranscription } from '../services/meeting-transcription';
 
 export const meetingsRouter = Router();
 export const contextMeetingsRouter = Router({ mergeParams: true });
 
 /**
- * Helper: extract AI context from request (query param, body, or header), default 'work'.
+ * Helper: extract AI context from request (query param, body, or header), default 'finance'.
  * The /api/meetings/* routes are deprecated — prefer /api/:context/calendar/events/:id/meeting.
  */
 function getMeetingContext(req: Request): AIContext {
@@ -35,9 +36,9 @@ function getMeetingContext(req: Request): AIContext {
     (req.query.context as string) ||
     (req.body?.context as string) ||
     (req.headers['x-ai-context'] as string) ||
-    'work';
+    'finance';
   if (!isValidContext(ctx)) {
-    throw new ValidationError(`Invalid context: ${ctx}. Must be one of: personal, work, learning, creative`);
+    throw new ValidationError(`Invalid context: ${ctx}. Must be one of: operations, finance, people, strategy`);
   }
   return ctx;
 }
@@ -313,7 +314,7 @@ const audioUpload = multer({
 function getRouteContext(req: Request): AIContext {
   const ctx = req.params.context;
   if (!isValidContext(ctx)) {
-    throw new ValidationError(`Invalid context: ${ctx}. Must be personal, work, learning, or creative.`);
+    throw new ValidationError(`Invalid context: ${ctx}. Must be operations, finance, people, or strategy.`);
   }
   return ctx;
 }
@@ -537,5 +538,89 @@ contextMeetingsRouter.get('/:id/audio-url', apiKeyAuth, asyncHandler(async (req,
       sizeBytes: notes.audio_size_bytes,
       mimeType: notes.audio_mime_type,
     },
+  });
+}));
+
+// =============================================================================
+// Live Transcription Session Routes (Task 9)
+// POST /api/:context/meetings/start
+// POST /api/:context/meetings/:id/stop
+// GET  /api/:context/meetings/:id/transcript
+// =============================================================================
+
+/**
+ * POST /api/:context/meetings/start
+ * Start a new live transcription session.
+ */
+contextMeetingsRouter.post('/start', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
+  const ctx = getRouteContext(req);
+  const { calendarEventId } = req.body as { calendarEventId?: string };
+
+  const session = await meetingTranscription.startSession(ctx, calendarEventId);
+
+  logger.info('Meeting transcription session started', { sessionId: session.id, ctx });
+
+  res.status(201).json({
+    sessionId: session.id,
+    context: session.context,
+    calendarEventId: session.calendarEventId ?? null,
+    startedAt: session.startedAt,
+    status: session.status,
+  });
+}));
+
+/**
+ * POST /api/:context/meetings/:id/stop
+ * End session and return AI-generated summary.
+ */
+contextMeetingsRouter.post('/:id/stop', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
+  const ctx = getRouteContext(req);
+  const sessionId = req.params.id;
+
+  const session = meetingTranscription.getSession(sessionId);
+  if (!session) {
+    res.status(404).json({ error: 'Transcription session not found' });
+    return;
+  }
+  if (session.context !== ctx) {
+    res.status(403).json({ error: 'Session belongs to a different context' });
+    return;
+  }
+
+  const { session: ended, summary } = await meetingTranscription.endSession(sessionId);
+
+  res.json({
+    sessionId: ended.id,
+    status: ended.status,
+    startedAt: ended.startedAt,
+    endedAt: ended.endedAt,
+    transcriptLength: ended.transcript.length,
+    summary,
+  });
+}));
+
+/**
+ * GET /api/:context/meetings/:id/transcript
+ * Fetch current transcript for an active or completed session.
+ */
+contextMeetingsRouter.get('/:id/transcript', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
+  const ctx = getRouteContext(req);
+  const sessionId = req.params.id;
+
+  const session = meetingTranscription.getSession(sessionId);
+  if (!session) {
+    res.status(404).json({ error: 'Transcription session not found' });
+    return;
+  }
+  if (session.context !== ctx) {
+    res.status(403).json({ error: 'Session belongs to a different context' });
+    return;
+  }
+
+  res.json({
+    sessionId: session.id,
+    status: session.status,
+    transcript: session.transcript,
+    summary: session.summary ?? null,
   });
 }));

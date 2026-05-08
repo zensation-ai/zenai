@@ -7,11 +7,12 @@
 import { Router, Request, Response } from 'express';
 import { apiKeyAuth, requireScope } from '../middleware/auth';
 import { asyncHandler } from '../middleware/errorHandler';
-import { AIContext } from '../utils/database-context';
+import { AIContext, queryContext } from '../utils/database-context';
 import { isValidUUID } from '../utils/validation';
 import { getUserId } from '../utils/user-context';
 import { systemUserGuard } from '../middleware/system-user-guard';
 import * as contactsService from '../services/contacts';
+import { buildCursorWhere, buildCursorResponse } from '../utils/cursor-pagination';
 
 const router = Router();
 
@@ -25,7 +26,7 @@ router.use(systemUserGuard);
 
 function validateContextParam(req: Request, res: Response): AIContext | null {
   const context = req.params.context as string;
-  if (!['personal', 'work', 'learning', 'creative'].includes(context)) {
+  if (!['operations', 'finance', 'people', 'strategy'].includes(context)) {
     res.status(400).json({ success: false, error: 'Invalid context' });
     return null;
   }
@@ -52,18 +53,100 @@ router.get('/:context/contacts', requireScope('read'), asyncHandler(async (req: 
     return;
   }
 
-  const filters: contactsService.ContactFilters = {
-    search,
-    relationship_type: relationshipType,
-    organization_id: req.query.organization_id as string | undefined,
-    tag,
-    is_favorite: req.query.is_favorite === 'true' ? true : undefined,
-    limit: req.query.limit ? parseInt(req.query.limit as string, 10) : undefined,
-    offset: req.query.offset ? parseInt(req.query.offset as string, 10) : undefined,
-  };
+  const cursorParam = req.query.cursor as string | undefined;
+  const limit = Math.min(parseInt(req.query.limit as string, 10) || 50, 200);
 
-  const result = await contactsService.getContacts(context, filters, userId);
-  res.json({ success: true, data: result.contacts, total: result.total });
+  if (cursorParam) {
+    // Cursor mode: build query directly with keyset pagination
+    const conditions: string[] = [];
+    const params: (string | number | boolean)[] = [];
+    let paramIdx = 1;
+
+    if (userId) {
+      conditions.push(`c.user_id = $${paramIdx++}`);
+      params.push(userId);
+    }
+
+    if (search) {
+      conditions.push(`(
+        c.display_name ILIKE $${paramIdx}
+        OR c.first_name ILIKE $${paramIdx}
+        OR c.last_name ILIKE $${paramIdx}
+        OR EXISTS (SELECT 1 FROM unnest(c.email) e WHERE e ILIKE $${paramIdx})
+        OR c.notes ILIKE $${paramIdx}
+      )`);
+      params.push(`%${search}%`);
+      paramIdx++;
+    }
+
+    if (relationshipType) {
+      conditions.push(`c.relationship_type = $${paramIdx++}`);
+      params.push(relationshipType);
+    }
+
+    if (req.query.organization_id) {
+      conditions.push(`c.organization_id = $${paramIdx++}`);
+      params.push(req.query.organization_id as string);
+    }
+
+    if (tag) {
+      conditions.push(`$${paramIdx++} = ANY(c.tags)`);
+      params.push(tag);
+    }
+
+    if (req.query.is_favorite === 'true') {
+      conditions.push(`c.is_favorite = $${paramIdx++}`);
+      params.push(true);
+    }
+
+    // Cursor WHERE clause (last_interaction_at + id)
+    const cursorResult = buildCursorWhere(cursorParam, 'c.last_interaction_at', 'c.id', paramIdx);
+    if (cursorResult.where) {
+      conditions.push(cursorResult.where);
+      cursorResult.params.forEach(p => params.push(p));
+      paramIdx += cursorResult.params.length;
+    }
+
+    const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
+
+    const result = await queryContext(context, `
+      SELECT c.*, o.name as organization_name
+      FROM contacts c
+      LEFT JOIN organizations o ON c.organization_id = o.id
+      ${whereClause}
+      ORDER BY c.last_interaction_at DESC, c.id DESC
+      LIMIT $${paramIdx}
+    `, [...params, limit + 1]);
+
+    const cursorPage = buildCursorResponse(
+      result.rows as Record<string, unknown>[],
+      limit,
+      'last_interaction_at',
+      'id',
+    );
+
+    res.json({
+      success: true,
+      data: cursorPage.data,
+      nextCursor: cursorPage.nextCursor,
+      hasMore: cursorPage.hasMore,
+      count: cursorPage.data.length,
+    });
+  } else {
+    // Offset mode (legacy): delegate to service for backward compatibility
+    const filters: contactsService.ContactFilters = {
+      search,
+      relationship_type: relationshipType,
+      organization_id: req.query.organization_id as string | undefined,
+      tag,
+      is_favorite: req.query.is_favorite === 'true' ? true : undefined,
+      limit,
+      offset: req.query.offset ? parseInt(req.query.offset as string, 10) : undefined,
+    };
+
+    const result = await contactsService.getContacts(context, filters, userId);
+    res.json({ success: true, data: result.contacts, total: result.total });
+  }
 }));
 
 // GET /api/:context/contacts/stats

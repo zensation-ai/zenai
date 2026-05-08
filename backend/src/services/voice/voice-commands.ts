@@ -126,7 +126,7 @@ const NAV_TARGET_MAP: Record<string, string> = {
   'werkstatt': 'workshop',
   'insights': 'insights',
   'business': 'business',
-  'lernen': 'learning',
+  'lernen': 'people',
   'meine ki': 'my-ai',
   // English
   'ideas': 'ideas',
@@ -136,7 +136,7 @@ const NAV_TARGET_MAP: Record<string, string> = {
   'documents': 'documents',
   'contacts': 'contacts',
   'workshop': 'workshop',
-  'learning': 'learning',
+  'learning': 'people',
 };
 
 function normalizeNavigationTarget(target: string): string {

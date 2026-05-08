@@ -9,6 +9,7 @@
 
 import { Router } from 'express';
 import { asyncHandler } from '../middleware/errorHandler';
+import { apiKeyAuth } from '../middleware/auth';
 import { logger } from '../utils/logger';
 import { queryContext } from '../utils/database-context';
 import type { AIContext } from '../types/context';
@@ -17,6 +18,9 @@ import type { ActivityRecord } from '../services/curiosity/pattern-tracker';
 import { makePrediction } from '../services/curiosity/prediction-engine';
 
 const router = Router();
+
+// Sprint 1.5 Item 4 — blanket auth for all predictions routes.
+router.use(apiKeyAuth);
 
 // ─── Prediction History ──────────────────────────────────────────────────────
 

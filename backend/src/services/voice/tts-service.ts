@@ -9,6 +9,16 @@
 
 import { logger } from '../../utils/logger';
 import { synthesizeSpeech, isTTSAvailable as isOpenAITTSAvailable } from '../tts';
+import { checkedFetch } from '../../utils/checked-http';
+import { recordVoicePhase, recordFailover } from './voice-metrics';
+import { getTracer } from '../observability/tracing';
+import {
+  buildProviderPriority,
+  classifyProviderError,
+  PROVIDER_TIMEOUT_MS,
+  ttsCircuitBreaker,
+  withProviderTimeout,
+} from './provider-registry';
 
 // ============================================================
 // Types
@@ -53,7 +63,7 @@ class ElevenLabsProvider implements TTSProvider {
     if (!this.apiKey) {throw new Error('ElevenLabs API key not configured');}
 
     const voiceId = options?.voice || '21m00Tcm4TlvDq8ikWAM'; // Rachel default
-    const response = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`, {
+    const response = await checkedFetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`, {
       method: 'POST',
       headers: {
         'xi-api-key': this.apiKey,
@@ -83,7 +93,7 @@ class ElevenLabsProvider implements TTSProvider {
     if (!this.apiKey) {return [];}
 
     try {
-      const response = await fetch('https://api.elevenlabs.io/v1/voices', {
+      const response = await checkedFetch('https://api.elevenlabs.io/v1/voices', {
         headers: { 'xi-api-key': this.apiKey },
       });
 
@@ -324,37 +334,91 @@ export class MultiTTSService {
     const cached = this.phraseCache.get(text, options?.voice, options?.provider);
     if (cached) {return cached;}
 
-    const providerName = options?.provider || this.defaultProvider;
-    const provider = this.providers.get(providerName);
+    const preferredName = options?.provider || this.defaultProvider;
+    const tracer = getTracer('voice');
 
-    if (provider && provider.isAvailable()) {
-      try {
-        const audio = await provider.synthesize(text, options);
-        this.phraseCache.set(text, audio, options?.voice, options?.provider);
-        return audio;
-      } catch (error) {
-        logger.warn(`TTS provider ${providerName} failed, trying fallback`, {
-          error: error instanceof Error ? error.message : String(error),
-        });
-      }
-    }
+    return tracer.startActiveSpan('voice.tts.synthesize', async (span) => {
+      span.setAttributes({
+        'voice.phase': 'tts',
+        'voice.provider.preferred': preferredName,
+        'voice.tts.text_length': text.length,
+      });
 
-    // Fallback to any available provider
-    for (const [name, p] of this.providers) {
-      if (name !== providerName && p.isAvailable()) {
+      const priority = buildProviderPriority(this.providers, preferredName);
+      const trail: Array<{ provider: string; reason: string }> = [];
+      let lastError: unknown;
+
+      for (const [name, provider] of priority) {
+        if (!provider.isAvailable()) {
+          trail.push({ provider: name, reason: 'unavailable' });
+          continue;
+        }
+        if (ttsCircuitBreaker.isOpen(name)) {
+          trail.push({ provider: name, reason: 'breaker_open' });
+          continue;
+        }
+
+        const start = Date.now();
         try {
-          const audio = await p.synthesize(text, options);
+          const audio = await withProviderTimeout(
+            provider.synthesize(text, options),
+            PROVIDER_TIMEOUT_MS,
+            name,
+          );
+          const duration = Date.now() - start;
+          const usedFallback = trail.length > 0;
+          ttsCircuitBreaker.recordSuccess(name);
+          recordVoicePhase('tts', duration, {
+            provider: name,
+            outcome: usedFallback ? 'fallback' : 'ok',
+          });
+          if (usedFallback) {
+            recordFailover(preferredName, name, trail[0].reason);
+          }
           this.phraseCache.set(text, audio, options?.voice, options?.provider);
+          span.setAttributes({
+            'voice.provider.used': name,
+            'voice.tts.duration_ms': duration,
+            'voice.tts.outcome': usedFallback ? 'fallback' : 'ok',
+          });
+          span.end();
           return audio;
         } catch (error) {
-          logger.warn(`TTS fallback provider ${name} also failed`, {
+          const duration = Date.now() - start;
+          const { classification, reason } = classifyProviderError(error);
+          recordVoicePhase('tts', duration, { provider: name, outcome: 'error' });
+          logger.warn(`TTS provider ${name} failed`, {
             error: error instanceof Error ? error.message : String(error),
+            classification,
+            reason,
           });
+          trail.push({ provider: name, reason });
+          lastError = error;
+
+          if (classification === 'non_retryable') {
+            span.setStatus({ code: 2, message: `TTS failed (non-retryable): ${reason}` });
+            span.setAttributes({
+              'voice.provider.used': name,
+              'voice.tts.outcome': 'error',
+              'voice.tts.failure_reason': reason,
+            });
+            span.end();
+            throw error;
+          }
+
+          // Retryable failure → count toward breaker
+          ttsCircuitBreaker.recordFailure(name);
         }
       }
-    }
 
-    throw new Error('No TTS provider available');
+      const summary = trail.map((t) => `${t.provider}:${t.reason}`).join(',');
+      span.setStatus({ code: 2, message: `All TTS providers failed: ${summary}` });
+      span.setAttribute('voice.tts.failure_trail', summary);
+      span.end();
+      throw lastError instanceof Error
+        ? lastError
+        : new Error(`No TTS provider succeeded (tried: ${summary || 'none'})`);
+    });
   }
 
   /**

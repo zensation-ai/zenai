@@ -109,7 +109,7 @@ describe('RAG Result Cache', () => {
     it('should return cached result from Redis on hit', async () => {
       mockCacheGet.mockResolvedValueOnce(sampleResult);
 
-      const result = await ragResultCache.get('test query', 'personal');
+      const result = await ragResultCache.get('test query', 'operations');
 
       expect(result).toEqual(sampleResult);
       expect(mockCacheGet).toHaveBeenCalledTimes(1);
@@ -121,7 +121,7 @@ describe('RAG Result Cache', () => {
       mockCacheGet.mockResolvedValueOnce(null);
       mockRagCacheGet.mockResolvedValueOnce(sampleResult);
 
-      const result = await ragResultCache.get('test query', 'personal');
+      const result = await ragResultCache.get('test query', 'operations');
 
       expect(result).toEqual(sampleResult);
       expect(mockCacheGet).toHaveBeenCalledTimes(1);
@@ -132,7 +132,7 @@ describe('RAG Result Cache', () => {
       mockCacheGet.mockResolvedValueOnce(null);
       mockRagCacheGet.mockResolvedValueOnce(null);
 
-      const result = await ragResultCache.get('unknown query', 'work');
+      const result = await ragResultCache.get('unknown query', 'finance');
 
       expect(result).toBeNull();
     });
@@ -141,7 +141,7 @@ describe('RAG Result Cache', () => {
       mockCacheGet.mockRejectedValueOnce(new Error('Redis down'));
       mockRagCacheGet.mockResolvedValueOnce(sampleResult);
 
-      const result = await ragResultCache.get('test query', 'personal');
+      const result = await ragResultCache.get('test query', 'operations');
 
       expect(result).toEqual(sampleResult);
     });
@@ -150,8 +150,8 @@ describe('RAG Result Cache', () => {
       mockCacheGet.mockResolvedValueOnce(null);
       mockRagCacheGet.mockResolvedValueOnce(null);
 
-      await ragResultCache.get('  TEST Query  ', 'personal');
-      await ragResultCache.get('test query', 'personal');
+      await ragResultCache.get('  TEST Query  ', 'operations');
+      await ragResultCache.get('test query', 'operations');
 
       // Both should produce the same Redis cache key
       const calls = mockCacheGet.mock.calls;
@@ -165,7 +165,7 @@ describe('RAG Result Cache', () => {
 
   describe('set', () => {
     it('should write to both Redis and semantic cache', async () => {
-      await ragResultCache.set('test query', 'personal', sampleResult);
+      await ragResultCache.set('test query', 'operations', sampleResult);
 
       expect(mockCacheSet).toHaveBeenCalledTimes(1);
       expect(ragCache.set).toHaveBeenCalledTimes(1);
@@ -177,14 +177,14 @@ describe('RAG Result Cache', () => {
         results: [],
       };
 
-      await ragResultCache.set('test query', 'personal', emptyResult);
+      await ragResultCache.set('test query', 'operations', emptyResult);
 
       expect(mockCacheSet).not.toHaveBeenCalled();
       expect(ragCache.set).not.toHaveBeenCalled();
     });
 
     it('should accept custom TTL', async () => {
-      await ragResultCache.set('test query', 'personal', sampleResult, 300);
+      await ragResultCache.set('test query', 'operations', sampleResult, 300);
 
       expect(mockCacheSet).toHaveBeenCalledWith(
         expect.any(String),
@@ -203,13 +203,13 @@ describe('RAG Result Cache', () => {
       mockCacheDelPattern.mockResolvedValueOnce(3);
       mockRagCacheInvalidateByTag.mockReturnValueOnce(2);
 
-      const deleted = await ragResultCache.invalidate('personal');
+      const deleted = await ragResultCache.invalidate('operations');
 
       expect(deleted).toBe(5); // 3 redis + 2 semantic
       expect(mockCacheDelPattern).toHaveBeenCalledWith(
-        expect.stringContaining('personal')
+        expect.stringContaining('operations')
       );
-      expect(mockRagCacheInvalidateByTag).toHaveBeenCalledWith('personal');
+      expect(mockRagCacheInvalidateByTag).toHaveBeenCalledWith('operations');
     });
   });
 
@@ -230,14 +230,14 @@ describe('RAG Result Cache', () => {
     it('should track hit/miss counts', async () => {
       // Simulate 2 hits and 1 miss
       mockCacheGet.mockResolvedValueOnce(sampleResult);
-      await ragResultCache.get('q1', 'personal');
+      await ragResultCache.get('q1', 'operations');
 
       mockCacheGet.mockResolvedValueOnce(sampleResult);
-      await ragResultCache.get('q2', 'personal');
+      await ragResultCache.get('q2', 'operations');
 
       mockCacheGet.mockResolvedValueOnce(null);
       mockRagCacheGet.mockResolvedValueOnce(null);
-      await ragResultCache.get('q3', 'personal');
+      await ragResultCache.get('q3', 'operations');
 
       const stats = ragResultCache.getStats();
       expect(stats.hits).toBe(2);
@@ -257,7 +257,7 @@ describe('RAG Result Cache', () => {
       mockCacheGet.mockResolvedValueOnce(null);
       mockRagCacheGet.mockResolvedValueOnce(sampleResult);
 
-      await ragResultCache.get('q1', 'personal');
+      await ragResultCache.get('q1', 'operations');
 
       const stats = ragResultCache.getStats();
       expect(stats.semanticHits).toBe(1);
@@ -265,8 +265,8 @@ describe('RAG Result Cache', () => {
     });
 
     it('should track write count', async () => {
-      await ragResultCache.set('q1', 'personal', sampleResult);
-      await ragResultCache.set('q2', 'work', sampleResult);
+      await ragResultCache.set('q1', 'operations', sampleResult);
+      await ragResultCache.set('q2', 'finance', sampleResult);
 
       const stats = ragResultCache.getStats();
       expect(stats.writes).toBe(2);
@@ -274,7 +274,7 @@ describe('RAG Result Cache', () => {
 
     it('should reset stats', async () => {
       mockCacheGet.mockResolvedValueOnce(sampleResult);
-      await ragResultCache.get('q1', 'personal');
+      await ragResultCache.get('q1', 'operations');
 
       ragResultCache.resetStats();
       const stats = ragResultCache.getStats();
@@ -289,7 +289,7 @@ describe('RAG Result Cache', () => {
 
   describe('edge cases', () => {
     it('should handle all 4 contexts', async () => {
-      for (const ctx of ['personal', 'work', 'learning', 'creative'] as const) {
+      for (const ctx of ['operations', 'finance', 'people', 'strategy'] as const) {
         mockCacheGet.mockResolvedValueOnce(null);
         mockRagCacheGet.mockResolvedValueOnce(null);
         await ragResultCache.get('query', ctx);

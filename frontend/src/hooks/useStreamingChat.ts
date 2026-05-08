@@ -37,6 +37,13 @@ export interface ToolResult {
   result: string;
 }
 
+export interface ThinkingTierInfo {
+  tier: number;
+  display: 'omitted' | 'collapsible' | 'visible' | 'visible_progress';
+  label: string;
+  budget: number;
+}
+
 export interface SendMessageParams {
   message: string;
   sessionId: string;
@@ -52,6 +59,8 @@ export interface UseStreamingChatOptions {
   onPanelAction?: (action: { action: string; panel: string; filter?: string }) => void;
   /** Called when the stream completes successfully */
   onStreamComplete?: (sessionId: string) => void;
+  /** Called when an AG-UI protocol event is received */
+  onAgUIEvent?: (event: Record<string, unknown>) => void;
 }
 
 export interface UseStreamingChatReturn {
@@ -63,6 +72,8 @@ export interface UseStreamingChatReturn {
   streamContent: string;
   /** Accumulated thinking/reasoning content */
   thinkingContent: string;
+  /** Thinking tier info from adaptive thinking (null until received) */
+  thinkingTier: ThinkingTierInfo | null;
   /** Name of the currently executing tool (null when idle) */
   activeToolName: string | null;
   /** List of completed tool results (last 5) */
@@ -130,13 +141,14 @@ export function parseSSEChunk(
 // ============================================
 
 export function useStreamingChat(options: UseStreamingChatOptions): UseStreamingChatReturn {
-  const { context, onNavigate, onPanelAction, onStreamComplete } = options;
+  const { context, onNavigate, onPanelAction, onStreamComplete, onAgUIEvent } = options;
   const queryClient = useQueryClient();
 
   // Streaming display state
   const [isStreaming, setIsStreaming] = useState(false);
   const [streamContent, setStreamContent] = useState('');
   const [thinkingContent, setThinkingContent] = useState('');
+  const [thinkingTier, setThinkingTier] = useState<ThinkingTierInfo | null>(null);
   const [activeToolName, setActiveToolName] = useState<string | null>(null);
   const [toolResults, setToolResults] = useState<ToolResult[]>([]);
 
@@ -159,6 +171,7 @@ export function useStreamingChat(options: UseStreamingChatOptions): UseStreaming
     setIsStreaming(false);
     setStreamContent('');
     setThinkingContent('');
+    setThinkingTier(null);
     setActiveToolName(null);
     setToolResults([]);
   }, []);
@@ -186,6 +199,7 @@ export function useStreamingChat(options: UseStreamingChatOptions): UseStreaming
       setIsStreaming(true);
       setStreamContent('');
       setThinkingContent('');
+      setThinkingTier(null);
       setActiveToolName(null);
       setToolResults([]);
 
@@ -193,10 +207,13 @@ export function useStreamingChat(options: UseStreamingChatOptions): UseStreaming
       const abortController = new AbortController();
       streamAbortRef.current = abortController;
 
-      // Timeout: abort if no response within 30s
+      // Timeout: abort if no response starts within 120s.
+      // Cleared as soon as the first SSE byte is received to avoid
+      // killing long-running tool calls (Extended Thinking + Tool Use can take 5+ min).
       const streamTimeout = setTimeout(() => {
         abortController.abort();
-      }, 30_000);
+      }, 120_000);
+      let streamTimeoutCleared = false;
 
       try {
         // Build auth header
@@ -228,15 +245,15 @@ export function useStreamingChat(options: UseStreamingChatOptions): UseStreaming
             403: 'Zugriff verweigert.',
             429: 'Zu viele Anfragen. Bitte kurz warten.',
             500: 'Serverfehler. Bitte erneut versuchen.',
-            502: 'Server nicht erreichbar. Bitte spaeter versuchen.',
-            503: 'Server ueberlastet. Bitte spaeter versuchen.',
+            502: 'Server nicht erreichbar. Bitte später versuchen.',
+            503: 'Server überlastet. Bitte später versuchen.',
           };
           throw new Error(statusMessages[response.status] || `Serverfehler (${response.status})`);
         }
 
         const reader = response.body?.getReader();
         if (!reader) {
-          throw new Error('Stream konnte nicht geoeffnet werden.');
+          throw new Error('Stream konnte nicht geöffnet werden.');
         }
 
         const decoder = new TextDecoder();
@@ -248,11 +265,29 @@ export function useStreamingChat(options: UseStreamingChatOptions): UseStreaming
             const { done, value } = await reader.read();
             if (done) break;
 
+            // Clear connection timeout on first byte — stream is alive
+            if (!streamTimeoutCleared) {
+              clearTimeout(streamTimeout);
+              streamTimeoutCleared = true;
+            }
+
             const chunk = decoder.decode(value, { stream: true });
             const { events, state: newState } = parseSSEChunk(chunk, sseState);
             sseState = newState;
 
             for (const { eventType, data } of events) {
+              // AG-UI protocol events — forward to callback
+              if (eventType === 'agui' && onAgUIEvent) {
+                onAgUIEvent(data);
+                continue;
+              }
+
+              // Thinking tier event — adaptive thinking metadata
+              if (eventType === 'thinking_tier') {
+                setThinkingTier(data as unknown as ThinkingTierInfo);
+                continue;
+              }
+
               // Skip non-delta events that would duplicate content
               if (eventType === 'done' || eventType === 'compaction_info' || eventType === 'thinking_end') {
                 continue;
@@ -295,6 +330,25 @@ export function useStreamingChat(options: UseStreamingChatOptions): UseStreaming
                       }
                     }
                   } catch { /* not JSON or no navigation */ }
+                }
+                continue;
+              }
+
+              // Guardrail block — server aborted the stream because scanOutput()
+              // detected a secret leak, system-prompt disclosure, or jailbreak
+              // acknowledgement. Append an inline marker so ChatContentRenderer
+              // can render a "response was blocked" notice and stop streaming.
+              if (eventType === 'guardrail_block') {
+                const reason = (data as { reason?: string; findings?: string[] }).reason
+                  ?? (data as { findings?: string[] }).findings?.[0]
+                  ?? 'policy';
+                accumulatedContent += `\n\n[[GUARDRAIL_BLOCK:${reason}]]`;
+                pendingStreamContentRef.current = accumulatedContent;
+                if (!streamingRafRef.current) {
+                  streamingRafRef.current = requestAnimationFrame(() => {
+                    setStreamContent(pendingStreamContentRef.current);
+                    streamingRafRef.current = null;
+                  });
                 }
                 continue;
               }
@@ -440,6 +494,7 @@ export function useStreamingChat(options: UseStreamingChatOptions): UseStreaming
     isStreaming,
     streamContent,
     thinkingContent,
+    thinkingTier,
     activeToolName,
     toolResults,
     cancelStream,

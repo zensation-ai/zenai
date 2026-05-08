@@ -7,6 +7,7 @@
 
 import * as Sentry from '@sentry/node';
 import { logger } from '../../utils/logger';
+import { scrubSentryEvent, scrubSentryBreadcrumb } from './pii-scrubber';
 
 let sentryInitialized = false;
 
@@ -35,7 +36,7 @@ export function initSentry(): boolean {
     // Only send errors in production or when explicitly enabled
     enabled: process.env.NODE_ENV === 'production' || process.env.SENTRY_ENABLED === 'true',
 
-    // Filter out noisy / expected errors
+    // Filter out noisy / expected errors and scrub PII (Sprint 1.4)
     beforeSend(event, hint) {
       const error = hint?.originalException;
 
@@ -47,8 +48,23 @@ export function initSentry(): boolean {
         }
       }
 
-      return event;
+      // PII scrubbing: remove secrets/tokens/emails/IPs before the event
+      // leaves the process. See services/observability/pii-scrubber.ts.
+      return scrubSentryEvent(
+        event as unknown as Record<string, unknown>
+      ) as unknown as typeof event;
     },
+
+    // Scrub PII on breadcrumbs too — console logs, HTTP req metadata etc.
+    beforeBreadcrumb(breadcrumb) {
+      return scrubSentryBreadcrumb(
+        breadcrumb as unknown as Record<string, unknown>
+      ) as unknown as typeof breadcrumb;
+    },
+
+    // Do NOT auto-capture PII (headers with auth, IPs) at all — the scrubbers
+    // are a second line of defense, not the first.
+    sendDefaultPii: false,
 
     // Integrations
     integrations: [

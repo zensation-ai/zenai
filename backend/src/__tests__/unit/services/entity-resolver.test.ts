@@ -12,7 +12,7 @@ import { EntityResolver } from '../../../services/memory/entity-resolver';
 jest.mock('../../../utils/database-context', () => ({
   queryContext: jest.fn(),
   isValidContext: (ctx: string) =>
-    ['personal', 'work', 'learning', 'creative'].includes(ctx),
+    ['operations', 'finance', 'people', 'strategy'].includes(ctx),
 }));
 
 jest.mock('../../../utils/logger', () => ({
@@ -75,7 +75,7 @@ describe('EntityResolver', () => {
         rowCount: 1,
       } as any);
 
-      const links = await resolver.resolveFromFact('personal', 'TypeScript and React are used in the project');
+      const links = await resolver.resolveFromFact('operations', 'TypeScript and React are used in the project');
 
       expect(links).toHaveLength(2);
       expect(links[0].factId).toBe('fact-001');
@@ -83,14 +83,14 @@ describe('EntityResolver', () => {
     });
 
     it('should return empty array for short content', async () => {
-      const links = await resolver.resolveFromFact('personal', 'Hi');
+      const links = await resolver.resolveFromFact('operations', 'Hi');
 
       expect(links).toEqual([]);
       expect(mockQueryContext).not.toHaveBeenCalled();
     });
 
     it('should return empty array for empty content', async () => {
-      const links = await resolver.resolveFromFact('personal', '');
+      const links = await resolver.resolveFromFact('operations', '');
 
       expect(links).toEqual([]);
     });
@@ -101,7 +101,7 @@ describe('EntityResolver', () => {
       // personalization_facts lookup returns nothing
       mockQueryContext.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any);
 
-      const links = await resolver.resolveFromFact('personal', 'Some fact content that is long enough');
+      const links = await resolver.resolveFromFact('operations', 'Some fact content that is long enough');
 
       expect(links).toEqual([]);
     });
@@ -122,7 +122,7 @@ describe('EntityResolver', () => {
         rowCount: 1,
       } as any);
 
-      const links = await resolver.resolveFromFact('personal', 'TypeScript and React in the project are important');
+      const links = await resolver.resolveFromFact('operations', 'TypeScript and React in the project are important');
 
       expect(links).toHaveLength(2);
     });
@@ -134,7 +134,7 @@ describe('EntityResolver', () => {
       }));
 
       const newResolver = new EntityResolver();
-      const links = await newResolver.resolveFromFact('personal', 'This is a test fact with enough content');
+      const links = await newResolver.resolveFromFact('operations', 'This is a test fact with enough content');
 
       expect(links).toEqual([]);
     });
@@ -147,7 +147,7 @@ describe('EntityResolver', () => {
         rowCount: 1,
       } as any);
 
-      const links = await resolver.linkFactToEntities('personal', 'fact-001', [
+      const links = await resolver.linkFactToEntities('operations', 'fact-001', [
         { entityId: 'ent-001', name: 'TypeScript', type: 'technology' },
       ]);
 
@@ -165,7 +165,7 @@ describe('EntityResolver', () => {
         rowCount: 1,
       } as any);
 
-      const links = await resolver.linkFactToEntities('personal', 'fact-001', [
+      const links = await resolver.linkFactToEntities('operations', 'fact-001', [
         { entityId: '', name: 'TypeScript', type: 'technology' },
       ]);
 
@@ -177,7 +177,7 @@ describe('EntityResolver', () => {
       // Lookup returns no entity
       mockQueryContext.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any);
 
-      const links = await resolver.linkFactToEntities('personal', 'fact-001', [
+      const links = await resolver.linkFactToEntities('operations', 'fact-001', [
         { entityId: '', name: 'UnknownEntity', type: 'concept' },
       ]);
 
@@ -190,13 +190,13 @@ describe('EntityResolver', () => {
         rowCount: 1,
       } as any);
 
-      const links = await resolver.linkFactToEntities('personal', 'fact-001', [
+      const links = await resolver.linkFactToEntities('operations', 'fact-001', [
         { entityId: 'ent-001', name: 'TypeScript', type: 'technology' },
       ]);
 
       expect(links).toHaveLength(1);
       expect(mockQueryContext).toHaveBeenCalledWith(
-        'personal',
+        'operations',
         expect.stringContaining('ON CONFLICT'),
         expect.any(Array)
       );
@@ -213,7 +213,7 @@ describe('EntityResolver', () => {
         rowCount: 2,
       } as any);
 
-      const entities = await resolver.getFactEntities('personal', 'fact-001');
+      const entities = await resolver.getFactEntities('operations', 'fact-001');
 
       expect(entities).toHaveLength(2);
       expect(entities[0].entityName).toBe('TypeScript');
@@ -223,7 +223,7 @@ describe('EntityResolver', () => {
     it('should return empty array when no entities linked', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any);
 
-      const entities = await resolver.getFactEntities('personal', 'fact-no-entities');
+      const entities = await resolver.getFactEntities('operations', 'fact-no-entities');
 
       expect(entities).toEqual([]);
     });
@@ -231,10 +231,10 @@ describe('EntityResolver', () => {
     it('should query with correct JOIN', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any);
 
-      await resolver.getFactEntities('work', 'fact-001');
+      await resolver.getFactEntities('finance', 'fact-001');
 
       expect(mockQueryContext).toHaveBeenCalledWith(
-        'work',
+        'finance',
         expect.stringContaining('JOIN knowledge_entities'),
         ['fact-001']
       );
@@ -250,7 +250,7 @@ describe('EntityResolver', () => {
         rowCount: 1,
       } as any);
 
-      const facts = await resolver.getEntityFacts('personal', 'ent-001');
+      const facts = await resolver.getEntityFacts('operations', 'ent-001');
 
       expect(facts).toHaveLength(1);
       expect(facts[0].content).toBe('TypeScript is preferred');
@@ -259,7 +259,7 @@ describe('EntityResolver', () => {
     it('should return empty array when no facts linked', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any);
 
-      const facts = await resolver.getEntityFacts('personal', 'ent-no-facts');
+      const facts = await resolver.getEntityFacts('operations', 'ent-no-facts');
 
       expect(facts).toEqual([]);
     });
@@ -273,7 +273,7 @@ describe('EntityResolver', () => {
         rowCount: 2,
       } as any);
 
-      const facts = await resolver.getEntityFacts('personal', 'ent-001');
+      const facts = await resolver.getEntityFacts('operations', 'ent-001');
 
       expect(facts).toHaveLength(1);
       expect(facts[0].factId).toBe('fact-001');
@@ -282,7 +282,7 @@ describe('EntityResolver', () => {
     it('should use LEFT JOINs for both fact tables', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any);
 
-      await resolver.getEntityFacts('learning', 'ent-001');
+      await resolver.getEntityFacts('people', 'ent-001');
 
       const sql = mockQueryContext.mock.calls[0][1];
       expect(sql).toContain('LEFT JOIN learned_facts');

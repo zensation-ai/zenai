@@ -12,7 +12,7 @@ import { ProceduralMemory } from '../../../services/memory/procedural-memory';
 jest.mock('../../../utils/database-context', () => ({
   queryContext: jest.fn(),
   isValidContext: (ctx: string) =>
-    ['personal', 'work', 'learning', 'creative'].includes(ctx),
+    ['operations', 'finance', 'people', 'strategy'].includes(ctx),
 }));
 
 jest.mock('../../../utils/logger', () => ({
@@ -65,7 +65,7 @@ describe('ProceduralMemory', () => {
     it('should store a procedure with embedding', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [mockProcedure], rowCount: 1 } as any);
 
-      const result = await proceduralMemory.recordProcedure('personal', {
+      const result = await proceduralMemory.recordProcedure('operations', {
         triggerDescription: 'User asks to send an email',
         steps: ['Parse recipient', 'Draft email', 'Send via Resend'],
         toolsUsed: ['email_compose', 'email_send'],
@@ -79,7 +79,7 @@ describe('ProceduralMemory', () => {
       expect(result.steps).toEqual(['Parse recipient', 'Draft email', 'Send via Resend']);
       expect(result.outcome).toBe('success');
       expect(mockQueryContext).toHaveBeenCalledWith(
-        'personal',
+        'operations',
         expect.stringContaining('INSERT INTO procedural_memories'),
         expect.any(Array)
       );
@@ -91,7 +91,7 @@ describe('ProceduralMemory', () => {
         rowCount: 1,
       } as any);
 
-      const result = await proceduralMemory.recordProcedure('work', {
+      const result = await proceduralMemory.recordProcedure('finance', {
         triggerDescription: 'Simple task',
         steps: ['Do it'],
         toolsUsed: [],
@@ -106,7 +106,7 @@ describe('ProceduralMemory', () => {
       generateEmbedding.mockRejectedValueOnce(new Error('Embedding API down'));
       mockQueryContext.mockResolvedValueOnce({ rows: [mockProcedure], rowCount: 1 } as any);
 
-      await proceduralMemory.recordProcedure('personal', {
+      await proceduralMemory.recordProcedure('operations', {
         triggerDescription: 'Test',
         steps: ['step1'],
         toolsUsed: [],
@@ -115,7 +115,7 @@ describe('ProceduralMemory', () => {
 
       // Should still insert with null embedding
       expect(mockQueryContext).toHaveBeenCalledWith(
-        'personal',
+        'operations',
         expect.stringContaining('INSERT'),
         expect.arrayContaining([null]) // null embedding
       );
@@ -134,7 +134,7 @@ describe('ProceduralMemory', () => {
         } as any)
         .mockResolvedValueOnce({ rows: [], rowCount: 0 } as any); // usage update
 
-      const results = await proceduralMemory.recallProcedure('personal', 'send email to user');
+      const results = await proceduralMemory.recallProcedure('operations', 'send email to user');
 
       expect(results).toHaveLength(2);
       expect(results[0].id).toBe('proc-001');
@@ -145,11 +145,11 @@ describe('ProceduralMemory', () => {
         .mockResolvedValueOnce({ rows: [mockProcedure], rowCount: 1 } as any)
         .mockResolvedValueOnce({ rows: [], rowCount: 1 } as any);
 
-      await proceduralMemory.recallProcedure('personal', 'test query');
+      await proceduralMemory.recallProcedure('operations', 'test query');
 
       expect(mockQueryContext).toHaveBeenCalledTimes(2);
       expect(mockQueryContext).toHaveBeenLastCalledWith(
-        'personal',
+        'operations',
         expect.stringContaining('UPDATE procedural_memories SET usage_count'),
         expect.any(Array)
       );
@@ -159,7 +159,7 @@ describe('ProceduralMemory', () => {
       const { generateEmbedding } = require('../../../services/ai');
       generateEmbedding.mockRejectedValueOnce(new Error('fail'));
 
-      const results = await proceduralMemory.recallProcedure('personal', 'test');
+      const results = await proceduralMemory.recallProcedure('operations', 'test');
 
       expect(results).toEqual([]);
     });
@@ -167,10 +167,10 @@ describe('ProceduralMemory', () => {
     it('should respect the limit parameter', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any);
 
-      await proceduralMemory.recallProcedure('personal', 'test', 3);
+      await proceduralMemory.recallProcedure('operations', 'test', 3);
 
       expect(mockQueryContext).toHaveBeenCalledWith(
-        'personal',
+        'operations',
         expect.any(String),
         expect.arrayContaining([3])
       );
@@ -183,7 +183,7 @@ describe('ProceduralMemory', () => {
         .mockResolvedValueOnce({ rows: [{ usage_count: 10, success_rate: 0.8 }], rowCount: 1 } as any)
         .mockResolvedValueOnce({ rows: [mockProcedure], rowCount: 1 } as any);
 
-      const result = await proceduralMemory.optimizeProcedure('proc-001', 'personal', {
+      const result = await proceduralMemory.optimizeProcedure('proc-001', 'operations', {
         success: true,
         score: 5,
       });
@@ -197,7 +197,7 @@ describe('ProceduralMemory', () => {
         .mockResolvedValueOnce({ rows: [{ usage_count: 10, success_rate: 0.8 }], rowCount: 1 } as any)
         .mockResolvedValueOnce({ rows: [{ ...mockProcedure, success_rate: 0.7 }], rowCount: 1 } as any);
 
-      const result = await proceduralMemory.optimizeProcedure('proc-001', 'personal', {
+      const result = await proceduralMemory.optimizeProcedure('proc-001', 'operations', {
         success: false,
       });
 
@@ -207,7 +207,7 @@ describe('ProceduralMemory', () => {
     it('should return null for non-existent procedure', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any);
 
-      const result = await proceduralMemory.optimizeProcedure('non-existent', 'personal', {
+      const result = await proceduralMemory.optimizeProcedure('non-existent', 'operations', {
         success: true,
       });
 
@@ -225,11 +225,11 @@ describe('ProceduralMemory', () => {
         rowCount: 2,
       } as any);
 
-      const results = await proceduralMemory.getTopProcedures('personal', 5);
+      const results = await proceduralMemory.getTopProcedures('operations', 5);
 
       expect(results).toHaveLength(2);
       expect(mockQueryContext).toHaveBeenCalledWith(
-        'personal',
+        'operations',
         expect.stringContaining('ORDER BY success_rate DESC'),
         [5]
       );
@@ -238,10 +238,10 @@ describe('ProceduralMemory', () => {
     it('should exclude failures', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any);
 
-      await proceduralMemory.getTopProcedures('personal');
+      await proceduralMemory.getTopProcedures('operations');
 
       expect(mockQueryContext).toHaveBeenCalledWith(
-        'personal',
+        'operations',
         expect.stringContaining("outcome != 'failure'"),
         [10]
       );
@@ -252,7 +252,7 @@ describe('ProceduralMemory', () => {
     it('should return true when procedure is deleted', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [], rowCount: 1 } as any);
 
-      const result = await proceduralMemory.deleteProcedure('proc-001', 'personal');
+      const result = await proceduralMemory.deleteProcedure('proc-001', 'operations');
 
       expect(result).toBe(true);
     });
@@ -260,7 +260,7 @@ describe('ProceduralMemory', () => {
     it('should return false when procedure not found', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any);
 
-      const result = await proceduralMemory.deleteProcedure('non-existent', 'personal');
+      const result = await proceduralMemory.deleteProcedure('non-existent', 'operations');
 
       expect(result).toBe(false);
     });
@@ -270,7 +270,7 @@ describe('ProceduralMemory', () => {
     it('should return procedure by ID', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [mockProcedure], rowCount: 1 } as any);
 
-      const result = await proceduralMemory.getProcedure('proc-001', 'personal');
+      const result = await proceduralMemory.getProcedure('proc-001', 'operations');
 
       expect(result).not.toBeNull();
       expect(result!.id).toBe('proc-001');
@@ -279,7 +279,7 @@ describe('ProceduralMemory', () => {
     it('should return null when not found', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any);
 
-      const result = await proceduralMemory.getProcedure('non-existent', 'personal');
+      const result = await proceduralMemory.getProcedure('non-existent', 'operations');
 
       expect(result).toBeNull();
     });
@@ -289,11 +289,11 @@ describe('ProceduralMemory', () => {
     it('should list with default options', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [mockProcedure], rowCount: 1 } as any);
 
-      const results = await proceduralMemory.listProcedures('personal', {});
+      const results = await proceduralMemory.listProcedures('operations', {});
 
       expect(results).toHaveLength(1);
       expect(mockQueryContext).toHaveBeenCalledWith(
-        'personal',
+        'operations',
         expect.stringContaining('ORDER BY created_at DESC'),
         [20]
       );
@@ -302,10 +302,10 @@ describe('ProceduralMemory', () => {
     it('should filter by outcome', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any);
 
-      await proceduralMemory.listProcedures('work', { outcome: 'success', limit: 5 });
+      await proceduralMemory.listProcedures('finance', { outcome: 'success', limit: 5 });
 
       expect(mockQueryContext).toHaveBeenCalledWith(
-        'work',
+        'finance',
         expect.stringContaining('WHERE outcome = $1'),
         ['success', 5]
       );

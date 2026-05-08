@@ -21,7 +21,7 @@ const mockQueryContext = jest.fn();
 jest.mock('../../../../utils/database-context', () => ({
   queryContext: (...args: unknown[]) => mockQueryContext(...args),
   isValidContext: (c: string) =>
-    ['personal', 'work', 'learning', 'creative'].includes(c),
+    ['operations', 'finance', 'people', 'strategy'].includes(c),
 }));
 
 jest.mock('../../../../utils/logger', () => ({
@@ -141,11 +141,11 @@ describe('recordFeedback', () => {
 
   it('inserts event into the database', async () => {
     const event = makeEvent();
-    await recordFeedback('personal', event);
+    await recordFeedback('operations', event);
 
     expect(mockQueryContext).toHaveBeenCalledTimes(1);
     const [ctx, sql, params] = mockQueryContext.mock.calls[0];
-    expect(ctx).toBe('personal');
+    expect(ctx).toBe('operations');
     expect(sql).toContain('INSERT INTO feedback_events');
     expect(params[0]).toBe(event.id);
     expect(params[1]).toBe(event.type);
@@ -154,7 +154,7 @@ describe('recordFeedback', () => {
 
   it('serialises details as JSON', async () => {
     const event = makeEvent({ details: { key: 'val' } });
-    await recordFeedback('work', event);
+    await recordFeedback('finance', event);
 
     const params = mockQueryContext.mock.calls[0][2];
     expect(params[5]).toBe(JSON.stringify({ key: 'val' }));
@@ -162,12 +162,12 @@ describe('recordFeedback', () => {
 
   it('does not throw on DB error', async () => {
     mockQueryContext.mockRejectedValue(new Error('DB down'));
-    await expect(recordFeedback('personal', makeEvent())).resolves.toBeUndefined();
+    await expect(recordFeedback('operations', makeEvent())).resolves.toBeUndefined();
   });
 
   it('logs error on DB failure', async () => {
     mockQueryContext.mockRejectedValue(new Error('DB down'));
-    await recordFeedback('personal', makeEvent());
+    await recordFeedback('operations', makeEvent());
 
     const { logger } = jest.requireMock('../../../../utils/logger');
     expect(logger.error).toHaveBeenCalledWith(

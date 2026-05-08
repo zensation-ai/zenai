@@ -40,7 +40,7 @@ export const ConnectorSettings: React.FC = () => {
     setTestResult(null);
     try {
       const res = await axios.post(`/api/business/connectors/${type}/test`);
-      setTestResult({ type, success: res.data.test?.success ?? false, message: res.data.test?.message ?? 'Unknown' });
+      setTestResult({ type, success: res.data.test?.success ?? false, message: res.data.test?.message ?? 'Unbekannt' });
     } catch (error) {
       setTestResult({ type, success: false, message: error instanceof Error ? error.message : 'Verbindungsfehler' });
     } finally {
@@ -101,8 +101,8 @@ export const ConnectorSettings: React.FC = () => {
 
   return (
     <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-        <h3 style={{ color: 'rgba(255,255,255,0.9)', margin: 0 }}>Datenquellen</h3>
+      <div className="flex justify-between items-center mb-6">
+        <h3 className="text-white/90 m-0">Datenquellen</h3>
         <button type="button" className="business-btn" onClick={triggerCollection}>🔄 Daten sammeln</button>
       </div>
 
@@ -126,9 +126,9 @@ export const ConnectorSettings: React.FC = () => {
                     {c.last_sync ? `Letzter Sync: ${new Date(c.last_sync).toLocaleString('de-DE')}` : 'Noch nicht synchronisiert'}
                   </div>
                   {c.last_error && (
-                    <div style={{ color: '#f87171', fontSize: '0.8rem', marginTop: '0.25rem' }}>{c.last_error}</div>
+                    <div className="text-red-400 text-[0.8rem] mt-1">{c.last_error}</div>
                   )}
-                  <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.75rem' }}>
+                  <div className="flex gap-2 mt-3">
                     <button
                       type="button"
                       className="business-btn"
@@ -140,14 +140,10 @@ export const ConnectorSettings: React.FC = () => {
                     <button type="button" className="business-btn" onClick={() => removeConnector(c.id)}>🗑️ Entfernen</button>
                   </div>
                   {testResult?.type === c.source_type && (
-                    <div style={{
-                      marginTop: '0.5rem',
-                      padding: '0.5rem',
-                      borderRadius: 'var(--radius-sm)',
-                      background: testResult.success ? 'rgba(52,211,153,0.1)' : 'rgba(248,113,113,0.1)',
-                      color: testResult.success ? '#34d399' : '#f87171',
-                      fontSize: '0.8rem',
-                    }}>
+                    <div className="mt-2 p-2 rounded-[var(--radius-sm)] text-[0.8rem] bg-[var(--bg)] text-[color:var(--c)]" style={{
+                      '--bg': testResult.success ? 'rgba(52,211,153,0.1)' : 'rgba(248,113,113,0.1)',
+                      '--c': testResult.success ? '#34d399' : '#f87171',
+                    } as React.CSSProperties}>
                       {testResult.message}
                     </div>
                   )}
@@ -160,13 +156,13 @@ export const ConnectorSettings: React.FC = () => {
 
       {/* Available Connectors */}
       <div className="business-section">
-        <div className="business-section-title">➕ Verfuegbare Connectors</div>
+        <div className="business-section-title">➕ Verfügbare Connectors</div>
         <div className="business-connector-grid">
           {Object.entries(CONNECTOR_INFO).map(([type, info]) => {
             const isConfigured = configuredTypes.has(type as BusinessSourceType);
             const isGoogleType = type === 'gsc' || type === 'ga4';
             return (
-              <div key={type} className="business-connector-card" style={{ opacity: isConfigured ? 0.5 : 1 }}>
+              <div key={type} className="business-connector-card opacity-[var(--op)]" style={{ '--op': isConfigured ? 0.5 : 1 } as React.CSSProperties}>
                 <div className="business-connector-header">
                   <div className="business-connector-name">
                     <span>{info.icon}</span>
@@ -176,9 +172,9 @@ export const ConnectorSettings: React.FC = () => {
                 </div>
                 <div className="business-connector-meta">{info.description}</div>
                 {!isConfigured && (
-                  <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.75rem' }}>
+                  <div className="flex gap-2 mt-3">
                     <button type="button" className="business-btn primary" onClick={() => addConnector(type as BusinessSourceType)}>
-                      Hinzufuegen
+                      Hinzufügen
                     </button>
                     {isGoogleType && (
                       <button type="button" className="business-btn" onClick={authorizeGoogle}>

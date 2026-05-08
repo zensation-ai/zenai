@@ -74,7 +74,7 @@ describe('Plugin System Routes', () => {
 
   describe('GET /api/:context/plugins', () => {
     it('should list installed plugins', async () => {
-      const res = await request(app).get('/api/personal/plugins');
+      const res = await request(app).get('/api/operations/plugins');
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
       expect(res.body.data).toHaveLength(1);
@@ -86,13 +86,13 @@ describe('Plugin System Routes', () => {
     });
 
     it('should reject invalid status filter', async () => {
-      const res = await request(app).get('/api/personal/plugins?status=bad');
+      const res = await request(app).get('/api/operations/plugins?status=bad');
       expect(res.status).toBe(400);
     });
 
     it('should pass status filter to service', async () => {
-      await request(app).get('/api/personal/plugins?status=active');
-      expect(mockListPlugins).toHaveBeenCalledWith('personal', 'active');
+      await request(app).get('/api/operations/plugins?status=active');
+      expect(mockListPlugins).toHaveBeenCalledWith('operations', 'active');
     });
   });
 
@@ -102,7 +102,7 @@ describe('Plugin System Routes', () => {
 
   describe('GET /api/:context/plugins/marketplace', () => {
     it('should return marketplace plugins', async () => {
-      const res = await request(app).get('/api/personal/plugins/marketplace');
+      const res = await request(app).get('/api/operations/plugins/marketplace');
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
       expect(res.body.data.length).toBeGreaterThan(0);
@@ -117,7 +117,7 @@ describe('Plugin System Routes', () => {
 
   describe('GET /api/:context/plugins/:id', () => {
     it('should return plugin details', async () => {
-      const res = await request(app).get('/api/personal/plugins/pomodoro-timer');
+      const res = await request(app).get('/api/operations/plugins/pomodoro-timer');
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
       expect(res.body.data.id).toBe('pomodoro-timer');
@@ -125,7 +125,7 @@ describe('Plugin System Routes', () => {
 
     it('should return 404 for non-existent plugin', async () => {
       mockGetPlugin.mockResolvedValueOnce(null);
-      const res = await request(app).get('/api/personal/plugins/unknown');
+      const res = await request(app).get('/api/operations/plugins/unknown');
       expect(res.status).toBe(404);
     });
   });
@@ -140,7 +140,7 @@ describe('Plugin System Routes', () => {
     it('should install a new plugin', async () => {
       mockGetPlugin.mockResolvedValueOnce(null); // not already installed
       const res = await request(app)
-        .post('/api/personal/plugins')
+        .post('/api/operations/plugins')
         .send({ manifest: validManifest });
       expect(res.status).toBe(201);
       expect(res.body.success).toBe(true);
@@ -148,21 +148,21 @@ describe('Plugin System Routes', () => {
 
     it('should return 409 if plugin already installed', async () => {
       const res = await request(app)
-        .post('/api/personal/plugins')
+        .post('/api/operations/plugins')
         .send({ manifest: validManifest });
       expect(res.status).toBe(409);
     });
 
     it('should return 400 for invalid manifest', async () => {
       const res = await request(app)
-        .post('/api/personal/plugins')
+        .post('/api/operations/plugins')
         .send({ manifest: { id: 'x' } }); // missing name and version
       expect(res.status).toBe(400);
     });
 
     it('should return 400 when manifest is missing', async () => {
       const res = await request(app)
-        .post('/api/personal/plugins')
+        .post('/api/operations/plugins')
         .send({});
       expect(res.status).toBe(400);
     });
@@ -174,28 +174,28 @@ describe('Plugin System Routes', () => {
 
   describe('PUT /api/:context/plugins/:id/activate', () => {
     it('should activate a plugin', async () => {
-      const res = await request(app).put('/api/personal/plugins/pomodoro-timer/activate');
+      const res = await request(app).put('/api/operations/plugins/pomodoro-timer/activate');
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
     });
 
     it('should return 404 if plugin not found', async () => {
       mockActivatePlugin.mockRejectedValueOnce(new Error('Plugin not found'));
-      const res = await request(app).put('/api/personal/plugins/unknown/activate');
+      const res = await request(app).put('/api/operations/plugins/unknown/activate');
       expect(res.status).toBe(404);
     });
   });
 
   describe('PUT /api/:context/plugins/:id/deactivate', () => {
     it('should deactivate a plugin', async () => {
-      const res = await request(app).put('/api/personal/plugins/pomodoro-timer/deactivate');
+      const res = await request(app).put('/api/operations/plugins/pomodoro-timer/deactivate');
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
     });
 
     it('should return 404 if plugin not found', async () => {
       mockDeactivatePlugin.mockRejectedValueOnce(new Error('Plugin not found'));
-      const res = await request(app).put('/api/personal/plugins/unknown/deactivate');
+      const res = await request(app).put('/api/operations/plugins/unknown/deactivate');
       expect(res.status).toBe(404);
     });
   });
@@ -207,7 +207,7 @@ describe('Plugin System Routes', () => {
   describe('PUT /api/:context/plugins/:id/config', () => {
     it('should update plugin config', async () => {
       const res = await request(app)
-        .put('/api/personal/plugins/pomodoro-timer/config')
+        .put('/api/operations/plugins/pomodoro-timer/config')
         .send({ config: { interval: 25 } });
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
@@ -215,7 +215,7 @@ describe('Plugin System Routes', () => {
 
     it('should return 400 for invalid config', async () => {
       const res = await request(app)
-        .put('/api/personal/plugins/pomodoro-timer/config')
+        .put('/api/operations/plugins/pomodoro-timer/config')
         .send({ config: 'not-an-object' });
       expect(res.status).toBe(400);
     });
@@ -223,7 +223,7 @@ describe('Plugin System Routes', () => {
     it('should return 404 if plugin not found', async () => {
       mockUpdatePluginConfig.mockRejectedValueOnce(new Error('Plugin not found'));
       const res = await request(app)
-        .put('/api/personal/plugins/unknown/config')
+        .put('/api/operations/plugins/unknown/config')
         .send({ config: { key: 'val' } });
       expect(res.status).toBe(404);
     });
@@ -235,7 +235,7 @@ describe('Plugin System Routes', () => {
 
   describe('DELETE /api/:context/plugins/:id', () => {
     it('should uninstall a plugin', async () => {
-      const res = await request(app).delete('/api/personal/plugins/pomodoro-timer');
+      const res = await request(app).delete('/api/operations/plugins/pomodoro-timer');
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
       expect(res.body.message).toBe('Plugin uninstalled');
@@ -243,7 +243,7 @@ describe('Plugin System Routes', () => {
 
     it('should return 404 if plugin not found', async () => {
       mockUninstallPlugin.mockRejectedValueOnce(new Error('Plugin not found'));
-      const res = await request(app).delete('/api/personal/plugins/unknown');
+      const res = await request(app).delete('/api/operations/plugins/unknown');
       expect(res.status).toBe(404);
     });
   });

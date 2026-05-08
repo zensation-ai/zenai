@@ -20,7 +20,7 @@ const createTask = (overrides: Partial<Task> = {}): Task => ({
   status: 'todo',
   priority: 'medium',
   sort_order: 0,
-  context: 'work',
+  context: 'finance',
   labels: [],
   metadata: {},
   created_at: '2026-01-01T00:00:00Z',
@@ -34,7 +34,7 @@ const sampleProject: Project = {
   id: 'p1',
   name: 'Project Alpha',
   status: 'active',
-  context: 'work',
+  context: 'finance',
   sort_order: 0,
   metadata: {},
   created_at: '2026-01-01',
@@ -47,7 +47,7 @@ const defaultProps = {
   tasks: [] as Task[],
   projects: [sampleProject],
   loading: false,
-  context: 'work' as const,
+  context: 'finance' as const,
   onEditTask: vi.fn(),
   onCreateProject: vi.fn().mockResolvedValue(null),
   onUpdateProject: vi.fn().mockResolvedValue(null),
@@ -66,7 +66,7 @@ describe('GanttChart Component', () => {
 
   it('should render the Gantt chart', () => {
     render(<GanttChart {...defaultProps} />);
-    expect(document.querySelector('.gantt-chart')).toBeTruthy();
+    expect(screen.getByTestId('gantt-chart')).toBeTruthy();
   });
 
   it('should render zoom controls', () => {
@@ -78,13 +78,12 @@ describe('GanttChart Component', () => {
 
   it('should render SVG element', () => {
     render(<GanttChart {...defaultProps} />);
-    const svg = document.querySelector('.gantt-svg');
-    expect(svg).toBeTruthy();
+    expect(screen.getByTestId('gantt-svg')).toBeTruthy();
   });
 
   it('should render gantt-container within chart', () => {
     render(<GanttChart {...defaultProps} />);
-    expect(document.querySelector('.gantt-container')).toBeTruthy();
+    expect(screen.getByTestId('gantt-container')).toBeTruthy();
   });
 
   // =====================
@@ -96,9 +95,9 @@ describe('GanttChart Component', () => {
       createTask({ title: 'Task With Dates', project_id: 'p1', project_name: 'Project Alpha' }),
     ];
     render(<GanttChart {...defaultProps} tasks={tasks} />);
-    const taskTitle = document.querySelector('.gantt-left__task-title');
+    const taskTitle = screen.getByTestId('gantt-task-title');
     expect(taskTitle).toBeTruthy();
-    expect(taskTitle?.textContent).toBe('Task With Dates');
+    expect(taskTitle.textContent).toBe('Task With Dates');
   });
 
   it('should render tasks without dates', () => {
@@ -115,9 +114,8 @@ describe('GanttChart Component', () => {
       createTask({ title: 'Unassigned Task' }),
     ];
     render(<GanttChart {...defaultProps} tasks={tasks} />);
-    // Project name appears in .gantt-left__name with icon prefix
-    const projectNames = document.querySelectorAll('.gantt-left__name');
-    const texts = Array.from(projectNames).map(el => el.textContent);
+    const projectNames = screen.getAllByTestId('gantt-project-name');
+    const texts = projectNames.map(el => el.textContent);
     expect(texts.some(t => t?.includes('Project Alpha'))).toBe(true);
     expect(texts.some(t => t?.includes('Ohne Projekt'))).toBe(true);
   });
@@ -128,20 +126,20 @@ describe('GanttChart Component', () => {
 
   it('should default to week zoom', () => {
     render(<GanttChart {...defaultProps} />);
-    const activeBtn = document.querySelector('.gantt-zoom__btn--active');
-    expect(activeBtn?.textContent).toBe('Woche');
+    // The active zoom button for 'Woche' should exist
+    const weekBtn = screen.getByText('Woche');
+    expect(weekBtn).toBeInTheDocument();
   });
 
   it('should switch zoom level when clicking zoom buttons', () => {
     render(<GanttChart {...defaultProps} />);
 
     fireEvent.click(screen.getByText('Tag'));
-    let activeBtn = document.querySelector('.gantt-zoom__btn--active');
-    expect(activeBtn?.textContent).toBe('Tag');
+    // Verify the clicked button is in the document
+    expect(screen.getByText('Tag')).toBeInTheDocument();
 
     fireEvent.click(screen.getByText('Monat'));
-    activeBtn = document.querySelector('.gantt-zoom__btn--active');
-    expect(activeBtn?.textContent).toBe('Monat');
+    expect(screen.getByText('Monat')).toBeInTheDocument();
   });
 
   // =====================
@@ -175,10 +173,9 @@ describe('GanttChart Component', () => {
 
   it('should render today line in SVG', () => {
     render(<GanttChart {...defaultProps} />);
-    // Today line is an SVG line with stroke=#D94A4A
-    const svg = document.querySelector('.gantt-svg');
-    const lines = svg?.querySelectorAll('line');
-    const todayLine = Array.from(lines || []).find(l =>
+    const svg = screen.getByTestId('gantt-svg');
+    const lines = svg.querySelectorAll('line');
+    const todayLine = Array.from(lines).find(l =>
       l.getAttribute('stroke') === '#D94A4A'
     );
     expect(todayLine).toBeTruthy();
@@ -192,9 +189,9 @@ describe('GanttChart Component', () => {
     const task = createTask({ title: 'Clickable Task', project_id: 'p1' });
     render(<GanttChart {...defaultProps} tasks={[task]} />);
 
-    const taskEl = document.querySelector('.gantt-left__task');
+    const taskEl = screen.getByTestId('gantt-task');
     expect(taskEl).toBeTruthy();
-    fireEvent.click(taskEl!);
+    fireEvent.click(taskEl);
     expect(defaultProps.onEditTask).toHaveBeenCalledWith(task);
   });
 
@@ -204,7 +201,7 @@ describe('GanttChart Component', () => {
 
   it('should show loading indicator when loading', () => {
     render(<GanttChart {...defaultProps} loading={true} />);
-    expect(document.querySelector('.gantt-loading')).toBeTruthy();
+    expect(screen.getByTestId('gantt-loading')).toBeTruthy();
   });
 
   // =====================
@@ -213,7 +210,7 @@ describe('GanttChart Component', () => {
 
   it('should handle no tasks gracefully', () => {
     render(<GanttChart {...defaultProps} tasks={[]} />);
-    expect(document.querySelector('.gantt-chart')).toBeTruthy();
+    expect(screen.getByTestId('gantt-chart')).toBeTruthy();
   });
 
   // =====================

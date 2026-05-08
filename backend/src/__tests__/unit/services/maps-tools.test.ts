@@ -48,7 +48,7 @@ import { estimateTravelDuration } from '../../../services/travel-estimator';
 import type { ToolExecutionContext } from '../../../services/claude/tool-use';
 
 var mockContext: ToolExecutionContext = {
-  aiContext: 'personal',
+  aiContext: 'operations',
   sessionId: 'test-session',
 };
 

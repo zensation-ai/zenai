@@ -11,20 +11,34 @@
 
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { motionVariants, reducedMotionVariants, useReducedMotion } from '../../design-system';
+import { motionVariants, reducedMotionVariants, useReducedMotion } from '@/lib/motion';
+
+export type ThinkingDisplayMode = 'omitted' | 'collapsible' | 'visible' | 'visible_progress';
 
 export interface ThinkingBlockProps {
   /** The thinking/reasoning content from the AI */
   content: string;
   /** Whether the thinking is still being streamed */
   isStreaming: boolean;
+  /** Display mode from adaptive thinking tier (default: collapsible) */
+  displayMode?: ThinkingDisplayMode;
+  /** Custom label from thinking tier (e.g. "Analyse", "Tiefe Reflexion") */
+  label?: string;
 }
 
-export function ThinkingBlock({ content, isStreaming }: ThinkingBlockProps) {
-  const [expanded, setExpanded] = useState(false);
+export function ThinkingBlock({ content, isStreaming, displayMode = 'collapsible', label }: ThinkingBlockProps) {
+  // 'visible' and 'visible_progress' start expanded; 'collapsible' starts collapsed
+  const [expanded, setExpanded] = useState(displayMode === 'visible' || displayMode === 'visible_progress');
   const contentRef = useRef<HTMLDivElement>(null);
   const prefersReduced = useReducedMotion();
   const slideVariant = prefersReduced ? reducedMotionVariants.slideUp : motionVariants.slideUp;
+
+  // Sync expanded state when displayMode changes (e.g. tier arrives mid-stream)
+  useEffect(() => {
+    if (displayMode === 'visible' || displayMode === 'visible_progress') {
+      setExpanded(true);
+    }
+  }, [displayMode]);
 
   // Auto-scroll during streaming when expanded
   useEffect(() => {
@@ -72,8 +86,15 @@ export function ThinkingBlock({ content, isStreaming }: ThinkingBlockProps) {
           </svg>
         </span>
         <span className="thinking-block-label">
-          Gedankengang
-          {isStreaming && <span className="thinking-block-streaming-dot" aria-label="denkt noch nach">...</span>}
+          {label || 'Gedankengang'}
+          {isStreaming && displayMode === 'visible_progress' && (
+            <span className="thinking-block-progress-indicator" aria-label="verarbeitet">
+              <span className="thinking-block-progress-bar" />
+            </span>
+          )}
+          {isStreaming && displayMode !== 'visible_progress' && (
+            <span className="thinking-block-streaming-dot" aria-label="denkt noch nach">...</span>
+          )}
         </span>
         <span className={`thinking-block-chevron${expanded ? ' thinking-block-chevron--open' : ''}`} aria-hidden="true">
           <svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
@@ -87,14 +108,15 @@ export function ThinkingBlock({ content, isStreaming }: ThinkingBlockProps) {
           <motion.div
             key="content"
             id="thinking-block-content"
-            ref={contentRef}
             className="thinking-block-content"
             variants={slideVariant}
             initial="initial"
             animate="animate"
             exit="exit"
           >
-            <pre className="thinking-block-text">{content}</pre>
+            <div ref={contentRef} className="thinking-block-content-inner">
+              <pre className="thinking-block-text">{content}</pre>
+            </div>
           </motion.div>
         ) : (
           <motion.div

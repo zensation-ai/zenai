@@ -20,20 +20,20 @@ describe('SlackMemory', () => {
     it('returns mapped context from workspace config', async () => {
       queryPublic.mockResolvedValueOnce({
         rows: [{
-          channel_context_mapping: { C123: 'learning' },
+          channel_context_mapping: { C123: 'people' },
         }],
       });
 
       const ctx = await getChannelContext('ws-1', 'C123', 'general');
-      expect(ctx).toBe('learning');
+      expect(ctx).toBe('people');
     });
 
     it('falls back to channel DB record', async () => {
       queryPublic.mockResolvedValueOnce({ rows: [{ channel_context_mapping: {} }] });
-      queryPublic.mockResolvedValueOnce({ rows: [{ target_context: 'creative' }] });
+      queryPublic.mockResolvedValueOnce({ rows: [{ target_context: 'strategy' }] });
 
       const ctx = await getChannelContext('ws-1', 'C456', 'brainstorm');
-      expect(ctx).toBe('creative');
+      expect(ctx).toBe('strategy');
     });
 
     it('falls back to name-based heuristic', async () => {
@@ -41,7 +41,7 @@ describe('SlackMemory', () => {
       queryPublic.mockResolvedValueOnce({ rows: [] });
 
       const ctx = await getChannelContext('ws-1', 'C789', 'engineering');
-      expect(ctx).toBe('work');
+      expect(ctx).toBe('finance');
     });
 
     it('defaults to work for unknown channels', async () => {
@@ -49,7 +49,7 @@ describe('SlackMemory', () => {
       queryPublic.mockResolvedValueOnce({ rows: [] });
 
       const ctx = await getChannelContext('ws-1', 'C000', 'some-unknown-name');
-      expect(ctx).toBe('work');
+      expect(ctx).toBe('finance');
     });
   });
 

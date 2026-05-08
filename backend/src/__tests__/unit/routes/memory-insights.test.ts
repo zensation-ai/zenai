@@ -11,13 +11,13 @@ jest.mock('../../../middleware/auth', () => ({
 }));
 
 jest.mock('../../../utils/database-context', () => ({
-  isValidContext: jest.fn((ctx: string) => ['personal', 'work', 'learning', 'creative'].includes(ctx)),
+  isValidContext: jest.fn((ctx: string) => ['operations', 'finance', 'people', 'strategy'].includes(ctx)),
   AIContext: {},
 }));
 
 jest.mock('../../../utils/validation', () => ({
   validateContextParam: jest.fn((ctx: string) => {
-    if (!['personal', 'work', 'learning', 'creative'].includes(ctx)) {
+    if (!['operations', 'finance', 'people', 'strategy'].includes(ctx)) {
       throw new Error('Invalid context');
     }
     return ctx;
@@ -60,7 +60,7 @@ describe('Memory Insights Routes', () => {
       mockGetMemoryTimeline.mockResolvedValue([{ date: '2026-03-01', count: 5 }]);
 
       const res = await request(app)
-        .get('/api/personal/memory/insights/timeline?from=2026-03-01&to=2026-03-21');
+        .get('/api/operations/memory/insights/timeline?from=2026-03-01&to=2026-03-21');
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
@@ -69,14 +69,14 @@ describe('Memory Insights Routes', () => {
 
     it('should require from and to parameters', async () => {
       const res = await request(app)
-        .get('/api/personal/memory/insights/timeline');
+        .get('/api/operations/memory/insights/timeline');
 
       expect(res.status).toBe(400);
     });
 
     it('should reject invalid granularity', async () => {
       const res = await request(app)
-        .get('/api/personal/memory/insights/timeline?from=2026-03-01&to=2026-03-21&granularity=hour');
+        .get('/api/operations/memory/insights/timeline?from=2026-03-01&to=2026-03-21&granularity=hour');
 
       expect(res.status).toBe(400);
     });
@@ -87,7 +87,7 @@ describe('Memory Insights Routes', () => {
       mockDetectConflicts.mockResolvedValue([{ type: 'duplicate', ids: ['a', 'b'] }]);
 
       const res = await request(app)
-        .get('/api/personal/memory/insights/conflicts');
+        .get('/api/operations/memory/insights/conflicts');
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
@@ -100,7 +100,7 @@ describe('Memory Insights Routes', () => {
       mockGetCurationSuggestions.mockResolvedValue([{ action: 'archive', factId: 'f1' }]);
 
       const res = await request(app)
-        .get('/api/personal/memory/insights/curation');
+        .get('/api/operations/memory/insights/curation');
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
@@ -112,7 +112,7 @@ describe('Memory Insights Routes', () => {
       mockGetMemoryImpact.mockResolvedValue([{ factId: 'f1', score: 0.95 }]);
 
       const res = await request(app)
-        .get('/api/personal/memory/insights/impact');
+        .get('/api/operations/memory/insights/impact');
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
@@ -124,7 +124,7 @@ describe('Memory Insights Routes', () => {
       mockGetMemoryStats.mockResolvedValue({ totalFacts: 100, totalEpisodes: 50 });
 
       const res = await request(app)
-        .get('/api/personal/memory/insights/stats');
+        .get('/api/operations/memory/insights/stats');
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);

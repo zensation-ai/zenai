@@ -24,7 +24,7 @@ jest.mock('../../../utils/logger', () => ({
 
 jest.mock('../../../utils/database-context', () => ({
   queryContext: jest.fn(),
-  isValidContext: jest.fn((ctx: string) => ['personal', 'work', 'learning', 'creative'].includes(ctx)),
+  isValidContext: jest.fn((ctx: string) => ['operations', 'finance', 'people', 'strategy'].includes(ctx)),
   AIContext: {},
 }));
 
@@ -77,31 +77,31 @@ describe('Analytics V2 Routes', () => {
       mockGetOverview.mockResolvedValue(overview);
 
       const res = await request(app)
-        .get('/api/personal/analytics/v2/overview?from=2026-01-01&to=2026-01-31');
+        .get('/api/operations/analytics/v2/overview?from=2026-01-01&to=2026-01-31');
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
       expect(res.body.data).toEqual(overview);
-      expect(mockGetOverview).toHaveBeenCalledWith('personal', '2026-01-01', '2026-01-31');
+      expect(mockGetOverview).toHaveBeenCalledWith('operations', '2026-01-01', '2026-01-31');
     });
 
     it('should reject missing date parameters', async () => {
       const res = await request(app)
-        .get('/api/personal/analytics/v2/overview');
+        .get('/api/operations/analytics/v2/overview');
 
       expect(res.status).toBe(400);
     });
 
     it('should reject invalid date format', async () => {
       const res = await request(app)
-        .get('/api/personal/analytics/v2/overview?from=01-2026-01&to=2026-01-31');
+        .get('/api/operations/analytics/v2/overview?from=01-2026-01&to=2026-01-31');
 
       expect(res.status).toBe(400);
     });
 
     it('should reject from date after to date', async () => {
       const res = await request(app)
-        .get('/api/personal/analytics/v2/overview?from=2026-02-01&to=2026-01-01');
+        .get('/api/operations/analytics/v2/overview?from=2026-02-01&to=2026-01-01');
 
       expect(res.status).toBe(400);
     });
@@ -120,26 +120,26 @@ describe('Analytics V2 Routes', () => {
       mockGetTrends.mockResolvedValue(trends);
 
       const res = await request(app)
-        .get('/api/work/analytics/v2/trends?from=2026-01-01&to=2026-01-31');
+        .get('/api/finance/analytics/v2/trends?from=2026-01-01&to=2026-01-31');
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
-      expect(mockGetTrends).toHaveBeenCalledWith('work', '2026-01-01', '2026-01-31', 'day');
+      expect(mockGetTrends).toHaveBeenCalledWith('finance', '2026-01-01', '2026-01-31', 'day');
     });
 
     it('should accept valid granularity parameter', async () => {
       mockGetTrends.mockResolvedValue([]);
 
       const res = await request(app)
-        .get('/api/personal/analytics/v2/trends?from=2026-01-01&to=2026-01-31&granularity=week');
+        .get('/api/operations/analytics/v2/trends?from=2026-01-01&to=2026-01-31&granularity=week');
 
       expect(res.status).toBe(200);
-      expect(mockGetTrends).toHaveBeenCalledWith('personal', '2026-01-01', '2026-01-31', 'week');
+      expect(mockGetTrends).toHaveBeenCalledWith('operations', '2026-01-01', '2026-01-31', 'week');
     });
 
     it('should reject invalid granularity', async () => {
       const res = await request(app)
-        .get('/api/personal/analytics/v2/trends?from=2026-01-01&to=2026-01-31&granularity=year');
+        .get('/api/operations/analytics/v2/trends?from=2026-01-01&to=2026-01-31&granularity=year');
 
       expect(res.status).toBe(400);
     });
@@ -151,7 +151,7 @@ describe('Analytics V2 Routes', () => {
       mockGetComparison.mockResolvedValue(comparison);
 
       const res = await request(app)
-        .get('/api/personal/analytics/v2/comparison?p1_from=2026-01-01&p1_to=2026-01-31&p2_from=2026-02-01&p2_to=2026-02-28');
+        .get('/api/operations/analytics/v2/comparison?p1_from=2026-01-01&p1_to=2026-01-31&p2_from=2026-02-01&p2_to=2026-02-28');
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
@@ -160,7 +160,7 @@ describe('Analytics V2 Routes', () => {
 
     it('should reject missing period parameters', async () => {
       const res = await request(app)
-        .get('/api/personal/analytics/v2/comparison?p1_from=2026-01-01&p1_to=2026-01-31');
+        .get('/api/operations/analytics/v2/comparison?p1_from=2026-01-01&p1_to=2026-01-31');
 
       expect(res.status).toBe(400);
     });
@@ -172,7 +172,7 @@ describe('Analytics V2 Routes', () => {
       mockGetMemoryHealth.mockResolvedValue(health);
 
       const res = await request(app)
-        .get('/api/learning/analytics/v2/memory-health?from=2026-01-01&to=2026-01-31');
+        .get('/api/people/analytics/v2/memory-health?from=2026-01-01&to=2026-01-31');
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);

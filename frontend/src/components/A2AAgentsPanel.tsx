@@ -9,12 +9,10 @@
  * - Agent entfernen mit Bestaetigung
  */
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, type CSSProperties } from 'react';
 import axios from 'axios';
 import { showToast } from './Toast';
 import { logError } from '../utils/errors';
-import './A2AAgentsPanel.css';
-
 // ─── Types ──────────────────────────────────────────────────────────────────
 
 interface ExternalAgent {
@@ -246,7 +244,7 @@ export function A2AAgentsPanel({ context }: A2AAgentsPanelProps) {
         <div className="a2a-empty">
           <div className="a2a-empty-icon">🌐</div>
           <div>Keine externen Agenten registriert.</div>
-          <div style={{ fontSize: '0.8rem', marginTop: '0.5rem', opacity: 0.6 }}>
+          <div className="text-[0.8rem] mt-2 opacity-60">
             Registriere einen A2A-kompatiblen Agent, um Aufgaben zu delegieren.
           </div>
         </div>
@@ -306,7 +304,7 @@ export function A2AAgentsPanel({ context }: A2AAgentsPanelProps) {
                   onClick={() => handleHealthCheck(agent.id)}
                   disabled={checkingHealthId === agent.id}
                 >
-                  {checkingHealthId === agent.id ? 'Pruefe...' : 'Health Check'}
+                  {checkingHealthId === agent.id ? 'Prüfe...' : 'Health Check'}
                 </button>
                 <button
                   type="button"
@@ -354,8 +352,8 @@ export function A2AAgentsPanel({ context }: A2AAgentsPanelProps) {
               <div key={task.id} className="a2a-task-card">
                 <div className="a2a-task-card-header">
                   <span
-                    className="a2a-task-status"
-                    style={{ background: `${statusCfg.color}22`, color: statusCfg.color }}
+                    className="a2a-task-status bg-[var(--bg)] text-[var(--c)]"
+                    style={{ '--bg': `${statusCfg.color}22`, '--c': statusCfg.color } as CSSProperties}
                   >
                     {statusCfg.label}
                   </span>
@@ -403,8 +401,7 @@ export function A2AAgentsPanel({ context }: A2AAgentsPanelProps) {
               </button>
               <button
                 type="button"
-                className="a2a-action-btn danger"
-                style={{ background: 'rgba(239,68,68,0.15)' }}
+                className="a2a-action-btn danger bg-red-500/15"
                 onClick={() => handleDelete(confirmDeleteId)}
               >
                 Entfernen

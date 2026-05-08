@@ -47,17 +47,17 @@ describe('Working Memory Service', () => {
 
   describe('initialize', () => {
     it('should create a new working memory session with goal', () => {
-      const state = memory.initialize('session-1', 'Complete project analysis', 'work');
+      const state = memory.initialize('session-1', 'Complete project analysis', 'finance');
 
       expect(state).toBeDefined();
       expect(state.sessionId).toBe('session-1');
       expect(state.currentGoal).toBe('Complete project analysis');
-      expect(state.context).toBe('work');
+      expect(state.context).toBe('finance');
       expect(state.capacity).toBe(7); // Miller's Law default
     });
 
     it('should add goal as first slot with highest priority', () => {
-      const state = memory.initialize('session-1', 'Test goal', 'personal');
+      const state = memory.initialize('session-1', 'Test goal', 'operations');
 
       expect(state.slots).toHaveLength(1);
       expect(state.slots[0].type).toBe('goal');
@@ -67,14 +67,14 @@ describe('Working Memory Service', () => {
     });
 
     it('should allow custom capacity', () => {
-      const state = memory.initialize('session-1', 'Goal', 'work', 9);
+      const state = memory.initialize('session-1', 'Goal', 'finance', 9);
 
       expect(state.capacity).toBe(9);
     });
 
     it('should return existing session if already initialized', () => {
-      const state1 = memory.initialize('session-1', 'Goal 1', 'work');
-      const state2 = memory.initialize('session-1', 'Goal 2', 'work');
+      const state1 = memory.initialize('session-1', 'Goal 1', 'finance');
+      const state2 = memory.initialize('session-1', 'Goal 2', 'finance');
 
       expect(state1).toBe(state2);
       expect(state2.currentGoal).toBe('Goal 2'); // Updated
@@ -87,7 +87,7 @@ describe('Working Memory Service', () => {
 
   describe('add', () => {
     beforeEach(() => {
-      memory.initialize('session-1', 'Main goal', 'work');
+      memory.initialize('session-1', 'Main goal', 'finance');
     });
 
     it('should add a new slot to working memory', async () => {
@@ -137,7 +137,7 @@ describe('Working Memory Service', () => {
 
   describe('addMultiple', () => {
     beforeEach(() => {
-      memory.initialize('session-1', 'Goal', 'work');
+      memory.initialize('session-1', 'Goal', 'finance');
     });
 
     it('should add multiple slots at once', async () => {
@@ -159,7 +159,7 @@ describe('Working Memory Service', () => {
 
   describe('activate', () => {
     beforeEach(() => {
-      memory.initialize('session-1', 'Goal', 'work');
+      memory.initialize('session-1', 'Goal', 'finance');
     });
 
     it('should boost activation when slot is activated', async () => {
@@ -184,7 +184,7 @@ describe('Working Memory Service', () => {
 
   describe('activateByContent', () => {
     beforeEach(() => {
-      memory.initialize('session-1', 'Goal', 'work');
+      memory.initialize('session-1', 'Goal', 'finance');
     });
 
     it('should activate slots matching content', async () => {
@@ -208,7 +208,7 @@ describe('Working Memory Service', () => {
 
   describe('remove', () => {
     beforeEach(() => {
-      memory.initialize('session-1', 'Goal', 'work');
+      memory.initialize('session-1', 'Goal', 'finance');
     });
 
     it('should remove a slot by id', async () => {
@@ -242,7 +242,7 @@ describe('Working Memory Service', () => {
 
   describe('sub-goals', () => {
     beforeEach(() => {
-      memory.initialize('session-1', 'Main goal', 'work');
+      memory.initialize('session-1', 'Main goal', 'finance');
     });
 
     it('should add sub-goals', () => {
@@ -277,7 +277,7 @@ describe('Working Memory Service', () => {
 
   describe('generateContextString', () => {
     beforeEach(() => {
-      memory.initialize('session-1', 'Analyze project risks', 'work');
+      memory.initialize('session-1', 'Analyze project risks', 'finance');
     });
 
     it('should generate context string with goal', () => {
@@ -321,7 +321,7 @@ describe('Working Memory Service', () => {
 
   describe('getActiveSlots', () => {
     beforeEach(() => {
-      memory.initialize('session-1', 'Goal', 'work');
+      memory.initialize('session-1', 'Goal', 'finance');
     });
 
     it('should return slots sorted by relevance', async () => {
@@ -346,14 +346,14 @@ describe('Working Memory Service', () => {
 
   describe('getOrInitialize', () => {
     it('should return existing session', async () => {
-      const state1 = memory.initialize('session-1', 'Goal 1', 'work');
-      const state2 = await memory.getOrInitialize('session-1', 'Goal 2', 'work');
+      const state1 = memory.initialize('session-1', 'Goal 1', 'finance');
+      const state2 = await memory.getOrInitialize('session-1', 'Goal 2', 'finance');
 
       expect(state1).toBe(state2);
     });
 
     it('should create new session if not exists', async () => {
-      const state = await memory.getOrInitialize('new-session', 'New goal', 'personal');
+      const state = await memory.getOrInitialize('new-session', 'New goal', 'operations');
 
       expect(state.sessionId).toBe('new-session');
       expect(state.currentGoal).toBe('New goal');
@@ -366,7 +366,7 @@ describe('Working Memory Service', () => {
     });
 
     it('should return state for existing session', () => {
-      memory.initialize('session-1', 'Goal', 'work');
+      memory.initialize('session-1', 'Goal', 'finance');
 
       const state = memory.getState('session-1');
       expect(state).not.toBeNull();
@@ -376,7 +376,7 @@ describe('Working Memory Service', () => {
 
   describe('clear', () => {
     it('should remove session from memory', () => {
-      memory.initialize('session-1', 'Goal', 'work');
+      memory.initialize('session-1', 'Goal', 'finance');
       memory.clear('session-1');
 
       expect(memory.getState('session-1')).toBeNull();
@@ -389,8 +389,8 @@ describe('Working Memory Service', () => {
 
   describe('getStats', () => {
     it('should return statistics about working memory', async () => {
-      memory.initialize('session-1', 'Goal 1', 'work');
-      memory.initialize('session-2', 'Goal 2', 'personal');
+      memory.initialize('session-1', 'Goal 1', 'finance');
+      memory.initialize('session-2', 'Goal 2', 'operations');
       await memory.add('session-1', 'fact', 'Fact 1');
       await memory.add('session-1', 'fact', 'Fact 2');
 

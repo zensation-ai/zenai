@@ -1,0 +1,28 @@
+{
+  "conv-26": [
+    {
+      "question": "When did Caroline go to the LGBTQ support group?",
+      "answer": "7 May 2023",
+      "response": "May 6, 2026",
+      "category": 2,
+      "seed": 42,
+      "query_id": "conv-26_q0"
+    },
+    {
+      "question": "When did Melanie paint a sunrise?",
+      "answer": "2022",
+      "response": "In 2025.",
+      "category": 2,
+      "seed": 42,
+      "query_id": "conv-26_q1"
+    },
+    {
+      "question": "What fields would Caroline be likely to pursue in her educaton?",
+      "answer": "Psychology, counseling certification",
+      "response": "Counseling and mental health.",
+      "category": 3,
+      "seed": 42,
+      "query_id": "conv-26_q2"
+    }
+  ]
+}

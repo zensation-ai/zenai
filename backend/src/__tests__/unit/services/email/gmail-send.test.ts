@@ -84,7 +84,7 @@ describe('GmailProvider.sendMessage', () => {
       to: [{ email: 'recipient@example.com' }],
       subject: 'Test Send',
       bodyText: 'Hello from Gmail',
-    }, 'personal');
+    }, 'operations');
 
     expect(mockBuildMime).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -110,7 +110,7 @@ describe('GmailProvider.sendMessage', () => {
       bodyText: 'My reply',
       inReplyTo: '<original@example.com>',
       threadId: 'existing-thread',
-    }, 'personal');
+    }, 'operations');
 
     expect(mockBuildMime).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -141,7 +141,7 @@ describe('GmailProvider.sendMessage', () => {
         content: Buffer.from('pdf-content'),
         contentType: 'application/pdf',
       }],
-    }, 'personal');
+    }, 'operations');
 
     expect(mockBuildMime).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -161,7 +161,7 @@ describe('GmailProvider.sendMessage', () => {
         to: [{ email: 'recipient@example.com' }],
         subject: 'Too Large',
         bodyText: 'Big',
-      }, 'personal')
+      }, 'operations')
     ).rejects.toThrow(/exceeds Gmail's 25MB limit/);
   });
 
@@ -176,7 +176,7 @@ describe('GmailProvider.sendMessage', () => {
       bcc: [{ email: 'bcc@example.com' }],
       subject: 'CC Test',
       bodyText: 'Hello',
-    }, 'personal');
+    }, 'operations');
 
     expect(mockBuildMime).toHaveBeenCalledWith(
       expect.objectContaining({

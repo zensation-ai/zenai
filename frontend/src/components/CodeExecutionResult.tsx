@@ -9,8 +9,6 @@
  */
 
 import { useState } from 'react';
-import './CodeExecutionResult.css';
-
 interface CodeExecutionResultProps {
   /** The executed source code */
   code: string;

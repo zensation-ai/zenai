@@ -11,8 +11,6 @@ import { useState, useEffect, useCallback, type KeyboardEvent } from 'react';
 import axios from 'axios';
 import { showToast } from './Toast';
 import { logError } from '../utils/errors';
-import './AgentIdentityPanel.css';
-
 // ─── Types ──────────────────────────────────────────────────────────────────
 
 interface AgentIdentity {
@@ -52,7 +50,7 @@ interface IdentityFormState {
 
 const ROLE_OPTIONS: { value: string; label: string; icon: string; color: string }[] = [
   { value: 'researcher', label: 'Researcher', icon: '🔍', color: '#3b82f6' },
-  { value: 'writer', label: 'Writer', icon: '✍️', color: '#8b5cf6' },
+  { value: 'writer', label: 'Writer', icon: '✍️', color: '#1a6b7a' },
   { value: 'reviewer', label: 'Reviewer', icon: '📋', color: '#22c55e' },
   { value: 'coder', label: 'Coder', icon: '💻', color: '#f59e0b' },
   { value: 'custom', label: 'Benutzerdefiniert', icon: '🤖', color: '#ec4899' },
@@ -66,7 +64,7 @@ const TONE_OPTIONS: { value: string; label: string }[] = [
 ];
 
 const TRUST_LEVELS: { value: 'low' | 'medium' | 'high'; label: string; color: string; desc: string }[] = [
-  { value: 'low', label: 'Niedrig', color: '#ef4444', desc: 'Eingeschraenkte Aktionen' },
+  { value: 'low', label: 'Niedrig', color: '#ef4444', desc: 'Eingeschränkte Aktionen' },
   { value: 'medium', label: 'Mittel', color: '#f59e0b', desc: 'Standard-Zugriff' },
   { value: 'high', label: 'Hoch', color: '#22c55e', desc: 'Voller Zugriff' },
 ];
@@ -83,8 +81,8 @@ const PERMISSION_OPTIONS: { value: string; label: string; desc: string }[] = [
 const LANGUAGE_OPTIONS: { value: string; label: string }[] = [
   { value: 'de', label: 'Deutsch' },
   { value: 'en', label: 'English' },
-  { value: 'fr', label: 'Francais' },
-  { value: 'es', label: 'Espanol' },
+  { value: 'fr', label: 'Français' },
+  { value: 'es', label: 'Español' },
 ];
 
 const EMPTY_FORM: IdentityFormState = {
@@ -240,12 +238,12 @@ export function AgentIdentityPanel() {
   const handleDelete = async (id: string) => {
     try {
       await axios.delete(`/api/agent-identities/${id}`);
-      showToast('Agent geloescht', 'success');
+      showToast('Agent gelöscht', 'success');
       setDeleteConfirmId(null);
       await loadIdentities();
     } catch (err) {
       logError('AgentIdentityPanel:delete', err);
-      showToast('Fehler beim Loeschen', 'error');
+      showToast('Fehler beim Löschen', 'error');
     }
   };
 
@@ -271,7 +269,7 @@ export function AgentIdentityPanel() {
 
       {/* Loading */}
       {loading && (
-        <div className="progress-init" style={{ justifyContent: 'center', padding: '2rem 0' }}>
+        <div className="progress-init justify-center py-8">
           <span className="loading-spinner" />
           <span>Lade Agenten...</span>
         </div>
@@ -282,7 +280,7 @@ export function AgentIdentityPanel() {
         <div className="identity-empty-state">
           <div className="identity-empty-icon">🤖</div>
           <p className="identity-empty-text">
-            Noch keine Agenten-Profile erstellt. Erstelle deinen ersten Agenten mit individueller Persoenlichkeit und Berechtigungen.
+            Noch keine Agenten-Profile erstellt. Erstelle deinen ersten Agenten mit individueller Persönlichkeit und Berechtigungen.
           </p>
           <button type="button" className="identity-empty-btn" onClick={openCreateModal}>
             Ersten Agenten erstellen
@@ -311,16 +309,16 @@ export function AgentIdentityPanel() {
                     <h4 className="identity-card-name">{identity.name}</h4>
                     <div className="identity-card-badges">
                       <span
-                        className="identity-role-badge"
-                        style={{ background: `${role.color}18`, color: role.color }}
+                        className="identity-role-badge bg-[var(--bg)] text-[var(--c)]"
+                        style={{ '--bg': `${role.color}18`, '--c': role.color } as React.CSSProperties}
                       >
                         {role.label}
                       </span>
                       <span
-                        className="identity-trust-badge"
-                        style={{ background: `${trust.color}18`, color: trust.color }}
+                        className="identity-trust-badge bg-[var(--bg)] text-[var(--c)]"
+                        style={{ '--bg': `${trust.color}18`, '--c': trust.color } as React.CSSProperties}
                       >
-                        <span className="trust-dot" style={{ background: trust.color }} />
+                        <span className="trust-dot bg-[var(--c)]" />
                         {trust.label}
                       </span>
                     </div>
@@ -331,7 +329,7 @@ export function AgentIdentityPanel() {
                 <div className="identity-card-details">
                   {identity.description && (
                     <div className="identity-detail-row">
-                      <span className="identity-detail-value" style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                      <span className="identity-detail-value text-[0.8rem] text-[var(--text-secondary)]">
                         {identity.description}
                       </span>
                     </div>
@@ -339,13 +337,13 @@ export function AgentIdentityPanel() {
                   {identity.persona?.tone && (
                     <div className="identity-detail-row">
                       <span className="identity-detail-label">Ton</span>
-                      <span className="identity-detail-value" style={{ textTransform: 'capitalize' }}>
+                      <span className="identity-detail-value capitalize">
                         {TONE_OPTIONS.find(t => t.value === identity.persona?.tone)?.label || identity.persona.tone}
                       </span>
                     </div>
                   )}
                   {identity.persona?.expertise && identity.persona.expertise.length > 0 && (
-                    <div className="identity-detail-row" style={{ flexDirection: 'column', gap: '4px' }}>
+                    <div className="identity-detail-row flex-col gap-1">
                       <span className="identity-detail-label">Expertise</span>
                       <div className="identity-expertise-tags">
                         {identity.persona.expertise.map(tag => (
@@ -378,7 +376,7 @@ export function AgentIdentityPanel() {
                     className="identity-action-btn delete-btn"
                     onClick={() => setDeleteConfirmId(identity.id)}
                   >
-                    Loeschen
+                    Löschen
                   </button>
                 </div>
               </div>
@@ -463,9 +461,9 @@ export function AgentIdentityPanel() {
                       style={{ '--trust-color': t.color } as React.CSSProperties}
                       onClick={() => setForm(f => ({ ...f, trust_level: t.value }))}
                     >
-                      <span className="trust-level-dot" style={{ background: t.color }} />
+                      <span className="trust-level-dot bg-[var(--trust-color)]" />
                       <span className="trust-level-label">{t.label}</span>
-                      <span style={{ fontSize: '0.65rem', color: 'var(--text-secondary)' }}>{t.desc}</span>
+                      <span className="text-[0.65rem] text-[var(--text-secondary)]">{t.desc}</span>
                     </button>
                   ))}
                 </div>
@@ -507,7 +505,7 @@ export function AgentIdentityPanel() {
                     onChange={(e) => setExpertiseInput(e.target.value)}
                     onKeyDown={handleExpertiseKeyDown}
                     onBlur={() => { if (expertiseInput.trim()) addExpertise(expertiseInput); }}
-                    placeholder={form.expertise.length === 0 ? 'TypeScript, React, ... (Enter zum Hinzufuegen)' : 'Weitere...'}
+                    placeholder={form.expertise.length === 0 ? 'TypeScript, React, ... (Enter zum Hinzufügen)' : 'Weitere...'}
                   />
                 </div>
               </div>
@@ -519,7 +517,7 @@ export function AgentIdentityPanel() {
                   className="identity-form-textarea"
                   value={form.style}
                   onChange={(e) => setForm(f => ({ ...f, style: e.target.value }))}
-                  placeholder="Beschreibe den Kommunikationsstil, z.B. 'Praezise und faktenbasiert, nutzt Aufzaehlungen, vermeidet Fachjargon...'"
+                  placeholder="Beschreibe den Kommunikationsstil, z.B. 'Präzise und faktenbasiert, nutzt Aufzählungen, vermeidet Fachjargon...'"
                   rows={2}
                 />
               </div>
@@ -581,9 +579,9 @@ export function AgentIdentityPanel() {
       {/* ─── Delete Confirmation Modal ───────────────────────────────────────── */}
       {deleteConfirmId && (
         <div className="identity-modal-overlay" onClick={(e) => { if (e.target === e.currentTarget) setDeleteConfirmId(null); }}>
-          <div className="identity-modal" style={{ maxWidth: '400px' }}>
+          <div className="identity-modal max-w-[400px]">
             <div className="identity-modal-header">
-              <h2>Agent loeschen</h2>
+              <h2>Agent löschen</h2>
               <button type="button" className="identity-modal-close" onClick={() => setDeleteConfirmId(null)}>
                 ✕
               </button>
@@ -591,16 +589,16 @@ export function AgentIdentityPanel() {
             <div className="identity-modal-body">
               <div className="identity-delete-confirm">
                 <p>
-                  Moechtest du den Agenten{' '}
+                  Möchtest du den Agenten{' '}
                   <strong>{identities.find(i => i.id === deleteConfirmId)?.name}</strong>{' '}
-                  wirklich loeschen? Diese Aktion kann nicht rueckgaengig gemacht werden.
+                  wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden.
                 </p>
                 <div className="identity-delete-actions">
                   <button type="button" className="identity-btn-cancel" onClick={() => setDeleteConfirmId(null)}>
                     Abbrechen
                   </button>
                   <button type="button" className="identity-btn-delete" onClick={() => handleDelete(deleteConfirmId)}>
-                    Endgueltig loeschen
+                    Endgültig löschen
                   </button>
                 </div>
               </div>

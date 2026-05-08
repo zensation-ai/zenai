@@ -12,6 +12,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
+import { cn } from '@/lib/utils';
 
 import type { Procedure, ProceduralMemoryPanelProps } from './types';
 import { ProcedureList } from './ProcedureList';
@@ -66,13 +67,13 @@ export function ProceduralMemoryPanel({ context }: ProceduralMemoryPanelProps) {
   }, [context]);
 
   const deleteProcedure = useCallback(async (id: string) => {
-    if (!confirm('Prozedur wirklich loeschen?')) return;
+    if (!confirm('Prozedur wirklich löschen?')) return;
     try {
       await axios.delete(`/api/${context}/memory/procedures/${id}`);
       setProcedures(prev => prev.filter(p => p.id !== id));
       if (selectedProcedure?.id === id) setSelectedProcedure(null);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Fehler beim Loeschen');
+      setError(err instanceof Error ? err.message : 'Fehler beim Löschen');
     }
   }, [context, selectedProcedure]);
 
@@ -101,25 +102,17 @@ export function ProceduralMemoryPanel({ context }: ProceduralMemoryPanelProps) {
   }, [activeTab, context, outcomeFilter]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
-    <div style={{ padding: '1rem' }}>
-      <h2 style={{ margin: '0 0 1rem', fontSize: '1.25rem', fontWeight: 600 }}>
-        Procedural Memory
+    <div className="p-4">
+      <h2 className="m-0 mb-4 text-xl font-semibold">
+        Prozedurales Gedächtnis
       </h2>
 
       {error && (
-        <div style={{
-          padding: '0.75rem 1rem',
-          marginBottom: '1rem',
-          background: 'rgba(239,68,68,0.1)',
-          border: '1px solid rgba(239,68,68,0.3)',
-          borderRadius: '8px',
-          color: '#ef4444',
-          fontSize: '0.875rem',
-        }}>
+        <div className="py-3 px-4 mb-4 bg-red-500/10 border border-red-500/30 rounded-lg text-red-500 text-sm">
           {error}
           <button
             onClick={() => setError(null)}
-            style={{ float: 'right', background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer' }}
+            className="float-right bg-transparent border-0 text-red-500 cursor-pointer"
           >
             x
           </button>
@@ -127,25 +120,21 @@ export function ProceduralMemoryPanel({ context }: ProceduralMemoryPanelProps) {
       )}
 
       {/* Tabs */}
-      <div style={{ display: 'flex', gap: '0.25rem', marginBottom: '1rem', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
+      <div className="flex gap-1 mb-4 border-b border-white/10">
         {([
           ['procedures', 'Prozeduren'],
-          ['recall', 'Recall'],
-          ['search', 'Hybrid Search'],
+          ['recall', 'Abruf'],
+          ['search', 'Hybridsuche'],
         ] as const).map(([key, label]) => (
           <button
             key={key}
             onClick={() => setActiveTab(key)}
-            style={{
-              padding: '0.5rem 1rem',
-              background: activeTab === key ? 'rgba(59,130,246,0.15)' : 'transparent',
-              border: 'none',
-              borderBottom: activeTab === key ? '2px solid #3b82f6' : '2px solid transparent',
-              color: activeTab === key ? '#3b82f6' : 'inherit',
-              cursor: 'pointer',
-              fontSize: '0.875rem',
-              fontWeight: activeTab === key ? 600 : 400,
-            }}
+            className={cn(
+              'py-2 px-4 border-0 cursor-pointer text-sm border-b-2',
+              activeTab === key
+                ? 'bg-blue-500/15 border-b-blue-500 text-blue-500 font-semibold'
+                : 'bg-transparent border-b-transparent font-normal',
+            )}
           >
             {label}
           </button>
@@ -155,40 +144,23 @@ export function ProceduralMemoryPanel({ context }: ProceduralMemoryPanelProps) {
       {/* Procedures Tab */}
       {activeTab === 'procedures' && (
         <div>
-          <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem', alignItems: 'center' }}>
+          <div className="flex gap-2 mb-4 items-center">
             <select
               value={outcomeFilter}
               onChange={e => setOutcomeFilter(e.target.value)}
-              style={{
-                padding: '0.5rem 0.75rem',
-                borderRadius: '6px',
-                border: '1px solid rgba(255,255,255,0.15)',
-                background: 'rgba(255,255,255,0.05)',
-                color: 'inherit',
-                fontSize: '0.875rem',
-              }}
+              className="py-2 px-3 rounded-md border border-white/15 bg-white/5 text-inherit text-sm"
             >
               <option value="">Alle Outcomes</option>
               <option value="success">Erfolgreich</option>
               <option value="failure">Fehlgeschlagen</option>
               <option value="partial">Teilweise</option>
             </select>
-            <span style={{ fontSize: '0.8rem', opacity: 0.5, alignSelf: 'center', flex: 1 }}>
+            <span className="text-[0.8rem] opacity-50 self-center flex-1">
               {procedures.length} Prozeduren
             </span>
             <button
               onClick={() => setShowRecordForm(!showRecordForm)}
-              style={{
-                padding: '0.45rem 0.9rem',
-                borderRadius: '8px',
-                border: '1px solid rgba(99,102,241,0.3)',
-                background: 'rgba(99,102,241,0.1)',
-                color: '#818cf8',
-                fontSize: '0.8rem',
-                fontWeight: 500,
-                cursor: 'pointer',
-                transition: 'all 0.2s',
-              }}
+              className="py-[0.45rem] px-[0.9rem] rounded-lg border border-[rgba(20,74,86,0.3)] bg-[rgba(20,74,86,0.1)] text-[#2d8a9e] text-[0.8rem] font-medium cursor-pointer transition-all duration-200"
             >
               {showRecordForm ? 'Abbrechen' : '+ Prozedur erfassen'}
             </button>
@@ -205,11 +177,11 @@ export function ProceduralMemoryPanel({ context }: ProceduralMemoryPanelProps) {
           )}
 
           {proceduresLoading ? (
-            <div style={{ textAlign: 'center', padding: '2rem', opacity: 0.5 }}>Laden...</div>
+            <div className="text-center p-8 opacity-50">Laden...</div>
           ) : (
-            <div style={{ display: 'flex', gap: '1rem' }}>
+            <div className="flex gap-4">
               {/* Procedure list */}
-              <div style={{ flex: 1, maxHeight: '500px', overflowY: 'auto' }}>
+              <div className="flex-1 max-h-[500px] overflow-y-auto">
                 <ProcedureList
                   procedures={procedures}
                   selectedId={selectedProcedure?.id ?? null}
@@ -220,15 +192,7 @@ export function ProceduralMemoryPanel({ context }: ProceduralMemoryPanelProps) {
 
               {/* Procedure detail */}
               {selectedProcedure && (
-                <div style={{
-                  flex: 1,
-                  padding: '1rem',
-                  borderRadius: '8px',
-                  border: '1px solid rgba(255,255,255,0.1)',
-                  background: 'rgba(255,255,255,0.03)',
-                  maxHeight: '500px',
-                  overflowY: 'auto',
-                }}>
+                <div className="flex-1 p-4 rounded-lg border border-white/10 bg-white/[0.03] max-h-[500px] overflow-y-auto">
                   <ProcedureDetail
                     procedure={selectedProcedure}
                     loading={procedureDetailLoading}

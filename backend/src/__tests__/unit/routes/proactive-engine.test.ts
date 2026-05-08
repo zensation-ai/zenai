@@ -64,7 +64,7 @@ describe('Proactive Engine Routes', () => {
   describe('GET /:context/proactive-engine/events', () => {
     it('should return event history', async () => {
       mockGetEventHistory.mockResolvedValue({ events: [{ id: '1', type: 'task.created' }], total: 1 });
-      const res = await request(app).get('/api/personal/proactive-engine/events');
+      const res = await request(app).get('/api/operations/proactive-engine/events');
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
       expect(res.body.data).toHaveLength(1);
@@ -80,7 +80,7 @@ describe('Proactive Engine Routes', () => {
   describe('GET /:context/proactive-engine/stats', () => {
     it('should return event stats', async () => {
       mockGetEventStats.mockResolvedValue({ total: 100, byType: {} });
-      const res = await request(app).get('/api/personal/proactive-engine/stats');
+      const res = await request(app).get('/api/operations/proactive-engine/stats');
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
       expect(res.body.data).toHaveProperty('total', 100);
@@ -91,7 +91,7 @@ describe('Proactive Engine Routes', () => {
     it('should return list of rules', async () => {
       const rules = [{ id: '1', name: 'Rule 1' }];
       mockListProactiveRules.mockResolvedValue(rules);
-      const res = await request(app).get('/api/work/proactive-engine/rules');
+      const res = await request(app).get('/api/finance/proactive-engine/rules');
       expect(res.status).toBe(200);
       expect(res.body.data).toEqual(rules);
     });
@@ -106,24 +106,24 @@ describe('Proactive Engine Routes', () => {
 
     it('should create a proactive rule', async () => {
       mockCreateProactiveRule.mockResolvedValue({ id: 'new-id', ...validRule });
-      const res = await request(app).post('/api/personal/proactive-engine/rules').send(validRule);
+      const res = await request(app).post('/api/operations/proactive-engine/rules').send(validRule);
       expect(res.status).toBe(201);
       expect(res.body.success).toBe(true);
       expect(res.body.data.name).toBe('Test Rule');
     });
 
     it('should reject missing name', async () => {
-      const res = await request(app).post('/api/personal/proactive-engine/rules').send({ eventTypes: ['x'], decision: 'notify' });
+      const res = await request(app).post('/api/operations/proactive-engine/rules').send({ eventTypes: ['x'], decision: 'notify' });
       expect(res.status).toBe(400);
     });
 
     it('should reject missing eventTypes', async () => {
-      const res = await request(app).post('/api/personal/proactive-engine/rules').send({ name: 'Test', decision: 'notify' });
+      const res = await request(app).post('/api/operations/proactive-engine/rules').send({ name: 'Test', decision: 'notify' });
       expect(res.status).toBe(400);
     });
 
     it('should reject invalid decision', async () => {
-      const res = await request(app).post('/api/personal/proactive-engine/rules').send({ name: 'Test', eventTypes: ['x'], decision: 'invalid' });
+      const res = await request(app).post('/api/operations/proactive-engine/rules').send({ name: 'Test', eventTypes: ['x'], decision: 'invalid' });
       expect(res.status).toBe(400);
     });
   });
@@ -131,14 +131,14 @@ describe('Proactive Engine Routes', () => {
   describe('PUT /:context/proactive-engine/rules/:id', () => {
     it('should update a proactive rule', async () => {
       mockUpdateProactiveRule.mockResolvedValue({ id: 'abc', name: 'Updated' });
-      const res = await request(app).put('/api/personal/proactive-engine/rules/abc').send({ name: 'Updated' });
+      const res = await request(app).put('/api/operations/proactive-engine/rules/abc').send({ name: 'Updated' });
       expect(res.status).toBe(200);
       expect(res.body.data.name).toBe('Updated');
     });
 
     it('should return 404 for non-existent rule', async () => {
       mockUpdateProactiveRule.mockResolvedValue(null);
-      const res = await request(app).put('/api/personal/proactive-engine/rules/abc').send({ name: 'X' });
+      const res = await request(app).put('/api/operations/proactive-engine/rules/abc').send({ name: 'X' });
       expect(res.status).toBe(404);
     });
   });
@@ -146,14 +146,14 @@ describe('Proactive Engine Routes', () => {
   describe('DELETE /:context/proactive-engine/rules/:id', () => {
     it('should delete a proactive rule', async () => {
       mockDeleteProactiveRule.mockResolvedValue(true);
-      const res = await request(app).delete('/api/personal/proactive-engine/rules/abc');
+      const res = await request(app).delete('/api/operations/proactive-engine/rules/abc');
       expect(res.status).toBe(200);
       expect(res.body.message).toBe('Proactive rule deleted');
     });
 
     it('should return 404 for non-existent rule', async () => {
       mockDeleteProactiveRule.mockResolvedValue(false);
-      const res = await request(app).delete('/api/personal/proactive-engine/rules/abc');
+      const res = await request(app).delete('/api/operations/proactive-engine/rules/abc');
       expect(res.status).toBe(404);
     });
   });
@@ -161,7 +161,7 @@ describe('Proactive Engine Routes', () => {
   describe('POST /:context/proactive-engine/process', () => {
     it('should trigger manual processing', async () => {
       mockProcessUnhandledEvents.mockResolvedValue([{ id: '1', decision: 'notify' }]);
-      const res = await request(app).post('/api/personal/proactive-engine/process');
+      const res = await request(app).post('/api/operations/proactive-engine/process');
       expect(res.status).toBe(200);
       expect(res.body.data.processed).toBe(1);
     });

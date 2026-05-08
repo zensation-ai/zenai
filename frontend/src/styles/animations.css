@@ -88,20 +88,6 @@
   }
 }
 
-/* ── View Transitions API ──────────────────────────────────── */
-
-@view-transition {
-  navigation: auto;
-}
-
-::view-transition-old(root) {
-  animation: fade-out 150ms ease-out;
-}
-
-::view-transition-new(root) {
-  animation: fade-in 150ms ease-in;
-}
-
 @keyframes fade-out {
   from { opacity: 1; }
   to { opacity: 0; }
@@ -134,13 +120,8 @@
   transition: opacity 200ms ease;
 }
 
-/* Respect reduced motion — disable hover-lift and view transitions */
+/* Respect reduced motion — disable hover-lift */
 @media (prefers-reduced-motion: reduce) {
-  ::view-transition-old(root),
-  ::view-transition-new(root) {
-    animation: none;
-  }
-
   .hover-lift {
     transition: none;
   }

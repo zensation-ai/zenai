@@ -71,6 +71,8 @@ jobs:
       - name: TypeScript type check
         working-directory: backend
         run: npx tsc --noEmit
+        env:
+          NODE_OPTIONS: --max-old-space-size=4096
 
       - name: Run ESLint
         working-directory: backend
@@ -144,12 +146,47 @@ jobs:
 
       - name: Run backend tests (shard ${{ matrix.shard }}/5)
         working-directory: backend
-        run: pnpm test -- --forceExit --detectOpenHandles --maxWorkers=1 --shard=${{ matrix.shard }}/5
+        run: pnpm test -- --forceExit --detectOpenHandles --maxWorkers=1 --shard=${{ matrix.shard }}/5 --testPathIgnorePatterns='integration-db'
         env:
           NODE_ENV: test
           NODE_OPTIONS: --max-old-space-size=6144
           CI: true
           SKIP_EXTERNAL_SERVICES: true
+
+  # ============================================
+  # Backend: Integration Tests (real PostgreSQL via Testcontainers)
+  # ============================================
+  test-integration-db:
+    runs-on: ubuntu-latest
+    needs: install
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - name: Restore node_modules
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            node_modules
+            frontend/node_modules
+            backend/node_modules
+            packages/*/node_modules
+          key: pnpm-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+
+      - name: Install dependencies (fallback)
+        run: pnpm install --frozen-lockfile
+
+      - name: Run integration tests (real DB)
+        working-directory: backend
+        run: pnpm jest --config jest.integration.config.js --no-coverage --forceExit
+        env:
+          NODE_ENV: test
+          CI: true
 
   # ============================================
   # Frontend: Vitest Unit Tests
@@ -219,6 +256,67 @@ jobs:
       - name: Build frontend
         working-directory: frontend
         run: pnpm run build
+        env:
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
+          SENTRY_PROJECT_FRONTEND: ${{ secrets.SENTRY_PROJECT_FRONTEND }}
+          SENTRY_RELEASE: zenai@${{ github.sha }}
+          VITE_SENTRY_RELEASE: zenai@${{ github.sha }}
+
+      - name: Upload source maps to Sentry
+        if: ${{ vars.SENTRY_ORG != '' }}
+        working-directory: frontend
+        run: pnpm exec sentry-cli sourcemaps upload --release=${{ github.sha }} dist/
+        env:
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          SENTRY_ORG: ${{ vars.SENTRY_ORG }}
+          SENTRY_PROJECT: ${{ vars.SENTRY_PROJECT }}
+
+  # ============================================
+  # Frontend: E2E Tests (Playwright)
+  # ============================================
+  test-e2e:
+    runs-on: ubuntu-latest
+    needs: [build-frontend]
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - name: Restore node_modules
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            node_modules
+            frontend/node_modules
+            backend/node_modules
+            packages/*/node_modules
+          key: pnpm-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+
+      - name: Install dependencies (fallback)
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Playwright browsers
+        working-directory: frontend
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Run E2E tests
+        working-directory: frontend
+        run: pnpm exec playwright test
+        env:
+          CI: true
+
+      - name: Upload Playwright report
+        uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with:
+          name: playwright-report
+          path: frontend/playwright-report/
+          retention-days: 14
 
   # ============================================
   # Backend: Production Build
@@ -256,7 +354,7 @@ jobs:
   # Deploy gate (main only)
   # ============================================
   deploy-ready:
-    needs: [test-backend, test-frontend, build-frontend, build-backend]
+    needs: [test-backend, test-frontend, test-integration-db, build-frontend, build-backend, test-e2e]
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     runs-on: ubuntu-latest
     steps:
@@ -265,3 +363,60 @@ jobs:
           echo "All checks passed - deploy ready"
           echo "Railway auto-deploys from main branch"
           echo "Vercel auto-deploys frontend from main branch"
+
+  # ============================================
+  # Post-deploy: Verify production health
+  # ============================================
+  deploy-verify:
+    needs: deploy-ready
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Wait for deployment to propagate
+        run: sleep 60
+
+      - name: Verify deployment health
+        if: ${{ vars.DEPLOY_HEALTH_URL != '' }}
+        run: |
+          echo "Checking deployment health at ${{ vars.DEPLOY_HEALTH_URL }}"
+          for i in 1 2 3 4 5; do
+            STATUS=$(curl -s -o /dev/null -w '%{http_code}' "${{ vars.DEPLOY_HEALTH_URL }}" || true)
+            if [ "$STATUS" = "200" ]; then
+              echo "Health check passed (attempt $i)"
+              curl -s "${{ vars.DEPLOY_HEALTH_URL }}" | head -c 500
+              exit 0
+            fi
+            echo "Attempt $i: Got HTTP $STATUS, retrying in 15s..."
+            sleep 15
+          done
+          echo "Health check failed after 5 attempts"
+          exit 1
+
+      - name: Skip (no DEPLOY_HEALTH_URL configured)
+        if: ${{ vars.DEPLOY_HEALTH_URL == '' }}
+        run: echo "DEPLOY_HEALTH_URL not configured — skipping health verification"
+
+  # ============================================
+  # Sentry: Create release & associate commits
+  # ============================================
+  sentry-release:
+    needs: [deploy-ready]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Create Sentry release
+        uses: getsentry/action-release@v3
+        continue-on-error: true
+        env:
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
+        with:
+          environment: production
+          version: zenai@${{ github.sha }}
+          projects: >-
+            ${{ secrets.SENTRY_PROJECT_FRONTEND }}
+            ${{ secrets.SENTRY_PROJECT_BACKEND }}
+          set_commits: auto

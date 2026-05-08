@@ -42,13 +42,31 @@ export const DEFAULT_DEBATE_CONFIG: DebateConfig = {
 /**
  * Returns true if confidence is strictly below the challenge threshold,
  * meaning the claim should be challenged.
+ *
+ * When a SelfCritique is available, uses iMAD selective gating first
+ * to avoid unnecessary debates (~92% token savings per arXiv 2511.11306).
  */
 export function shouldChallenge(
-  _claim: string,
+  claim: string,
   confidence: number,
   config: DebateConfig = DEFAULT_DEBATE_CONFIG,
+  selfCritique?: SelfCritique,
 ): boolean {
-  return confidence < config.challengeThreshold;
+  // Basic confidence check
+  if (confidence >= config.challengeThreshold) return false;
+
+  // If self-critique is provided, apply iMAD selective gating
+  if (selfCritique) {
+    const shouldDebate = shouldTriggerSelectiveDebate(selfCritique);
+    if (!shouldDebate) {
+      logger.debug('iMAD gate: debate suppressed (low hesitation)', {
+        claim: claim.slice(0, 80), confidence,
+      });
+      return false;
+    }
+  }
+
+  return true;
 }
 
 /**
@@ -156,3 +174,24 @@ export function isDebateComplete(
   const lastResolution = rounds[rounds.length - 1].resolution;
   return lastResolution === 'accepted' || lastResolution === 'escalated';
 }
+
+// --- iMAD Selective Debate Extension ---
+import {
+  extractHesitationFeatures,
+  shouldTriggerDebate as iMADShouldTrigger,
+  type SelfCritique,
+  type HesitationFeatures,
+  type IMADResult,
+} from './imad-debate';
+
+/**
+ * iMAD-gated debate: first check if debate is worth triggering.
+ * Based on: arXiv 2511.11306 (~92% token savings)
+ */
+export function shouldTriggerSelectiveDebate(critique: SelfCritique): boolean {
+  const features = extractHesitationFeatures(critique);
+  return iMADShouldTrigger(features);
+}
+
+// Re-export iMAD types for consumers
+export type { SelfCritique, HesitationFeatures, IMADResult } from './imad-debate';

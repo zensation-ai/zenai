@@ -96,7 +96,7 @@ function validateMediaId(id: string): void {
 
 function validateContext(context: string): void {
   if (!isValidContext(context)) {
-    throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
+    throw new ValidationError('Invalid context. Use "operations", "finance", "people", or "strategy".');
   }
 }
 
@@ -256,7 +256,7 @@ router.post('/:context/media', apiKeyAuth, requireScope('write'), upload.single(
  */
 router.get('/all-media', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
   const { context, type, limit = '50' } = req.query;
-  const mediaContext: AIContext = (context && typeof context === 'string' && isValidContext(context)) ? context : 'personal';
+  const mediaContext: AIContext = (context && typeof context === 'string' && isValidContext(context)) ? context : 'operations';
 
   let queryStr = 'SELECT id, media_type, filename, caption, context, created_at FROM media_items WHERE 1=1';
   const params: (string | number | boolean | Date | null)[] = [];
@@ -293,7 +293,7 @@ router.get('/all-media', apiKeyAuth, asyncHandler(async (req: Request, res: Resp
 router.get('/media-file/:id', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
   const { id } = req.params;
   validateMediaId(id);
-  const mediaContext: AIContext = (req.query.context && typeof req.query.context === 'string' && isValidContext(req.query.context)) ? req.query.context : 'personal';
+  const mediaContext: AIContext = (req.query.context && typeof req.query.context === 'string' && isValidContext(req.query.context)) ? req.query.context : 'operations';
 
   const result = await queryContext(
     mediaContext,
@@ -518,7 +518,7 @@ router.post('/media/:id/thumbnail', apiKeyAuth, requireScope('write'), asyncHand
   const { id } = req.params;
   validateMediaId(id);
   const { timestamp = '00:00:01' } = req.body;
-  const mediaContext: AIContext = (req.body.context && typeof req.body.context === 'string' && isValidContext(req.body.context)) ? req.body.context : 'personal';
+  const mediaContext: AIContext = (req.body.context && typeof req.body.context === 'string' && isValidContext(req.body.context)) ? req.body.context : 'operations';
 
   // Get media item
   const result = await queryContext(
@@ -584,7 +584,7 @@ router.post('/media/:id/thumbnail', apiKeyAuth, requireScope('write'), asyncHand
 router.get('/media/:id/thumbnail', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
   const { id } = req.params;
   validateMediaId(id);
-  const mediaContext: AIContext = (req.query.context && typeof req.query.context === 'string' && isValidContext(req.query.context)) ? req.query.context : 'personal';
+  const mediaContext: AIContext = (req.query.context && typeof req.query.context === 'string' && isValidContext(req.query.context)) ? req.query.context : 'operations';
 
   const result = await queryContext(
     mediaContext,
@@ -622,7 +622,7 @@ router.post('/media/:id/gif-preview', apiKeyAuth, requireScope('write'), asyncHa
   const { id } = req.params;
   validateMediaId(id);
   const { duration = 3 } = req.body;
-  const mediaContext: AIContext = (req.body.context && typeof req.body.context === 'string' && isValidContext(req.body.context)) ? req.body.context : 'personal';
+  const mediaContext: AIContext = (req.body.context && typeof req.body.context === 'string' && isValidContext(req.body.context)) ? req.body.context : 'operations';
 
   // Get media item
   const result = await queryContext(
@@ -674,7 +674,7 @@ router.post('/media/:id/gif-preview', apiKeyAuth, requireScope('write'), asyncHa
 router.get('/media/:id/info', apiKeyAuth, asyncHandler(async (req: Request, res: Response) => {
   const { id } = req.params;
   validateMediaId(id);
-  const mediaContext: AIContext = (req.query.context && typeof req.query.context === 'string' && isValidContext(req.query.context)) ? req.query.context : 'personal';
+  const mediaContext: AIContext = (req.query.context && typeof req.query.context === 'string' && isValidContext(req.query.context)) ? req.query.context : 'operations';
 
   const result = await queryContext(
     mediaContext,
@@ -737,7 +737,7 @@ router.get('/media/:id/info', apiKeyAuth, asyncHandler(async (req: Request, res:
 router.delete('/media/:id', apiKeyAuth, requireScope('write'), asyncHandler(async (req: Request, res: Response) => {
   const { id } = req.params;
   validateMediaId(id);
-  const mediaContext: AIContext = (req.query.context && typeof req.query.context === 'string' && isValidContext(req.query.context)) ? req.query.context : 'personal';
+  const mediaContext: AIContext = (req.query.context && typeof req.query.context === 'string' && isValidContext(req.query.context)) ? req.query.context : 'operations';
 
   const result = await queryContext(
     mediaContext,

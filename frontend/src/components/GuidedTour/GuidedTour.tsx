@@ -6,10 +6,8 @@
  * Calls onNavigate when the step changes so the app routes to the right page.
  */
 
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, type CSSProperties } from 'react';
 import type { TourStep } from './tour-steps';
-import './GuidedTour.css';
-
 interface SpotlightRect {
   top: number;
   left: number;
@@ -156,14 +154,14 @@ export function GuidedTour({
       {/* Spotlight cutout */}
       {spotlight && (
         <div
-          className="guided-tour-spotlight"
+          className="guided-tour-spotlight top-[var(--st)] left-[var(--sl)] w-[var(--sw)] h-[var(--sh)] [box-shadow:var(--ss)]"
           style={{
-            top: spotlight.top - 6,
-            left: spotlight.left - 6,
-            width: spotlight.width + 12,
-            height: spotlight.height + 12,
-            boxShadow: spotlightBoxShadow,
-          }}
+            '--st': `${spotlight.top - 6}px`,
+            '--sl': `${spotlight.left - 6}px`,
+            '--sw': `${spotlight.width + 12}px`,
+            '--sh': `${spotlight.height + 12}px`,
+            '--ss': spotlightBoxShadow,
+          } as CSSProperties}
           aria-hidden="true"
         />
       )}

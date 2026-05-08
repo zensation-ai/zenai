@@ -41,7 +41,7 @@ router.get(
     const userId = getUserId(req);
     const { context } = req.params;
     if (!isValidContext(context)) {
-      throw new ValidationError('Invalid context. Use: personal, work, learning, or creative.');
+      throw new ValidationError('Invalid context. Use: operations, finance, people, or strategy.');
     }
 
     try {
@@ -65,7 +65,7 @@ router.post(
     const userId = getUserId(req);
     const { context } = req.params;
     if (!isValidContext(context)) {
-      throw new ValidationError('Invalid context. Use: personal, work, learning, or creative.');
+      throw new ValidationError('Invalid context. Use: operations, finance, people, or strategy.');
     }
 
     const { triggerType, triggerCondition, memoryContent, priority, expiresAt } = req.body;
@@ -111,7 +111,7 @@ router.post(
     getUserId(req); // auth check
     const { context, id } = req.params;
     if (!isValidContext(context)) {
-      throw new ValidationError('Invalid context. Use: personal, work, learning, or creative.');
+      throw new ValidationError('Invalid context. Use: operations, finance, people, or strategy.');
     }
 
     try {
@@ -139,7 +139,7 @@ router.post(
     getUserId(req); // auth check
     const { context, id } = req.params;
     if (!isValidContext(context)) {
-      throw new ValidationError('Invalid context. Use: personal, work, learning, or creative.');
+      throw new ValidationError('Invalid context. Use: operations, finance, people, or strategy.');
     }
 
     try {
@@ -171,7 +171,7 @@ router.get(
     const userId = getUserId(req);
     const { context } = req.params;
     if (!isValidContext(context)) {
-      throw new ValidationError('Invalid context. Use: personal, work, learning, or creative.');
+      throw new ValidationError('Invalid context. Use: operations, finance, people, or strategy.');
     }
 
     try {
@@ -195,7 +195,7 @@ router.get(
     const userId = getUserId(req);
     const { context } = req.params;
     if (!isValidContext(context)) {
-      throw new ValidationError('Invalid context. Use: personal, work, learning, or creative.');
+      throw new ValidationError('Invalid context. Use: operations, finance, people, or strategy.');
     }
 
     try {
@@ -219,7 +219,7 @@ router.get(
     const userId = getUserId(req);
     const { context } = req.params;
     if (!isValidContext(context)) {
-      throw new ValidationError('Invalid context. Use: personal, work, learning, or creative.');
+      throw new ValidationError('Invalid context. Use: operations, finance, people, or strategy.');
     }
 
     try {

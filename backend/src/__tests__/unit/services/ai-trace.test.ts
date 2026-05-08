@@ -85,13 +85,13 @@ describe('AI Trace Service (Phase 73)', () => {
       const trace = startTrace('test-op', { q: 'hi' }, {
         sessionId: 'sess-1',
         userId: 'user-1',
-        metadata: { context: 'personal' },
+        metadata: { context: 'operations' },
       });
       const active = getActiveTrace(trace.id);
       expect(active).toBeDefined();
       expect(active!.sessionId).toBe('sess-1');
       expect(active!.userId).toBe('user-1');
-      expect(active!.metadata).toEqual({ context: 'personal' });
+      expect(active!.metadata).toEqual({ context: 'operations' });
     });
   });
 
@@ -301,7 +301,7 @@ describe('AI Trace Service (Phase 73)', () => {
       const trace = startTrace('chat-message', { message: 'What is AI?' }, {
         sessionId: 'sess-abc',
         userId: 'user-123',
-        metadata: { context: 'personal', mode: 'rag_enhanced' },
+        metadata: { context: 'operations', mode: 'rag_enhanced' },
       });
 
       // RAG retrieval span

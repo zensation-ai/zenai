@@ -9,6 +9,7 @@
 
 import { Router } from 'express';
 import { asyncHandler } from '../middleware/errorHandler';
+import { apiKeyAuth } from '../middleware/auth';
 import { logger } from '../utils/logger';
 import { queryContext } from '../utils/database-context';
 import type { AIContext } from '../types/context';
@@ -20,6 +21,9 @@ import type { BehaviorSignal } from '../services/adaptive/behavior-engine';
 import { buildStyleProfile } from '../services/adaptive/style-learner';
 
 const router = Router();
+
+// Sprint 1.5 Item 4 — blanket auth for all feedback/adaptive routes.
+router.use(apiKeyAuth);
 
 // ─── Feedback ────────────────────────────────────────────────────────────────
 

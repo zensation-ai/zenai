@@ -12,7 +12,7 @@ import { Request, Response, NextFunction } from 'express';
 import { verifyAccessToken, type AccessTokenPayload } from '../services/auth/jwt-service';
 import { apiKeyAuth } from './auth';
 import { logger } from '../utils/logger';
-import { setCurrentUserId } from '../utils/request-context';
+import { setCurrentUserId, setCurrentWorkspaceId, setCurrentIsAdmin } from '../utils/request-context';
 
 // ===========================================
 // Extend Express Request type for JWT users
@@ -28,6 +28,10 @@ declare global {
         role: string;
         plan?: string;
         isDemo?: boolean;
+        // Multi-tenancy (set when workspace token is used)
+        orgId?: string;
+        workspaceId?: string;
+        workspaceRole?: string;
       };
     }
   }
@@ -91,16 +95,23 @@ export async function jwtAuth(req: Request, res: Response, next: NextFunction): 
   try {
     const payload: AccessTokenPayload = verifyAccessToken(token);
 
-    // Set JWT user on request
+    // Set JWT user on request (including multi-tenancy fields if present)
+    // Sprint 1.9: `plan` is now in the JWT payload (resolved at token-issue
+    // time) so the rate-limiter can tier without a per-request DB lookup.
     req.jwtUser = {
       id: payload.sub,
       email: payload.email,
       role: payload.role,
+      orgId: payload.orgId,
+      workspaceId: payload.workspaceId,
+      workspaceRole: payload.workspaceRole,
+      plan: payload.plan,
     };
 
     const payloadRecord = payload as unknown as Record<string, unknown>;
     if (payloadRecord.isDemo && req.jwtUser) {
       req.jwtUser.isDemo = true;
+      // Demo tokens carry their own plan override (default 'pro' for demos).
       req.jwtUser.plan = (payloadRecord.plan as string) || 'pro';
       // Force demo context
       if (req.params.context) {
@@ -125,6 +136,17 @@ export async function jwtAuth(req: Request, res: Response, next: NextFunction): 
 
     // Phase 66: Store userId in AsyncLocalStorage for RLS
     setCurrentUserId(payload.sub);
+
+    // Multi-tenancy: Store workspaceId in AsyncLocalStorage for RLS
+    if (payload.workspaceId) {
+      setCurrentWorkspaceId(payload.workspaceId);
+    }
+
+    // Sprint 1.3: System-level admins get an RLS override GUC
+    // (used by public.* policies to bypass per-user filters for legitimate admin reads).
+    if (payload.role === 'admin' || payload.role === 'owner') {
+      setCurrentIsAdmin(true);
+    }
 
     next();
   } catch (error) {
@@ -174,6 +196,10 @@ export async function optionalJwtAuth(req: Request, res: Response, next: NextFun
       id: payload.sub,
       email: payload.email,
       role: payload.role,
+      orgId: payload.orgId,
+      workspaceId: payload.workspaceId,
+      workspaceRole: payload.workspaceRole,
+      plan: payload.plan,
     };
     req.user = {
       id: payload.sub,
@@ -187,6 +213,12 @@ export async function optionalJwtAuth(req: Request, res: Response, next: NextFun
     };
     // Phase 66: Store userId in AsyncLocalStorage for RLS
     setCurrentUserId(payload.sub);
+    if (payload.workspaceId) {
+      setCurrentWorkspaceId(payload.workspaceId);
+    }
+    if (payload.role === 'admin' || payload.role === 'owner') {
+      setCurrentIsAdmin(true);
+    }
   } catch {
     // Silent failure for optional auth
     logger.debug('Optional JWT auth failed', { operation: 'optionalJwtAuth' });
@@ -219,6 +251,10 @@ export function requireJwt(req: Request, res: Response, next: NextFunction): voi
       id: payload.sub,
       email: payload.email,
       role: payload.role,
+      orgId: payload.orgId,
+      workspaceId: payload.workspaceId,
+      workspaceRole: payload.workspaceRole,
+      plan: payload.plan,
     };
     req.user = {
       id: payload.sub,
@@ -226,6 +262,13 @@ export function requireJwt(req: Request, res: Response, next: NextFunction): voi
     };
     // Phase 66: Store userId in AsyncLocalStorage for RLS
     setCurrentUserId(payload.sub);
+    // Multi-tenancy: Store workspaceId in AsyncLocalStorage for RLS
+    if (payload.workspaceId) {
+      setCurrentWorkspaceId(payload.workspaceId);
+    }
+    if (payload.role === 'admin' || payload.role === 'owner') {
+      setCurrentIsAdmin(true);
+    }
     next();
   } catch (error) {
     const jwtError = error as { code?: string; message?: string };

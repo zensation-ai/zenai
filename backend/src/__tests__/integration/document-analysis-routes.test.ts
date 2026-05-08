@@ -40,7 +40,7 @@ jest.mock('../../utils/logger', () => ({
 
 jest.mock('../../utils/database-context', () => ({
   queryContext: jest.fn(),
-  isValidContext: jest.fn((ctx: string) => ['personal', 'work', 'learning', 'creative'].includes(ctx)),
+  isValidContext: jest.fn((ctx: string) => ['operations', 'finance', 'people', 'strategy'].includes(ctx)),
   AIContext: {},
 }));
 
@@ -247,7 +247,7 @@ describe('Document Analysis Routes Integration Tests', () => {
           file_size: 1024,
           analysis_type: 'general',
           token_usage: { input: 100, output: 200 },
-          context: 'work',
+          context: 'finance',
           created_at: '2026-03-20',
         },
       ];
@@ -289,7 +289,7 @@ describe('Document Analysis Routes Integration Tests', () => {
         analysis_type: 'general',
         analysis_result: { summary: 'A test document' },
         token_usage: { input: 100 },
-        context: 'work',
+        context: 'finance',
         created_at: '2026-03-20',
       };
       mockGetAnalysisById.mockResolvedValueOnce(entry);

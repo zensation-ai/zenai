@@ -3,7 +3,7 @@
  *
  * Tests the multi-agent orchestration page including:
  * - Rendering without crashing
- * - Tab navigation (Teams, Agenten, Workflows, A2A)
+ * - Tab navigation (Meine Agents, Erstellen, Marketplace, Analytics, Workflows, A2A)
  * - Strategy selection
  * - Template loading
  * - Task input
@@ -29,8 +29,8 @@ vi.mock('../A2AAgentsPanel', () => ({
   A2AAgentsPanel: () => <div data-testid="a2a-agents-panel">A2AAgentsPanel</div>,
 }));
 
-vi.mock('../WorkflowPanel', () => ({
-  WorkflowPanel: () => <div data-testid="workflow-panel">WorkflowPanel</div>,
+vi.mock('../WorkflowBuilder/WorkflowBuilder', () => ({
+  WorkflowBuilder: () => <div data-testid="workflow-builder">WorkflowBuilder</div>,
 }));
 
 vi.mock('../Toast', () => ({
@@ -53,7 +53,7 @@ vi.mock('../../utils/apiConfig', () => ({
 import { AgentTeamsPage } from '../AgentTeamsPage';
 
 const defaultProps = {
-  context: 'personal' as const,
+  context: 'operations' as const,
   onBack: vi.fn(),
   embedded: false,
 };
@@ -93,12 +93,12 @@ describe('AgentTeamsPage Component', () => {
 
   it('renders without crashing', () => {
     render(<AgentTeamsPage {...defaultProps} />);
-    expect(screen.getByText('Agent Teams')).toBeInTheDocument();
+    expect(screen.getByText('Agent Ecosystem')).toBeInTheDocument();
   });
 
   it('shows header with back button when not embedded', () => {
     render(<AgentTeamsPage {...defaultProps} />);
-    const backButton = screen.getByRole('button', { name: /Zurueck/i });
+    const backButton = screen.getByRole('button', { name: /Zurück/i });
     expect(backButton).toBeInTheDocument();
     fireEvent.click(backButton);
     expect(defaultProps.onBack).toHaveBeenCalled();
@@ -106,35 +106,31 @@ describe('AgentTeamsPage Component', () => {
 
   it('hides header when embedded', () => {
     render(<AgentTeamsPage {...defaultProps} embedded={true} />);
-    expect(screen.queryByRole('button', { name: /Zurueck/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Zurück/i })).not.toBeInTheDocument();
   });
 
-  it('shows tab navigation with 4 tabs', () => {
+  it('shows tab navigation with 6 tabs', () => {
     render(<AgentTeamsPage {...defaultProps} />);
-    expect(screen.getByText('Teams')).toBeInTheDocument();
-    expect(screen.getByText('Agenten')).toBeInTheDocument();
+    expect(screen.getByText('Meine Agents')).toBeInTheDocument();
+    expect(screen.getByText('Erstellen')).toBeInTheDocument();
+    expect(screen.getByText('Marketplace')).toBeInTheDocument();
+    expect(screen.getByText('Analytics')).toBeInTheDocument();
     expect(screen.getByText('Workflows')).toBeInTheDocument();
     expect(screen.getByText('A2A')).toBeInTheDocument();
   });
 
-  it('defaults to Teams tab', () => {
+  it('defaults to My Agents tab', () => {
     render(<AgentTeamsPage {...defaultProps} />);
-    // Teams tab should show strategy selection grid
+    // My Agents tab shows autonomous agents section + team execution
     expect(screen.getByText('Komplett')).toBeInTheDocument();
     expect(screen.getByText('Recherche')).toBeInTheDocument();
     expect(screen.getByText('Code')).toBeInTheDocument();
   });
 
-  it('switches to Agenten tab and shows AgentIdentityPanel', () => {
-    render(<AgentTeamsPage {...defaultProps} />);
-    fireEvent.click(screen.getByText('Agenten'));
-    expect(screen.getByTestId('agent-identity-panel')).toBeInTheDocument();
-  });
-
   it('switches to Workflows tab and shows WorkflowPanel', () => {
     render(<AgentTeamsPage {...defaultProps} />);
     fireEvent.click(screen.getByText('Workflows'));
-    expect(screen.getByTestId('workflow-panel')).toBeInTheDocument();
+    expect(screen.getByTestId('workflow-builder')).toBeInTheDocument();
   });
 
   it('switches to A2A tab and shows A2AAgentsPanel', () => {
@@ -143,7 +139,7 @@ describe('AgentTeamsPage Component', () => {
     expect(screen.getByTestId('a2a-agents-panel')).toBeInTheDocument();
   });
 
-  it('shows strategy selection cards on Teams tab', () => {
+  it('shows strategy selection cards on My Agents tab', () => {
     render(<AgentTeamsPage {...defaultProps} />);
     expect(screen.getByText('Komplett')).toBeInTheDocument();
     expect(screen.getByText('Recherche')).toBeInTheDocument();

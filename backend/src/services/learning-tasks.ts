@@ -13,10 +13,10 @@ import { PoolClient } from 'pg';
 
 // Pre-built search_path statements for schema isolation
 const SEARCH_PATH_SQL: Record<AIContext, string> = {
-  personal: 'SET search_path TO personal, public',
-  work: 'SET search_path TO work, public',
-  learning: 'SET search_path TO learning, public',
-  creative: 'SET search_path TO creative, public',
+  operations: 'SET search_path TO operations, public',
+  finance: 'SET search_path TO finance, public',
+  people: 'SET search_path TO people, public',
+  strategy: 'SET search_path TO strategy, public',
   demo: 'SET search_path TO demo, public',
 };
 
@@ -141,7 +141,7 @@ export async function createLearningTask(
     generate_outline?: boolean;
   } = {},
   userId: string = 'default',
-  context: AIContext = 'personal'
+  context: AIContext = 'operations'
 ): Promise<LearningTask> {
   const client = await getClient(context);
   const id = uuidv4();
@@ -192,7 +192,7 @@ export async function getLearningTasks(
     offset?: number;
   } = {},
   userId: string = 'default',
-  context: AIContext = 'personal'
+  context: AIContext = 'operations'
 ): Promise<{ tasks: LearningTask[]; total: number }> {
   const client = await getClient(context);
 
@@ -255,7 +255,7 @@ export async function getLearningTasks(
  */
 export async function getLearningTask(
   taskId: string,
-  context: AIContext = 'personal'
+  context: AIContext = 'operations'
 ): Promise<LearningTask | null> {
   const client = await getClient(context);
 
@@ -281,7 +281,7 @@ export async function getLearningTask(
 export async function updateLearningTask(
   taskId: string,
   updates: Partial<Pick<LearningTask, 'topic' | 'description' | 'category' | 'priority' | 'status' | 'target_completion_date' | 'learning_outline' | 'summary'>>,
-  context: AIContext = 'personal'
+  context: AIContext = 'operations'
 ): Promise<LearningTask | null> {
   const client = await getClient(context);
 
@@ -363,7 +363,7 @@ export async function updateLearningTask(
  */
 export async function deleteLearningTask(
   taskId: string,
-  context: AIContext = 'personal'
+  context: AIContext = 'operations'
 ): Promise<boolean> {
   const client = await getClient(context);
 
@@ -396,7 +396,7 @@ export async function logStudySession(
     understanding_level?: number;
   },
   userId: string = 'default',
-  context: AIContext = 'personal'
+  context: AIContext = 'operations'
 ): Promise<LearningSession> {
   const client = await getClient(context);
   const sessionId = uuidv4();
@@ -454,7 +454,7 @@ export async function logStudySession(
 export async function getStudySessions(
   taskId: string,
   limit: number = 20,
-  context: AIContext = 'personal'
+  context: AIContext = 'operations'
 ): Promise<LearningSession[]> {
   const client = await getClient(context);
 
@@ -482,7 +482,7 @@ export async function getStudySessions(
  */
 export async function getLearningStats(
   userId: string = 'default',
-  context: AIContext = 'personal'
+  context: AIContext = 'operations'
 ): Promise<LearningStats> {
   const client = await getClient(context);
 
@@ -586,7 +586,7 @@ Formatiere den Plan übersichtlich mit Markdown.`;
  */
 export async function updateTaskProgress(
   taskId: string,
-  context: AIContext = 'personal'
+  context: AIContext = 'operations'
 ): Promise<number> {
   const client = await getClient(context);
 
@@ -633,7 +633,7 @@ export async function updateTaskProgress(
  */
 export async function getLearningInsights(
   userId: string = 'default',
-  context: AIContext = 'personal'
+  context: AIContext = 'operations'
 ): Promise<LearningInsight[]> {
   const client = await getClient(context);
 
@@ -670,7 +670,7 @@ export async function getLearningInsights(
  */
 export async function acknowledgeInsight(
   insightId: string,
-  context: AIContext = 'personal'
+  context: AIContext = 'operations'
 ): Promise<boolean> {
   const client = await getClient(context);
 
@@ -694,7 +694,7 @@ export async function acknowledgeInsight(
  */
 export async function getDailyLearningSummary(
   userId: string = 'default',
-  context: AIContext = 'personal'
+  context: AIContext = 'operations'
 ): Promise<{
   tasks_studied_today: number;
   minutes_today: number;

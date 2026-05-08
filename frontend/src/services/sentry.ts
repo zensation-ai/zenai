@@ -6,6 +6,7 @@
  */
 
 import * as Sentry from '@sentry/react';
+import { scrubSentryEvent, scrubSentryBreadcrumb } from './pii-scrubber';
 
 let sentryInitialized = false;
 
@@ -38,12 +39,12 @@ export function initSentry(): boolean {
     integrations: [
       Sentry.browserTracingIntegration(),
       Sentry.replayIntegration({
-        maskAllText: false,
-        blockAllMedia: false,
+        maskAllText: true,
+        blockAllMedia: true,
       }),
     ],
 
-    // Filter noisy errors
+    // Filter noisy errors and scrub PII (Sprint 1.4)
     beforeSend(event) {
       // Ignore network errors from external services
       if (event.exception?.values?.[0]?.value?.includes('Network Error')) {
@@ -53,7 +54,17 @@ export function initSentry(): boolean {
       if (event.exception?.values?.[0]?.value?.includes('ResizeObserver loop')) {
         return null;
       }
-      return event;
+      // PII scrubbing: emails, tokens, storage keys, IPs
+      return scrubSentryEvent(
+        event as unknown as Record<string, unknown>
+      ) as unknown as typeof event;
+    },
+
+    // Scrub breadcrumbs too — console logs and navigation entries may carry PII
+    beforeBreadcrumb(breadcrumb) {
+      return scrubSentryBreadcrumb(
+        breadcrumb as unknown as Record<string, unknown>
+      ) as unknown as typeof breadcrumb;
     },
 
     // Don't send PII by default

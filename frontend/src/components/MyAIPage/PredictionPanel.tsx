@@ -4,6 +4,7 @@
  * Phase 141: Prediction accuracy gauges and history timeline
  */
 
+import { type CSSProperties } from 'react';
 import type { AIContext } from '../ContextSwitcher';
 import {
   usePredictionHistory,
@@ -28,7 +29,7 @@ function AccuracyGauges({ context }: { context: AIContext }) {
   if (isError || !data) {
     return (
       <div className="cognitive-error">
-        <div className="cognitive-error-message">Genauigkeitsdaten nicht verfuegbar.</div>
+        <div className="cognitive-error-message">Genauigkeitsdaten nicht verfügbar.</div>
         <button className="cognitive-retry-btn" onClick={() => refetch()} type="button">
           Erneut versuchen
         </button>
@@ -42,14 +43,14 @@ function AccuracyGauges({ context }: { context: AIContext }) {
   return (
     <div className="accuracy-grid" role="region" aria-label="Vorhersagegenauigkeit">
       <div className="accuracy-card">
-        <div className="accuracy-value" style={{ color: getAccuracyColor(format7d) }}>
+        <div className="accuracy-value text-[var(--c)]" style={{ '--c': getAccuracyColor(format7d) } as CSSProperties}>
           {format7d !== null ? `${format7d}%` : '-'}
         </div>
         <div className="accuracy-label">7-Tage Genauigkeit</div>
         <div className="cognitive-gap-description">{data.total7d} Vorhersagen</div>
       </div>
       <div className="accuracy-card">
-        <div className="accuracy-value" style={{ color: getAccuracyColor(format30d) }}>
+        <div className="accuracy-value text-[var(--c)]" style={{ '--c': getAccuracyColor(format30d) } as CSSProperties}>
           {format30d !== null ? `${format30d}%` : '-'}
         </div>
         <div className="accuracy-label">30-Tage Genauigkeit</div>
@@ -80,7 +81,7 @@ function PredictionTimeline({ context }: { context: AIContext }) {
   if (isError) {
     return (
       <div className="cognitive-error">
-        <div className="cognitive-error-message">Vorhersageverlauf nicht verfuegbar.</div>
+        <div className="cognitive-error-message">Vorhersageverlauf nicht verfügbar.</div>
         <button className="cognitive-retry-btn" onClick={() => refetch()} type="button">
           Erneut versuchen
         </button>
@@ -108,8 +109,8 @@ function PredictionTimeline({ context }: { context: AIContext }) {
               minute: '2-digit',
             });
             return (
-              <div key={entry.id} className="cognitive-gap-item" style={{ flexDirection: 'column', alignItems: 'stretch' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div key={entry.id} className="cognitive-gap-item flex-col items-stretch">
+                <div className="flex justify-between items-center">
                   <span className="cognitive-gap-area">
                     {entry.predicted_intent} ({entry.predicted_domain})
                   </span>
@@ -123,7 +124,7 @@ function PredictionTimeline({ context }: { context: AIContext }) {
                     {!entry.was_correct && ` \u{00B7} Fehler: ${entry.error_magnitude.toFixed(2)}`}
                   </span>
                 )}
-                <span className="cognitive-gap-description" style={{ fontSize: 11 }}>
+                <span className="cognitive-gap-description text-[11px]">
                   {dateStr}
                 </span>
               </div>

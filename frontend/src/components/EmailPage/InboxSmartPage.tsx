@@ -5,6 +5,9 @@
  * Follows the same pattern as IdeasSmartPage from Phase 107.
  */
 import { useState, useMemo, useCallback } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { staggerContainer, staggerItem } from '../../utils/animations';
+import { Mail } from 'lucide-react';
 import { FilterChipBar } from './FilterChipBar';
 import { InboxToolbar } from './InboxToolbar';
 import { EmailListView } from './EmailListView';
@@ -12,11 +15,13 @@ import { EmailGridView } from './EmailGridView';
 import { InboxPanel } from './InboxPanel';
 import { useInboxFilters } from './useInboxFilters';
 import { QueryErrorState } from '../QueryErrorState';
+import { ListSkeleton } from '../skeletons/PageSkeletons';
+import { Button } from '@/components/ui/button';
+import { EmptyState } from '@/components/ui/empty-state';
 import { useEmailsQuery, useToggleEmailStarMutation, useBatchEmailStatusMutation } from '../../hooks/queries/useEmail';
+import { showToast } from '../Toast';
 import type { Email, InboxViewMode } from './types';
 import type { AIContext } from '../ContextSwitcher';
-import './InboxSmartPage.css';
-
 interface InboxSmartPageProps {
   context: AIContext | string;
   initialTab?: string;
@@ -49,7 +54,7 @@ export function InboxSmartPage({ context, initialTab: _initialTab }: InboxSmartP
     return f;
   }, [filters]);
 
-  const { data: emails = [], isLoading: _isLoading, error, refetch } = useEmailsQuery(
+  const { data: emails = [], isLoading, error, refetch } = useEmailsQuery(
     context as AIContext,
     queryFilters,
   );
@@ -93,7 +98,10 @@ export function InboxSmartPage({ context, initialTab: _initialTab }: InboxSmartP
   const handleStar = useCallback((id: string) => {
     const email = allEmails.find(e => e.id === id);
     if (email) {
-      starMutation.mutate({ id, starred: !email.is_starred });
+      starMutation.mutate(
+        { id, starred: !email.is_starred },
+        { onError: () => showToast('Stern konnte nicht gesetzt werden', 'error') },
+      );
     }
   }, [allEmails, starMutation]);
 
@@ -110,7 +118,10 @@ export function InboxSmartPage({ context, initialTab: _initialTab }: InboxSmartP
   const handleBatchArchive = useCallback(() => {
     const ids = [...selectedIds];
     if (ids.length > 0) {
-      batchStatusMutation.mutate({ ids, status: 'archived' });
+      batchStatusMutation.mutate(
+        { ids, status: 'archived' },
+        { onError: () => showToast('Archivierung fehlgeschlagen', 'error') },
+      );
     }
     setSelectedIds(new Set());
     setSelectionMode(false);
@@ -119,21 +130,16 @@ export function InboxSmartPage({ context, initialTab: _initialTab }: InboxSmartP
   const handleBatchDelete = useCallback(() => {
     const ids = [...selectedIds];
     if (ids.length > 0) {
-      batchStatusMutation.mutate({ ids, status: 'trash' });
+      batchStatusMutation.mutate(
+        { ids, status: 'trash' },
+        { onError: () => showToast('Löschen fehlgeschlagen', 'error') },
+      );
     }
     setSelectedIds(new Set());
     setSelectionMode(false);
   }, [selectedIds, batchStatusMutation]);
 
-  if (error) {
-    return (
-      <QueryErrorState
-        error={error as Error}
-        refetch={refetch}
-        className="inbox-smart-page__error"
-      />
-    );
-  }
+  const showEmpty = !isLoading && !error && filteredEmails.length === 0 && activeFilterCount === 0;
 
   return (
     <div className="inbox-smart-page" role="main" aria-label="Posteingang">
@@ -158,32 +164,63 @@ export function InboxSmartPage({ context, initialTab: _initialTab }: InboxSmartP
         onBatchDelete={handleBatchDelete}
       />
 
-      <div className="inbox-smart-page__content">
-        {viewMode === 'list' && (
-          <EmailListView
-            emails={filteredEmails}
-            selectedId={selectedEmailId}
-            onSelect={handleEmailSelect}
-            onStar={handleStar}
-          />
+      <AnimatePresence mode="wait">
+        {isLoading ? (
+          <motion.div key="skeleton" exit={{ opacity: 0 }} transition={{ duration: 0.1 }}>
+            <ListSkeleton rows={6} />
+          </motion.div>
+        ) : error ? (
+          <motion.div key="error" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+            <QueryErrorState
+              error={error as Error}
+              refetch={refetch}
+              className="inbox-smart-page__error"
+            />
+          </motion.div>
+        ) : showEmpty ? (
+          <motion.div key="empty" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+            <EmptyState
+              icon={<Mail size={40} strokeWidth={1.5} />}
+              title="Posteingang leer"
+              description="Du hast keine E-Mails. Verfasse eine neue E-Mail um loszulegen."
+              action={
+                <Button variant="default" size="sm" onClick={handleCompose}>
+                  E-Mail verfassen
+                </Button>
+              }
+            />
+          </motion.div>
+        ) : (
+          <motion.div key="content" variants={staggerContainer} initial="initial" animate="animate" className="inbox-smart-page__content">
+            <motion.div variants={staggerItem}>
+              {viewMode === 'list' && (
+                <EmailListView
+                  emails={filteredEmails}
+                  selectedId={selectedEmailId}
+                  onSelect={handleEmailSelect}
+                  onStar={handleStar}
+                />
+              )}
+              {viewMode === 'grid' && (
+                <EmailGridView
+                  emails={filteredEmails}
+                  selectedId={selectedEmailId}
+                  onSelect={handleEmailSelect}
+                  onStar={handleStar}
+                />
+              )}
+              {viewMode === 'conversation' && (
+                <EmailListView
+                  emails={filteredEmails}
+                  selectedId={selectedEmailId}
+                  onSelect={handleEmailSelect}
+                  onStar={handleStar}
+                />
+              )}
+            </motion.div>
+          </motion.div>
         )}
-        {viewMode === 'grid' && (
-          <EmailGridView
-            emails={filteredEmails}
-            selectedId={selectedEmailId}
-            onSelect={handleEmailSelect}
-            onStar={handleStar}
-          />
-        )}
-        {viewMode === 'conversation' && (
-          <EmailListView
-            emails={filteredEmails}
-            selectedId={selectedEmailId}
-            onSelect={handleEmailSelect}
-            onStar={handleStar}
-          />
-        )}
-      </div>
+      </AnimatePresence>
 
       <InboxPanel
         open={panelOpen}

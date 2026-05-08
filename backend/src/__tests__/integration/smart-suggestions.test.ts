@@ -29,7 +29,7 @@ jest.mock('../../utils/logger', () => ({
 }));
 
 jest.mock('../../utils/database-context', () => ({
-  isValidContext: jest.fn((ctx: string) => ['personal', 'work', 'learning', 'creative'].includes(ctx)),
+  isValidContext: jest.fn((ctx: string) => ['operations', 'finance', 'people', 'strategy'].includes(ctx)),
   AIContext: {},
 }));
 
@@ -80,7 +80,7 @@ describe('Smart Suggestions API Integration Tests', () => {
       mockGetActiveSuggestions.mockResolvedValueOnce([mockSuggestion]);
 
       const res = await request(app)
-        .get('/api/personal/suggestions')
+        .get('/api/operations/suggestions')
         .expect(200);
 
       expect(res.body.success).toBe(true);
@@ -92,11 +92,11 @@ describe('Smart Suggestions API Integration Tests', () => {
       mockGetActiveSuggestions.mockResolvedValueOnce([]);
 
       await request(app)
-        .get('/api/personal/suggestions?limit=50')
+        .get('/api/operations/suggestions?limit=50')
         .expect(200);
 
       expect(mockGetActiveSuggestions).toHaveBeenCalledWith(
-        'personal',
+        'operations',
         '00000000-0000-0000-0000-000000000001',
         10 // capped
       );
@@ -114,7 +114,7 @@ describe('Smart Suggestions API Integration Tests', () => {
       mockGetActiveSuggestions.mockResolvedValueOnce([]);
 
       const res = await request(app)
-        .get('/api/personal/suggestions')
+        .get('/api/operations/suggestions')
         .expect(200);
 
       expect(res.body.data).toHaveLength(0);
@@ -130,7 +130,7 @@ describe('Smart Suggestions API Integration Tests', () => {
       mockDismissSuggestion.mockResolvedValueOnce(true);
 
       const res = await request(app)
-        .post(`/api/personal/suggestions/${VALID_UUID}/dismiss`)
+        .post(`/api/operations/suggestions/${VALID_UUID}/dismiss`)
         .expect(200);
 
       expect(res.body.success).toBe(true);
@@ -141,7 +141,7 @@ describe('Smart Suggestions API Integration Tests', () => {
       mockDismissSuggestion.mockResolvedValueOnce(false);
 
       await request(app)
-        .post(`/api/personal/suggestions/${VALID_UUID}/dismiss`)
+        .post(`/api/operations/suggestions/${VALID_UUID}/dismiss`)
         .expect(404);
     });
   });
@@ -155,7 +155,7 @@ describe('Smart Suggestions API Integration Tests', () => {
       mockSnoozeSuggestion.mockResolvedValueOnce(true);
 
       const res = await request(app)
-        .post(`/api/personal/suggestions/${VALID_UUID}/snooze`)
+        .post(`/api/operations/suggestions/${VALID_UUID}/snooze`)
         .send({ duration: '1h' })
         .expect(200);
 
@@ -167,7 +167,7 @@ describe('Smart Suggestions API Integration Tests', () => {
       mockSnoozeSuggestion.mockResolvedValueOnce(true);
 
       const res = await request(app)
-        .post(`/api/personal/suggestions/${VALID_UUID}/snooze`)
+        .post(`/api/operations/suggestions/${VALID_UUID}/snooze`)
         .send({ duration: '4h' })
         .expect(200);
 
@@ -178,7 +178,7 @@ describe('Smart Suggestions API Integration Tests', () => {
       mockSnoozeSuggestion.mockResolvedValueOnce(true);
 
       const res = await request(app)
-        .post(`/api/personal/suggestions/${VALID_UUID}/snooze`)
+        .post(`/api/operations/suggestions/${VALID_UUID}/snooze`)
         .send({ duration: 'tomorrow' })
         .expect(200);
 
@@ -187,7 +187,7 @@ describe('Smart Suggestions API Integration Tests', () => {
 
     it('should reject invalid snooze duration', async () => {
       const res = await request(app)
-        .post(`/api/personal/suggestions/${VALID_UUID}/snooze`)
+        .post(`/api/operations/suggestions/${VALID_UUID}/snooze`)
         .send({ duration: '2h' })
         .expect(400);
 
@@ -196,7 +196,7 @@ describe('Smart Suggestions API Integration Tests', () => {
 
     it('should reject missing duration', async () => {
       const res = await request(app)
-        .post(`/api/personal/suggestions/${VALID_UUID}/snooze`)
+        .post(`/api/operations/suggestions/${VALID_UUID}/snooze`)
         .send({})
         .expect(400);
 
@@ -207,7 +207,7 @@ describe('Smart Suggestions API Integration Tests', () => {
       mockSnoozeSuggestion.mockResolvedValueOnce(false);
 
       await request(app)
-        .post(`/api/personal/suggestions/${VALID_UUID}/snooze`)
+        .post(`/api/operations/suggestions/${VALID_UUID}/snooze`)
         .send({ duration: '1h' })
         .expect(404);
     });
@@ -222,7 +222,7 @@ describe('Smart Suggestions API Integration Tests', () => {
       mockAcceptSuggestion.mockResolvedValueOnce(true);
 
       const res = await request(app)
-        .post(`/api/personal/suggestions/${VALID_UUID}/accept`)
+        .post(`/api/operations/suggestions/${VALID_UUID}/accept`)
         .expect(200);
 
       expect(res.body.success).toBe(true);
@@ -233,7 +233,7 @@ describe('Smart Suggestions API Integration Tests', () => {
       mockAcceptSuggestion.mockResolvedValueOnce(false);
 
       await request(app)
-        .post(`/api/personal/suggestions/${VALID_UUID}/accept`)
+        .post(`/api/operations/suggestions/${VALID_UUID}/accept`)
         .expect(404);
     });
   });

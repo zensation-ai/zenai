@@ -9,7 +9,7 @@
 const mockQueryContext = jest.fn();
 jest.mock('../../../utils/database-context', () => ({
   queryContext: (...args: unknown[]) => mockQueryContext(...args),
-  isValidContext: (c: string) => ['personal', 'work', 'learning', 'creative'].includes(c),
+  isValidContext: (c: string) => ['operations', 'finance', 'people', 'strategy'].includes(c),
 }));
 
 jest.mock('../../../utils/logger', () => ({
@@ -89,7 +89,7 @@ function makeEmailRow(overrides: Record<string, unknown> = {}): Record<string, u
     ai_processed_at: null,
     labels: '[]',
     is_starred: false,
-    context: 'work',
+    context: 'finance',
     metadata: '{}',
     received_at: '2026-03-20T10:00:00Z',
     sent_at: null,
@@ -121,7 +121,7 @@ describe('Email Service', () => {
         .mockResolvedValueOnce({ rows: [{ total: '5' }] } as any)
         .mockResolvedValueOnce({ rows: [makeEmailRow(), makeEmailRow({ id: 'email-002' })] } as any);
 
-      const result = await getEmails('work', {}, TEST_USER_ID);
+      const result = await getEmails('finance', {}, TEST_USER_ID);
       expect(result.total).toBe(5);
       expect(result.emails).toHaveLength(2);
       expect(result.emails[0].id).toBe('email-001');
@@ -132,7 +132,7 @@ describe('Email Service', () => {
         .mockResolvedValueOnce({ rows: [{ total: '3' }] } as any)
         .mockResolvedValueOnce({ rows: [makeEmailRow()] } as any);
 
-      await getEmails('work', { folder: 'inbox' }, TEST_USER_ID);
+      await getEmails('finance', { folder: 'inbox' }, TEST_USER_ID);
 
       const countSql = mockQueryContext.mock.calls[0][1] as string;
       expect(countSql).toContain('direction');
@@ -143,7 +143,7 @@ describe('Email Service', () => {
         .mockResolvedValueOnce({ rows: [{ total: '1' }] } as any)
         .mockResolvedValueOnce({ rows: [makeEmailRow({ status: 'draft' })] } as any);
 
-      await getEmails('work', { folder: 'drafts' }, TEST_USER_ID);
+      await getEmails('finance', { folder: 'drafts' }, TEST_USER_ID);
       expect(mockQueryContext).toHaveBeenCalledTimes(2);
     });
 
@@ -152,7 +152,7 @@ describe('Email Service', () => {
         .mockResolvedValueOnce({ rows: [{ total: '1' }] } as any)
         .mockResolvedValueOnce({ rows: [makeEmailRow()] } as any);
 
-      await getEmails('work', { search: 'invoice' }, TEST_USER_ID);
+      await getEmails('finance', { search: 'invoice' }, TEST_USER_ID);
 
       const countSql = mockQueryContext.mock.calls[0][1] as string;
       expect(countSql).toContain('ILIKE');
@@ -163,7 +163,7 @@ describe('Email Service', () => {
         .mockResolvedValueOnce({ rows: [{ total: '500' }] } as any)
         .mockResolvedValueOnce({ rows: [] } as any);
 
-      await getEmails('work', { limit: 999 }, TEST_USER_ID);
+      await getEmails('finance', { limit: 999 }, TEST_USER_ID);
 
       const params = mockQueryContext.mock.calls[1][2] as unknown[];
       // The limit param should be capped at 200
@@ -175,7 +175,7 @@ describe('Email Service', () => {
         .mockResolvedValueOnce({ rows: [{ total: '0' }] } as any)
         .mockResolvedValueOnce({ rows: [] } as any);
 
-      const result = await getEmails('work', {}, TEST_USER_ID);
+      const result = await getEmails('finance', {}, TEST_USER_ID);
       expect(result.total).toBe(0);
       expect(result.emails).toHaveLength(0);
     });
@@ -188,7 +188,7 @@ describe('Email Service', () => {
     it('should return a single email by id', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [makeEmailRow()] } as any);
 
-      const email = await getEmail('work', 'email-001', TEST_USER_ID);
+      const email = await getEmail('finance', 'email-001', TEST_USER_ID);
       expect(email).not.toBeNull();
       expect(email!.id).toBe('email-001');
       expect(email!.from_address).toBe('sender@example.com');
@@ -197,7 +197,7 @@ describe('Email Service', () => {
     it('should return null if email not found', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [] } as any);
 
-      const email = await getEmail('work', 'nonexistent', TEST_USER_ID);
+      const email = await getEmail('finance', 'nonexistent', TEST_USER_ID);
       expect(email).toBeNull();
     });
 
@@ -209,7 +209,7 @@ describe('Email Service', () => {
         })],
       } as any);
 
-      const email = await getEmail('work', 'email-001', TEST_USER_ID);
+      const email = await getEmail('finance', 'email-001', TEST_USER_ID);
       expect(email!.to_addresses).toHaveLength(2);
       expect(email!.ai_action_items).toHaveLength(1);
       expect(email!.ai_action_items[0].text).toBe('Follow up');
@@ -228,14 +228,14 @@ describe('Email Service', () => {
         ],
       } as any);
 
-      const thread = await getThread('work', 'thread-001', TEST_USER_ID);
+      const thread = await getThread('finance', 'thread-001', TEST_USER_ID);
       expect(thread).toHaveLength(2);
     });
 
     it('should return empty array for unknown thread', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [] } as any);
 
-      const thread = await getThread('work', 'unknown-thread', TEST_USER_ID);
+      const thread = await getThread('finance', 'unknown-thread', TEST_USER_ID);
       expect(thread).toHaveLength(0);
     });
   });
@@ -254,7 +254,7 @@ describe('Email Service', () => {
         rows: [makeEmailRow({ status: 'draft', direction: 'outbound' })],
       } as any);
 
-      const draft = await createDraft('work', {
+      const draft = await createDraft('finance', {
         to_addresses: [{ email: 'recipient@test.com' }],
         subject: 'Draft Subject',
       }, TEST_USER_ID);
@@ -273,7 +273,7 @@ describe('Email Service', () => {
         rows: [makeEmailRow({ status: 'draft', from_address: 'custom@zensation.ai' })],
       } as any);
 
-      await createDraft('work', {
+      await createDraft('finance', {
         to_addresses: [{ email: 'r@test.com' }],
         account_id: 'acct-custom',
       }, TEST_USER_ID);
@@ -291,7 +291,7 @@ describe('Email Service', () => {
         rows: [makeEmailRow({ status: 'draft', subject: 'Updated Subject' })],
       } as any);
 
-      const result = await updateDraft('work', 'email-001', {
+      const result = await updateDraft('finance', 'email-001', {
         subject: 'Updated Subject',
         body_text: 'New body',
       }, TEST_USER_ID);
@@ -305,7 +305,7 @@ describe('Email Service', () => {
     it('should return null if draft not found', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [] } as any);
 
-      const result = await updateDraft('work', 'nonexistent', { subject: 'X' }, TEST_USER_ID);
+      const result = await updateDraft('finance', 'nonexistent', { subject: 'X' }, TEST_USER_ID);
       expect(result).toBeNull();
     });
   });
@@ -317,7 +317,7 @@ describe('Email Service', () => {
     it('should throw if Resend is not configured', async () => {
       (isResendConfigured as jest.Mock).mockReturnValueOnce(false);
 
-      await expect(sendEmailById('work', 'email-001', TEST_USER_ID))
+      await expect(sendEmailById('finance', 'email-001', TEST_USER_ID))
         .rejects.toThrow('Resend is not configured');
     });
 
@@ -331,7 +331,7 @@ describe('Email Service', () => {
         rows: [makeEmailRow({ status: 'sent', resend_email_id: 'resend-abc-123' })],
       } as any);
 
-      const result = await sendEmailById('work', 'email-001', TEST_USER_ID);
+      const result = await sendEmailById('finance', 'email-001', TEST_USER_ID);
       expect(result).not.toBeNull();
       expect(result!.status).toBe('sent');
     });
@@ -342,7 +342,7 @@ describe('Email Service', () => {
       // getEmail also returns null
       mockQueryContext.mockResolvedValueOnce({ rows: [] } as any);
 
-      const result = await sendEmailById('work', 'nonexistent', TEST_USER_ID);
+      const result = await sendEmailById('finance', 'nonexistent', TEST_USER_ID);
       expect(result).toBeNull();
     });
   });
@@ -356,7 +356,7 @@ describe('Email Service', () => {
         rows: [makeEmailRow({ status: 'archived' })],
       } as any);
 
-      const result = await updateEmailStatus('work', 'email-001', 'archived', TEST_USER_ID);
+      const result = await updateEmailStatus('finance', 'email-001', 'archived', TEST_USER_ID);
       expect(result).not.toBeNull();
       expect(result!.status).toBe('archived');
     });
@@ -364,7 +364,7 @@ describe('Email Service', () => {
     it('should return null if email not found', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [] } as any);
 
-      const result = await updateEmailStatus('work', 'nonexistent', 'archived', TEST_USER_ID);
+      const result = await updateEmailStatus('finance', 'nonexistent', 'archived', TEST_USER_ID);
       expect(result).toBeNull();
     });
   });
@@ -375,7 +375,7 @@ describe('Email Service', () => {
         rows: [makeEmailRow({ status: 'read' })],
       } as any);
 
-      const result = await markAsRead('work', 'email-001', TEST_USER_ID);
+      const result = await markAsRead('finance', 'email-001', TEST_USER_ID);
       expect(result).not.toBeNull();
       const sql = mockQueryContext.mock.calls[0][1] as string;
       expect(sql).toContain("status = 'read'");
@@ -389,7 +389,7 @@ describe('Email Service', () => {
         rows: [makeEmailRow({ is_starred: true })],
       } as any);
 
-      const result = await toggleStar('work', 'email-001', TEST_USER_ID);
+      const result = await toggleStar('finance', 'email-001', TEST_USER_ID);
       expect(result).not.toBeNull();
       const sql = mockQueryContext.mock.calls[0][1] as string;
       expect(sql).toContain('NOT is_starred');
@@ -400,14 +400,14 @@ describe('Email Service', () => {
     it('should update multiple emails at once', async () => {
       mockQueryContext.mockResolvedValueOnce({ rowCount: 3 } as any);
 
-      const count = await batchUpdateStatus('work', ['e1', 'e2', 'e3'], 'archived', TEST_USER_ID);
+      const count = await batchUpdateStatus('finance', ['e1', 'e2', 'e3'], 'archived', TEST_USER_ID);
       expect(count).toBe(3);
     });
 
     it('should return 0 when no emails matched', async () => {
       mockQueryContext.mockResolvedValueOnce({ rowCount: 0 } as any);
 
-      const count = await batchUpdateStatus('work', ['nonexistent'], 'trash', TEST_USER_ID);
+      const count = await batchUpdateStatus('finance', ['nonexistent'], 'trash', TEST_USER_ID);
       expect(count).toBe(0);
     });
   });
@@ -418,7 +418,7 @@ describe('Email Service', () => {
         rows: [makeEmailRow({ status: 'trash' })],
       } as any);
 
-      const result = await moveToTrash('work', 'email-001', TEST_USER_ID);
+      const result = await moveToTrash('finance', 'email-001', TEST_USER_ID);
       expect(result).not.toBeNull();
       expect(result!.status).toBe('trash');
     });
@@ -439,7 +439,7 @@ describe('Email Service', () => {
         }],
       } as any);
 
-      const stats = await getEmailStats('work', TEST_USER_ID);
+      const stats = await getEmailStats('finance', TEST_USER_ID);
       expect(stats.total).toBe(42);
       expect(stats.unread).toBe(5);
       expect(stats.starred).toBe(3);
@@ -457,7 +457,7 @@ describe('Email Service', () => {
         }],
       } as any);
 
-      const stats = await getEmailStats('work', TEST_USER_ID);
+      const stats = await getEmailStats('finance', TEST_USER_ID);
       expect(stats.total).toBe(0);
       expect(stats.by_account).toHaveLength(0);
     });
@@ -475,7 +475,7 @@ describe('Email Service', () => {
         ],
       } as any);
 
-      const accounts = await getAccounts('work', TEST_USER_ID);
+      const accounts = await getAccounts('finance', TEST_USER_ID);
       expect(accounts).toHaveLength(2);
     });
   });
@@ -486,14 +486,14 @@ describe('Email Service', () => {
         rows: [{ id: 'acct-1', email_address: 'a@zensation.ai' }],
       } as any);
 
-      const account = await getAccount('work', 'acct-1', TEST_USER_ID);
+      const account = await getAccount('finance', 'acct-1', TEST_USER_ID);
       expect(account).not.toBeNull();
     });
 
     it('should return undefined for nonexistent account', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [] } as any);
 
-      const account = await getAccount('work', 'nonexistent', TEST_USER_ID);
+      const account = await getAccount('finance', 'nonexistent', TEST_USER_ID);
       expect(account).toBeFalsy();
     });
   });
@@ -504,7 +504,7 @@ describe('Email Service', () => {
         rows: [{ id: 'test-uuid-1234', email_address: 'new@zensation.ai', domain: 'zensation.ai' }],
       } as any);
 
-      const account = await createAccount('work', {
+      const account = await createAccount('finance', {
         email_address: 'new@zensation.ai',
         domain: 'zensation.ai',
       }, TEST_USER_ID);
@@ -518,7 +518,7 @@ describe('Email Service', () => {
     it('should delete an email account', async () => {
       mockQueryContext.mockResolvedValueOnce({ rowCount: 1 } as any);
 
-      await deleteAccount('work', 'acct-1', TEST_USER_ID);
+      await deleteAccount('finance', 'acct-1', TEST_USER_ID);
       expect(mockQueryContext).toHaveBeenCalledTimes(1);
       const sql = mockQueryContext.mock.calls[0][1] as string;
       expect(sql).toContain('DELETE FROM email_accounts');
@@ -537,7 +537,7 @@ describe('Email Service', () => {
         ],
       } as any);
 
-      const labels = await getLabels('work', TEST_USER_ID);
+      const labels = await getLabels('finance', TEST_USER_ID);
       expect(labels).toHaveLength(2);
     });
   });
@@ -548,7 +548,7 @@ describe('Email Service', () => {
         rows: [{ id: 'test-uuid-1234', name: 'Urgent', color: '#4A90D9', icon: '🏷️' }],
       } as any);
 
-      const label = await createLabel('work', { name: 'Urgent' }, TEST_USER_ID);
+      const label = await createLabel('finance', { name: 'Urgent' }, TEST_USER_ID);
       expect(label.name).toBe('Urgent');
     });
   });

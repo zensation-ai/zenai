@@ -14,7 +14,7 @@ let intelligentLearningRouter: any;
 // Mock all external dependencies
 jest.mock('../../utils/database-context', () => ({
   isValidUUID: jest.fn((id: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)),
-  isValidContext: jest.fn((context: string) => ['personal', 'work', 'learning', 'creative'].includes(context)),
+  isValidContext: jest.fn((context: string) => ['operations', 'finance', 'people', 'strategy'].includes(context)),
 }));
 
 // Mock auth middleware
@@ -168,7 +168,7 @@ const sampleFocus = {
   description: 'Focus on ML and AI topics',
   is_active: true,
   priority: 1,
-  context: 'work',
+  context: 'finance',
   created_at: new Date().toISOString(),
   updated_at: new Date().toISOString(),
 };
@@ -202,7 +202,7 @@ const sampleSuggestion = {
 
 const sampleProfile = {
   id: '123e4567-e89b-12d3-a456-426614174004',
-  context: 'work',
+  context: 'finance',
   company_name: 'Tech Corp',
   industry: 'Technology',
   role: 'Engineer',
@@ -237,7 +237,7 @@ describe('Intelligent Learning API Integration Tests', () => {
         mockGetAllDomainFocus.mockResolvedValueOnce([sampleFocus] as any);
 
         const res = await request(app)
-          .get('/api/work/focus')
+          .get('/api/finance/focus')
           .expect(200);
 
         expect(res.body).toHaveProperty('focus_areas');
@@ -249,10 +249,10 @@ describe('Intelligent Learning API Integration Tests', () => {
         mockGetAllDomainFocus.mockResolvedValueOnce([sampleFocus] as any);
 
         await request(app)
-          .get('/api/work/focus?activeOnly=true')
+          .get('/api/finance/focus?activeOnly=true')
           .expect(200);
 
-        expect(mockGetAllDomainFocus).toHaveBeenCalledWith('work', true);
+        expect(mockGetAllDomainFocus).toHaveBeenCalledWith('finance', true);
       });
 
       it('should return 400 for invalid context', async () => {
@@ -269,7 +269,7 @@ describe('Intelligent Learning API Integration Tests', () => {
         mockCreateDomainFocus.mockResolvedValueOnce(sampleFocus as any);
 
         const res = await request(app)
-          .post('/api/work/focus')
+          .post('/api/finance/focus')
           .send({
             name: 'Machine Learning',
             description: 'Focus on ML and AI topics',
@@ -283,7 +283,7 @@ describe('Intelligent Learning API Integration Tests', () => {
 
       it('should return 400 when name is missing', async () => {
         const res = await request(app)
-          .post('/api/work/focus')
+          .post('/api/finance/focus')
           .send({ description: 'Description only' })
           .expect(400);
 
@@ -299,7 +299,7 @@ describe('Intelligent Learning API Integration Tests', () => {
         } as any);
 
         const res = await request(app)
-          .patch(`/api/work/focus/${sampleFocus.id}`)
+          .patch(`/api/finance/focus/${sampleFocus.id}`)
           .send({ name: 'Updated Name' });
 
         // Accept 200 or 404 based on route availability/mock setup
@@ -318,7 +318,7 @@ describe('Intelligent Learning API Integration Tests', () => {
         } as any);
 
         const res = await request(app)
-          .post(`/api/work/focus/${sampleFocus.id}/toggle`);
+          .post(`/api/finance/focus/${sampleFocus.id}/toggle`);
 
         // Accept 200 or 404 based on route availability
         expect([200, 404]).toContain(res.status);
@@ -333,7 +333,7 @@ describe('Intelligent Learning API Integration Tests', () => {
         mockDeleteDomainFocus.mockResolvedValueOnce(true);
 
         const res = await request(app)
-          .delete(`/api/work/focus/${sampleFocus.id}`)
+          .delete(`/api/finance/focus/${sampleFocus.id}`)
           .expect(200);
 
         expect(res.body).toHaveProperty('message');
@@ -350,7 +350,7 @@ describe('Intelligent Learning API Integration Tests', () => {
 
         // Route is actually /api/:context/focus-stats (hyphenated)
         const res = await request(app)
-          .get('/api/work/focus-stats');
+          .get('/api/finance/focus-stats');
 
         // Accept 200 or 400 based on route availability
         expect([200, 400]).toContain(res.status);
@@ -372,7 +372,7 @@ describe('Intelligent Learning API Integration Tests', () => {
 
         // Actual API uses response_type and original_response instead of idea_id
         const res = await request(app)
-          .post('/api/work/feedback')
+          .post('/api/finance/feedback')
           .send({
             response_type: 'idea_classification',
             original_response: 'Sample response',
@@ -389,7 +389,7 @@ describe('Intelligent Learning API Integration Tests', () => {
 
       it('should return 400 when required fields are missing', async () => {
         const res = await request(app)
-          .post('/api/work/feedback')
+          .post('/api/finance/feedback')
           .send({ rating: 5 })
           .expect(400);
 
@@ -403,7 +403,7 @@ describe('Intelligent Learning API Integration Tests', () => {
 
         // Actual route is /feedback/thumbs-up not /feedback/:id/thumbs-up
         const res = await request(app)
-          .post('/api/work/feedback/thumbs-up')
+          .post('/api/finance/feedback/thumbs-up')
           .send({
             response_type: 'idea_classification',
             original_response: 'Sample response',
@@ -423,7 +423,7 @@ describe('Intelligent Learning API Integration Tests', () => {
 
         // Route is /feedback/thumbs-down not /feedback/:id/thumbs-down
         const res = await request(app)
-          .post('/api/work/feedback/thumbs-down')
+          .post('/api/finance/feedback/thumbs-down')
           .send({
             response_type: 'idea_classification',
             original_response: 'Sample response',
@@ -449,7 +449,7 @@ describe('Intelligent Learning API Integration Tests', () => {
 
         // Route is /feedback-stats not /feedback/stats
         const res = await request(app)
-          .get('/api/work/feedback-stats');
+          .get('/api/finance/feedback-stats');
 
         // Accept 200 or 400/404 based on route availability
         expect([200, 400, 404]).toContain(res.status);
@@ -470,7 +470,7 @@ describe('Intelligent Learning API Integration Tests', () => {
         mockGetPendingResearch.mockResolvedValueOnce([sampleResearch] as any);
 
         const res = await request(app)
-          .get('/api/work/research/pending');
+          .get('/api/finance/research/pending');
 
         // Accept 200 or 400 based on route availability
         expect([200, 400]).toContain(res.status);
@@ -485,7 +485,7 @@ describe('Intelligent Learning API Integration Tests', () => {
         mockGetResearchById.mockResolvedValueOnce(sampleResearch as any);
 
         const res = await request(app)
-          .get(`/api/work/research/${sampleResearch.id}`)
+          .get(`/api/finance/research/${sampleResearch.id}`)
           .expect(200);
 
         expect(res.body).toHaveProperty('research');
@@ -496,7 +496,7 @@ describe('Intelligent Learning API Integration Tests', () => {
         mockGetResearchById.mockResolvedValueOnce(null);
 
         const res = await request(app)
-          .get('/api/work/research/123e4567-e89b-12d3-a456-426614174999');
+          .get('/api/finance/research/123e4567-e89b-12d3-a456-426614174999');
 
         // Accept 404 or 400 based on error handling
         expect([400, 404]).toContain(res.status);
@@ -509,7 +509,7 @@ describe('Intelligent Learning API Integration Tests', () => {
         mockDismissResearch.mockResolvedValueOnce({ success: true } as any);
 
         const res = await request(app)
-          .post(`/api/work/research/${sampleResearch.id}/dismiss`);
+          .post(`/api/finance/research/${sampleResearch.id}/dismiss`);
 
         // Accept 200 or 404 based on route/mock setup
         expect([200, 404]).toContain(res.status);
@@ -524,7 +524,7 @@ describe('Intelligent Learning API Integration Tests', () => {
         mockTriggerManualResearch.mockResolvedValueOnce(sampleResearch as any);
 
         const res = await request(app)
-          .post('/api/work/research/trigger')
+          .post('/api/finance/research/trigger')
           .send({ idea_id: sampleResearch.idea_id });
 
         // Accept 200 or 400 based on validation
@@ -546,7 +546,7 @@ describe('Intelligent Learning API Integration Tests', () => {
         mockGetActiveSuggestions.mockResolvedValueOnce([sampleSuggestion] as any);
 
         const res = await request(app)
-          .get('/api/work/suggestions')
+          .get('/api/finance/suggestions')
           .expect(200);
 
         expect(res.body).toHaveProperty('suggestions');
@@ -562,7 +562,7 @@ describe('Intelligent Learning API Integration Tests', () => {
         } as any);
 
         const res = await request(app)
-          .post(`/api/work/suggestions/${sampleSuggestion.id}/respond`)
+          .post(`/api/finance/suggestions/${sampleSuggestion.id}/respond`)
           .send({ response: 'accept' });
 
         // Accept 200 or 404 based on route/mock setup
@@ -574,7 +574,7 @@ describe('Intelligent Learning API Integration Tests', () => {
 
       it('should return 400 for invalid response', async () => {
         const res = await request(app)
-          .post(`/api/work/suggestions/${sampleSuggestion.id}/respond`)
+          .post(`/api/finance/suggestions/${sampleSuggestion.id}/respond`)
           .send({ response: 'invalid_response' });
 
         // Accept 400 or 404 based on route handling
@@ -596,7 +596,7 @@ describe('Intelligent Learning API Integration Tests', () => {
         } as any);
 
         const res = await request(app)
-          .get('/api/work/suggestions/stats');
+          .get('/api/finance/suggestions/stats');
 
         // Accept 200 or 404 based on route availability
         expect([200, 404]).toContain(res.status);
@@ -614,7 +614,7 @@ describe('Intelligent Learning API Integration Tests', () => {
         } as any);
 
         const res = await request(app)
-          .post('/api/work/learning/run')
+          .post('/api/finance/learning/run')
           .expect(200);
 
         expect(res.body).toHaveProperty('result');
@@ -633,7 +633,7 @@ describe('Intelligent Learning API Integration Tests', () => {
         mockGetOrCreateProfile.mockResolvedValueOnce(sampleProfile as any);
 
         const res = await request(app)
-          .get('/api/work/profile')
+          .get('/api/finance/profile')
           .expect(200);
 
         expect(res.body).toHaveProperty('profile');
@@ -649,7 +649,7 @@ describe('Intelligent Learning API Integration Tests', () => {
         } as any);
 
         const res = await request(app)
-          .put('/api/work/profile')
+          .put('/api/finance/profile')
           .send({ company_name: 'Updated Corp' })
           .expect(200);
 
@@ -665,7 +665,7 @@ describe('Intelligent Learning API Integration Tests', () => {
         } as any);
 
         const res = await request(app)
-          .get('/api/work/profile/stats');
+          .get('/api/finance/profile/stats');
 
         // Accept 200 or 404 based on route availability
         expect([200, 404]).toContain(res.status);
@@ -678,13 +678,13 @@ describe('Intelligent Learning API Integration Tests', () => {
     describe('GET /api/:context/profile/context', () => {
       it('should return personalized context', async () => {
         mockGetPersonalizedContext.mockResolvedValueOnce({
-          context: 'work',
+          context: 'finance',
           preferences: { theme: 'dark' },
           focus_areas: ['ML', 'AI'],
         } as any);
 
         const res = await request(app)
-          .get('/api/work/profile/context');
+          .get('/api/finance/profile/context');
 
         // Accept 200 or 404 based on route availability
         expect([200, 404]).toContain(res.status);
@@ -700,11 +700,11 @@ describe('Intelligent Learning API Integration Tests', () => {
   // ===========================================
 
   describe('Context Validation', () => {
-    it('should accept personal context', async () => {
+    it('should accept operations context', async () => {
       mockGetAllDomainFocus.mockResolvedValueOnce([]);
 
       const res = await request(app)
-        .get('/api/personal/focus')
+        .get('/api/operations/focus')
         .expect(200);
 
       expect(res.body).toHaveProperty('focus_areas');
@@ -714,7 +714,7 @@ describe('Intelligent Learning API Integration Tests', () => {
       mockGetAllDomainFocus.mockResolvedValueOnce([]);
 
       const res = await request(app)
-        .get('/api/work/focus')
+        .get('/api/finance/focus')
         .expect(200);
 
       expect(res.body).toHaveProperty('focus_areas');

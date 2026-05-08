@@ -30,7 +30,7 @@ function makeConnector(overrides: Partial<Connector> = {}): Connector {
       requiredScopes: ['test.read'],
       webhookSupported: true,
       syncSupported: true,
-      defaultContext: 'personal',
+      defaultContext: 'operations',
     },
     connect: jest.fn().mockResolvedValue(undefined),
     disconnect: jest.fn().mockResolvedValue(undefined),
@@ -54,7 +54,7 @@ function makeIntegrationEvent(overrides: Partial<IntegrationEvent> = {}): Integr
     connectorId: 'test-connector',
     userId: 'user-1',
     type: 'message.received',
-    targetContext: 'work',
+    targetContext: 'finance',
     payload: { text: 'hello' },
     timestamp: new Date('2026-01-01T10:00:00Z'),
     ...overrides,
@@ -107,7 +107,7 @@ describe('WebhookRouter', () => {
     it('should emit an event to EventSystem after successful handling', async () => {
       const integrationEvent = makeIntegrationEvent({
         type: 'message.received',
-        targetContext: 'work',
+        targetContext: 'finance',
         payload: { text: 'hello' },
       });
       const connector = makeConnector({
@@ -123,7 +123,7 @@ describe('WebhookRouter', () => {
 
       expect(mockEmitSystemEvent).toHaveBeenCalledTimes(1);
       expect(mockEmitSystemEvent).toHaveBeenCalledWith({
-        context: 'work',
+        context: 'finance',
         eventType: 'integration.message.received',
         eventSource: 'test-connector',
         payload: { text: 'hello' },

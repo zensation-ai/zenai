@@ -7,6 +7,7 @@ import { AIContext, isValidContext } from '../utils/database-context';
 import { queryContext } from '../utils/database-context';
 import { asyncHandler } from '../middleware/errorHandler';
 import { apiKeyAuth } from '../middleware/auth';
+import { requirePlan } from '../middleware/plan-gate';
 import { getSleepComputeEngine } from '../services/memory/sleep-compute';
 import { getContextEngineV2 } from '../services/context-engine-v2';
 import { getUserId } from '../utils/user-context';
@@ -61,8 +62,8 @@ router.get('/:context/sleep-compute/stats', asyncHandler(async (req: Request, re
   res.json({ success: true, data: result.rows[0] || {} });
 }));
 
-// POST /api/:context/sleep-compute/trigger - Manually trigger sleep cycle
-router.post('/:context/sleep-compute/trigger', asyncHandler(async (req: Request, res: Response) => {
+// POST /api/:context/sleep-compute/trigger - Manually trigger sleep cycle (Pro+)
+router.post('/:context/sleep-compute/trigger', requirePlan('pro'), asyncHandler(async (req: Request, res: Response) => {
   getUserId(req); // auth check
   const context = req.params.context as AIContext;
   if (!isValidContext(context)) {

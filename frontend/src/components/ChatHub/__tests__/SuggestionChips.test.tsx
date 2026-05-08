@@ -64,6 +64,6 @@ describe('SuggestionChips', () => {
 
   it('has accessible list role', () => {
     render(<SuggestionChips {...defaultProps} />);
-    expect(screen.getByRole('list')).toHaveAttribute('aria-label', 'Vorschlaege');
+    expect(screen.getByRole('list')).toHaveAttribute('aria-label', 'Vorschläge');
   });
 });

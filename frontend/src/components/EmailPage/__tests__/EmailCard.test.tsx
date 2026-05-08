@@ -32,7 +32,7 @@ const mockEmail: Email = {
   ai_processed_at: null,
   labels: [],
   is_starred: false,
-  context: 'personal',
+  context: 'operations',
   received_at: '2026-03-20T10:00:00Z',
   sent_at: null,
   created_at: '2026-03-20T10:00:00Z',
@@ -93,13 +93,13 @@ describe('EmailCard', () => {
 
   it('shows category badge when ai_category is set', () => {
     render(<EmailCard email={mockEmail} onSelect={vi.fn()} />);
-    expect(screen.getByText(/Geschaeftlich/i)).toBeInTheDocument();
+    expect(screen.getByText(/Geschäftlich/i)).toBeInTheDocument();
   });
 
   it('does not show category badge when ai_category is null', () => {
     const noCatEmail: Email = { ...mockEmail, ai_category: null };
     render(<EmailCard email={noCatEmail} onSelect={vi.fn()} />);
-    expect(screen.queryByText(/Geschaeftlich/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Geschäftlich/i)).not.toBeInTheDocument();
   });
 
   it('star button has aria-pressed', () => {
@@ -136,6 +136,6 @@ describe('EmailCard', () => {
   it('shows attachment indicator when has_attachments is true', () => {
     const withAttachment: Email = { ...mockEmail, has_attachments: true };
     render(<EmailCard email={withAttachment} onSelect={vi.fn()} />);
-    expect(screen.getByLabelText('Hat Anhaenge')).toBeInTheDocument();
+    expect(screen.getByLabelText('Hat Anhänge')).toBeInTheDocument();
   });
 });

@@ -25,7 +25,7 @@ function TriggerConfig({ formData, errors, updateTriggerConfig }: Omit<TriggerSt
           <input
             id="afm-pattern"
             type="text"
-            className={`liquid-glass-input ${errors.triggerConfig ? 'has-error' : ''}`}
+            className={`bg-[var(--color-glass-bg)] backdrop-blur-md border border-[var(--color-glass-border)] rounded-lg px-4 py-2.5 text-sm text-[var(--color-text)] placeholder:text-[var(--color-text-muted)] focus:outline-none focus:ring-2 transition-shadow ${errors.triggerConfig ? 'ring-[var(--color-danger)]/50' : 'focus:ring-[var(--color-primary)]/50'}`}
             value={(formData.trigger.config.pattern as string) || ''}
             onChange={e => updateTriggerConfig('pattern', e.target.value)}
             placeholder="z.B. dringend|asap|sofort (getrennt mit |)"
@@ -41,7 +41,7 @@ function TriggerConfig({ formData, errors, updateTriggerConfig }: Omit<TriggerSt
           <label htmlFor="afm-event">Event</label>
           <select
             id="afm-event"
-            className={`liquid-glass-input ${errors.triggerConfig ? 'has-error' : ''}`}
+            className={`bg-[var(--color-glass-bg)] backdrop-blur-md border border-[var(--color-glass-border)] rounded-lg px-4 py-2.5 text-sm text-[var(--color-text)] placeholder:text-[var(--color-text-muted)] focus:outline-none focus:ring-2 transition-shadow ${errors.triggerConfig ? 'ring-[var(--color-danger)]/50' : 'focus:ring-[var(--color-primary)]/50'}`}
             value={(formData.trigger.config.eventName as string) || ''}
             onChange={e => updateTriggerConfig('eventName', e.target.value)}
           >
@@ -70,12 +70,12 @@ function TriggerConfig({ formData, errors, updateTriggerConfig }: Omit<TriggerSt
               </button>
             ))}
           </div>
-          <div className="afm-field" style={{ marginTop: '12px' }}>
+          <div className="afm-field mt-3">
             <label htmlFor="afm-cron">Oder Cron-Ausdruck eingeben</label>
             <input
               id="afm-cron"
               type="text"
-              className={`liquid-glass-input ${errors.triggerConfig ? 'has-error' : ''}`}
+              className={`bg-[var(--color-glass-bg)] backdrop-blur-md border border-[var(--color-glass-border)] rounded-lg px-4 py-2.5 text-sm text-[var(--color-text)] placeholder:text-[var(--color-text-muted)] focus:outline-none focus:ring-2 transition-shadow ${errors.triggerConfig ? 'ring-[var(--color-danger)]/50' : 'focus:ring-[var(--color-primary)]/50'}`}
               value={(formData.trigger.config.cron as string) || ''}
               onChange={e => updateTriggerConfig('cron', e.target.value)}
               placeholder="z.B. 0 9 * * 1 (Montags 9:00)"

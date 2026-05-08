@@ -53,7 +53,7 @@ describe('Multi-Document Reasoner', () => {
 
   describe('empty inputs', () => {
     it('should handle empty documents array', async () => {
-      const result = await synthesize('What is X?', [], 'personal');
+      const result = await synthesize('What is X?', [], 'operations');
 
       expect(result.synthesis).toContain('No relevant sources');
       expect(result.sources).toEqual([]);
@@ -63,7 +63,7 @@ describe('Multi-Document Reasoner', () => {
     });
 
     it('should handle null documents', async () => {
-      const result = await synthesize('What is X?', null as unknown as EnhancedResult[], 'personal');
+      const result = await synthesize('What is X?', null as unknown as EnhancedResult[], 'operations');
 
       expect(result.confidence).toBe(0);
       expect(result.sources).toEqual([]);
@@ -78,7 +78,7 @@ describe('Multi-Document Reasoner', () => {
     it('should return document content without Claude calls for single doc', async () => {
       const doc = makeDocument({ title: 'Memory Guide', content: 'Memory works by encoding information.' });
 
-      const result = await synthesize('How does memory work?', [doc], 'personal');
+      const result = await synthesize('How does memory work?', [doc], 'operations');
 
       expect(result.synthesis).toContain('Memory Guide');
       expect(result.synthesis).toContain('[1]');
@@ -96,7 +96,7 @@ describe('Multi-Document Reasoner', () => {
 
     it('should cap confidence at 1.0 for single high-scoring doc', async () => {
       const doc = makeDocument({ score: 0.99 });
-      const result = await synthesize('query', [doc], 'personal');
+      const result = await synthesize('query', [doc], 'operations');
       expect(result.confidence).toBeLessThanOrEqual(1.0);
     });
   });
@@ -121,7 +121,7 @@ describe('Multi-Document Reasoner', () => {
         makeDocument({ id: 'doc-2', title: 'Cat Social Life', content: 'Cats are social animals.', score: 0.80 }),
       ];
 
-      const result = await synthesize('Are cats social?', docs, 'personal');
+      const result = await synthesize('Are cats social?', docs, 'operations');
 
       expect(result.synthesis).toContain('[1]');
       expect(result.synthesis).toContain('[2]');
@@ -147,7 +147,7 @@ describe('Multi-Document Reasoner', () => {
         makeDocument({ id: 'd2', title: 'Source B' }),
       ];
 
-      const result = await synthesize('What is X?', docs, 'work');
+      const result = await synthesize('What is X?', docs, 'finance');
 
       expect(result.agreements).toHaveLength(2);
       expect(result.contradictions).toHaveLength(0);
@@ -167,7 +167,7 @@ describe('Multi-Document Reasoner', () => {
         makeDocument({ id: 'd2', title: 'Report B', content: 'Event happened in 2021.' }),
       ];
 
-      const result = await synthesize('When did the event happen?', docs, 'personal');
+      const result = await synthesize('When did the event happen?', docs, 'operations');
 
       expect(result.contradictions).toHaveLength(1);
       expect(result.confidence).toBe(0.4);
@@ -202,7 +202,7 @@ describe('Multi-Document Reasoner', () => {
         }),
       ];
 
-      const result = await synthesize('query', docs, 'personal');
+      const result = await synthesize('query', docs, 'operations');
 
       expect(result.sources).toHaveLength(2);
       expect(result.sources[0].id).toBe('src-1');
@@ -225,7 +225,7 @@ describe('Multi-Document Reasoner', () => {
         makeDocument({ id: 'd2', title: 'https://example.com/page', summary: 'A website about...' }),
       ];
 
-      const result = await synthesize('query', docs, 'personal');
+      const result = await synthesize('query', docs, 'operations');
 
       expect(result.sources[0].type).toBe('chat');
       expect(result.sources[1].type).toBe('web');
@@ -246,7 +246,7 @@ describe('Multi-Document Reasoner', () => {
       });
 
       const docs = [makeDocument(), makeDocument({ id: 'd2' })];
-      const result = await synthesize('query', docs, 'personal');
+      const result = await synthesize('query', docs, 'operations');
 
       expect(result.synthesis).toContain('Unable to synthesize');
       // Analysis should still succeed
@@ -258,7 +258,7 @@ describe('Multi-Document Reasoner', () => {
       mockQueryClaudeJSON.mockRejectedValueOnce(new Error('JSON parse failed'));
 
       const docs = [makeDocument(), makeDocument({ id: 'd2' })];
-      const result = await synthesize('query', docs, 'personal');
+      const result = await synthesize('query', docs, 'operations');
 
       expect(result.synthesis).toBe('Synthesis text.');
       expect(result.agreements).toEqual([]);
@@ -277,7 +277,7 @@ describe('Multi-Document Reasoner', () => {
       });
 
       const docs = [makeDocument(), makeDocument({ id: 'd2' })];
-      const result = await synthesize('query', docs, 'personal');
+      const result = await synthesize('query', docs, 'operations');
 
       expect(result.confidence).toBeLessThanOrEqual(1.0);
       expect(result.confidence).toBeGreaterThanOrEqual(0);
@@ -298,7 +298,7 @@ describe('Multi-Document Reasoner', () => {
       });
 
       const docs = [makeDocument(), makeDocument({ id: 'd2' })];
-      const result = await synthesize('query', docs, 'personal');
+      const result = await synthesize('query', docs, 'operations');
 
       expect(result.confidence).toBe(0.88);
     });
@@ -312,7 +312,7 @@ describe('Multi-Document Reasoner', () => {
       });
 
       const docs = [makeDocument(), makeDocument({ id: 'd2' })];
-      const result = await synthesize('query', docs, 'personal');
+      const result = await synthesize('query', docs, 'operations');
 
       // Should fall back to calculated confidence
       expect(typeof result.confidence).toBe('number');

@@ -9,12 +9,40 @@
  * @module utils/ollama
  */
 
-import axios, { AxiosError } from 'axios';
+import { AxiosError } from 'axios';
+import { checkedAxiosGet, checkedAxiosPost } from './checked-http';
 import { getCachedEmbedding } from './cache';
 import { logger } from './logger';
 import { OLLAMA, TIMEOUTS } from '../config/constants';
 import { withCircuitBreaker, withRetry, isCircuitOpen } from './retry';
-import { generateOpenAIEmbedding, isOpenAIAvailable, queryOpenAIJSON } from '../services/openai';
+import {
+  StructuredIdea,
+  normalizeCategory,
+  normalizeType,
+  normalizePriority,
+  normalizeContext,
+} from './idea-types';
+import type { ValidCategory, ValidType, ValidPriority } from './idea-types';
+
+// Lazy imports to break circular dependency with services/openai.ts
+// ollama.ts is a util that should not depend on services/ at module load time
+let _isOpenAIAvailable: (() => boolean) | null = null;
+let _generateOpenAIEmbedding: ((text: string) => Promise<number[]>) | null = null;
+let _queryOpenAIJSON: (<T>(systemPrompt: string, userPrompt: string) => Promise<T>) | null = null;
+
+async function getOpenAIService() {
+  if (!_isOpenAIAvailable) {
+    const openai = await import('../services/openai');
+    _isOpenAIAvailable = openai.isOpenAIAvailable;
+    _generateOpenAIEmbedding = openai.generateOpenAIEmbedding;
+    _queryOpenAIJSON = openai.queryOpenAIJSON;
+  }
+  return {
+    isOpenAIAvailable: _isOpenAIAvailable!,
+    generateOpenAIEmbedding: _generateOpenAIEmbedding!,
+    queryOpenAIJSON: _queryOpenAIJSON!,
+  };
+}
 
 // ===========================================
 // Configuration
@@ -123,10 +151,10 @@ WICHTIG:
 
 KONTEXT-VORSCHLAG:
 Schlage vor, in welchen Bereich dieser Gedanke gehört:
-- "work" = Berufliches, Geschäftliches, Projekte, Meetings, Kunden
-- "personal" = Privates, Familie, Gesundheit, Alltag, Hobbys
-- "learning" = Lernen, Weiterbildung, Kurse, Recherche, Wissen
-- "creative" = Kreatives, Kunst, Design, Schreiben, Musik, Content
+- "finance" = Berufliches, Geschäftliches, Projekte, Meetings, Kunden
+- "operations" = Privates, Familie, Gesundheit, Alltag, Hobbys
+- "people" = Lernen, Weiterbildung, Kurse, Recherche, Wissen
+- "strategy" = Kreatives, Kunst, Design, Schreiben, Musik, Content
 
 OUTPUT FORMAT (JSON):
 {
@@ -134,150 +162,16 @@ OUTPUT FORMAT (JSON):
   "type": "idea|task|insight|problem|question",
   "category": "business|technical|personal|learning",
   "priority": "low|medium|high",
-  "suggested_context": "personal|work|learning|creative",
+  "suggested_context": "operations|finance|people|strategy",
   "summary": "1-2 Sätze Zusammenfassung",
   "next_steps": ["Schritt 1", "Schritt 2"],
   "context_needed": ["Kontext 1", "Kontext 2"],
   "keywords": ["keyword1", "keyword2", "keyword3"]
 }`;
 
-// ===========================================
-// Structured Idea Interface
-// ===========================================
-
-export interface StructuredIdea {
-  title: string;
-  type: 'idea' | 'task' | 'insight' | 'problem' | 'question';
-  category: 'business' | 'technical' | 'personal' | 'learning';
-  priority: 'low' | 'medium' | 'high';
-  summary: string;
-  next_steps: string[];
-  context_needed: string[];
-  keywords: string[];
-  suggested_context?: 'personal' | 'work' | 'learning' | 'creative' | 'demo';
-}
-
-// ===========================================
-// Valid Values (Database Constraints)
-// ===========================================
-
-const VALID_CATEGORIES = ['business', 'technical', 'personal', 'learning'] as const;
-const VALID_TYPES = ['idea', 'task', 'insight', 'problem', 'question'] as const;
-const VALID_PRIORITIES = ['low', 'medium', 'high'] as const;
-const VALID_CONTEXTS = ['personal', 'work', 'learning', 'creative'] as const;
-
-type ValidCategory = typeof VALID_CATEGORIES[number];
-type ValidType = typeof VALID_TYPES[number];
-type ValidPriority = typeof VALID_PRIORITIES[number];
-type ValidContext = typeof VALID_CONTEXTS[number];
-
-// ===========================================
-// Category Mapping
-// ===========================================
-
-// Category mapping for common LLM outputs that don't match our schema
-const CATEGORY_MAPPING: Record<string, ValidCategory> = {
-  // Business-related (including German/Work-specific)
-  'marketing': 'business',
-  'sales': 'business',
-  'strategy': 'business',
-  'strategie': 'business',
-  'finance': 'business',
-  'management': 'business',
-  'startup': 'business',
-  'product': 'business',
-  'growth': 'business',
-  'operations': 'business',
-  'kunden': 'business',
-  'ews': 'business',
-  '1komma5': 'business',
-  'team': 'business',
-  'vertrieb': 'business',
-  'verkauf': 'business',
-  // Technical-related
-  'development': 'technical',
-  'engineering': 'technical',
-  'code': 'technical',
-  'programming': 'technical',
-  'software': 'technical',
-  'infrastructure': 'technical',
-  'devops': 'technical',
-  'architecture': 'technical',
-  'technik': 'technical',
-  'tech': 'technical',
-  'it': 'technical',
-  // Personal-related
-  'health': 'personal',
-  'wellness': 'personal',
-  'lifestyle': 'personal',
-  'family': 'personal',
-  'relationships': 'personal',
-  'hobby': 'personal',
-  'creativity': 'personal',
-  'privat': 'personal',
-  'persönlich': 'personal',
-  'familie': 'personal',
-  'gesundheit': 'personal',
-  // Learning-related
-  'education': 'learning',
-  'research': 'learning',
-  'study': 'learning',
-  'training': 'learning',
-  'skills': 'learning',
-  'lernen': 'learning',
-  'weiterbildung': 'learning',
-  'forschung': 'learning',
-};
-
-// Context mapping for LLM outputs to valid context values
-const CONTEXT_MAPPING: Record<string, ValidContext> = {
-  // Work-related
-  'arbeit': 'work',
-  'beruf': 'work',
-  'büro': 'work',
-  'office': 'work',
-  'business': 'work',
-  'geschäft': 'work',
-  'projekt': 'work',
-  'job': 'work',
-  'professional': 'work',
-  'beruflich': 'work',
-  'geschäftlich': 'work',
-  // Personal-related
-  'privat': 'personal',
-  'persönlich': 'personal',
-  'private': 'personal',
-  'zuhause': 'personal',
-  'home': 'personal',
-  'familie': 'personal',
-  'family': 'personal',
-  'freizeit': 'personal',
-  'alltag': 'personal',
-  // Learning-related
-  'lernen': 'learning',
-  'studium': 'learning',
-  'weiterbildung': 'learning',
-  'education': 'learning',
-  'kurs': 'learning',
-  'training': 'learning',
-  'research': 'learning',
-  'forschung': 'learning',
-  'skill': 'learning',
-  'wissen': 'learning',
-  // Creative-related
-  'kreativ': 'creative',
-  'kunst': 'creative',
-  'art': 'creative',
-  'design': 'creative',
-  'musik': 'creative',
-  'music': 'creative',
-  'schreiben': 'creative',
-  'writing': 'creative',
-  'foto': 'creative',
-  'photography': 'creative',
-  'video': 'creative',
-  'content': 'creative',
-};
+// Re-export shared types and normalization functions from idea-types
+export { StructuredIdea, normalizeCategory, normalizeType, normalizePriority, normalizeContext } from './idea-types';
+export type { ValidCategory, ValidType, ValidPriority } from './idea-types';
 
 // ===========================================
 // Helper Functions
@@ -296,96 +190,7 @@ function getErrorMessage(error: unknown): string {
   return String(error);
 }
 
-/**
- * Normalize category to valid database value
- *
- * @param category - Raw category string from LLM
- * @returns Valid category value
- */
-export function normalizeCategory(category: string | undefined): ValidCategory {
-  if (!category) {return 'personal';}
-
-  // Handle pipe-separated categories (e.g., "EwS|Strategie|Business")
-  // Take the first part or find the first matching category
-  const parts = category.split('|').map(p => p.toLowerCase().trim());
-
-  for (const part of parts) {
-    // Direct match
-    if (VALID_CATEGORIES.includes(part as ValidCategory)) {
-      return part as ValidCategory;
-    }
-
-    // Check mapping
-    const mapped = CATEGORY_MAPPING[part];
-    if (mapped) {
-      return mapped;
-    }
-  }
-
-  // Default fallback
-  return 'business';
-}
-
-/**
- * Normalize type to valid database value
- *
- * @param type - Raw type string from LLM
- * @returns Valid type value
- */
-export function normalizeType(type: string | undefined): ValidType {
-  if (!type) {return 'idea';}
-
-  const lower = type.toLowerCase().trim();
-
-  if (VALID_TYPES.includes(lower as ValidType)) {
-    return lower as ValidType;
-  }
-
-  return 'idea';
-}
-
-/**
- * Normalize priority to valid database value
- *
- * @param priority - Raw priority string from LLM
- * @returns Valid priority value
- */
-export function normalizePriority(priority: string | undefined): ValidPriority {
-  if (!priority) {return 'medium';}
-
-  const lower = priority.toLowerCase().trim();
-
-  if (VALID_PRIORITIES.includes(lower as ValidPriority)) {
-    return lower as ValidPriority;
-  }
-
-  return 'medium';
-}
-
-/**
- * Normalize context suggestion to valid context value
- *
- * @param context - Raw context string from LLM
- * @returns Valid context value or undefined if not determinable
- */
-export function normalizeContext(context: string | undefined): ValidContext | undefined {
-  if (!context) {return undefined;}
-
-  const lower = context.toLowerCase().trim();
-
-  // Direct match
-  if (VALID_CONTEXTS.includes(lower as ValidContext)) {
-    return lower as ValidContext;
-  }
-
-  // Check mapping
-  const mapped = CONTEXT_MAPPING[lower];
-  if (mapped) {
-    return mapped;
-  }
-
-  return undefined;
-}
+// Normalization functions are re-exported from idea-types above
 
 /**
  * Creates a fallback structured idea when LLM fails
@@ -440,7 +245,7 @@ STRUCTURED OUTPUT:`;
 
   try {
     const response = await executeOllamaWithProtection(async () => {
-      return axios.post<OllamaGenerateResponse>(
+      return checkedAxiosPost<OllamaGenerateResponse>(
         `${OLLAMA_URL}/api/generate`,
         {
           model: MODEL,
@@ -448,7 +253,7 @@ STRUCTURED OUTPUT:`;
           stream: false,
           options: GENERATION_OPTIONS,
         },
-        { timeout: TIMEOUTS.LLM_GENERATION_MS }
+        { timeout: TIMEOUTS.LLM_GENERATION_MS, allowLoopback: true }
       );
     }, 'ollama');
 
@@ -531,9 +336,10 @@ export async function generateEmbedding(text: string): Promise<number[]> {
  */
 async function generateEmbeddingUncached(text: string): Promise<number[]> {
   // Priority 1: Try OpenAI if available (works in production)
-  if (isOpenAIAvailable()) {
+  const openai = await getOpenAIService();
+  if (openai.isOpenAIAvailable()) {
     try {
-      const embedding = await generateOpenAIEmbedding(text);
+      const embedding = await openai.generateOpenAIEmbedding(text);
       logger.debug('Embedding generated via OpenAI', {
         operation: 'generateEmbedding',
         provider: 'openai',
@@ -560,13 +366,13 @@ async function generateEmbeddingUncached(text: string): Promise<number[]> {
 
   try {
     const response = await executeOllamaWithProtection(async () => {
-      return axios.post<OllamaEmbeddingsResponse>(
+      return checkedAxiosPost<OllamaEmbeddingsResponse>(
         `${OLLAMA_URL}/api/embeddings`,
         {
           model: EMBEDDING_MODEL,
           prompt: text,
         },
-        { timeout: TIMEOUTS.STANDARD_MS }
+        { timeout: TIMEOUTS.STANDARD_MS, allowLoopback: true }
       );
     }, 'ollama-embedding');
 
@@ -616,9 +422,9 @@ async function generateEmbeddingUncached(text: string): Promise<number[]> {
  */
 export async function checkOllamaHealth(): Promise<{ available: boolean; models: string[] }> {
   try {
-    const response = await axios.get<OllamaTagsResponse>(
+    const response = await checkedAxiosGet<OllamaTagsResponse>(
       `${OLLAMA_URL}/api/tags`,
-      { timeout: TIMEOUTS.QUICK_MS }
+      { timeout: TIMEOUTS.QUICK_MS, allowLoopback: true }
     );
 
     const models = response.data.models?.map((m) => m.name) || [];
@@ -642,10 +448,11 @@ export async function checkOllamaHealth(): Promise<{ available: boolean; models:
  */
 export async function queryOllamaJSON<T = unknown>(prompt: string): Promise<T | null> {
   // Priority 1: Try OpenAI if available (works in production)
-  if (isOpenAIAvailable()) {
+  const openai = await getOpenAIService();
+  if (openai.isOpenAIAvailable()) {
     try {
       const systemPrompt = 'Du bist ein hilfreicher Assistent. Antworte NUR mit validem JSON, keine zusätzlichen Erklärungen.';
-      const result = await queryOpenAIJSON<T>(systemPrompt, prompt);
+      const result = await openai.queryOpenAIJSON<T>(systemPrompt, prompt);
       logger.debug('JSON query completed via OpenAI', { operation: 'queryOllamaJSON', provider: 'openai' });
       return result;
     } catch (error: unknown) {
@@ -666,7 +473,7 @@ export async function queryOllamaJSON<T = unknown>(prompt: string): Promise<T | 
 
   try {
     const response = await executeOllamaWithProtection(async () => {
-      return axios.post<OllamaGenerateResponse>(
+      return checkedAxiosPost<OllamaGenerateResponse>(
         `${OLLAMA_URL}/api/generate`,
         {
           model: MODEL,
@@ -674,7 +481,7 @@ export async function queryOllamaJSON<T = unknown>(prompt: string): Promise<T | 
           stream: false,
           options: EXTENDED_GENERATION_OPTIONS,
         },
-        { timeout: TIMEOUTS.LLM_GENERATION_MS }
+        { timeout: TIMEOUTS.LLM_GENERATION_MS, allowLoopback: true }
       );
     }, 'ollama');
 
@@ -696,7 +503,7 @@ export async function queryOllamaJSON<T = unknown>(prompt: string): Promise<T | 
     return JSON.parse(jsonStr) as T;
   } catch (error: unknown) {
     // Only log as debug if Ollama is not the primary provider
-    if (isOpenAIAvailable()) {
+    if (openai.isOpenAIAvailable()) {
       logger.debug('Ollama JSON query also failed (expected in production)', {
         operation: 'queryOllamaJSON',
       });
@@ -739,7 +546,8 @@ export async function generateText(
   } = options;
 
   // Priority 1: Try OpenAI if available (works in production)
-  if (isOpenAIAvailable()) {
+  const openaiSvc = await getOpenAIService();
+  if (openaiSvc.isOpenAIAvailable()) {
     try {
       const { generateOpenAIResponse } = await import('../services/openai');
       const result = await generateOpenAIResponse(systemPrompt, prompt, {
@@ -765,7 +573,7 @@ export async function generateText(
 
   try {
     const response = await executeOllamaWithProtection(async () => {
-      return axios.post<OllamaGenerateResponse>(
+      return checkedAxiosPost<OllamaGenerateResponse>(
         `${OLLAMA_URL}/api/generate`,
         {
           model: MODEL,
@@ -776,14 +584,14 @@ export async function generateText(
             num_predict: maxTokens,
           },
         },
-        { timeout: TIMEOUTS.LLM_GENERATION_MS }
+        { timeout: TIMEOUTS.LLM_GENERATION_MS, allowLoopback: true }
       );
     }, 'ollama');
 
     logger.debug('Text generated via Ollama', { operation: 'generateText', provider: 'ollama' });
     return response.data.response.trim();
   } catch (error: unknown) {
-    if (isOpenAIAvailable()) {
+    if (openaiSvc.isOpenAIAvailable()) {
       logger.debug('Ollama text generation also failed (expected in production)', {
         operation: 'generateText',
       });
@@ -797,8 +605,4 @@ export async function generateText(
   }
 }
 
-// ===========================================
-// Export Types
-// ===========================================
-
-export type { ValidCategory, ValidType, ValidPriority };
+// Types are re-exported from idea-types above

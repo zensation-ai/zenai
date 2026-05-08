@@ -104,21 +104,21 @@ describe('extractTemporalPatterns', () => {
   });
 
   it('returns single pattern for single activity', () => {
-    const activities = [makeActivity(9, 1, 'work', 'search')];
+    const activities = [makeActivity(9, 1, 'finance', 'search')];
     const patterns = extractTemporalPatterns(activities);
     expect(patterns).toHaveLength(1);
     expect(patterns[0].timeOfDay).toBe(9);
     expect(patterns[0].dayOfWeek).toBe(1);
-    expect(patterns[0].domain).toBe('work');
+    expect(patterns[0].domain).toBe('finance');
     expect(patterns[0].intent).toBe('search');
     expect(patterns[0].frequency).toBe(1);
   });
 
   it('groups multiple activities at same time/domain/intent', () => {
     const activities = [
-      makeActivity(9, 1, 'work', 'search'),
-      makeActivity(9, 1, 'work', 'search'),
-      makeActivity(9, 1, 'work', 'search'),
+      makeActivity(9, 1, 'finance', 'search'),
+      makeActivity(9, 1, 'finance', 'search'),
+      makeActivity(9, 1, 'finance', 'search'),
     ];
     const patterns = extractTemporalPatterns(activities);
     expect(patterns).toHaveLength(1);
@@ -127,8 +127,8 @@ describe('extractTemporalPatterns', () => {
 
   it('creates separate patterns for different times', () => {
     const activities = [
-      makeActivity(9, 1, 'work', 'search'),
-      makeActivity(14, 1, 'work', 'search'),
+      makeActivity(9, 1, 'finance', 'search'),
+      makeActivity(14, 1, 'finance', 'search'),
     ];
     const patterns = extractTemporalPatterns(activities);
     expect(patterns).toHaveLength(2);
@@ -136,8 +136,8 @@ describe('extractTemporalPatterns', () => {
 
   it('creates separate patterns for different domains', () => {
     const activities = [
-      makeActivity(9, 1, 'work', 'search'),
-      makeActivity(9, 1, 'personal', 'search'),
+      makeActivity(9, 1, 'finance', 'search'),
+      makeActivity(9, 1, 'operations', 'search'),
     ];
     const patterns = extractTemporalPatterns(activities);
     expect(patterns).toHaveLength(2);
@@ -145,8 +145,8 @@ describe('extractTemporalPatterns', () => {
 
   it('creates separate patterns for different intents', () => {
     const activities = [
-      makeActivity(9, 1, 'work', 'search'),
-      makeActivity(9, 1, 'work', 'create'),
+      makeActivity(9, 1, 'finance', 'search'),
+      makeActivity(9, 1, 'finance', 'create'),
     ];
     const patterns = extractTemporalPatterns(activities);
     expect(patterns).toHaveLength(2);
@@ -154,11 +154,11 @@ describe('extractTemporalPatterns', () => {
 
   it('sorts by frequency descending', () => {
     const activities = [
-      makeActivity(14, 2, 'personal', 'browse'),
-      makeActivity(9, 1, 'work', 'search'),
-      makeActivity(9, 1, 'work', 'search'),
-      makeActivity(9, 1, 'work', 'search'),
-      makeActivity(14, 2, 'personal', 'browse'),
+      makeActivity(14, 2, 'operations', 'browse'),
+      makeActivity(9, 1, 'finance', 'search'),
+      makeActivity(9, 1, 'finance', 'search'),
+      makeActivity(9, 1, 'finance', 'search'),
+      makeActivity(14, 2, 'operations', 'browse'),
     ];
     const patterns = extractTemporalPatterns(activities);
     expect(patterns[0].frequency).toBe(3);
@@ -167,8 +167,8 @@ describe('extractTemporalPatterns', () => {
 
   it('creates separate patterns for different days of week', () => {
     const activities = [
-      makeActivity(9, 1, 'work', 'search'),
-      makeActivity(9, 3, 'work', 'search'),
+      makeActivity(9, 1, 'finance', 'search'),
+      makeActivity(9, 3, 'finance', 'search'),
     ];
     const patterns = extractTemporalPatterns(activities);
     expect(patterns).toHaveLength(2);
@@ -176,10 +176,10 @@ describe('extractTemporalPatterns', () => {
 
   it('correctly counts frequency for mixed activities', () => {
     const activities = [
-      makeActivity(9, 1, 'work', 'search'),
-      makeActivity(9, 1, 'work', 'search'),
-      makeActivity(9, 1, 'work', 'create'),
-      makeActivity(14, 3, 'personal', 'browse'),
+      makeActivity(9, 1, 'finance', 'search'),
+      makeActivity(9, 1, 'finance', 'search'),
+      makeActivity(9, 1, 'finance', 'create'),
+      makeActivity(14, 3, 'operations', 'browse'),
     ];
     const patterns = extractTemporalPatterns(activities);
     expect(patterns).toHaveLength(3);
@@ -198,14 +198,14 @@ describe('extractSequentialPatterns', () => {
   });
 
   it('returns empty array for single activity (no pair)', () => {
-    const activities = [makeActivity(9, 1, 'work', 'search')];
+    const activities = [makeActivity(9, 1, 'finance', 'search')];
     expect(extractSequentialPatterns(activities)).toEqual([]);
   });
 
   it('returns one pair for two consecutive activities', () => {
     const activities = [
-      makeActivity(9, 1, 'work', 'search'),
-      makeActivity(10, 1, 'work', 'create'),
+      makeActivity(9, 1, 'finance', 'search'),
+      makeActivity(10, 1, 'finance', 'create'),
     ];
     const patterns = extractSequentialPatterns(activities);
     expect(patterns).toHaveLength(1);
@@ -217,9 +217,9 @@ describe('extractSequentialPatterns', () => {
 
   it('extracts chain of intents correctly', () => {
     const activities = [
-      makeActivity(9, 1, 'work', 'search'),
-      makeActivity(10, 1, 'work', 'read'),
-      makeActivity(11, 1, 'work', 'create'),
+      makeActivity(9, 1, 'finance', 'search'),
+      makeActivity(10, 1, 'finance', 'read'),
+      makeActivity(11, 1, 'finance', 'create'),
     ];
     const patterns = extractSequentialPatterns(activities);
     expect(patterns).toHaveLength(2);
@@ -229,10 +229,10 @@ describe('extractSequentialPatterns', () => {
 
   it('computes correct probability for repeated patterns', () => {
     const activities = [
-      makeActivity(9, 1, 'work', 'search'),
-      makeActivity(10, 1, 'work', 'read'),
-      makeActivity(11, 1, 'work', 'search'),
-      makeActivity(12, 1, 'work', 'read'),
+      makeActivity(9, 1, 'finance', 'search'),
+      makeActivity(10, 1, 'finance', 'read'),
+      makeActivity(11, 1, 'finance', 'search'),
+      makeActivity(12, 1, 'finance', 'read'),
     ];
     const patterns = extractSequentialPatterns(activities);
     const searchToRead = patterns.find((p) => p.fromIntent === 'search' && p.toIntent === 'read');
@@ -244,10 +244,10 @@ describe('extractSequentialPatterns', () => {
 
   it('computes probability correctly when from-intent has multiple targets', () => {
     const activities = [
-      makeActivity(9, 1, 'work', 'search'),
-      makeActivity(10, 1, 'work', 'read'),
-      makeActivity(11, 1, 'work', 'search'),
-      makeActivity(12, 1, 'work', 'create'),
+      makeActivity(9, 1, 'finance', 'search'),
+      makeActivity(10, 1, 'finance', 'read'),
+      makeActivity(11, 1, 'finance', 'search'),
+      makeActivity(12, 1, 'finance', 'create'),
     ];
     const patterns = extractSequentialPatterns(activities);
     const searchToRead = patterns.find((p) => p.fromIntent === 'search' && p.toIntent === 'read');
@@ -261,12 +261,12 @@ describe('extractSequentialPatterns', () => {
 
   it('sorts by count descending', () => {
     const activities = [
-      makeActivity(9, 1, 'work', 'search'),
-      makeActivity(10, 1, 'work', 'read'),
-      makeActivity(11, 1, 'work', 'search'),
-      makeActivity(12, 1, 'work', 'read'),
-      makeActivity(13, 1, 'work', 'create'),
-      makeActivity(14, 1, 'work', 'done'),
+      makeActivity(9, 1, 'finance', 'search'),
+      makeActivity(10, 1, 'finance', 'read'),
+      makeActivity(11, 1, 'finance', 'search'),
+      makeActivity(12, 1, 'finance', 'read'),
+      makeActivity(13, 1, 'finance', 'create'),
+      makeActivity(14, 1, 'finance', 'done'),
     ];
     const patterns = extractSequentialPatterns(activities);
     for (let i = 0; i < patterns.length - 1; i++) {
@@ -276,9 +276,9 @@ describe('extractSequentialPatterns', () => {
 
   it('handles same intent repeated consecutively', () => {
     const activities = [
-      makeActivity(9, 1, 'work', 'search'),
-      makeActivity(10, 1, 'work', 'search'),
-      makeActivity(11, 1, 'work', 'search'),
+      makeActivity(9, 1, 'finance', 'search'),
+      makeActivity(10, 1, 'finance', 'search'),
+      makeActivity(11, 1, 'finance', 'search'),
     ];
     const patterns = extractSequentialPatterns(activities);
     expect(patterns).toHaveLength(1);
@@ -295,9 +295,9 @@ describe('extractSequentialPatterns', () => {
 
 describe('findDominantPattern', () => {
   const patterns: TemporalPattern[] = [
-    { timeOfDay: 9, dayOfWeek: 1, domain: 'work', intent: 'search', frequency: 10 },
-    { timeOfDay: 9, dayOfWeek: 1, domain: 'work', intent: 'create', frequency: 5 },
-    { timeOfDay: 14, dayOfWeek: 3, domain: 'personal', intent: 'browse', frequency: 8 },
+    { timeOfDay: 9, dayOfWeek: 1, domain: 'finance', intent: 'search', frequency: 10 },
+    { timeOfDay: 9, dayOfWeek: 1, domain: 'finance', intent: 'create', frequency: 5 },
+    { timeOfDay: 14, dayOfWeek: 3, domain: 'operations', intent: 'browse', frequency: 8 },
     { timeOfDay: 20, dayOfWeek: 5, domain: 'learning', intent: 'study', frequency: 12 },
   ];
 
@@ -321,7 +321,7 @@ describe('findDominantPattern', () => {
 
   it('returns null when no pattern is close enough', () => {
     const sparsePatterns: TemporalPattern[] = [
-      { timeOfDay: 3, dayOfWeek: 6, domain: 'work', intent: 'search', frequency: 5 },
+      { timeOfDay: 3, dayOfWeek: 6, domain: 'finance', intent: 'search', frequency: 5 },
     ];
     const result = findDominantPattern(sparsePatterns, 15, 2);
     expect(result).toBeNull();
@@ -329,8 +329,8 @@ describe('findDominantPattern', () => {
 
   it('prefers higher frequency among exact matches', () => {
     const multiMatch: TemporalPattern[] = [
-      { timeOfDay: 9, dayOfWeek: 1, domain: 'work', intent: 'search', frequency: 3 },
-      { timeOfDay: 9, dayOfWeek: 1, domain: 'work', intent: 'create', frequency: 7 },
+      { timeOfDay: 9, dayOfWeek: 1, domain: 'finance', intent: 'search', frequency: 3 },
+      { timeOfDay: 9, dayOfWeek: 1, domain: 'finance', intent: 'create', frequency: 7 },
     ];
     const result = findDominantPattern(multiMatch, 9, 1);
     expect(result!.intent).toBe('create');
@@ -354,17 +354,17 @@ describe('recordActivity', () => {
 
     const activity: ActivityRecord = {
       timestamp: new Date(2026, 2, 22, 9, 0, 0),
-      domain: 'work',
+      domain: 'finance',
       intent: 'search',
       entities: ['typescript'],
     };
 
-    await recordActivity('personal', activity);
+    await recordActivity('operations', activity);
     expect(mockQueryContext).toHaveBeenCalledTimes(1);
     expect(mockQueryContext).toHaveBeenCalledWith(
-      'personal',
+      'operations',
       expect.stringContaining('INSERT INTO activity_patterns'),
-      expect.arrayContaining(['work', 'search']),
+      expect.arrayContaining(['finance', 'search']),
     );
   });
 
@@ -373,11 +373,11 @@ describe('recordActivity', () => {
 
     const activity: ActivityRecord = {
       timestamp: new Date(),
-      domain: 'work',
+      domain: 'finance',
       intent: 'search',
     };
 
-    await expect(recordActivity('personal', activity)).resolves.toBeUndefined();
+    await expect(recordActivity('operations', activity)).resolves.toBeUndefined();
   });
 
   it('serializes entities as JSON', async () => {
@@ -385,12 +385,12 @@ describe('recordActivity', () => {
 
     const activity: ActivityRecord = {
       timestamp: new Date(),
-      domain: 'work',
+      domain: 'finance',
       intent: 'search',
       entities: ['typescript', 'react'],
     };
 
-    await recordActivity('personal', activity);
+    await recordActivity('operations', activity);
     const callArgs = mockQueryContext.mock.calls[0][2] as any[];
     expect(callArgs[3]).toBe(JSON.stringify(['typescript', 'react']));
   });
@@ -400,11 +400,11 @@ describe('recordActivity', () => {
 
     const activity: ActivityRecord = {
       timestamp: new Date(),
-      domain: 'work',
+      domain: 'finance',
       intent: 'search',
     };
 
-    await recordActivity('personal', activity);
+    await recordActivity('operations', activity);
     const callArgs = mockQueryContext.mock.calls[0][2] as any[];
     expect(callArgs[3]).toBe('[]');
   });
@@ -418,13 +418,13 @@ describe('loadPatterns', () => {
   it('loads activities from DB and returns temporal patterns', async () => {
     mockQueryContext.mockResolvedValueOnce({
       rows: [
-        { timestamp: '2026-03-22T09:00:00Z', domain: 'work', intent: 'search', entities: '[]' },
-        { timestamp: '2026-03-22T09:30:00Z', domain: 'work', intent: 'search', entities: '[]' },
-        { timestamp: '2026-03-22T14:00:00Z', domain: 'personal', intent: 'browse', entities: '[]' },
+        { timestamp: '2026-03-22T09:00:00Z', domain: 'finance', intent: 'search', entities: '[]' },
+        { timestamp: '2026-03-22T09:30:00Z', domain: 'finance', intent: 'search', entities: '[]' },
+        { timestamp: '2026-03-22T14:00:00Z', domain: 'operations', intent: 'browse', entities: '[]' },
       ],
     } as any);
 
-    const patterns = await loadPatterns('personal');
+    const patterns = await loadPatterns('operations');
     expect(Array.isArray(patterns)).toBe(true);
     expect(patterns.length).toBeGreaterThan(0);
   });
@@ -432,23 +432,23 @@ describe('loadPatterns', () => {
   it('returns empty array when no records exist', async () => {
     mockQueryContext.mockResolvedValueOnce({ rows: [] } as any);
 
-    const patterns = await loadPatterns('personal');
+    const patterns = await loadPatterns('operations');
     expect(patterns).toEqual([]);
   });
 
   it('returns empty array on DB error', async () => {
     mockQueryContext.mockRejectedValueOnce(new Error('DB connection failed'));
 
-    const patterns = await loadPatterns('personal');
+    const patterns = await loadPatterns('operations');
     expect(patterns).toEqual([]);
   });
 
   it('passes userId when provided', async () => {
     mockQueryContext.mockResolvedValueOnce({ rows: [] } as any);
 
-    await loadPatterns('personal', 'user-123');
+    await loadPatterns('operations', 'user-123');
     expect(mockQueryContext).toHaveBeenCalledWith(
-      'personal',
+      'operations',
       expect.stringContaining('user_id'),
       ['user-123'],
     );
@@ -457,9 +457,9 @@ describe('loadPatterns', () => {
   it('does not include userId param when not provided', async () => {
     mockQueryContext.mockResolvedValueOnce({ rows: [] } as any);
 
-    await loadPatterns('personal');
+    await loadPatterns('operations');
     expect(mockQueryContext).toHaveBeenCalledWith(
-      'personal',
+      'operations',
       expect.any(String),
       [],
     );

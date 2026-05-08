@@ -82,7 +82,7 @@ export const ExportPanel: React.FC<ExportPanelProps> = ({ overview, dateRange, c
       <h4 className="av2-export-title">Daten exportieren</h4>
       <p className="av2-export-desc">
         Exportiere die aktuellen Analytics-Daten als CSV- oder JSON-Datei.
-        Der Export umfasst alle Metriken des ausgewaehlten Zeitraums.
+        Der Export umfasst alle Metriken des ausgewählten Zeitraums.
       </p>
       <div className="av2-export-info">
         <span className="av2-export-range">

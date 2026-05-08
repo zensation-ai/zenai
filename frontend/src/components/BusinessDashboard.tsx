@@ -13,10 +13,9 @@ import React, { Suspense, lazy, memo } from 'react';
 import { AIContext } from './ContextSwitcher';
 import { HubPage, type TabDef } from './HubPage';
 import { SkeletonLoader } from './SkeletonLoader';
+import { ErrorBoundary } from './ErrorBoundary';
 import { useTabNavigation } from '../hooks/useTabNavigation';
 import type { BusinessTab } from '../types/business';
-import './BusinessDashboard.css';
-
 const BusinessOverview = lazy(() => import('./business/BusinessOverview').then(m => ({ default: m.BusinessOverview })));
 const RevenueDashboard = lazy(() => import('./business/RevenueDashboard').then(m => ({ default: m.RevenueDashboard })));
 const TrafficDashboard = lazy(() => import('./business/TrafficDashboard').then(m => ({ default: m.TrafficDashboard })));
@@ -35,14 +34,14 @@ interface BusinessDashboardProps {
 
 const TABS: readonly TabDef<BusinessTab>[] = [
   { id: 'overview', label: 'Übersicht', icon: '📊', description: 'KPI-Dashboard' },
-  { id: 'revenue', label: 'Revenue', icon: '💰', description: 'Umsatz und Subscriptions' },
-  { id: 'traffic', label: 'Traffic', icon: '🌐', description: 'Besucher und Analytics' },
+  { id: 'revenue', label: 'Umsatz', icon: '💰', description: 'Umsatz und Subscriptions' },
+  { id: 'traffic', label: 'Besucher', icon: '🌐', description: 'Besucher und Analytics' },
   { id: 'seo', label: 'SEO', icon: '🔍', description: 'Suchmaschinen-Performance' },
-  { id: 'health', label: 'Health', icon: '🏥', description: 'Uptime und Performance' },
-  { id: 'insights', label: 'Insights', icon: '💡', description: 'AI-generierte Erkenntnisse' },
-  { id: 'reports', label: 'Reports', icon: '📋', description: 'AI-generierte Berichte' },
-  { id: 'connectors', label: 'Connectors', icon: '🔗', description: 'Datenquellen verwalten' },
-  { id: 'intelligence', label: 'Intelligence', icon: '🧠', description: 'Cross-Context Business Narrative' },
+  { id: 'health', label: 'Zustand', icon: '🏥', description: 'Uptime und Performance' },
+  { id: 'insights', label: 'Erkenntnisse', icon: '💡', description: 'AI-generierte Erkenntnisse' },
+  { id: 'reports', label: 'Berichte', icon: '📋', description: 'AI-generierte Berichte' },
+  { id: 'connectors', label: 'Verbindungen', icon: '🔗', description: 'Datenquellen verwalten' },
+  { id: 'intelligence', label: 'Intelligenz', icon: '🧠', description: 'Cross-Context Business Narrative' },
 ];
 
 const TabLoader = () => (
@@ -50,6 +49,22 @@ const TabLoader = () => (
     <SkeletonLoader type="card" count={3} />
   </div>
 );
+
+const TabErrorFallback = () => (
+  <div className="hub-tab-loader text-text-secondary text-sm p-8 text-center">
+    Inhalt konnte nicht geladen werden.
+  </div>
+);
+
+function LazyTab({ children }: { children: React.ReactNode }) {
+  return (
+    <ErrorBoundary fallback={<TabErrorFallback />}>
+      <Suspense fallback={<TabLoader />}>
+        {children}
+      </Suspense>
+    </ErrorBoundary>
+  );
+}
 
 const BusinessDashboardComponent: React.FC<BusinessDashboardProps> = ({
   context,
@@ -60,65 +75,29 @@ const BusinessDashboardComponent: React.FC<BusinessDashboardProps> = ({
     initialTab,
     validTabs: TABS.map(t => t.id),
     defaultTab: 'overview',
-    basePath: '/business',
+    basePath: '/cockpit',
   });
 
   const renderTabContent = () => {
     switch (activeTab) {
       case 'overview':
-        return (
-          <Suspense fallback={<TabLoader />}>
-            <BusinessOverview onNavigateTab={handleTabChange} />
-          </Suspense>
-        );
+        return <LazyTab><BusinessOverview onNavigateTab={handleTabChange} /></LazyTab>;
       case 'revenue':
-        return (
-          <Suspense fallback={<TabLoader />}>
-            <RevenueDashboard />
-          </Suspense>
-        );
+        return <LazyTab><RevenueDashboard /></LazyTab>;
       case 'traffic':
-        return (
-          <Suspense fallback={<TabLoader />}>
-            <TrafficDashboard />
-          </Suspense>
-        );
+        return <LazyTab><TrafficDashboard /></LazyTab>;
       case 'seo':
-        return (
-          <Suspense fallback={<TabLoader />}>
-            <SeoDashboard />
-          </Suspense>
-        );
+        return <LazyTab><SeoDashboard /></LazyTab>;
       case 'health':
-        return (
-          <Suspense fallback={<TabLoader />}>
-            <HealthDashboard />
-          </Suspense>
-        );
+        return <LazyTab><HealthDashboard /></LazyTab>;
       case 'insights':
-        return (
-          <Suspense fallback={<TabLoader />}>
-            <BusinessInsightsTab />
-          </Suspense>
-        );
+        return <LazyTab><BusinessInsightsTab /></LazyTab>;
       case 'reports':
-        return (
-          <Suspense fallback={<TabLoader />}>
-            <BusinessReports />
-          </Suspense>
-        );
+        return <LazyTab><BusinessReports /></LazyTab>;
       case 'connectors':
-        return (
-          <Suspense fallback={<TabLoader />}>
-            <ConnectorSettings />
-          </Suspense>
-        );
+        return <LazyTab><ConnectorSettings /></LazyTab>;
       case 'intelligence':
-        return (
-          <Suspense fallback={<TabLoader />}>
-            <BusinessNarrativeTab context={context} />
-          </Suspense>
-        );
+        return <LazyTab><BusinessNarrativeTab context={context} /></LazyTab>;
       default:
         return null;
     }
@@ -126,7 +105,7 @@ const BusinessDashboardComponent: React.FC<BusinessDashboardProps> = ({
 
   return (
     <HubPage
-      title="Business Manager"
+      title="Geschäftscockpit"
       icon="💼"
       subtitle="AI-gesteuerte Geschäftsanalysen"
       tabs={TABS}
@@ -134,7 +113,7 @@ const BusinessDashboardComponent: React.FC<BusinessDashboardProps> = ({
       onTabChange={handleTabChange}
       onBack={onBack}
       context={context}
-      ariaLabel="Business Navigation"
+      ariaLabel="Geschäftscockpit Navigation"
     >
       {renderTabContent()}
     </HubPage>

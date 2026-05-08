@@ -56,7 +56,7 @@ const DEFAULTS = {
  * Retrieve chunks by vector similarity search.
  *
  * @param query - The search query
- * @param context - The AI context (personal, work, learning, creative)
+ * @param context - The AI context (operations, finance, people, strategy)
  * @param options - Retrieval options
  * @returns Ranked chunk results
  */

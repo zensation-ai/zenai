@@ -45,11 +45,11 @@ export interface HistoryEntry {
 }
 
 export const EXECUTION_STATUS_LABELS: Record<string, { label: string; color: string }> = {
-  running: { label: 'Laeuft', color: '#3b82f6' },
+  running: { label: 'Läuft', color: '#3b82f6' },
   completed: { label: 'Abgeschlossen', color: '#22c55e' },
   failed: { label: 'Fehlgeschlagen', color: '#ef4444' },
   paused: { label: 'Pausiert', color: '#f59e0b' },
-  awaiting_approval: { label: 'Genehmigung noetig', color: '#f97316' },
+  awaiting_approval: { label: 'Genehmigung nötig', color: 'var(--accent-orange)' },
   cancelled: { label: 'Abgebrochen', color: '#9ca3af' },
 };
 
@@ -99,19 +99,97 @@ export const STRATEGIES: { id: Strategy; label: string; icon: string; desc: stri
 
 export const ROLE_CONFIG: Record<string, { icon: string; label: string; color: string }> = {
   researcher: { icon: '🔍', label: 'Researcher', color: '#3b82f6' },
-  writer: { icon: '✍️', label: 'Writer', color: '#8b5cf6' },
+  writer: { icon: '✍️', label: 'Writer', color: '#1a6b7a' },
   reviewer: { icon: '📋', label: 'Reviewer', color: '#22c55e' },
   coder: { icon: '💻', label: 'Coder', color: '#f59e0b' },
 };
 
-export type AgentTab = 'teams' | 'identities' | 'workflows' | 'a2a';
+export type AgentTab = 'my-agents' | 'create' | 'marketplace' | 'analytics' | 'workflows' | 'a2a';
 
 export const AGENT_TABS: { id: AgentTab; label: string; icon: string }[] = [
-  { id: 'teams', label: 'Teams', icon: '🚀' },
-  { id: 'identities', label: 'Agenten', icon: '🤖' },
+  { id: 'my-agents', label: 'Meine Agents', icon: '🤖' },
+  { id: 'create', label: 'Erstellen', icon: '✨' },
+  { id: 'marketplace', label: 'Marketplace', icon: '🏪' },
+  { id: 'analytics', label: 'Analytics', icon: '📊' },
   { id: 'workflows', label: 'Workflows', icon: '🔄' },
   { id: 'a2a', label: 'A2A', icon: '🌐' },
 ];
+
+// Blueprint types
+export interface AgentBlueprint {
+  id: string;
+  name: string;
+  description: string | null;
+  icon: string;
+  category: string;
+  tags: string[];
+  type: 'autonomous' | 'team_task' | 'hybrid';
+  triggers: Array<{ type: string; config: Record<string, unknown> }>;
+  maxActionsPerDay: number;
+  tokenBudgetDaily: number;
+  approvalRequired: boolean;
+  tools: string[];
+  instructions: string;
+  source: 'built_in' | 'user_created' | 'community' | 'nl_generated';
+  rating: number | null;
+  usageCount: number;
+  defaultContext?: string;
+}
+
+export interface GeneratedBlueprint {
+  blueprint: Partial<AgentBlueprint>;
+  confidence: number;
+  reasoning: string;
+  warnings: string[];
+}
+
+export interface RatingHistogram {
+  total: number;
+  average: number | null;
+  distribution: Record<1 | 2 | 3 | 4 | 5, number>;
+}
+
+export interface BlueprintDetail extends AgentBlueprint {
+  instructions: string;
+  maxActionsPerDay: number;
+  tokenBudgetDaily: number;
+  approvalRequired: boolean;
+  featured: boolean;
+  moderationStatus?: 'pending' | 'approved' | 'rejected';
+  moderationReason?: string | null;
+  histogram: RatingHistogram;
+  recentReviews: Array<{
+    id: string;
+    rating: number;
+    review: string | null;
+    createdAt: string;
+  }>;
+  ratingCount?: number;
+}
+
+export interface PublishCandidate {
+  blueprintId: string;
+  name: string;
+  description: string | null;
+  category: string;
+  tags: string[];
+  icon: string;
+  tools: string[];
+  approvalRequired: boolean;
+  maxActionsPerDay: number;
+  tokenBudgetDaily: number;
+}
+
+export interface AgentSystemStats {
+  totalAgents: number;
+  activeAgents: number;
+  totalExecutionsToday: number;
+  totalTokensToday: number;
+  overallSuccessRate: number;
+  topPerformingAgent: { id: string; name: string; successRate: number } | null;
+  mostUsedAgent: { id: string; name: string; executionCount: number } | null;
+  tokenBudgetUtilization: number;
+}
 
 export interface AgentTeamsPageProps {
   context: AIContext;

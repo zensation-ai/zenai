@@ -1,0 +1,99 @@
+{
+  "language": "de",
+  "generatedBy": "scripts/moderation/build-ldnoobw.ts",
+  "count": 23,
+  "entries": [
+    {
+      "pattern": "amoklauf (planen|anleitung)",
+      "severity": "block"
+    },
+    {
+      "pattern": "anleitung (bombe|sprengstoff)",
+      "severity": "block"
+    },
+    {
+      "pattern": "arschloch",
+      "severity": "soft"
+    },
+    {
+      "pattern": "ausrotten (juden|muslime|ausländer)",
+      "severity": "block"
+    },
+    {
+      "pattern": "begehe selbstmord",
+      "severity": "block"
+    },
+    {
+      "pattern": "biowaffe synthese",
+      "severity": "block"
+    },
+    {
+      "pattern": "bring dich um",
+      "severity": "block"
+    },
+    {
+      "pattern": "du hurensohn",
+      "severity": "soft"
+    },
+    {
+      "pattern": "erhänge dich",
+      "severity": "block"
+    },
+    {
+      "pattern": "halt die fresse",
+      "severity": "soft"
+    },
+    {
+      "pattern": "kinderpornografie",
+      "severity": "block"
+    },
+    {
+      "pattern": "kinderpornos",
+      "severity": "block"
+    },
+    {
+      "pattern": "kinderschänder anleitung",
+      "severity": "block"
+    },
+    {
+      "pattern": "lyncht die",
+      "severity": "block"
+    },
+    {
+      "pattern": "missbrauchsbilder",
+      "severity": "block"
+    },
+    {
+      "pattern": "ritze dich",
+      "severity": "block"
+    },
+    {
+      "pattern": "rohrbombe bauen",
+      "severity": "block"
+    },
+    {
+      "pattern": "scheisskerl",
+      "severity": "soft"
+    },
+    {
+      "pattern": "sprengstoff (herstellen|selber machen)",
+      "severity": "block"
+    },
+    {
+      "pattern": "töte dich selbst",
+      "severity": "block"
+    },
+    {
+      "pattern": "vergase die (juden|schwarzen|ausländer)",
+      "severity": "block"
+    },
+    {
+      "pattern": "verpiss dich",
+      "severity": "soft"
+    },
+    {
+      "pattern": "waffe selbst bauen",
+      "severity": "block"
+    }
+  ]
+}

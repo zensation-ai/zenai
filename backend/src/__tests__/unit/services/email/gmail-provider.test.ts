@@ -121,7 +121,7 @@ describe('GmailProvider', () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [{ id: 'db-1' }] });
       mockQueryContext.mockResolvedValueOnce({ rows: [] });
 
-      const result = await provider.syncFull('acc-1', 'personal');
+      const result = await provider.syncFull('acc-1', 'operations');
 
       expect(result.newMessages).toBe(1);
       expect(result.errors).toHaveLength(0);
@@ -135,7 +135,7 @@ describe('GmailProvider', () => {
       // update last_sync_at
       mockQueryContext.mockResolvedValueOnce({ rows: [] });
 
-      const result = await provider.syncFull('acc-1', 'personal');
+      const result = await provider.syncFull('acc-1', 'operations');
       expect(result.newMessages).toBe(0);
     });
   });
@@ -181,7 +181,7 @@ describe('GmailProvider', () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [{ id: 'db-2' }] });
       mockQueryContext.mockResolvedValueOnce({ rows: [] });
 
-      const result = await provider.syncIncremental('acc-1', 'personal');
+      const result = await provider.syncIncremental('acc-1', 'operations');
       expect(result.newMessages).toBe(1);
       expect(mockHistoryList).toHaveBeenCalledWith(
         expect.objectContaining({ userId: 'me', startHistoryId: '10000' })
@@ -208,7 +208,7 @@ describe('GmailProvider', () => {
       // update last_sync_at
       mockQueryContext.mockResolvedValueOnce({ rows: [] });
 
-      const result = await provider.syncIncremental('acc-1', 'personal');
+      const result = await provider.syncIncremental('acc-1', 'operations');
       expect(result.errors).toHaveLength(0);
       expect(mockMessagesList).toHaveBeenCalled();
     });
@@ -219,7 +219,7 @@ describe('GmailProvider', () => {
       // We need to mock the pool for the cross-context account lookup
       const { pool } = require('../../../../utils/database');
       (pool.query as jest.Mock).mockResolvedValueOnce({
-        rows: [{ ctx: 'personal' }],
+        rows: [{ ctx: 'operations' }],
       });
       // Account lookup for getGmailClient
       mockQueryContext.mockReset();
@@ -248,7 +248,7 @@ describe('GmailProvider', () => {
     it('should call messages.modify with label changes', async () => {
       const { pool } = require('../../../../utils/database');
       (pool.query as jest.Mock).mockResolvedValueOnce({
-        rows: [{ ctx: 'personal' }],
+        rows: [{ ctx: 'operations' }],
       });
       mockQueryContext.mockReset();
       mockQueryContext.mockResolvedValueOnce({ rows: [mockAccount] });

@@ -24,7 +24,7 @@ jest.mock('../../../utils/logger', () => ({
 
 jest.mock('../../../utils/database-context', () => ({
   queryContext: jest.fn(),
-  isValidContext: jest.fn((ctx: string) => ['personal', 'work', 'learning', 'creative'].includes(ctx)),
+  isValidContext: jest.fn((ctx: string) => ['operations', 'finance', 'people', 'strategy'].includes(ctx)),
   isValidUUID: jest.fn((id: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id)),
   AIContext: {},
   getPool: jest.fn(() => ({
@@ -102,7 +102,7 @@ describe('Incubator Routes', () => {
 
       const res = await request(app)
         .post('/api/incubator/thought')
-        .send({ text: 'test thought', context: 'personal' });
+        .send({ text: 'test thought', context: 'operations' });
 
       expect(res.status).toBe(201);
       expect(res.body.success).toBe(true);
@@ -112,7 +112,7 @@ describe('Incubator Routes', () => {
     it('should reject empty text', async () => {
       const res = await request(app)
         .post('/api/incubator/thought')
-        .send({ text: '', context: 'personal' });
+        .send({ text: '', context: 'operations' });
 
       expect(res.status).toBe(400);
     });
@@ -120,7 +120,7 @@ describe('Incubator Routes', () => {
     it('should reject missing text', async () => {
       const res = await request(app)
         .post('/api/incubator/thought')
-        .send({ context: 'personal' });
+        .send({ context: 'operations' });
 
       expect(res.status).toBe(400);
     });
@@ -131,7 +131,7 @@ describe('Incubator Routes', () => {
       mockGetLooseThoughts.mockResolvedValue([{ id: '1' }, { id: '2' }]);
 
       const res = await request(app)
-        .get('/api/incubator/thoughts?context=personal');
+        .get('/api/incubator/thoughts?context=operations');
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
@@ -145,7 +145,7 @@ describe('Incubator Routes', () => {
       mockGetAllClusters.mockResolvedValue([{ id: 'c1', status: 'ready' }]);
 
       const res = await request(app)
-        .get('/api/incubator/clusters?context=personal');
+        .get('/api/incubator/clusters?context=operations');
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
@@ -158,7 +158,7 @@ describe('Incubator Routes', () => {
       mockGetReadyClusters.mockResolvedValue([{ id: 'c1', status: 'ready' }]);
 
       const res = await request(app)
-        .get('/api/incubator/clusters/ready?context=personal');
+        .get('/api/incubator/clusters/ready?context=operations');
 
       expect(res.status).toBe(200);
       expect(res.body.hasNew).toBe(true);
@@ -171,7 +171,7 @@ describe('Incubator Routes', () => {
 
       const res = await request(app)
         .post('/api/incubator/clusters/11111111-1111-4111-a111-111111111111/dismiss')
-        .send({ context: 'personal' });
+        .send({ context: 'operations' });
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
@@ -180,7 +180,7 @@ describe('Incubator Routes', () => {
     it('should reject invalid cluster UUID', async () => {
       const res = await request(app)
         .post('/api/incubator/clusters/invalid-id/dismiss')
-        .send({ context: 'personal' });
+        .send({ context: 'operations' });
 
       expect(res.status).toBe(400);
     });
@@ -191,7 +191,7 @@ describe('Incubator Routes', () => {
       mockGetIncubatorStats.mockResolvedValue({ totalThoughts: 10, totalClusters: 3 });
 
       const res = await request(app)
-        .get('/api/incubator/stats?context=personal');
+        .get('/api/incubator/stats?context=operations');
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
@@ -205,7 +205,7 @@ describe('Incubator Routes', () => {
 
       const res = await request(app)
         .post('/api/incubator/analyze')
-        .send({ context: 'personal' });
+        .send({ context: 'operations' });
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);

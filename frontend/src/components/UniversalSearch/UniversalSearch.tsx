@@ -15,8 +15,6 @@ import { createPortal } from 'react-dom';
 import { SearchResultCard } from './SearchResultCard';
 import type { SearchResultItem, SearchEntityType } from './SearchResultCard';
 import { useUniversalSearch } from '../../hooks/useUniversalSearch';
-import './UniversalSearch.css';
-
 // ===========================================
 // Types
 // ===========================================
@@ -238,7 +236,7 @@ export const UniversalSearch = memo(function UniversalSearch({
                 <div className="us-recent-header">
                   <span>Letzte Suchen</span>
                   <button className="us-recent-clear" onClick={clearHistory}>
-                    Verlauf loeschen
+                    Verlauf löschen
                   </button>
                 </div>
                 <div className="us-recent-chips">
@@ -258,7 +256,7 @@ export const UniversalSearch = memo(function UniversalSearch({
             {/* Empty State - No results */}
             {query && !loading && results.length === 0 && (
               <div className="us-empty">
-                Keine Ergebnisse fuer &ldquo;{query}&rdquo;
+                Keine Ergebnisse für &ldquo;{query}&rdquo;
               </div>
             )}
 

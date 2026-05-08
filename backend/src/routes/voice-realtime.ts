@@ -9,7 +9,7 @@
 
 import { Router, Request, Response } from 'express';
 import { z } from 'zod';
-import { apiKeyAuth } from '../middleware/auth';
+import { apiKeyAuth, requireScope } from '../middleware/auth';
 import { asyncHandler, ValidationError } from '../middleware/errorHandler';
 import { isValidContext } from '../utils/database-context';
 import { voicePipeline } from '../services/voice/voice-pipeline';
@@ -18,6 +18,9 @@ import { sttService } from '../services/voice/stt-service';
 import { queryContext } from '../utils/database-context';
 import { logger } from '../utils/logger';
 import { getUserId } from '../utils/user-context';
+import { requirePlan } from '../middleware/plan-gate';
+import { getAllVoiceStats } from '../services/voice/voice-metrics';
+import { sttCircuitBreaker, ttsCircuitBreaker } from '../services/voice/provider-registry';
 
 export const voiceRealtimeRouter = Router();
 
@@ -54,9 +57,9 @@ const VoiceSettingsSchema = z.object({
 // Context Validation Helper
 // ============================================================
 
-function validateContext(context: string): asserts context is 'personal' | 'work' | 'learning' | 'creative' | 'demo' {
+function validateContext(context: string): asserts context is 'operations' | 'finance' | 'people' | 'strategy' | 'demo' {
   if (!isValidContext(context)) {
-    throw new ValidationError(`Invalid context: ${context}. Must be personal, work, learning, or creative.`);
+    throw new ValidationError(`Invalid context: ${context}. Must be operations, finance, people, or strategy.`);
   }
 }
 
@@ -71,6 +74,7 @@ function validateContext(context: string): asserts context is 'personal' | 'work
 voiceRealtimeRouter.post(
   '/:context/voice/session/start',
   apiKeyAuth,
+  requirePlan('pro'),
   asyncHandler(async (req: Request, res: Response) => {
     const _userId = getUserId(req);
     const { context } = req.params;
@@ -367,4 +371,88 @@ voiceRealtimeRouter.get(
       },
     });
   })
+);
+
+// ============================================================
+// Sprint 1.13 — Voice Admin API
+// ============================================================
+
+/**
+ * GET /api/voice/admin/status
+ *
+ * System-wide voice pipeline health snapshot for the admin dashboard:
+ *   - provider availability (STT + TTS)
+ *   - circuit breaker state (per provider)
+ *   - latency stats (p50/p95/max/mean) per phase, optionally windowed
+ */
+voiceRealtimeRouter.get(
+  '/voice/admin/status',
+  apiKeyAuth,
+  requireScope('read'),
+  asyncHandler(async (req: Request, res: Response) => {
+    const windowMsRaw = req.query.windowMs as string | undefined;
+    const windowMs = windowMsRaw ? Number.parseInt(windowMsRaw, 10) : undefined;
+    const safeWindow = Number.isFinite(windowMs) && (windowMs ?? 0) > 0 ? windowMs : undefined;
+
+    const sttAvailable = sttService.getAvailableProviders();
+    const ttsAvailable = multiTTSService.getAvailableProviders();
+
+    res.json({
+      success: true,
+      data: {
+        stt: {
+          available: sttAvailable,
+          default: sttAvailable[0] || 'whisper',
+          breaker: sttCircuitBreaker.getStatus(),
+          breakerConfig: sttCircuitBreaker.getConfig(),
+        },
+        tts: {
+          available: ttsAvailable,
+          default: ttsAvailable[0] || 'edge-tts',
+          cache: multiTTSService.getCacheStats(),
+          breaker: ttsCircuitBreaker.getStatus(),
+          breakerConfig: ttsCircuitBreaker.getConfig(),
+        },
+        latency: getAllVoiceStats(safeWindow),
+        windowMs: safeWindow ?? null,
+      },
+    });
+  }),
+);
+
+/**
+ * POST /api/voice/admin/breaker/:kind/:provider/reset
+ *
+ * Manually close a circuit breaker. `kind` is 'stt' or 'tts',
+ * `provider` is the provider name ('whisper', 'deepgram',
+ * 'elevenlabs', 'edge-tts'). Admin scope required.
+ */
+voiceRealtimeRouter.post(
+  '/voice/admin/breaker/:kind/:provider/reset',
+  apiKeyAuth,
+  requireScope('admin'),
+  asyncHandler(async (req: Request, res: Response) => {
+    const { kind, provider } = req.params;
+    if (kind !== 'stt' && kind !== 'tts') {
+      throw new ValidationError('kind must be "stt" or "tts"');
+    }
+    if (!provider || provider.length === 0 || provider.length > 64) {
+      throw new ValidationError('provider must be a non-empty string');
+    }
+    const breaker = kind === 'stt' ? sttCircuitBreaker : ttsCircuitBreaker;
+    breaker.reset(provider);
+    logger.info('Voice circuit breaker manually reset', {
+      kind,
+      provider,
+      operation: 'voice-admin',
+    });
+    res.json({
+      success: true,
+      data: {
+        kind,
+        provider,
+        breaker: breaker.getStatus()[provider] ?? null,
+      },
+    });
+  }),
 );

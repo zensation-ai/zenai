@@ -4,8 +4,6 @@ import React, { Component } from 'react';
 import type { ErrorInfo, ReactNode } from 'react';
 import { logError } from '../utils/errors';
 import { queueError } from '../services/sentry-lazy';
-import './ErrorBoundary.css';
-
 interface ErrorBoundaryProps {
   children: ReactNode;
   fallback?: ReactNode;
@@ -24,6 +22,13 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
   }
 
   static getDerivedStateFromError(error: Error): ErrorBoundaryState {
+    // React Router v7 internally uses startTransition for navigation.
+    // When a transition is interrupted (e.g. rapid tab switches), it throws
+    // "AbortError: Transition was skipped" — this is benign and should not
+    // crash the UI.
+    if (error?.name === 'AbortError' && error?.message?.includes('Transition was skipped')) {
+      return { hasError: false, error: null };
+    }
     return { hasError: true, error };
   }
 

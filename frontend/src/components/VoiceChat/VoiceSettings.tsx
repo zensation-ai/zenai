@@ -7,8 +7,6 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
-import './VoiceSettings.css';
-
 interface VoiceSettingsProps {
   context: string;
 }

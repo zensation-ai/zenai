@@ -24,7 +24,7 @@ jest.mock('../../../utils/logger', () => ({
 
 jest.mock('../../../utils/database-context', () => ({
   queryContext: jest.fn(),
-  isValidContext: jest.fn((ctx: string) => ['personal', 'work', 'learning', 'creative'].includes(ctx)),
+  isValidContext: jest.fn((ctx: string) => ['operations', 'finance', 'people', 'strategy'].includes(ctx)),
   AIContext: {},
 }));
 
@@ -82,7 +82,7 @@ describe('Evolution Analytics Routes', () => {
       const dashboard = { score: 85, facts: 120 };
       mockGetEvolutionDashboard.mockResolvedValue(dashboard);
 
-      const res = await request(app).get('/api/personal/evolution');
+      const res = await request(app).get('/api/operations/evolution');
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
@@ -109,7 +109,7 @@ describe('Evolution Analytics Routes', () => {
         upcoming: [{ id: '2', title: '200 ideas' }],
       });
 
-      const res = await request(app).get('/api/personal/evolution/summary');
+      const res = await request(app).get('/api/operations/evolution/summary');
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
@@ -121,7 +121,7 @@ describe('Evolution Analytics Routes', () => {
       mockGetLatestSnapshot.mockResolvedValue(null);
       mockGetMilestones.mockResolvedValue({ achieved: [], upcoming: [] });
 
-      const res = await request(app).get('/api/work/evolution/summary');
+      const res = await request(app).get('/api/finance/evolution/summary');
 
       expect(res.status).toBe(200);
       expect(res.body.summary.context_depth_score).toBe(0);
@@ -132,7 +132,7 @@ describe('Evolution Analytics Routes', () => {
     it('should return snapshots with default days', async () => {
       mockGetSnapshots.mockResolvedValue([{ date: '2026-01-01', score: 80 }]);
 
-      const res = await request(app).get('/api/personal/evolution/snapshots');
+      const res = await request(app).get('/api/operations/evolution/snapshots');
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
@@ -142,10 +142,10 @@ describe('Evolution Analytics Routes', () => {
     it('should accept custom days parameter', async () => {
       mockGetSnapshots.mockResolvedValue([]);
 
-      const res = await request(app).get('/api/personal/evolution/snapshots?days=7');
+      const res = await request(app).get('/api/operations/evolution/snapshots?days=7');
 
       expect(res.status).toBe(200);
-      expect(mockGetSnapshots).toHaveBeenCalledWith('personal', 7);
+      expect(mockGetSnapshots).toHaveBeenCalledWith('operations', 7);
     });
   });
 
@@ -155,7 +155,7 @@ describe('Evolution Analytics Routes', () => {
       mockCreateDailySnapshot.mockResolvedValue(snapshot);
 
       const res = await request(app)
-        .post('/api/personal/evolution/snapshots');
+        .post('/api/operations/evolution/snapshots');
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
@@ -168,7 +168,7 @@ describe('Evolution Analytics Routes', () => {
       const events = [{ id: '1', title: 'Learned pattern', type: 'pattern_learned' }];
       mockGetLearningTimeline.mockResolvedValue(events);
 
-      const res = await request(app).get('/api/personal/evolution/timeline');
+      const res = await request(app).get('/api/operations/evolution/timeline');
 
       expect(res.status).toBe(200);
       expect(res.body.events).toHaveLength(1);
@@ -177,7 +177,7 @@ describe('Evolution Analytics Routes', () => {
     it('should filter by event type', async () => {
       mockGetEventsByType.mockResolvedValue([]);
 
-      const res = await request(app).get('/api/personal/evolution/timeline?event_type=pattern_learned');
+      const res = await request(app).get('/api/operations/evolution/timeline?event_type=pattern_learned');
 
       expect(res.status).toBe(200);
       expect(mockGetEventsByType).toHaveBeenCalled();
@@ -189,7 +189,7 @@ describe('Evolution Analytics Routes', () => {
       mockRecordLearningEvent.mockResolvedValue('evt-123');
 
       const res = await request(app)
-        .post('/api/personal/evolution/events')
+        .post('/api/operations/evolution/events')
         .send({ event_type: 'pattern_learned', title: 'Discovered email pattern' });
 
       expect(res.status).toBe(201);
@@ -199,7 +199,7 @@ describe('Evolution Analytics Routes', () => {
 
     it('should reject missing required fields', async () => {
       const res = await request(app)
-        .post('/api/personal/evolution/events')
+        .post('/api/operations/evolution/events')
         .send({ event_type: 'pattern_learned' });
 
       expect(res.status).toBe(400);
@@ -207,7 +207,7 @@ describe('Evolution Analytics Routes', () => {
 
     it('should reject invalid event type', async () => {
       const res = await request(app)
-        .post('/api/personal/evolution/events')
+        .post('/api/operations/evolution/events')
         .send({ event_type: 'invalid_type', title: 'Test' });
 
       expect(res.status).toBe(400);

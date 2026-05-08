@@ -41,7 +41,7 @@ beforeEach(() => {
 
 describe('OnboardingWizard', () => {
   const defaultProps = {
-    context: 'personal' as const,
+    context: 'operations' as const,
     onContextChange: vi.fn(),
     onComplete: vi.fn(),
   };
@@ -50,7 +50,7 @@ describe('OnboardingWizard', () => {
     render(<OnboardingWizard {...defaultProps} />);
 
     expect(screen.getByText('ZenAI')).toBeInTheDocument();
-    expect(screen.getByText('Dein persoenlicher KI-Assistent')).toBeInTheDocument();
+    expect(screen.getByText('Dein persönlicher KI-Assistent')).toBeInTheDocument();
     expect(screen.getByText("Los geht's")).toBeInTheDocument();
   });
 
@@ -60,11 +60,11 @@ describe('OnboardingWizard', () => {
 
     await user.click(screen.getByText("Los geht's"));
 
-    expect(screen.getByText('Waehle deinen Hauptkontext')).toBeInTheDocument();
-    expect(screen.getByText('Privat')).toBeInTheDocument();
-    expect(screen.getByText('Arbeit')).toBeInTheDocument();
-    expect(screen.getByText('Lernen')).toBeInTheDocument();
-    expect(screen.getByText('Kreativ')).toBeInTheDocument();
+    expect(screen.getByText('Wähle deinen Hauptkontext')).toBeInTheDocument();
+    expect(screen.getByText('Operativ')).toBeInTheDocument();
+    expect(screen.getByText('Finanzen')).toBeInTheDocument();
+    expect(screen.getByText('Team')).toBeInTheDocument();
+    expect(screen.getByText('Strategie')).toBeInTheDocument();
   });
 
   it('can go back from step 2 to step 1', async () => {
@@ -72,9 +72,9 @@ describe('OnboardingWizard', () => {
     render(<OnboardingWizard {...defaultProps} />);
 
     await user.click(screen.getByText("Los geht's"));
-    expect(screen.getByText('Waehle deinen Hauptkontext')).toBeInTheDocument();
+    expect(screen.getByText('Wähle deinen Hauptkontext')).toBeInTheDocument();
 
-    await user.click(screen.getByText('Zurueck'));
+    await user.click(screen.getByText('Zurück'));
     expect(screen.getByText('ZenAI')).toBeInTheDocument();
   });
 
@@ -85,13 +85,13 @@ describe('OnboardingWizard', () => {
     // Go to step 2
     await user.click(screen.getByText("Los geht's"));
 
-    // Click 'Arbeit' context card
-    const workButton = screen.getByText('Arbeit').closest('button');
-    expect(workButton).toBeTruthy();
-    await user.click(workButton!);
+    // Click 'Finanzen' context card
+    const financeButton = screen.getByText('Finanzen').closest('button');
+    expect(financeButton).toBeTruthy();
+    await user.click(financeButton!);
 
     // The button should have aria-pressed=true
-    expect(workButton).toHaveAttribute('aria-pressed', 'true');
+    expect(financeButton).toHaveAttribute('aria-pressed', 'true');
   });
 
   it('calls onContextChange when advancing from step 2', async () => {
@@ -100,59 +100,63 @@ describe('OnboardingWizard', () => {
 
     await user.click(screen.getByText("Los geht's"));
 
-    // Select work context
-    const workButton = screen.getByText('Arbeit').closest('button');
-    await user.click(workButton!);
+    // Select finance context
+    const financeButton = screen.getByText('Finanzen').closest('button');
+    await user.click(financeButton!);
 
     // Advance to step 3
     await user.click(screen.getByText('Weiter'));
 
-    expect(defaultProps.onContextChange).toHaveBeenCalledWith('work');
+    expect(defaultProps.onContextChange).toHaveBeenCalledWith('finance');
   });
 
   it('can skip idea creation in step 3', async () => {
     const user = userEvent.setup();
     render(<OnboardingWizard {...defaultProps} />);
 
-    // Navigate to step 3
+    // Navigate to step 3 (Idea creation: Welcome → Context → Idea)
     await user.click(screen.getByText("Los geht's"));
     await user.click(screen.getByText('Weiter'));
 
     expect(screen.getByText('Deine erste Idee')).toBeInTheDocument();
-    expect(screen.getByText('Ueberspringen')).toBeInTheDocument();
+    expect(screen.getByText('Überspringen')).toBeInTheDocument();
 
-    await user.click(screen.getByText('Ueberspringen'));
+    await user.click(screen.getByText('Überspringen'));
 
-    // Should be on step 4 (Discovery)
-    expect(screen.getByText('Entdecke ZenAI')).toBeInTheDocument();
+    // Should be on step 4 (AI Discovery)
+    expect(screen.getByText('Die KI denkt mit')).toBeInTheDocument();
   });
 
-  it('shows all 4 features in step 4', async () => {
+  it('shows all 5 features in step 5 (Feature Tour)', async () => {
     const user = userEvent.setup();
     render(<OnboardingWizard {...defaultProps} />);
 
-    // Navigate through all steps
+    // Navigate through: Welcome → Context → Idea(skip) → AI Discovery → Feature Tour
     await user.click(screen.getByText("Los geht's"));
     await user.click(screen.getByText('Weiter'));
-    await user.click(screen.getByText('Ueberspringen'));
+    await user.click(screen.getByText('Überspringen'));
+    await user.click(screen.getByText('Beeindruckend! Weiter →'));
 
     expect(screen.getByText('Chat')).toBeInTheDocument();
-    expect(screen.getByText('Gedanken')).toBeInTheDocument();
-    expect(screen.getByText('Werkstatt')).toBeInTheDocument();
-    expect(screen.getByText('Insights')).toBeInTheDocument();
+    expect(screen.getByText('Ideen')).toBeInTheDocument();
+    expect(screen.getByText('Planer')).toBeInTheDocument();
+    expect(screen.getByText('Dokumente')).toBeInTheDocument();
+    expect(screen.getByText('My AI')).toBeInTheDocument();
   });
 
   it('calls onComplete on finish', async () => {
     const user = userEvent.setup();
     render(<OnboardingWizard {...defaultProps} />);
 
-    // Navigate to final step
+    // Navigate to final step (6 steps total)
     await user.click(screen.getByText("Los geht's"));
     await user.click(screen.getByText('Weiter'));
-    await user.click(screen.getByText('Ueberspringen'));
+    await user.click(screen.getByText('Überspringen'));
+    await user.click(screen.getByText('Beeindruckend! Weiter →'));
+    await user.click(screen.getByText('Tour abschließen →'));
 
-    expect(screen.getByText('Fertig')).toBeInTheDocument();
-    await user.click(screen.getByText('Fertig'));
+    expect(screen.getByText(/Loslegen/)).toBeInTheDocument();
+    await user.click(screen.getByText(/Loslegen/));
 
     expect(defaultProps.onComplete).toHaveBeenCalledTimes(1);
   });
@@ -162,26 +166,26 @@ describe('OnboardingWizard', () => {
     const user = userEvent.setup();
     render(<OnboardingWizard {...defaultProps} />);
 
-    // Navigate to step 3
+    // Navigate to step 3 (Idea)
     await user.click(screen.getByText("Los geht's"));
     await user.click(screen.getByText('Weiter'));
 
     // Type idea text
-    const textarea = screen.getByPlaceholderText(/Ich moechte eine App bauen/);
+    const textarea = screen.getByPlaceholderText(/Ich möchte eine App bauen/);
     await user.type(textarea, 'Meine erste Idee');
 
     // Click create
     await user.click(screen.getByText('Idee erstellen'));
 
     await waitFor(() => {
-      expect(axios.post).toHaveBeenCalledWith('/api/personal/ideas', {
+      expect(axios.post).toHaveBeenCalledWith('/api/operations/ideas', {
         raw_transcript: 'Meine erste Idee',
       });
     });
 
-    // Should advance to step 4
+    // Should advance to step 4 (AI Discovery)
     await waitFor(() => {
-      expect(screen.getByText('Entdecke ZenAI')).toBeInTheDocument();
+      expect(screen.getByText('Die KI denkt mit')).toBeInTheDocument();
     });
   });
 
@@ -189,7 +193,7 @@ describe('OnboardingWizard', () => {
     render(<OnboardingWizard {...defaultProps} />);
 
     const dots = document.querySelectorAll('.onboarding-wizard-dot');
-    expect(dots.length).toBe(4);
+    expect(dots.length).toBe(6);
     expect(dots[0]).toHaveClass('active');
   });
 });

@@ -15,7 +15,7 @@ import { queryContext, AIContext } from '../utils/database-context';
 import { queryOllamaJSON } from '../utils/ollama';
 import { generateEmbedding } from '../utils/ollama';
 import { logger } from '../utils/logger';
-import { IdeaRelation, RelationType, RELATION_TYPE_METADATA } from './knowledge-graph';
+import { IdeaRelation, RelationType, RELATION_TYPE_METADATA } from './knowledge-graph/graph-core';
 
 // ===========================================
 // Types and Interfaces

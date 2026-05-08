@@ -115,7 +115,7 @@ import { longTermMemory, episodicMemory } from '../../../services/memory';
 
 /** Default execution context for tests */
 const defaultContext: ToolExecutionContext = {
-  aiContext: 'personal',
+  aiContext: 'operations',
   sessionId: 'test-session-id',
 };
 
@@ -144,14 +144,14 @@ describe('Tool Handlers', () => {
     it('should respect limit parameter', async () => {
       await toolRegistry.execute('search_ideas', { query: 'test', limit: 3 }, defaultContext);
 
-      expect(enhancedRAG.quickRetrieve).toHaveBeenCalledWith('test', 'personal', 3);
+      expect(enhancedRAG.quickRetrieve).toHaveBeenCalledWith('test', 'operations', 3);
     });
 
     it('should use work context when specified', async () => {
-      const workContext: ToolExecutionContext = { aiContext: 'work' };
+      const workContext: ToolExecutionContext = { aiContext: 'finance' };
       await toolRegistry.execute('search_ideas', { query: 'test', limit: 5 }, workContext);
 
-      expect(enhancedRAG.quickRetrieve).toHaveBeenCalledWith('test', 'work', 5);
+      expect(enhancedRAG.quickRetrieve).toHaveBeenCalledWith('test', 'finance', 5);
     });
 
     it('should handle no results', async () => {
@@ -228,7 +228,7 @@ describe('Tool Handlers', () => {
       }, defaultContext);
 
       expect(queryContext).toHaveBeenCalledWith(
-        'personal',
+        'operations',
         expect.any(String),
         expect.arrayContaining([
           expect.stringContaining('Step 1'),
@@ -263,7 +263,7 @@ describe('Tool Handlers', () => {
 
       expect(result).toContain('gespeichert');
       expect(longTermMemory.addFact).toHaveBeenCalledWith(
-        'personal',
+        'operations',
         expect.objectContaining({
           factType: 'knowledge',
           content: 'The project deadline is December 15th',
@@ -286,7 +286,7 @@ describe('Tool Handlers', () => {
       }, defaultContext);
 
       expect(longTermMemory.addFact).toHaveBeenCalledWith(
-        'personal',
+        'operations',
         expect.objectContaining({
           confidence: 0.8,
         })
@@ -315,7 +315,7 @@ describe('Tool Handlers', () => {
       }, defaultContext);
 
       expect(result).toContain('Suchergebnisse');
-      expect(longTermMemory.retrieve).toHaveBeenCalledWith('personal', expect.any(String));
+      expect(longTermMemory.retrieve).toHaveBeenCalledWith('operations', expect.any(String));
       expect(episodicMemory.retrieve).toHaveBeenCalled();
     });
 

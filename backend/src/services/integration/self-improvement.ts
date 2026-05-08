@@ -11,6 +11,7 @@ import { logger } from '../../utils/logger';
 import { queryContext } from '../../utils/database-context';
 import type { AIContext } from '../../types/context';
 import { randomUUID } from 'crypto';
+import { proposeImprovement, type ImprovementProposal } from '../hyperagents/meta-improver';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -222,6 +223,40 @@ export async function recordImprovementAction(
   }
 }
 
+/**
+ * Execute an improvement action through HyperAgent Level 0.
+ * Routes through meta-improver for safety bounds checking.
+ */
+export async function executeWithHyperAgent(
+  context: string,
+  action: ImprovementAction,
+): Promise<{ success: boolean; reason: string; governanceRequired: boolean }> {
+  // Map self-improvement action to HyperAgent proposal
+  const proposal: ImprovementProposal = {
+    level: 0,
+    type: action.type,
+    description: action.description,
+    targetProperty: `improvement.${action.type}`,
+    currentValue: 0,
+    proposedValue: action.estimatedImpact,
+    rationale: action.basis.join('; '),
+    expectedImpact: action.estimatedImpact,
+  };
+
+  const result = await proposeImprovement(proposal);
+
+  // Record in self-improvement history
+  if (result.applied) {
+    await recordImprovementAction(context, action);
+  }
+
+  return {
+    success: result.applied,
+    reason: result.reason,
+    governanceRequired: result.governanceRequired,
+  };
+}
+
 export async function getImprovementHistory(
   context: string,
   limit: number = 20,
@@ -248,4 +283,27 @@ export async function getImprovementHistory(
     logger.error('Failed to get improvement history', err instanceof Error ? err : new Error(String(err)));
     return [];
   }
+}
+
+// --- Metacognitive HyperAgent Extension ---
+import { MetacognitiveHyperAgent, type StrategyRecord } from '../agents/metacognitive-hyperagent';
+
+/**
+ * Meta-level analysis: identify underperforming improvement strategies.
+ * Based on: Hyperagents DGM-H (arXiv 2603.19461)
+ */
+export function analyzeImprovementStrategies(
+  history: Array<{ id: string; type: string; successRate: number; attempts: number }>,
+): { underperforming: StrategyRecord[]; insight: ReturnType<MetacognitiveHyperAgent['generateMetaInsight']> } {
+  const hyperAgent = new MetacognitiveHyperAgent();
+  const strategies: StrategyRecord[] = history.map(h => ({
+    id: h.id,
+    type: h.type,
+    successRate: h.successRate,
+    attempts: h.attempts,
+  }));
+
+  const underperforming = hyperAgent.analyzeStrategyPerformance(strategies);
+  const insight = hyperAgent.generateMetaInsight(underperforming);
+  return { underperforming, insight };
 }

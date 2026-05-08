@@ -1,6 +1,6 @@
 import OpenAI from 'openai';
 import { logger } from '../utils/logger';
-import { StructuredIdea, normalizeCategory, normalizeType, normalizePriority } from '../utils/ollama';
+import { StructuredIdea, normalizeCategory, normalizeType, normalizePriority } from '../utils/idea-types';
 
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 const OPENAI_MODEL = process.env.OPENAI_MODEL || 'gpt-4o-mini';

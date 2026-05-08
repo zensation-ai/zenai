@@ -22,7 +22,7 @@ import {
 jest.mock('../../../utils/database-context', () => ({
   queryContext: jest.fn(),
   pool: { query: jest.fn() },
-  isValidContext: (ctx: string) => ['personal', 'work', 'learning', 'creative'].includes(ctx),
+  isValidContext: (ctx: string) => ['operations', 'finance', 'people', 'strategy'].includes(ctx),
 }));
 
 jest.mock('../../../utils/logger', () => ({
@@ -92,9 +92,9 @@ const mockEntitiesWork = [
 
 const mockLink: CrossContextLink = {
   id: 'link-001',
-  sourceContext: 'personal',
+  sourceContext: 'operations',
   sourceEntityId: 'ent-p-001',
-  targetContext: 'work',
+  targetContext: 'finance',
   targetEntityId: 'ent-w-001',
   mergeType: 'hard',
   mergeScore: 1.0,
@@ -155,7 +155,7 @@ describe('findMergeCandidates', () => {
       .mockResolvedValueOnce({ rows: mockEntitiesPersonal } as any)
       .mockResolvedValueOnce({ rows: mockEntitiesWork } as any);
 
-    const candidates = await findMergeCandidates('user-001', 'personal', 'work');
+    const candidates = await findMergeCandidates('user-001', 'operations', 'finance');
 
     expect(candidates.length).toBeGreaterThan(0);
     const michaelCandidate = candidates.find(
@@ -171,7 +171,7 @@ describe('findMergeCandidates', () => {
       .mockResolvedValueOnce({ rows: mockEntitiesPersonal } as any)
       .mockResolvedValueOnce({ rows: mockEntitiesWork } as any);
 
-    const candidates = await findMergeCandidates('user-001', 'personal', 'work');
+    const candidates = await findMergeCandidates('user-001', 'operations', 'finance');
 
     const tsCandidate = candidates.find(
       (c) => c.sourceEntityId === 'ent-p-002' && c.targetEntityId === 'ent-w-002'
@@ -185,7 +185,7 @@ describe('findMergeCandidates', () => {
       .mockResolvedValueOnce({ rows: mockEntitiesPersonal } as any)
       .mockResolvedValueOnce({ rows: mockEntitiesWork } as any);
 
-    const candidates = await findMergeCandidates('user-001', 'personal', 'work');
+    const candidates = await findMergeCandidates('user-001', 'operations', 'finance');
     const hardMerges = candidates.filter((c) => c.mergeType === 'hard');
     hardMerges.forEach((c) => {
       expect(c.mergeScore).toBeGreaterThanOrEqual(0.95);
@@ -197,7 +197,7 @@ describe('findMergeCandidates', () => {
       .mockResolvedValueOnce({ rows: mockEntitiesPersonal } as any)
       .mockResolvedValueOnce({ rows: mockEntitiesWork } as any);
 
-    const candidates = await findMergeCandidates('user-001', 'personal', 'work');
+    const candidates = await findMergeCandidates('user-001', 'operations', 'finance');
     const softMerges = candidates.filter((c) => c.mergeType === 'soft');
     softMerges.forEach((c) => {
       expect(c.mergeScore).toBeGreaterThanOrEqual(0.85);
@@ -217,7 +217,7 @@ describe('findMergeCandidates', () => {
       .mockResolvedValueOnce({ rows: lowSimilarityEntities } as any)
       .mockResolvedValueOnce({ rows: unrelatedEntities } as any);
 
-    const candidates = await findMergeCandidates('user-001', 'personal', 'work');
+    const candidates = await findMergeCandidates('user-001', 'operations', 'finance');
     expect(candidates).toHaveLength(0);
   });
 
@@ -226,7 +226,7 @@ describe('findMergeCandidates', () => {
       .mockResolvedValueOnce({ rows: [] } as any)
       .mockResolvedValueOnce({ rows: mockEntitiesWork } as any);
 
-    const candidates = await findMergeCandidates('user-001', 'personal', 'work');
+    const candidates = await findMergeCandidates('user-001', 'operations', 'finance');
     expect(candidates).toHaveLength(0);
   });
 
@@ -235,7 +235,7 @@ describe('findMergeCandidates', () => {
       .mockResolvedValueOnce({ rows: mockEntitiesPersonal } as any)
       .mockResolvedValueOnce({ rows: [] } as any);
 
-    const candidates = await findMergeCandidates('user-001', 'personal', 'work');
+    const candidates = await findMergeCandidates('user-001', 'operations', 'finance');
     expect(candidates).toHaveLength(0);
   });
 
@@ -244,11 +244,11 @@ describe('findMergeCandidates', () => {
       .mockResolvedValueOnce({ rows: mockEntitiesPersonal } as any)
       .mockResolvedValueOnce({ rows: mockEntitiesWork } as any);
 
-    const candidates = await findMergeCandidates('user-001', 'personal', 'work');
+    const candidates = await findMergeCandidates('user-001', 'operations', 'finance');
     const candidate = candidates[0];
 
-    expect(candidate.sourceContext).toBe('personal');
-    expect(candidate.targetContext).toBe('work');
+    expect(candidate.sourceContext).toBe('operations');
+    expect(candidate.targetContext).toBe('finance');
     expect(candidate.sourceEntityId).toBeDefined();
     expect(candidate.targetEntityId).toBeDefined();
     expect(candidate.sourceEntityName).toBeDefined();
@@ -270,7 +270,7 @@ describe('findMergeCandidates', () => {
       .mockResolvedValueOnce({ rows: sameTypeEntities } as any)
       .mockResolvedValueOnce({ rows: matchingTypeTarget } as any);
 
-    const candidates = await findMergeCandidates('user-001', 'personal', 'work');
+    const candidates = await findMergeCandidates('user-001', 'operations', 'finance');
     expect(candidates.length).toBeGreaterThan(0);
     // Should be a hard merge since same name (score 1.0 base) + type match bonus
     expect(candidates[0].mergeScore).toBeGreaterThanOrEqual(0.95);
@@ -287,10 +287,10 @@ describe('createCrossContextLink', () => {
   });
 
   const candidate: CrossContextCandidate = {
-    sourceContext: 'personal',
+    sourceContext: 'operations',
     sourceEntityId: 'ent-p-001',
     sourceEntityName: 'Michael Schmidt',
-    targetContext: 'work',
+    targetContext: 'finance',
     targetEntityId: 'ent-w-001',
     targetEntityName: 'Michael Schmidt',
     mergeScore: 0.97,
@@ -302,9 +302,9 @@ describe('createCrossContextLink', () => {
       rows: [
         {
           id: 'link-001',
-          source_context: 'personal',
+          source_context: 'operations',
           source_entity_id: 'ent-p-001',
-          target_context: 'work',
+          target_context: 'finance',
           target_entity_id: 'ent-w-001',
           merge_type: 'hard',
           merge_score: 0.97,
@@ -316,8 +316,8 @@ describe('createCrossContextLink', () => {
     const link = await createCrossContextLink('user-001', candidate);
 
     expect(link).toBeDefined();
-    expect(link.sourceContext).toBe('personal');
-    expect(link.targetContext).toBe('work');
+    expect(link.sourceContext).toBe('operations');
+    expect(link.targetContext).toBe('finance');
     expect(link.sourceEntityId).toBe('ent-p-001');
     expect(link.targetEntityId).toBe('ent-w-001');
     expect(link.mergeType).toBe('hard');
@@ -336,9 +336,9 @@ describe('createCrossContextLink', () => {
       rows: [
         {
           id: 'link-002',
-          source_context: 'personal',
+          source_context: 'operations',
           source_entity_id: 'ent-p-001',
-          target_context: 'work',
+          target_context: 'finance',
           target_entity_id: 'ent-w-001',
           merge_type: 'hard',
           merge_score: 0.97,
@@ -369,9 +369,9 @@ describe('getCrossContextLinks', () => {
       rows: [
         {
           id: 'link-001',
-          source_context: 'personal',
+          source_context: 'operations',
           source_entity_id: 'ent-p-001',
-          target_context: 'work',
+          target_context: 'finance',
           target_entity_id: 'ent-w-001',
           merge_type: 'hard',
           merge_score: 1.0,
@@ -380,7 +380,7 @@ describe('getCrossContextLinks', () => {
       ],
     } as any);
 
-    const links = await getCrossContextLinks('user-001', 'personal', 'ent-p-001');
+    const links = await getCrossContextLinks('user-001', 'operations', 'ent-p-001');
 
     expect(links).toHaveLength(1);
     expect(links[0].sourceEntityId).toBe('ent-p-001');
@@ -391,9 +391,9 @@ describe('getCrossContextLinks', () => {
       rows: [
         {
           id: 'link-002',
-          source_context: 'work',
+          source_context: 'finance',
           source_entity_id: 'ent-w-001',
-          target_context: 'personal',
+          target_context: 'operations',
           target_entity_id: 'ent-p-001',
           merge_type: 'hard',
           merge_score: 1.0,
@@ -402,7 +402,7 @@ describe('getCrossContextLinks', () => {
       ],
     } as any);
 
-    const links = await getCrossContextLinks('user-001', 'personal', 'ent-p-001');
+    const links = await getCrossContextLinks('user-001', 'operations', 'ent-p-001');
 
     expect(links).toHaveLength(1);
     expect(links[0].targetEntityId).toBe('ent-p-001');
@@ -411,7 +411,7 @@ describe('getCrossContextLinks', () => {
   it('returns empty array for unknown entity', async () => {
     mockPoolQuery.mockResolvedValueOnce({ rows: [] } as any);
 
-    const links = await getCrossContextLinks('user-001', 'personal', 'ent-unknown-999');
+    const links = await getCrossContextLinks('user-001', 'operations', 'ent-unknown-999');
 
     expect(links).toHaveLength(0);
   });
@@ -421,9 +421,9 @@ describe('getCrossContextLinks', () => {
       rows: [
         {
           id: 'link-001',
-          source_context: 'personal',
+          source_context: 'operations',
           source_entity_id: 'ent-p-001',
-          target_context: 'work',
+          target_context: 'finance',
           target_entity_id: 'ent-w-001',
           merge_type: 'soft',
           merge_score: 0.88,
@@ -432,12 +432,12 @@ describe('getCrossContextLinks', () => {
       ],
     } as any);
 
-    const links = await getCrossContextLinks('user-001', 'personal', 'ent-p-001');
+    const links = await getCrossContextLinks('user-001', 'operations', 'ent-p-001');
 
     expect(links[0].id).toBe('link-001');
-    expect(links[0].sourceContext).toBe('personal');
+    expect(links[0].sourceContext).toBe('operations');
     expect(links[0].sourceEntityId).toBe('ent-p-001');
-    expect(links[0].targetContext).toBe('work');
+    expect(links[0].targetContext).toBe('finance');
     expect(links[0].targetEntityId).toBe('ent-w-001');
     expect(links[0].mergeType).toBe('soft');
     expect(links[0].mergeScore).toBe(0.88);
@@ -498,9 +498,9 @@ describe('runMergeDetection', () => {
       rows: [
         {
           id: 'link-new',
-          source_context: 'personal',
+          source_context: 'operations',
           source_entity_id: 'ent-p-001',
-          target_context: 'work',
+          target_context: 'finance',
           target_entity_id: 'ent-w-001',
           merge_type: 'hard',
           merge_score: 1.0,

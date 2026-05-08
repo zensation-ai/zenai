@@ -25,6 +25,8 @@ export interface IpcDependencies {
   hideSpotlight: () => void;
   /** Resize the spotlight overlay to a given height */
   resizeSpotlight: (height: number) => void;
+  /** Set the tray icon status (idle, thinking, notification) */
+  setTrayStatus: (status: string) => void;
 }
 
 // ─── Handler registration ─────────────────────────────────────────────────────
@@ -41,6 +43,7 @@ export function registerIpcHandlers(deps: IpcDependencies): void {
     getBackendUrl,
     hideSpotlight,
     resizeSpotlight,
+    setTrayStatus,
   } = deps;
 
   // ─── Notifications ───────────────────────────────────────────────────────
@@ -121,7 +124,48 @@ export function registerIpcHandlers(deps: IpcDependencies): void {
   });
 
   ipcMain.on('spotlight:resize', (_event, height: number) => {
+    if (typeof height !== 'number' || !isFinite(height)) return;
     resizeSpotlight(height);
+  });
+
+  ipcMain.handle('spotlight:query', async (_event, text: string) => {
+    const backendUrl = getBackendUrl();
+    try {
+      const res = await fetch(`${backendUrl}/api/chat/quick`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: text }),
+      });
+      if (!res.ok) {
+        return { response: `Fehler: Server antwortete mit ${res.status}` };
+      }
+      const data = (await res.json()) as Record<string, unknown>;
+      return { response: (data.response as string) || (data.message as string) || 'Keine Antwort.' };
+    } catch {
+      return { response: 'Verbindung zum Backend fehlgeschlagen.' };
+    }
+  });
+
+  ipcMain.on('spotlight:openInMain', (_event, query: string) => {
+    const win = getMainWindow();
+    if (win) {
+      win.show();
+      win.focus();
+      win.webContents.send('navigate', 'chat');
+      // Give the renderer a tick to navigate before sending the prefill
+      setTimeout(() => {
+        win.webContents.send('chat:prefill', query);
+      }, 200);
+    }
+  });
+
+  // ─── Tray Status ─────────────────────────────────────────────────────────
+
+  ipcMain.on('tray:setStatus', (_event, status: string) => {
+    const valid = ['idle', 'thinking', 'notification'];
+    if (valid.includes(status)) {
+      setTrayStatus(status);
+    }
   });
 
   // ─── External Links ──────────────────────────────────────────────────────

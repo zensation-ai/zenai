@@ -236,6 +236,18 @@ const TOOL_PATTERNS: Array<{ pattern: RegExp; tools: string[]; weight: number }>
   { pattern: /create\s+(a\s+)?(new\s+)?(idea|note|thought)/i, tools: ['create_idea'], weight: 0.9 },
   { pattern: /run\s+(this\s+)?code/i, tools: ['execute_code'], weight: 0.9 },
   { pattern: /what('s|\s+is)\s+(in\s+)?my\s+(inbox|email|mail)/i, tools: ['ask_inbox'], weight: 0.9 },
+
+  // Document generation patterns (Smart Document Generator)
+  { pattern: /erstell(e|en?)?\s+(eine?\s+)?(präsentation|vortrag|slides?|folie[n]?|deck)/i, tools: ['prepare_document_context', 'create_document', 'search_documents', 'search_ideas'], weight: 0.95 },
+  { pattern: /mach(e?)\s+(mir\s+)?(eine?\s+)?(präsentation|powerpoint|pptx)/i, tools: ['prepare_document_context', 'create_document', 'search_documents', 'search_ideas'], weight: 0.95 },
+  { pattern: /generier(e|en?)?\s+(ein(e|en)?\s+)?(dokument|bericht|report|präsentation|tabelle)/i, tools: ['prepare_document_context', 'create_document', 'search_documents'], weight: 0.95 },
+  { pattern: /erstell(e|en?)?\s+(ein(e|en)?\s+)?(word|pdf|excel|tabelle|spreadsheet|bericht|report|zusammenfassung|briefing)/i, tools: ['prepare_document_context', 'create_document'], weight: 0.95 },
+  { pattern: /ich\s+brauche?\s+(eine?\s+)?(präsentation|vortrag|deck|folie[n]?|bericht|report)/i, tools: ['prepare_document_context', 'create_document', 'search_documents', 'search_ideas'], weight: 0.95 },
+  { pattern: /quartals(bericht|versammlung|präsentation|meeting|review)/i, tools: ['prepare_document_context', 'create_document', 'search_documents', 'search_ideas'], weight: 0.9 },
+  { pattern: /monats(bericht|report|übersicht)/i, tools: ['prepare_document_context', 'create_document', 'search_documents'], weight: 0.9 },
+  { pattern: /bereite?\s+(eine?\s+)?(präsentation|vortrag|slides?)\s+(vor|zu)/i, tools: ['prepare_document_context', 'create_document', 'search_documents', 'search_ideas'], weight: 0.95 },
+  { pattern: /create\s+(a\s+)?(presentation|report|document|spreadsheet|briefing)/i, tools: ['prepare_document_context', 'create_document', 'search_documents', 'search_ideas'], weight: 0.95 },
+  { pattern: /powerpoint|pptx|keynote/i, tools: ['prepare_document_context', 'create_document'], weight: 0.9 },
 ];
 
 /**
@@ -609,9 +621,9 @@ export function getEffortForMode(mode: ChatMode): EffortLevel {
 export function getDefaultToolsForMode(mode: ChatMode): string[] {
   switch (mode) {
     case 'tool_assisted':
-      return ['search_ideas', 'create_idea', 'calculate', 'remember', 'recall', 'memory_update', 'memory_delete', 'memory_update_profile', 'execute_code', 'create_meeting', 'navigate_to', 'app_help', 'get_revenue_metrics', 'get_traffic_analytics', 'get_seo_performance', 'get_system_health', 'generate_business_report', 'identify_anomalies', 'compare_periods', 'ask_inbox', 'inbox_summary', 'mcp_list_tools', 'mcp_call_tool'];
+      return ['search_ideas', 'create_idea', 'calculate', 'remember', 'recall', 'memory_update', 'memory_delete', 'memory_update_profile', 'execute_code', 'create_meeting', 'navigate_to', 'app_help', 'get_revenue_metrics', 'get_traffic_analytics', 'get_seo_performance', 'get_system_health', 'generate_business_report', 'identify_anomalies', 'compare_periods', 'ask_inbox', 'inbox_summary', 'mcp_list_tools', 'mcp_call_tool', 'create_document', 'prepare_document_context'];
     case 'agent':
-      return ['search_ideas', 'create_idea', 'get_related_ideas', 'calculate', 'remember', 'recall', 'memory_introspect', 'memory_update', 'memory_delete', 'memory_update_profile', 'execute_code', 'create_meeting', 'navigate_to', 'app_help', 'get_revenue_metrics', 'get_traffic_analytics', 'get_seo_performance', 'get_system_health', 'generate_business_report', 'identify_anomalies', 'compare_periods', 'ask_inbox', 'inbox_summary', 'mcp_list_tools', 'mcp_call_tool'];
+      return ['search_ideas', 'create_idea', 'get_related_ideas', 'calculate', 'remember', 'recall', 'memory_introspect', 'memory_update', 'memory_delete', 'memory_update_profile', 'execute_code', 'create_meeting', 'navigate_to', 'app_help', 'get_revenue_metrics', 'get_traffic_analytics', 'get_seo_performance', 'get_system_health', 'generate_business_report', 'identify_anomalies', 'compare_periods', 'ask_inbox', 'inbox_summary', 'mcp_list_tools', 'mcp_call_tool', 'create_document', 'prepare_document_context'];
     case 'rag_enhanced':
       return ['search_ideas', 'recall'];
     default:

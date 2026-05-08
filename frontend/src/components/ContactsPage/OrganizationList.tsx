@@ -3,7 +3,11 @@
  */
 
 import { useState } from 'react';
+import { Building2 } from 'lucide-react';
 import type { Organization } from './types';
+import { ListSkeleton } from '../skeletons/PageSkeletons';
+import { Button } from '@/components/ui/button';
+import { EmptyState } from '@/components/ui/empty-state';
 
 interface OrganizationListProps {
   organizations: Organization[];
@@ -12,6 +16,7 @@ interface OrganizationListProps {
   onSelect: (org: Organization) => void;
   onSearch: (query: string) => void;
   onDelete: (id: string) => void;
+  onAdd?: () => void;
 }
 
 export function OrganizationList({
@@ -21,6 +26,7 @@ export function OrganizationList({
   onSelect,
   onSearch,
   onDelete,
+  onAdd,
 }: OrganizationListProps) {
   const [searchValue, setSearchValue] = useState('');
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
@@ -44,12 +50,20 @@ export function OrganizationList({
       </div>
 
       {loading ? (
-        <div className="contacts-loading">Lade Organisationen...</div>
+        <ListSkeleton rows={5} />
       ) : organizations.length === 0 ? (
-        <div className="contacts-empty">
-          <span className="contacts-empty-icon">🏢</span>
-          <p>Keine Organisationen gefunden</p>
-        </div>
+        <EmptyState
+          icon={<Building2 size={40} strokeWidth={1.5} />}
+          title="Keine Organisationen"
+          description="Erstelle eine Organisation um Kontakte zu gruppieren."
+          action={
+            onAdd ? (
+              <Button variant="default" size="sm" onClick={onAdd}>
+                Organisation erstellen
+              </Button>
+            ) : undefined
+          }
+        />
       ) : (
         <div className="contacts-items">
           {organizations.map(org => (
@@ -101,7 +115,8 @@ export function OrganizationList({
                   <button
                     type="button"
                     className="contact-action-btn"
-                    title="Loeschen"
+                    title="Löschen"
+                    aria-label="Löschen"
                     onClick={e => { e.stopPropagation(); setDeleteConfirm(org.id); }}
                   >
                     🗑️

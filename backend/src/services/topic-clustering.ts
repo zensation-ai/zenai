@@ -12,10 +12,10 @@ import { PoolClient } from 'pg';
 
 // Pre-built search_path statements for schema isolation
 const SEARCH_PATH_SQL: Record<AIContext, string> = {
-  personal: 'SET search_path TO personal, public',
-  work: 'SET search_path TO work, public',
-  learning: 'SET search_path TO learning, public',
-  creative: 'SET search_path TO creative, public',
+  operations: 'SET search_path TO operations, public',
+  finance: 'SET search_path TO finance, public',
+  people: 'SET search_path TO people, public',
+  strategy: 'SET search_path TO strategy, public',
   demo: 'SET search_path TO demo, public',
 };
 

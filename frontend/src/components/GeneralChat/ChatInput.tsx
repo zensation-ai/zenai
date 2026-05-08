@@ -10,7 +10,7 @@ import type { AIContext } from '../ContextSwitcher';
 import { ImageUpload } from '../ImageUpload';
 import { VoiceInput } from '../VoiceInput';
 import { AnimatedButton } from '../ui';
-import { SlashCommandMenu } from '../cockpit/SlashCommandMenu';
+import { SlashCommandMenu } from './SlashCommandMenu';
 
 // Module-level constant — stable reference for useMemo
 const ALL_THINKING_MODES = [
@@ -75,10 +75,10 @@ export function ChatInput({
     setSlashMenuVisible(inputValue.startsWith('/') && !inputValue.includes(' '));
   }, [inputValue]);
 
-  const handleSlashSelect = useCallback((cmd: { panel: string; command: string }) => {
+  const handleSlashSelect = useCallback((cmd: { action: string; command: string }) => {
     setSlashMenuVisible(false);
     setInputValue('');
-    onPanelAction?.(cmd.panel);
+    onPanelAction?.(cmd.action);
   }, [onPanelAction, setInputValue]);
 
   // Auto-resize textarea to fit content (up to max-height set in CSS)
@@ -95,41 +95,45 @@ export function ChatInput({
 
   // Context-aware mode filtering: show all for learning, hide challenge for creative
   const contextModes = useMemo(() => {
-    if (context === 'learning') return ALL_THINKING_MODES;
-    if (context === 'creative') return ALL_THINKING_MODES.filter(m => m.mode !== 'challenge');
+    if (context === 'people') return ALL_THINKING_MODES;
+    if (context === 'strategy') return ALL_THINKING_MODES.filter(m => m.mode !== 'challenge');
     return ALL_THINKING_MODES;
   }, [context]);
 
   return (
     <>
       {/* Thinking Mode Toggle (Phase 32C-1) - hidden in assistantMode where it has no effect */}
-      {!assistantMode && <div className="thinking-mode-bar">
+      {!assistantMode && <div className="flex gap-1.5 px-1 pb-2">
         {contextModes.map(({ mode, icon, label }) => (
           <button
             key={mode}
             type="button"
-            className={`thinking-mode-btn ${thinkingMode === mode ? 'active' : ''}`}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[13px] border transition-all duration-150 cursor-pointer font-[inherit] ${
+              thinkingMode === mode
+                ? 'bg-primary/10 border-primary/20 text-primary font-medium'
+                : 'border-glass-border text-text-secondary hover:bg-surface-hover hover:text-text hover:border-glass-border'
+            }`}
             onClick={() => setThinkingMode(mode)}
             title={label}
             aria-label={label}
             aria-pressed={thinkingMode === mode}
           >
-            <span className="thinking-mode-icon">{icon}</span>
-            <span className="thinking-mode-label">{label}</span>
+            <span className="text-sm leading-none">{icon}</span>
+            <span className="leading-none">{label}</span>
           </button>
         ))}
       </div>}
 
       {/* Inline Error Display (for assistant mode where toast is hidden) */}
       {inlineError && (
-        <div className="chat-inline-error" role="alert">
-          <span className="chat-inline-error-icon" aria-hidden="true">{'\u2715'}</span>
-          <span className="chat-inline-error-message">{inlineError}</span>
+        <div className="flex items-center gap-2 px-3 py-2 mb-2 bg-[var(--color-danger)]/10 border border-[var(--color-danger)]/20 rounded-lg text-sm" role="alert">
+          <span className="text-[var(--color-danger)] flex-shrink-0" aria-hidden="true">{'\u2715'}</span>
+          <span className="flex-1 text-[var(--color-danger)]">{inlineError}</span>
           <button
             type="button"
-            className="chat-inline-error-dismiss"
+            className="flex-shrink-0 text-[var(--color-text-muted)] hover:text-[var(--color-text)] cursor-pointer"
             onClick={() => setInlineError(null)}
-            aria-label="Fehlermeldung schlie\u00DFen"
+            aria-label="Fehlermeldung schließen"
           >
             {'\u00D7'}
           </button>
@@ -145,8 +149,8 @@ export function ChatInput({
       />
 
       {/* Input Area */}
-      <div className="chat-input-area">
-        <div className="chat-input-wrapper">
+      <div className="flex flex-col gap-3">
+        <div className="flex items-end gap-2 max-md:gap-1.5 relative">
           {/* Image Upload Button */}
           <ImageUpload
             onImagesChange={setSelectedImages}
@@ -164,7 +168,7 @@ export function ChatInput({
           />
           <button
             type="button"
-            className="voice-chat-toggle neuro-hover-lift neuro-focus-ring"
+            className="flex items-center justify-center w-10 h-10 rounded-xl text-text-muted hover:text-text hover:bg-surface-hover transition-colors max-md:hidden"
             onClick={() => setVoiceChatOpen(true)}
             disabled={sending}
             aria-label="Sprachkonversation starten"
@@ -180,31 +184,31 @@ export function ChatInput({
             placeholder={selectedImages.length > 0 ? "Frage zum Bild..." : "Frag mich etwas..."}
             rows={1}
             disabled={sending}
-            className="chat-input liquid-glass-input neuro-placeholder-animated"
+            className="flex-1 min-w-0 min-h-[40px] max-h-[120px] resize-none bg-surface/80 backdrop-blur-md border border-glass-border rounded-xl px-4 py-2.5 text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary/30 transition-all max-md:px-3"
             aria-label="Chat-Nachricht eingeben"
             enterKeyHint="send"
           />
           <AnimatedButton
-            className="chat-send-btn neuro-hover-lift neuro-color-transition neuro-focus-ring"
+            className="flex items-center justify-center w-10 h-10 rounded-xl bg-primary text-white hover:brightness-110 disabled:opacity-30 disabled:cursor-not-allowed transition-all shrink-0"
             onClick={handleSendMessage}
             disabled={sending || (!inputValue.trim() && selectedImages.length === 0)}
             aria-label={sending ? 'Nachricht wird gesendet' : 'Nachricht senden'}
           >
             {sending ? (
-              <span className="sending-dots">...</span>
+              <span className="animate-pulse text-sm">...</span>
             ) : (
-              <span className="send-arrow">{'\u2191'}</span>
+              <span className="text-base font-bold">{'\u2191'}</span>
             )}
           </AnimatedButton>
         </div>
-        <div className="chat-input-footer">
-          <span className="chat-hint" title="Enter sendet die Nachricht, Shift+Enter f\u00FCr neue Zeile">
-            Enter zum Senden {'\u00B7'} Shift+Enter f{'\u00FC'}r neue Zeile
+        <div className="flex items-center justify-between px-1 pt-1">
+          <span className="text-[11px] text-text-muted" title="Enter sendet die Nachricht, Shift+Enter für neue Zeile">
+            Enter zum Senden {'\u00B7'} Shift+Enter f&uuml;r neue Zeile
           </span>
           {sessionId && (
             <button
               type="button"
-              className="new-chat-btn neuro-hover-lift neuro-color-transition neuro-focus-ring"
+              className="text-[11px] px-2 py-0.5 rounded-md text-text-muted hover:text-text hover:bg-surface-hover transition-colors"
               onClick={handleNewChat}
               aria-label="Neue Chat-Session starten (bisherige bleibt erhalten)"
             >

@@ -132,7 +132,7 @@ export function calculateNDCG(scores: number[], threshold: number): number {
 /**
  * Store a RAG evaluation record in the database.
  *
- * @param context - AI context (personal, work, learning, creative)
+ * @param context - AI context (operations, finance, people, strategy)
  * @param record - Evaluation metrics to store
  * @returns The ID of the created record, or empty string on error
  */

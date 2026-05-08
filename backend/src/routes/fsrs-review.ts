@@ -8,6 +8,7 @@
 
 import { Router } from 'express';
 import { asyncHandler } from '../middleware/errorHandler';
+import { apiKeyAuth } from '../middleware/auth';
 import { logger } from '../utils/logger';
 import { queryContext } from '../utils/database-context';
 import type { AIContext } from '../types/context';
@@ -15,6 +16,9 @@ import { getRetrievability, updateAfterRecall, updateAfterForgot } from '../serv
 import type { FSRSState } from '../services/memory/fsrs-scheduler';
 
 const router = Router();
+
+// Sprint 1.5 Item 4 — blanket auth for all FSRS review routes.
+router.use(apiKeyAuth);
 
 // ─── Review Queue ────────────────────────────────────────────────────────────
 
@@ -24,15 +28,16 @@ router.get('/:context/memory/review-queue', asyncHandler(async (req, res) => {
   try {
     const result = await queryContext(
       context as AIContext,
-      `SELECT id, content, domain, confidence, fsrs_difficulty, fsrs_stability, fsrs_next_review
+      `SELECT id, content, fact_type, confidence, fsrs_difficulty, fsrs_stability, fsrs_next_review
        FROM learned_facts
        WHERE fsrs_next_review IS NOT NULL AND fsrs_next_review <= NOW()
        ORDER BY fsrs_next_review ASC LIMIT 10`,
     );
-    res.json({ success: true, data: result.rows });
+    res.json({ success: true, data: result.rows ?? [] });
   } catch (error) {
     logger.error('Failed to load review queue', error instanceof Error ? error : new Error(String(error)));
-    res.json({ success: false, error: 'Failed to load review queue' });
+    // Return empty array instead of crashing — table may not exist or have no FSRS columns yet
+    res.json({ success: true, data: [] });
   }
 }));
 
@@ -130,6 +135,55 @@ router.get('/:context/memory/fsrs/stats', asyncHandler(async (req, res) => {
   } catch (error) {
     logger.error('Failed to load FSRS stats', error instanceof Error ? error : new Error(String(error)));
     res.json({ success: false, error: 'Failed to load FSRS stats' });
+  }
+}));
+
+// ─── Retention Curve ─────────────────────────────────────────────────────────
+
+/** GET /api/:context/memory/fsrs/retention-curve/:factId — Retention curve data for a fact */
+router.get('/:context/memory/fsrs/retention-curve/:factId', asyncHandler(async (req, res) => {
+  const { context, factId } = req.params;
+
+  try {
+    const result = await queryContext(
+      context as AIContext,
+      'SELECT fsrs_difficulty, fsrs_stability, fsrs_next_review FROM learned_facts WHERE id = $1',
+      [factId],
+    );
+
+    if (!result.rows.length) {
+      res.status(404).json({ success: false, error: 'Fact not found' });
+      return;
+    }
+
+    const row = result.rows[0];
+    const stability = parseFloat(row.fsrs_stability) || 1.0;
+    const difficulty = parseFloat(row.fsrs_difficulty) || 5.0;
+    const nextReview = row.fsrs_next_review ? new Date(row.fsrs_next_review).toISOString() : null;
+
+    // Calculate R = e^(-t/S) for t = 0..30 days
+    const curvePoints: Array<{ day: number; retention: number }> = [];
+    for (let day = 0; day <= 30; day++) {
+      const retention = Math.exp(-day / stability);
+      curvePoints.push({
+        day,
+        retention: Math.round(retention * 10000) / 10000,
+      });
+    }
+
+    res.json({
+      success: true,
+      data: {
+        factId,
+        difficulty: Math.round(difficulty * 100) / 100,
+        stability: Math.round(stability * 100) / 100,
+        nextReview,
+        curvePoints,
+      },
+    });
+  } catch (error) {
+    logger.error('Failed to compute retention curve', error instanceof Error ? error : new Error(String(error)));
+    res.status(500).json({ success: false, error: 'Failed to compute retention curve' });
   }
 }));
 

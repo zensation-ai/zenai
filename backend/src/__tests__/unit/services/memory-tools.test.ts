@@ -47,7 +47,7 @@ const { queryContext } = require('../../../utils/database-context');
 const { invalidatePersonalFactsCache } = require('../../../services/personal-facts-bridge');
 
 const defaultContext: ToolExecutionContext = {
-  aiContext: 'personal',
+  aiContext: 'operations',
   sessionId: 'test-session',
   userId: 'test-user',
 };
@@ -107,7 +107,7 @@ describe('Memory Self-Editing Tools', () => {
       expect(result).toContain('aktualisiert');
       expect(result).toContain('Firma B');
       expect(queryContext).toHaveBeenCalledWith(
-        'personal',
+        'operations',
         expect.stringContaining('UPDATE personalization_facts'),
         expect.arrayContaining(['Arbeitet bei Firma B', 'knowledge', 0.95, 'fact-123'])
       );
@@ -157,7 +157,7 @@ describe('Memory Self-Editing Tools', () => {
 
       expect(result).toContain('Neuer Fakt gespeichert');
       expect(longTermMemory.addFact).toHaveBeenCalledWith(
-        'personal',
+        'operations',
         expect.objectContaining({
           content: 'Brand new fact',
           source: 'explicit',
@@ -205,7 +205,7 @@ describe('Memory Self-Editing Tools', () => {
       expect(result).toContain('gelöscht');
       expect(result).toContain('Raucht Zigaretten');
       expect(queryContext).toHaveBeenCalledWith(
-        'personal',
+        'operations',
         expect.stringContaining('UPDATE personalization_facts'),
         ['fact-789']
       );
@@ -294,9 +294,9 @@ describe('Memory Self-Editing Tools', () => {
       expect(result).toContain('Alexander');
       expect(result).toContain('Grundlegendes');
 
-      // Should use 'personal' schema (identity is context-independent)
+      // Should use 'operations' schema (identity is context-independent)
       expect(queryContext).toHaveBeenCalledWith(
-        'personal',
+        'operations',
         expect.stringContaining('INSERT INTO personal_facts'),
         expect.arrayContaining(['basic_info', 'name', 'Alexander'])
       );

@@ -1,8 +1,6 @@
 import { useEffect, useCallback, useRef } from 'react';
 import type { ReactNode, KeyboardEvent } from 'react';
 import { createPortal } from 'react-dom';
-import './BottomSheet.css';
-
 export interface BottomSheetProps {
   isOpen: boolean;
   onClose: () => void;

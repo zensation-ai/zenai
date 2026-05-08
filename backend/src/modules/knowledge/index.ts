@@ -28,7 +28,7 @@ export class KnowledgeModule implements Module {
     // Restore persisted thinking budget strategies
     try {
       const { loadPersistedStrategies } = await import('../../services/thinking-management');
-      await loadPersistedStrategies('personal' as const);
+      await loadPersistedStrategies('operations' as const);
       logger.info('Thinking budget strategies restored (deferred)', { operation: 'startup' });
     } catch (error) {
       logger.error('Thinking strategies restore failed (non-critical)', error instanceof Error ? error : undefined, { operation: 'startup' });

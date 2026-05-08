@@ -4,7 +4,7 @@
  */
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import './MeetingSearchBar.css';
+import { Input } from '@/components/ui/input';
 
 interface MeetingSearchFilters {
   status?: string;
@@ -47,17 +47,17 @@ export function MeetingSearchBar({ onSearch }: MeetingSearchBarProps) {
   }, [query, status, hasAudio, triggerSearch]);
 
   return (
-    <div className="meeting-search-bar">
-      <input
-        className="meeting-search-bar__input"
+    <div className="flex flex-row gap-3 items-center mb-4 max-[600px]:flex-wrap">
+      <Input
         type="text"
         placeholder="Meetings durchsuchen..."
         value={query}
         onChange={e => setQuery(e.target.value)}
+        className="flex-1 max-[600px]:min-w-full"
       />
 
       <select
-        className="meeting-search-bar__select"
+        className="px-3 py-2 rounded-md border border-glass-border bg-surface text-text text-[0.85rem] cursor-pointer"
         value={status}
         onChange={e => setStatus(e.target.value)}
       >
@@ -67,11 +67,12 @@ export function MeetingSearchBar({ onSearch }: MeetingSearchBarProps) {
         <option value="completed">Abgeschlossen</option>
       </select>
 
-      <label className="meeting-search-bar__toggle">
+      <label className="inline-flex items-center gap-1 text-[0.85rem] text-text-secondary cursor-pointer whitespace-nowrap">
         <input
           type="checkbox"
           checked={hasAudio}
           onChange={e => setHasAudio(e.target.checked)}
+          className="cursor-pointer"
         />
         Hat Audio
       </label>

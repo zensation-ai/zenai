@@ -9,9 +9,6 @@ import { DigestCard } from './DigestCard';
 import { DigestGoals } from './DigestGoals';
 import type { GoalFormState } from './DigestGoals';
 import { DigestEntry, ProductivityGoals, adaptDigest, adaptGoals } from './DigestTypes';
-import '../neurodesign.css';
-import './DigestDashboard.css';
-
 interface DigestDashboardProps {
   onBack: () => void;
   context: AIContext;

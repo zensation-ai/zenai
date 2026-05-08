@@ -1,12 +1,9 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, type CSSProperties } from 'react';
 import axios from 'axios';
 import { showToast } from './Toast';
 import { getErrorMessage } from '../utils/errors';
 import type { AIContext } from './ContextSwitcher';
 import { getTimeBasedGreeting } from '../utils/aiPersonality';
-import '../neurodesign.css';
-import './ProfileDashboard.css';
-
 interface UserProfile {
   total_ideas: number;
   total_meetings: number;
@@ -238,7 +235,7 @@ export function ProfileDashboard({ onBack, context, embedded }: ProfileDashboard
             <span className="greeting-subtext neuro-subtext-emotional">{greeting.subtext}</span>
           </div>
           <span className={`context-indicator ${context}`}>
-            {{ personal: 'Persönlich', work: 'Arbeit', learning: 'Lernen', creative: 'Kreativ' }[context] || context}
+            {{ operations: 'Operativ', finance: 'Finanzen', people: 'Team', strategy: 'Strategie' }[context] || context}
           </span>
           <button
             type="button"
@@ -418,7 +415,7 @@ export function ProfileDashboard({ onBack, context, embedded }: ProfileDashboard
           <h2>Erkenntnisse</h2>
           <div className="insights-list neuro-flow-list">
             {recommendations.insights.slice(0, 7).map((insight, i) => (
-              <div key={i} className="insight-item neuro-stagger-item neuro-hover-lift" style={{ animationDelay: `${i * 50}ms` }}>
+              <div key={i} className="insight-item neuro-stagger-item neuro-hover-lift [animation-delay:var(--delay)]" style={{ '--delay': `${i * 50}ms` } as CSSProperties}>
                 {insight}
               </div>
             ))}
@@ -437,8 +434,8 @@ export function ProfileDashboard({ onBack, context, embedded }: ProfileDashboard
                   <span className="bar-label">{categoryLabels[cat] || cat}</span>
                   <div className="bar-container">
                     <div
-                      className="bar category-bar"
-                      style={{ width: `${(count / maxCategoryCount) * 100}%` }}
+                      className="bar category-bar w-[var(--bar-w)]"
+                      style={{ '--bar-w': `${(count / maxCategoryCount) * 100}%` } as CSSProperties}
                     />
                   </div>
                   <span className="bar-value">{count}</span>
@@ -460,8 +457,8 @@ export function ProfileDashboard({ onBack, context, embedded }: ProfileDashboard
                   </span>
                   <div className="bar-container">
                     <div
-                      className="bar type-bar"
-                      style={{ width: `${(count / maxTypeCount) * 100}%` }}
+                      className="bar type-bar w-[var(--bar-w)]"
+                      style={{ '--bar-w': `${(count / maxTypeCount) * 100}%` } as CSSProperties}
                     />
                   </div>
                   <span className="bar-value">{count}</span>
@@ -480,11 +477,11 @@ export function ProfileDashboard({ onBack, context, embedded }: ProfileDashboard
             {profile.top_topics.map(([topic, count]) => (
               <span
                 key={topic}
-                className="topic-tag"
+                className="topic-tag text-[length:var(--fs)] opacity-[var(--op)]"
                 style={{
-                  fontSize: `${Math.max(0.75, Math.min(1.5, count / maxTopicCount + 0.5))}rem`,
-                  opacity: Math.max(0.5, count / maxTopicCount),
-                }}
+                  '--fs': `${Math.max(0.75, Math.min(1.5, count / maxTopicCount + 0.5))}rem`,
+                  '--op': Math.max(0.5, count / maxTopicCount),
+                } as CSSProperties}
               >
                 {topic}
                 <span className="topic-count">{count}</span>
@@ -500,7 +497,7 @@ export function ProfileDashboard({ onBack, context, embedded }: ProfileDashboard
           <h2>Produktive Stunden</h2>
           <div className="hours-display neuro-flow-list">
             {recommendations.optimal_hours.slice(0, 7).map((hour, index) => (
-              <span key={hour} className="hour-badge neuro-stagger-item neuro-hover-lift" style={{ animationDelay: `${index * 50}ms` }}>
+              <span key={hour} className="hour-badge neuro-stagger-item neuro-hover-lift [animation-delay:var(--delay)]" style={{ '--delay': `${index * 50}ms` } as CSSProperties}>
                 {hour}:00 - {hour + 1}:00
               </span>
             ))}
@@ -535,7 +532,7 @@ export function ProfileDashboard({ onBack, context, embedded }: ProfileDashboard
           </p>
           <div className="suggestions-list neuro-flow-list">
             {recommendations.suggested_topics.slice(0, 7).map((topic, i) => (
-              <span key={i} className="suggestion-tag neuro-stagger-item neuro-hover-lift" style={{ animationDelay: `${i * 50}ms` }}>
+              <span key={i} className="suggestion-tag neuro-stagger-item neuro-hover-lift [animation-delay:var(--delay)]" style={{ '--delay': `${i * 50}ms` } as CSSProperties}>
                 {topic}
               </span>
             ))}

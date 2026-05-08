@@ -171,10 +171,10 @@ BEISPIELE für "task":
 
 KONTEXT-VORSCHLAG:
 Schlage vor, in welchen Bereich dieser Gedanke gehört:
-- "work" = Berufliches, Geschäftliches, Projekte, Meetings, Kunden
-- "personal" = Privates, Familie, Gesundheit, Alltag, Hobbys
-- "learning" = Lernen, Weiterbildung, Kurse, Recherche, Wissen
-- "creative" = Kreatives, Kunst, Design, Schreiben, Musik, Content
+- "finance" = Berufliches, Geschäftliches, Projekte, Meetings, Kunden
+- "operations" = Privates, Familie, Gesundheit, Alltag, Hobbys
+- "people" = Lernen, Weiterbildung, Kurse, Recherche, Wissen
+- "strategy" = Kreatives, Kunst, Design, Schreiben, Musik, Content
 
 OUTPUT FORMAT (JSON):
 {
@@ -182,7 +182,7 @@ OUTPUT FORMAT (JSON):
   "type": "idea|task|insight|problem|question",
   "category": "business|technical|personal|learning",
   "priority": "low|medium|high",
-  "suggested_context": "personal|work|learning|creative",
+  "suggested_context": "operations|finance|people|strategy",
   "summary": "1-2 Sätze Zusammenfassung",
   "next_steps": ["Schritt 1", "Schritt 2"],
   "context_needed": ["Kontext 1", "Kontext 2"],

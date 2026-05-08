@@ -1,5 +1,4 @@
-import '../neurodesign.css';
-import './SkeletonLoader.css';
+import { type CSSProperties } from 'react';
 
 interface SkeletonLoaderProps {
   type?: 'card' | 'text' | 'avatar' | 'button';
@@ -27,8 +26,8 @@ export function SkeletonLoader({
         {items.map((i) => (
           <div
             key={i}
-            className="skeleton skeleton-text"
-            style={{ width: width || `${80 - i * 15}%` }}
+            className="skeleton skeleton-text w-[var(--sk-w)]"
+            style={{ '--sk-w': width || `${80 - i * 15}%` } as CSSProperties}
             aria-hidden="true"
           />
         ))}
@@ -39,8 +38,8 @@ export function SkeletonLoader({
   if (type === 'avatar') {
     return (
       <div
-        className="skeleton skeleton-avatar"
-        style={{ width: width || '48px', height: height || '48px' }}
+        className="skeleton skeleton-avatar w-[var(--sk-w)] h-[var(--sk-h)]"
+        style={{ '--sk-w': width || '48px', '--sk-h': height || '48px' } as CSSProperties}
         role="status"
         aria-busy="true"
         aria-label="Lädt..."
@@ -51,8 +50,8 @@ export function SkeletonLoader({
   if (type === 'button') {
     return (
       <div
-        className="skeleton skeleton-button"
-        style={{ width: width || '120px', height: height || '40px' }}
+        className="skeleton skeleton-button w-[var(--sk-w)] h-[var(--sk-h)]"
+        style={{ '--sk-w': width || '120px', '--sk-h': height || '40px' } as CSSProperties}
         role="status"
         aria-busy="true"
         aria-label="Lädt..."
@@ -71,9 +70,9 @@ export function SkeletonLoader({
             <div className="skeleton skeleton-action" />
           </div>
           <div className="skeleton-card-body">
-            <div className="skeleton skeleton-line" style={{ width: '100%' }} />
-            <div className="skeleton skeleton-line" style={{ width: '85%' }} />
-            <div className="skeleton skeleton-line" style={{ width: '70%' }} />
+            <div className="skeleton skeleton-line w-full" />
+            <div className="skeleton skeleton-line w-[85%]" />
+            <div className="skeleton skeleton-line w-[70%]" />
           </div>
           <div className="skeleton-card-tags">
             <div className="skeleton skeleton-tag" />

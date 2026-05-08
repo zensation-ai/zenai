@@ -8,7 +8,7 @@
 const mockQueryContext = jest.fn();
 jest.mock('../../../utils/database-context', () => ({
   queryContext: (...args: unknown[]) => mockQueryContext(...args),
-  isValidContext: (c: string) => ['personal', 'work', 'learning', 'creative'].includes(c),
+  isValidContext: (c: string) => ['operations', 'finance', 'people', 'strategy'].includes(c),
 }));
 
 jest.mock('../../../utils/logger', () => ({
@@ -55,11 +55,11 @@ describe('Finance Service', () => {
       const account = { id: 'a-1', name: 'Checking', account_type: 'checking', currency: 'EUR', balance: 0 };
       mockQueryContext.mockResolvedValueOnce({ rows: [account] });
 
-      const result = await createAccount('personal', { name: 'Checking' });
+      const result = await createAccount('operations', { name: 'Checking' });
 
       expect(result).toEqual(account);
       expect(mockQueryContext).toHaveBeenCalledWith(
-        'personal',
+        'operations',
         expect.stringContaining('INSERT INTO financial_accounts'),
         expect.arrayContaining(['Checking'])
       );
@@ -68,7 +68,7 @@ describe('Finance Service', () => {
     it('should use provided userId', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [{ id: 'a-2' }] });
 
-      await createAccount('work', { name: 'Biz Account' }, 'user-42');
+      await createAccount('finance', { name: 'Biz Account' }, 'user-42');
 
       const params = mockQueryContext.mock.calls[0][2] as unknown[];
       expect(params[params.length - 1]).toBe('user-42');
@@ -83,11 +83,11 @@ describe('Finance Service', () => {
       ];
       mockQueryContext.mockResolvedValueOnce({ rows: accounts });
 
-      const result = await getAccounts('personal');
+      const result = await getAccounts('operations');
 
       expect(result).toHaveLength(2);
       expect(mockQueryContext).toHaveBeenCalledWith(
-        'personal',
+        'operations',
         expect.stringContaining('ORDER BY'),
         [SYSTEM_USER]
       );
@@ -99,14 +99,14 @@ describe('Finance Service', () => {
       const account = { id: 'a-1', name: 'Checking' };
       mockQueryContext.mockResolvedValueOnce({ rows: [account] });
 
-      const result = await getAccount('personal', 'a-1');
+      const result = await getAccount('operations', 'a-1');
       expect(result).toEqual(account);
     });
 
     it('should return null if not found', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [] });
 
-      const result = await getAccount('personal', 'nonexistent');
+      const result = await getAccount('operations', 'nonexistent');
       expect(result).toBeNull();
     });
   });
@@ -116,7 +116,7 @@ describe('Finance Service', () => {
       const updated = { id: 'a-1', name: 'Updated', balance: 500 };
       mockQueryContext.mockResolvedValueOnce({ rows: [updated] });
 
-      const result = await updateAccount('personal', 'a-1', { name: 'Updated', balance: 500 });
+      const result = await updateAccount('operations', 'a-1', { name: 'Updated', balance: 500 });
 
       expect(result).toEqual(updated);
       const sql = mockQueryContext.mock.calls[0][1] as string;
@@ -127,7 +127,7 @@ describe('Finance Service', () => {
       const existing = { id: 'a-1', name: 'Existing' };
       mockQueryContext.mockResolvedValueOnce({ rows: [existing] });
 
-      const result = await updateAccount('personal', 'a-1', {});
+      const result = await updateAccount('operations', 'a-1', {});
 
       expect(result).toEqual(existing);
     });
@@ -136,12 +136,12 @@ describe('Finance Service', () => {
   describe('deleteAccount', () => {
     it('should return true on delete', async () => {
       mockQueryContext.mockResolvedValueOnce({ rowCount: 1 });
-      expect(await deleteAccount('personal', 'a-1')).toBe(true);
+      expect(await deleteAccount('operations', 'a-1')).toBe(true);
     });
 
     it('should return false when not found', async () => {
       mockQueryContext.mockResolvedValueOnce({ rowCount: 0 });
-      expect(await deleteAccount('personal', 'nope')).toBe(false);
+      expect(await deleteAccount('operations', 'nope')).toBe(false);
     });
   });
 
@@ -157,7 +157,7 @@ describe('Finance Service', () => {
         .mockResolvedValueOnce({ rowCount: 1 }) // UPDATE account balance
         .mockResolvedValueOnce({ rowCount: 0 }); // UPDATE budget spent (no match)
 
-      const result = await createTransaction('personal', {
+      const result = await createTransaction('operations', {
         amount: 50,
         transaction_type: 'expense',
         account_id: 'a-1',
@@ -176,7 +176,7 @@ describe('Finance Service', () => {
         .mockResolvedValueOnce({ rows: [tx] })
         .mockResolvedValueOnce({ rowCount: 1 });
 
-      await createTransaction('personal', {
+      await createTransaction('operations', {
         amount: 1000,
         transaction_type: 'income',
         account_id: 'a-1',
@@ -193,7 +193,7 @@ describe('Finance Service', () => {
         .mockResolvedValueOnce({ rows: [{ id: 'tx-1', payee: 'Store' }] })
         .mockResolvedValueOnce({ rows: [{ total: '15' }] });
 
-      const result = await getTransactions('personal', { category: 'food' });
+      const result = await getTransactions('operations', { category: 'food' });
 
       expect(result.transactions).toHaveLength(1);
       expect(result.total).toBe(15);
@@ -211,7 +211,7 @@ describe('Finance Service', () => {
       // balance reversal
       mockQueryContext.mockResolvedValueOnce({ rowCount: 1 });
 
-      const result = await deleteTransaction('personal', 'tx-1');
+      const result = await deleteTransaction('operations', 'tx-1');
 
       expect(result).toBe(true);
       // Should reverse the expense (add back)
@@ -222,7 +222,7 @@ describe('Finance Service', () => {
     it('should return false for nonexistent transaction', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [] });
 
-      const result = await deleteTransaction('personal', 'nonexistent');
+      const result = await deleteTransaction('operations', 'nonexistent');
       expect(result).toBe(false);
     });
   });
@@ -236,7 +236,7 @@ describe('Finance Service', () => {
       const budget = { id: 'b-1', name: 'Food', category: 'food', amount_limit: 200, current_spent: 0, alert_threshold: 0.8 };
       mockQueryContext.mockResolvedValueOnce({ rows: [budget] });
 
-      const result = await createBudget('personal', {
+      const result = await createBudget('operations', {
         name: 'Food',
         category: 'food',
         amount_limit: 200,
@@ -253,7 +253,7 @@ describe('Finance Service', () => {
         rows: [{ id: 'b-1', amount_limit: 100, current_spent: 90, alert_threshold: 0.8 }],
       });
 
-      const result = await getBudgets('personal');
+      const result = await getBudgets('operations');
 
       expect(result[0].usage_percent).toBe(90);
       expect(result[0].is_over_threshold).toBe(true);
@@ -262,7 +262,7 @@ describe('Finance Service', () => {
     it('should return empty array if table does not exist', async () => {
       mockQueryContext.mockRejectedValueOnce(new Error('relation "budgets" does not exist'));
 
-      const result = await getBudgets('personal');
+      const result = await getBudgets('operations');
       expect(result).toEqual([]);
     });
   });
@@ -270,7 +270,7 @@ describe('Finance Service', () => {
   describe('deleteBudget', () => {
     it('should return true on delete', async () => {
       mockQueryContext.mockResolvedValueOnce({ rowCount: 1 });
-      expect(await deleteBudget('personal', 'b-1')).toBe(true);
+      expect(await deleteBudget('operations', 'b-1')).toBe(true);
     });
   });
 
@@ -283,7 +283,7 @@ describe('Finance Service', () => {
       const goal = { id: 'g-1', name: 'Vacation', target_amount: 5000, current_amount: 1000, is_completed: false };
       mockQueryContext.mockResolvedValueOnce({ rows: [goal] });
 
-      const result = await createGoal('personal', { name: 'Vacation', target_amount: 5000, current_amount: 1000 });
+      const result = await createGoal('operations', { name: 'Vacation', target_amount: 5000, current_amount: 1000 });
 
       expect(result.progress_percent).toBe(20);
     });
@@ -293,7 +293,7 @@ describe('Finance Service', () => {
     it('should filter active only by default', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [] });
 
-      await getGoals('personal');
+      await getGoals('operations');
 
       const sql = mockQueryContext.mock.calls[0][1] as string;
       expect(sql).toContain('is_completed = FALSE');
@@ -303,7 +303,7 @@ describe('Finance Service', () => {
   describe('getGoal', () => {
     it('should return null when not found', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [] });
-      expect(await getGoal('personal', 'nonexistent')).toBeNull();
+      expect(await getGoal('operations', 'nonexistent')).toBeNull();
     });
   });
 });

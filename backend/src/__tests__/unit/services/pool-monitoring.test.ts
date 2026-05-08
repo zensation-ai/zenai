@@ -38,6 +38,8 @@ jest.mock('../../../utils/logger', () => ({
 
 jest.mock('../../../utils/request-context', () => ({
   getCurrentUserId: jest.fn().mockReturnValue(null),
+  getCurrentWorkspaceId: jest.fn().mockReturnValue(undefined),
+  getCurrentContextSlug: jest.fn().mockReturnValue(undefined),
 }));
 
 jest.mock('@opentelemetry/api', () => {
@@ -157,15 +159,15 @@ describe('Pool Monitoring', () => {
 
       // Contexts section
       expect(stats.contexts).toBeDefined();
-      expect(stats.contexts.personal).toBeDefined();
-      expect(stats.contexts.work).toBeDefined();
-      expect(stats.contexts.learning).toBeDefined();
-      expect(stats.contexts.creative).toBeDefined();
+      expect(stats.contexts.operations).toBeDefined();
+      expect(stats.contexts.finance).toBeDefined();
+      expect(stats.contexts.people).toBeDefined();
+      expect(stats.contexts.strategy).toBeDefined();
     });
 
     it('should include per-context query counters', () => {
       const stats = getPoolStats();
-      for (const ctx of ['personal', 'work', 'learning', 'creative'] as const) {
+      for (const ctx of ['operations', 'finance', 'people', 'strategy'] as const) {
         expect(stats.contexts[ctx]).toHaveProperty('queries');
         expect(stats.contexts[ctx]).toHaveProperty('errors');
         expect(stats.contexts[ctx]).toHaveProperty('slowQueries');

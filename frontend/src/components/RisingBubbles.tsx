@@ -17,8 +17,6 @@
  */
 
 import { memo } from 'react';
-import './RisingBubbles.css';
-
 interface RisingBubblesProps {
   /** "full" = 3 blobs + 10 bubbles, "subtle" = 2 blobs + 6 bubbles */
   variant?: 'full' | 'subtle';

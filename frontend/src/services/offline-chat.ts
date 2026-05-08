@@ -239,13 +239,13 @@ export async function generateOfflineResponse(query: string): Promise<OfflineRes
 
   switch (intent) {
     case 'search':
-      content = 'Du bist gerade offline. Deine Suchanfrage wird gespeichert und ausgefuehrt, sobald du wieder online bist.';
+      content = 'Du bist gerade offline. Deine Suchanfrage wird gespeichert und ausgeführt, sobald du wieder online bist.';
       break;
     case 'action':
-      content = 'Du bist gerade offline. Die Aktion wurde vorgemerkt und wird ausgefuehrt, sobald die Verbindung wiederhergestellt ist.';
+      content = 'Du bist gerade offline. Die Aktion wurde vorgemerkt und wird ausgeführt, sobald die Verbindung wiederhergestellt ist.';
       break;
     case 'code':
-      content = 'Du bist gerade offline. Code-Analyse und -Generierung benoetigt eine Server-Verbindung. Deine Anfrage wird gespeichert.';
+      content = 'Du bist gerade offline. Code-Analyse und -Generierung benötigt eine Server-Verbindung. Deine Anfrage wird gespeichert.';
       break;
     default: {
       // Chat - provide a minimal acknowledgement
@@ -254,7 +254,7 @@ export async function generateOfflineResponse(query: string): Promise<OfflineRes
         : sentiment.label === 'positive'
           ? 'Das klingt gut! '
           : '';
-      content = `${tone}Du bist gerade offline. Ich kann im Offline-Modus nur eingeschraenkt antworten. Deine Nachricht wird gespeichert und vollstaendig beantwortet, sobald du wieder online bist.`;
+      content = `${tone}Du bist gerade offline. Ich kann im Offline-Modus nur eingeschränkt antworten. Deine Nachricht wird gespeichert und vollständig beantwortet, sobald du wieder online bist.`;
       break;
     }
   }

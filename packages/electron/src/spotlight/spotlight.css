@@ -1,0 +1,159 @@
+/* Spotlight Overlay — Raycast/Alfred-inspired quick input */
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  background: transparent;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', sans-serif;
+  color: #e4e4e7;
+  -webkit-app-region: drag;
+  overflow: hidden;
+}
+
+.spotlight {
+  background: rgba(15, 17, 23, 0.92);
+  backdrop-filter: blur(40px) saturate(180%);
+  -webkit-backdrop-filter: blur(40px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow:
+    0 24px 48px rgba(0, 0, 0, 0.4),
+    0 0 0 1px rgba(255, 255, 255, 0.05);
+}
+
+/* ─── Input Row ──────────────────────────────────────────────────────── */
+
+.spotlight-input-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  height: 56px;
+  -webkit-app-region: no-drag;
+}
+
+.spotlight-icon {
+  width: 20px;
+  height: 20px;
+  color: #71717a;
+  flex-shrink: 0;
+}
+
+#spotlight-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  font-size: 16px;
+  color: #fafafa;
+  font-family: inherit;
+  letter-spacing: -0.01em;
+}
+
+#spotlight-input::placeholder {
+  color: #52525b;
+}
+
+.spotlight-kbd {
+  font-size: 11px;
+  color: #52525b;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 4px;
+  padding: 2px 6px;
+  font-family: inherit;
+  flex-shrink: 0;
+}
+
+/* ─── Spinner ────────────────────────────────────────────────────────── */
+
+.spotlight-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.1);
+  border-top-color: #a78bfa;
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+  flex-shrink: 0;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ─── Results ────────────────────────────────────────────────────────── */
+
+.spotlight-results {
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  padding: 12px 16px;
+  max-height: 328px;
+  overflow-y: auto;
+  -webkit-app-region: no-drag;
+}
+
+.spotlight-response {
+  font-size: 14px;
+  line-height: 1.6;
+  color: #d4d4d8;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.spotlight-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.spotlight-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 6px;
+  color: #a1a1aa;
+  font-size: 12px;
+  padding: 5px 12px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.15s, color 0.15s;
+}
+
+.spotlight-action:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fafafa;
+}
+
+.spotlight-action:active {
+  transform: scale(0.97);
+}
+
+/* ─── Scrollbar ──────────────────────────────────────────────────────── */
+
+.spotlight-results::-webkit-scrollbar {
+  width: 4px;
+}
+
+.spotlight-results::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.spotlight-results::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 2px;
+}
+
+/* ─── Utility ────────────────────────────────────────────────────────── */
+
+.hidden {
+  display: none !important;
+}

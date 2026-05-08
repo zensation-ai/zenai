@@ -25,7 +25,7 @@ import {
 jest.mock('../../../utils/database-context', () => ({
   queryContext: jest.fn(),
   isValidContext: (ctx: string) =>
-    ['personal', 'work', 'learning', 'creative'].includes(ctx),
+    ['operations', 'finance', 'people', 'strategy'].includes(ctx),
 }));
 
 jest.mock('../../../utils/logger', () => ({
@@ -75,7 +75,7 @@ const mockQueryContext = queryContext as jest.MockedFunction<typeof queryContext
 
 const mockMeetingRow = {
   id: 'meet-001',
-  company_id: 'personal',
+  company_id: 'operations',
   title: 'Sprint Planning',
   date: '2026-03-20T10:00:00Z',
   duration_minutes: 60,
@@ -123,7 +123,7 @@ describe('Meetings Service', () => {
       expect(result.id).toBe('meet-001');
       expect(result.title).toBe('Sprint Planning');
       expect(mockQueryContext).toHaveBeenCalledWith(
-        'work',
+        'finance',
         expect.stringContaining('INSERT INTO meetings'),
         expect.any(Array)
       );
@@ -132,10 +132,10 @@ describe('Meetings Service', () => {
     it('should use specified context', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [mockMeetingRow], rowCount: 1 } as any);
 
-      await createMeeting({ title: 'Study Session', date: '2026-03-20', context: 'learning' });
+      await createMeeting({ title: 'Study Session', date: '2026-03-20', context: 'people' });
 
       expect(mockQueryContext).toHaveBeenCalledWith(
-        'learning',
+        'people',
         expect.any(String),
         expect.any(Array)
       );
@@ -258,7 +258,7 @@ describe('Meetings Service', () => {
         mimeType: 'audio/wav',
       };
 
-      const result = await processMeetingNotes('meet-001', 'transcript', 'work', audioMeta);
+      const result = await processMeetingNotes('meet-001', 'transcript', 'finance', audioMeta);
 
       expect(result.audio_storage_path).toBe('/audio/meeting.wav');
       expect(result.audio_duration_seconds).toBe(3600);

@@ -3,8 +3,7 @@
  * Verifies spring physics configs, CSS fallbacks, and motion variants.
  */
 
-import { springs, springCSS, springFallback } from '../design-system/springs';
-import { motionVariants, reducedMotionVariants } from '../design-system/motion-variants';
+import { springs, springCSS, springFallback, motionVariants, reducedMotionVariants } from '@/lib/motion';
 
 describe('Spring Physics System', () => {
   test('all spring presets have required properties', () => {

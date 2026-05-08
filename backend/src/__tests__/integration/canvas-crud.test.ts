@@ -92,11 +92,11 @@ describe('Canvas CRUD Integration Tests', () => {
 
       const res = await request(app)
         .post('/api/canvas')
-        .send({ title: 'Code', type: 'code', language: 'typescript', context: 'work' })
+        .send({ title: 'Code', type: 'code', language: 'typescript', context: 'finance' })
         .expect(201);
 
       expect(res.body.success).toBe(true);
-      expect(mockCreateCanvasDocument).toHaveBeenCalledWith('work', 'Code', 'code', 'typescript', '', expect.any(String));
+      expect(mockCreateCanvasDocument).toHaveBeenCalledWith('finance', 'Code', 'code', 'typescript', '', expect.any(String));
     });
 
     it('should reject missing title', async () => {
@@ -174,6 +174,98 @@ describe('Canvas CRUD Integration Tests', () => {
     it('should reject invalid UUID format', async () => {
       const res = await request(app)
         .get('/api/canvas/not-a-uuid')
+        .expect(400);
+
+      expect(res.body.success).toBe(false);
+    });
+  });
+
+  // ============================================================
+  // PATCH /api/canvas/:id - Update
+  // ============================================================
+
+  describe('PATCH /api/canvas/:id', () => {
+    it('should update document title', async () => {
+      const doc = { id: VALID_UUID, title: 'Updated Title', type: 'markdown', content: '' };
+      mockUpdateCanvasDocument.mockResolvedValueOnce(doc);
+
+      const res = await request(app)
+        .patch(`/api/canvas/${VALID_UUID}`)
+        .send({ title: 'Updated Title' })
+        .expect(200);
+
+      expect(res.body.success).toBe(true);
+      expect(res.body.data.title).toBe('Updated Title');
+      expect(mockUpdateCanvasDocument).toHaveBeenCalledWith(
+        VALID_UUID,
+        expect.objectContaining({ title: 'Updated Title' }),
+        expect.any(String)
+      );
+    });
+
+    it('should update board_data', async () => {
+      const boardData = {
+        nodes: [{ id: 'n1', type: 'note', position: { x: 10, y: 20 }, data: { text: 'Test' } }],
+        edges: [],
+      };
+      const doc = { id: VALID_UUID, title: 'Board', board_data: boardData };
+      mockUpdateCanvasDocument.mockResolvedValueOnce(doc);
+
+      const res = await request(app)
+        .patch(`/api/canvas/${VALID_UUID}`)
+        .send({ board_data: boardData })
+        .expect(200);
+
+      expect(res.body.success).toBe(true);
+      expect(mockUpdateCanvasDocument).toHaveBeenCalledWith(
+        VALID_UUID,
+        expect.objectContaining({ board_data: boardData }),
+        expect.any(String)
+      );
+    });
+
+    it('should update content and board_data simultaneously', async () => {
+      const boardData = { nodes: [], edges: [] };
+      const doc = { id: VALID_UUID, title: 'Doc', content: 'new', board_data: boardData };
+      mockUpdateCanvasDocument.mockResolvedValueOnce(doc);
+
+      const res = await request(app)
+        .patch(`/api/canvas/${VALID_UUID}`)
+        .send({ content: 'new', board_data: boardData })
+        .expect(200);
+
+      expect(res.body.success).toBe(true);
+      expect(mockUpdateCanvasDocument).toHaveBeenCalledWith(
+        VALID_UUID,
+        expect.objectContaining({ content: 'new', board_data: boardData }),
+        expect.any(String)
+      );
+    });
+
+    it('should reject empty update body', async () => {
+      const res = await request(app)
+        .patch(`/api/canvas/${VALID_UUID}`)
+        .send({})
+        .expect(400);
+
+      expect(res.body.success).toBe(false);
+    });
+
+    it('should return 404 for non-existent document', async () => {
+      mockUpdateCanvasDocument.mockResolvedValueOnce(null);
+
+      const res = await request(app)
+        .patch(`/api/canvas/${VALID_UUID}`)
+        .send({ title: 'Nope' })
+        .expect(404);
+
+      expect(res.body.success).toBe(false);
+    });
+
+    it('should reject invalid UUID format', async () => {
+      const res = await request(app)
+        .patch('/api/canvas/not-a-uuid')
+        .send({ title: 'Test' })
         .expect(400);
 
       expect(res.body.success).toBe(false);

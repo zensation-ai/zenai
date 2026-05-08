@@ -1,3 +1,4 @@
+import { type CSSProperties } from 'react';
 import { AISuggestion } from './types';
 import { getSuggestionIcon, getSuggestionLabel, formatDate } from './helpers';
 
@@ -18,7 +19,7 @@ export function SuggestionsTab({ suggestions, onRespondToSuggestion }: Suggestio
       ) : (
         <div className="suggestions-list neuro-flow-list">
           {suggestions.slice(0, 7).map((suggestion, index) => (
-            <div key={suggestion.id} className="suggestion-card liquid-glass neuro-hover-lift neuro-stagger-item" style={{ animationDelay: `${index * 50}ms` }}>
+            <div key={suggestion.id} className="suggestion-card liquid-glass neuro-hover-lift neuro-stagger-item [animation-delay:var(--delay)]" style={{ '--delay': `${index * 50}ms` } as CSSProperties}>
               <div className="suggestion-header">
                 <span className="suggestion-type-badge">
                   {getSuggestionIcon(suggestion.suggestion_type)}

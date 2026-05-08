@@ -81,7 +81,7 @@ describe('RecordButton Component', () => {
       render(
         <RecordButton
           onTranscript={mockOnTranscript}
-          context="personal"
+          context="operations"
         />
       );
 
@@ -93,7 +93,7 @@ describe('RecordButton Component', () => {
       render(
         <RecordButton
           onTranscript={mockOnTranscript}
-          context="personal"
+          context="operations"
         />
       );
 
@@ -106,7 +106,7 @@ describe('RecordButton Component', () => {
       render(
         <RecordButton
           onTranscript={mockOnTranscript}
-          context="personal"
+          context="operations"
         />
       );
 
@@ -122,7 +122,7 @@ describe('RecordButton Component', () => {
       render(
         <RecordButton
           onTranscript={mockOnTranscript}
-          context="personal"
+          context="operations"
         />
       );
 
@@ -142,7 +142,7 @@ describe('RecordButton Component', () => {
       render(
         <RecordButton
           onTranscript={mockOnTranscript}
-          context="personal"
+          context="operations"
         />
       );
 
@@ -162,7 +162,7 @@ describe('RecordButton Component', () => {
         <RecordButton
           onTranscript={mockOnTranscript}
           onRecordingChange={mockOnRecordingChange}
-          context="personal"
+          context="operations"
         />
       );
 
@@ -182,7 +182,7 @@ describe('RecordButton Component', () => {
       render(
         <RecordButton
           onTranscript={mockOnTranscript}
-          context="personal"
+          context="operations"
         />
       );
 
@@ -203,7 +203,7 @@ describe('RecordButton Component', () => {
       render(
         <RecordButton
           onTranscript={mockOnTranscript}
-          context="personal"
+          context="operations"
         />
       );
 
@@ -231,7 +231,7 @@ describe('RecordButton Component', () => {
         <RecordButton
           onTranscript={mockOnTranscript}
           onRecordingChange={mockOnRecordingChange}
-          context="personal"
+          context="operations"
         />
       );
 
@@ -257,7 +257,7 @@ describe('RecordButton Component', () => {
       render(
         <RecordButton
           onTranscript={mockOnTranscript}
-          context="personal"
+          context="operations"
         />
       );
 
@@ -278,7 +278,7 @@ describe('RecordButton Component', () => {
       render(
         <RecordButton
           onTranscript={mockOnTranscript}
-          context="personal"
+          context="operations"
         />
       );
 
@@ -293,7 +293,7 @@ describe('RecordButton Component', () => {
       render(
         <RecordButton
           onTranscript={mockOnTranscript}
-          context="personal"
+          context="operations"
         />
       );
 
@@ -309,7 +309,7 @@ describe('RecordButton Component', () => {
       render(
         <RecordButton
           onTranscript={mockOnTranscript}
-          context="personal"
+          context="operations"
         />
       );
 
@@ -324,7 +324,7 @@ describe('RecordButton Component', () => {
       render(
         <RecordButton
           onTranscript={mockOnTranscript}
-          context="personal"
+          context="operations"
         />
       );
 
@@ -336,7 +336,7 @@ describe('RecordButton Component', () => {
       render(
         <RecordButton
           onTranscript={mockOnTranscript}
-          context="work"
+          context="finance"
         />
       );
 
@@ -350,7 +350,7 @@ describe('RecordButton Component', () => {
       render(
         <RecordButton
           onTranscript={mockOnTranscript}
-          context="personal"
+          context="operations"
           disabled={true}
         />
       );
@@ -365,7 +365,7 @@ describe('RecordButton Component', () => {
       render(
         <RecordButton
           onTranscript={mockOnTranscript}
-          context="personal"
+          context="operations"
           disabled={true}
         />
       );
@@ -382,7 +382,7 @@ describe('RecordButton Component', () => {
       render(
         <RecordButton
           onTranscript={mockOnTranscript}
-          context="personal"
+          context="operations"
           persona="assistant"
         />
       );
@@ -395,7 +395,7 @@ describe('RecordButton Component', () => {
       render(
         <RecordButton
           onTranscript={mockOnTranscript}
-          context="personal"
+          context="operations"
           persona={null}
         />
       );

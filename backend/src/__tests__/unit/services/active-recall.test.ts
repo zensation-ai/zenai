@@ -107,7 +107,7 @@ describe('Active Recall Service', () => {
         }],
       });
 
-      const challenge = await generateChallenge('task-1', 'personal');
+      const challenge = await generateChallenge('task-1', 'operations');
 
       expect(challenge).not.toBeNull();
       expect(challenge!.title).toBe('Machine Learning Basics');
@@ -119,7 +119,7 @@ describe('Active Recall Service', () => {
     it('should return null for non-existent task', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [] });
 
-      const challenge = await generateChallenge('nonexistent', 'personal');
+      const challenge = await generateChallenge('nonexistent', 'operations');
 
       expect(challenge).toBeNull();
     });
@@ -129,7 +129,7 @@ describe('Active Recall Service', () => {
         rows: [{ id: 'task-1', title: 'Test', tags: null, created_at: '2026-01-15', metadata: {} }],
       });
 
-      const challenge = await generateChallenge('task-1', 'personal');
+      const challenge = await generateChallenge('task-1', 'operations');
 
       expect(challenge!.tags).toEqual([]);
     });
@@ -157,7 +157,7 @@ describe('Active Recall Service', () => {
 
       const result = await evaluateRecall(
         'task-1',
-        'personal',
+        'operations',
         'ML uses labeled data for supervised learning and finds patterns without labels'
       );
 
@@ -174,7 +174,7 @@ describe('Active Recall Service', () => {
     it('should return null for non-existent task', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [] });
 
-      const result = await evaluateRecall('nonexistent', 'personal', 'some recall');
+      const result = await evaluateRecall('nonexistent', 'operations', 'some recall');
 
       expect(result).toBeNull();
     });
@@ -185,8 +185,8 @@ describe('Active Recall Service', () => {
   // ========================================
   describe('getReviewSchedule', () => {
     it('should return due tasks sorted by due date', async () => {
-      const yesterday = new Date();
-      yesterday.setDate(yesterday.getDate() - 1);
+      // Subtract 25h in ms to avoid DST edge case (setDate can be only 23h on spring-forward days)
+      const yesterday = new Date(Date.now() - 25 * 60 * 60 * 1000);
 
       mockQueryContext.mockResolvedValueOnce({
         rows: [
@@ -204,7 +204,7 @@ describe('Active Recall Service', () => {
         ],
       });
 
-      const schedule = await getReviewSchedule('personal');
+      const schedule = await getReviewSchedule('operations');
 
       expect(schedule).toHaveLength(1);
       expect(schedule[0].taskId).toBe('task-1');
@@ -215,7 +215,7 @@ describe('Active Recall Service', () => {
     it('should return empty for no due tasks', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [] });
 
-      const schedule = await getReviewSchedule('personal');
+      const schedule = await getReviewSchedule('operations');
 
       expect(schedule).toEqual([]);
     });

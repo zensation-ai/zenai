@@ -7,8 +7,6 @@
 
 import { useEffect, useState } from 'react';
 import type { DailyBriefing, ConflictInfo } from './useCalendarAI';
-import './CalendarBriefing.css';
-
 interface Props {
   briefing: DailyBriefing | null;
   briefingLoading: boolean;
@@ -77,13 +75,13 @@ export function CalendarBriefing({
               {errorConflicts.length > 0 ? '⚠' : 'ℹ'} {errorConflicts.length + warningConflicts.length}
             </span>
           )}
-          <button className="cal-briefing__bar-btn" onClick={handleRefresh} title="Aktualisieren" disabled={briefingLoading}>
+          <button className="cal-briefing__bar-btn" onClick={handleRefresh} title="Aktualisieren" aria-label="Aktualisieren" disabled={briefingLoading}>
             <svg width="13" height="13" viewBox="0 0 14 14" fill="none" className={briefingLoading ? 'cal-briefing__spinning' : ''}>
               <path d="M1.75 7C1.75 4.1 4.1 1.75 7 1.75c1.7 0 3.2.82 4.15 2.08M12.25 7c0 2.9-2.35 5.25-5.25 5.25-1.7 0-3.2-.82-4.15-2.08" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/>
               <path d="M10.5 1.75v2.33h-2.33M3.5 12.25V9.92h2.33" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
           </button>
-          <button className="cal-briefing__bar-btn" onClick={onClose} title="Schließen">
+          <button className="cal-briefing__bar-btn" onClick={onClose} title="Schließen" aria-label="Schließen">
             <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
               <path d="M3 3l6 6M9 3l-6 6" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/>
             </svg>

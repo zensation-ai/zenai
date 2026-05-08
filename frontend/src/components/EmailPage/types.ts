@@ -139,8 +139,8 @@ export interface ComposeState {
 }
 
 export const CATEGORY_LABELS: Record<EmailCategory, { label: string; color: string; icon: string }> = {
-  business: { label: 'Geschaeftlich', color: '#4A90D9', icon: '💼' },
-  personal: { label: 'Persoenlich', color: '#7B68EE', icon: '👤' },
+  business: { label: 'Geschäftlich', color: '#4A90D9', icon: '💼' },
+  personal: { label: 'Persönlich', color: '#7B68EE', icon: '👤' },
   newsletter: { label: 'Newsletter', color: '#20B2AA', icon: '📰' },
   notification: { label: 'Benachrichtigung', color: '#FFB347', icon: '🔔' },
   spam: { label: 'Spam', color: '#FF6B6B', icon: '🚫' },
@@ -156,7 +156,7 @@ export const PRIORITY_LABELS: Record<EmailPriority, { label: string; color: stri
 export const FOLDER_CONFIG: Record<EmailTab, { label: string; icon: string }> = {
   inbox: { label: 'Posteingang', icon: '📥' },
   sent: { label: 'Gesendet', icon: '📤' },
-  drafts: { label: 'Entwuerfe', icon: '📝' },
+  drafts: { label: 'Entwürfe', icon: '📝' },
   archived: { label: 'Archiv', icon: '📦' },
   trash: { label: 'Papierkorb', icon: '🗑' },
   starred: { label: 'Markiert', icon: '⭐' },
@@ -266,7 +266,7 @@ export interface InboxFilterChipDef {
 export const INBOX_FOLDER_CHIPS: InboxFilterChipDef[] = [
   { id: 'folder-inbox', label: 'Eingang', group: 'folder', value: 'inbox' },
   { id: 'folder-sent', label: 'Gesendet', group: 'folder', value: 'sent' },
-  { id: 'folder-drafts', label: 'Entwuerfe', group: 'folder', value: 'drafts' },
+  { id: 'folder-drafts', label: 'Entwürfe', group: 'folder', value: 'drafts' },
   { id: 'folder-archived', label: 'Archiv', group: 'folder', value: 'archived' },
   { id: 'folder-trash', label: 'Papierkorb', group: 'folder', value: 'trash' },
 ];
@@ -277,8 +277,8 @@ export const INBOX_STATUS_CHIPS: InboxFilterChipDef[] = [
 ];
 
 export const INBOX_CATEGORY_CHIPS: InboxFilterChipDef[] = [
-  { id: 'cat-business', label: 'Geschaeftlich', group: 'category', value: 'business' },
-  { id: 'cat-personal', label: 'Persoenlich', group: 'category', value: 'personal' },
+  { id: 'cat-business', label: 'Geschäftlich', group: 'category', value: 'business' },
+  { id: 'cat-personal', label: 'Persönlich', group: 'category', value: 'personal' },
   { id: 'cat-newsletter', label: 'Newsletter', group: 'category', value: 'newsletter' },
   { id: 'cat-notification', label: 'Benachrichtigung', group: 'category', value: 'notification' },
 ];

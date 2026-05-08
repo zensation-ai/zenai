@@ -53,7 +53,10 @@ export type Page =
   | 'documents'      // Wissen (intermediary: DocumentVaultPage)
   | 'business'       // Cockpit (intermediary: BusinessDashboard)
   | 'my-ai'          // Meine KI (intermediary: MyAIPage)
-  | 'settings'       // System (intermediary: SettingsDashboard)
+  | 'settings-user'          // System > Benutzer
+  | 'settings-ai'            // System > KI
+  | 'settings-integrations'  // System > Integrationen
+  | 'settings-admin'         // System > Admin
 
   // ── Active sub-pages (rendered within parent Smart Page) ──
   | 'contacts'       // Within Planer
@@ -70,6 +73,8 @@ export type Page =
   | 'analytics' | 'digest' | 'knowledge-graph' | 'graphrag'
   | 'voice-chat' | 'procedural-memory' | 'digital-twin'
   | 'system-admin'
+  | 'billing'
+  | 'social'
 
   // ── Legacy redirect-only types ────────────────────
   // @deprecated Phase 105 — kept for redirect support, remove in Phase 110
@@ -84,9 +89,9 @@ export type Page =
   | 'evolution'      // → ideas (AI Panel tab)
   | 'agent-teams'    // → hub (intent + result panel)
   | 'learning-tasks' // → calendar (tasks with learning tag)
-  | 'personalization'// → my-ai (Persona tab)
-  | 'stories'        // → deprecated (unused)
-  | 'dashboard'      // → hub
+  // 'personalization' removed — use /meine-ki directly
+  // 'stories'        removed — was unused, redirects to /wissen
+  // 'dashboard'      removed — use hub/home, redirects to /
   | 'ai-workshop'    // → ideas
   | 'mcp-servers'    // → settings (Integrations tab)
   | 'automations'    // → settings

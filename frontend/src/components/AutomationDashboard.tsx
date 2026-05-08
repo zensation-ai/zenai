@@ -1,13 +1,10 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, type CSSProperties } from 'react';
 import { AIContext } from './ContextSwitcher';
 import axios from 'axios';
 import { showToast } from './Toast';
 import { getTimeBasedGreeting, EMPTY_STATE_MESSAGES } from '../utils/aiPersonality';
 import { AutomationFormModal } from './AutomationFormModal';
 import { useConfirm } from './ConfirmDialog';
-import '../neurodesign.css';
-import './AutomationDashboard.css';
-
 interface AutomationDashboardProps {
   context: AIContext;
   onBack: () => void;
@@ -166,9 +163,9 @@ export function AutomationDashboard({ context, onBack, embedded }: AutomationDas
 
   const handleDeleteAutomation = async (id: string) => {
     const confirmed = await confirm({
-      title: 'Automation loeschen',
-      message: 'Automation wirklich loeschen?',
-      confirmText: 'Loeschen',
+      title: 'Automation löschen',
+      message: 'Automation wirklich löschen?',
+      confirmText: 'Löschen',
       variant: 'danger',
     });
     if (!confirmed) return;
@@ -264,12 +261,12 @@ export function AutomationDashboard({ context, onBack, embedded }: AutomationDas
             >
               + Neue Automation
             </button>
-            <span className="context-badge">{context === 'work' ? '💼 Work' : '🏠 Personal'}</span>
+            <span className="context-badge">{context === 'finance' ? '💰 Finanzen' : '⚙️ Operativ'}</span>
           </div>
         </header>
       )}
       {embedded && (
-        <div className="automation-header-embedded" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+        <div className="automation-header-embedded flex justify-between items-center mb-4">
           <button
             type="button"
             className="create-automation-btn neuro-button neuro-hover-lift"
@@ -356,8 +353,8 @@ export function AutomationDashboard({ context, onBack, embedded }: AutomationDas
               automations.slice(0, 7).map((automation, index) => (
                 <div
                   key={automation.id}
-                  className={`automation-card liquid-glass neuro-hover-lift neuro-stagger-item ${!automation.is_active ? 'inactive' : ''} ${selectedAutomation?.id === automation.id ? 'selected' : ''}`}
-                  style={{ animationDelay: `${index * 50}ms` }}
+                  className={`automation-card liquid-glass neuro-hover-lift neuro-stagger-item [animation-delay:var(--delay)] ${!automation.is_active ? 'inactive' : ''} ${selectedAutomation?.id === automation.id ? 'selected' : ''}`}
+                  style={{ '--delay': `${index * 50}ms` } as CSSProperties}
                   onClick={() => setSelectedAutomation(selectedAutomation?.id === automation.id ? null : automation)}
                 >
                   <div className="automation-header-row">
@@ -477,7 +474,7 @@ export function AutomationDashboard({ context, onBack, embedded }: AutomationDas
             ) : (
               <div className="suggestions-list neuro-flow-list">
                 {suggestions.slice(0, 7).map((suggestion, index) => (
-                  <div key={suggestion.id} className="suggestion-card liquid-glass neuro-hover-lift neuro-stagger-item" style={{ animationDelay: `${index * 50}ms` }}>
+                  <div key={suggestion.id} className="suggestion-card liquid-glass neuro-hover-lift neuro-stagger-item [animation-delay:var(--delay)]" style={{ '--delay': `${index * 50}ms` } as CSSProperties}>
                     <div className="suggestion-header">
                       <h3>{suggestion.name}</h3>
                       <span className="confidence-badge">

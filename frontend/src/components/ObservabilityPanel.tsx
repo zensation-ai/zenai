@@ -1,14 +1,12 @@
 /**
- * ObservabilityPanel - System-Ueberwachung
+ * ObservabilityPanel - System-Überwachung
  *
  * Zeigt System-Health, Queue-Statistiken und KI-Metriken.
  * Backend: GET /api/observability/metrics, /queue-stats, /health
  */
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, type CSSProperties } from 'react';
 import { getApiBaseUrl, getApiFetchHeaders } from '../utils/apiConfig';
-import './ObservabilityPanel.css';
-
 // ─── Types ────────────────────────────────────────────────
 
 interface PoolStats {
@@ -64,7 +62,8 @@ function formatUptime(seconds: number): string {
   return `${m}m`;
 }
 
-function formatNumber(n: number): string {
+function formatNumber(n: number | undefined | null): string {
+  if (n == null) return '–';
   if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
   if (n >= 1_000) return `${(n / 1_000).toFixed(1)}k`;
   return n.toLocaleString('de-DE');
@@ -133,7 +132,8 @@ export function ObservabilityPanel() {
 
       if (metricsRes.status === 'fulfilled' && metricsRes.value.ok) {
         const data = await metricsRes.value.json();
-        setMetrics(data.data || data.metrics || []);
+        const raw = data.data || data.metrics || [];
+        setMetrics(Array.isArray(raw) ? raw : []);
       }
 
       setLastRefresh(new Date());
@@ -161,7 +161,7 @@ export function ObservabilityPanel() {
   const statusLabel = health?.status === 'ok' || health?.status === 'healthy'
     ? 'Gesund'
     : health?.status === 'degraded'
-    ? 'Eingeschraenkt'
+    ? 'Eingeschränkt'
     : health?.status || 'Unbekannt';
 
   return (
@@ -169,7 +169,7 @@ export function ObservabilityPanel() {
       {/* Header with refresh */}
       <div className="obs-header">
         <div>
-          <h3 className="obs-title">System-Ueberwachung</h3>
+          <h3 className="obs-title">System-Überwachung</h3>
           <p className="obs-subtitle">
             Zuletzt aktualisiert: {lastRefresh.toLocaleTimeString('de-DE')}
           </p>
@@ -180,6 +180,7 @@ export function ObservabilityPanel() {
           onClick={fetchAll}
           disabled={loading}
           title="Aktualisieren"
+          aria-label="Aktualisieren"
         >
           {loading ? (
             <span className="obs-refresh-spinner" />
@@ -204,10 +205,10 @@ export function ObservabilityPanel() {
         <div className="obs-health-grid">
           {/* Overall Status */}
           <div className="obs-health-card obs-health-status">
-            <div className="obs-health-indicator" style={{ backgroundColor: statusColor }} />
+            <div className="obs-health-indicator bg-[var(--sc)]" style={{ '--sc': statusColor } as CSSProperties} />
             <div className="obs-health-info">
               <span className="obs-health-label">Status</span>
-              <span className="obs-health-value" style={{ color: statusColor }}>
+              <span className="obs-health-value text-[var(--sc)]" style={{ '--sc': statusColor } as CSSProperties}>
                 {statusLabel}
               </span>
             </div>
@@ -248,9 +249,7 @@ export function ObservabilityPanel() {
             <div className="obs-health-icon">⚡</div>
             <div className="obs-health-info">
               <span className="obs-health-label">Redis</span>
-              <span className="obs-health-value" style={{
-                color: health?.redis?.connected ? '#22c55e' : '#ef4444',
-              }}>
+              <span className={`obs-health-value ${health?.redis?.connected ? 'text-green-500' : 'text-red-500'}`}>
                 {health?.redis?.connected ? 'Verbunden' : 'Nicht verbunden'}
               </span>
             </div>
@@ -262,9 +261,7 @@ export function ObservabilityPanel() {
               <div className="obs-health-icon">📡</div>
               <div className="obs-health-info">
                 <span className="obs-health-label">Tracing</span>
-                <span className="obs-health-value" style={{
-                  color: health.tracing.enabled ? '#22c55e' : 'var(--text-secondary)',
-                }}>
+                <span className={`obs-health-value ${health.tracing.enabled ? 'text-green-500' : 'text-text-secondary'}`}>
                   {health.tracing.enabled ? 'Aktiv' : 'Inaktiv'}
                 </span>
                 {health.tracing.provider && (
@@ -280,7 +277,7 @@ export function ObservabilityPanel() {
       <div className="obs-section">
         <h4 className="obs-section-title">Queue-Statistiken</h4>
         {!queueStats || Object.keys(queueStats).length === 0 ? (
-          <div className="obs-empty">Keine Queue-Daten verfuegbar</div>
+          <div className="obs-empty">Keine Queue-Daten verfügbar</div>
         ) : (
           <div className="obs-queue-grid">
             {Object.entries(queueStats).map(([name, stats]) => {
@@ -316,13 +313,13 @@ export function ObservabilityPanel() {
                     <div className="obs-queue-bar-wrap">
                       <div className="obs-queue-bar">
                         <div
-                          className="obs-queue-bar-success"
-                          style={{ width: `${100 - failRate}%` }}
+                          className="obs-queue-bar-success w-[var(--bar-ok)]"
+                          style={{ '--bar-ok': `${100 - failRate}%` } as CSSProperties}
                         />
                         {failRate > 0 && (
                           <div
-                            className="obs-queue-bar-fail"
-                            style={{ width: `${failRate}%` }}
+                            className="obs-queue-bar-fail w-[var(--bar-fail)]"
+                            style={{ '--bar-fail': `${failRate}%` } as CSSProperties}
                           />
                         )}
                       </div>
@@ -340,9 +337,9 @@ export function ObservabilityPanel() {
 
       {/* ─── Metrics Overview ─────────────────────────── */}
       <div className="obs-section">
-        <h4 className="obs-section-title">Metriken-Uebersicht</h4>
-        {metrics.length === 0 ? (
-          <div className="obs-empty">Keine Metriken verfuegbar</div>
+        <h4 className="obs-section-title">Metriken-Übersicht</h4>
+        {!Array.isArray(metrics) || metrics.length === 0 ? (
+          <div className="obs-empty">Keine Metriken verfügbar</div>
         ) : (
           <div className="obs-metrics-grid">
             {metrics.map((m, i) => (

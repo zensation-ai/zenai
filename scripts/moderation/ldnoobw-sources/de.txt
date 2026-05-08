@@ -1,0 +1,39 @@
+# LDNOOBW German source — ZenAI Tier-1 moderation
+# Format: <pattern>|<severity>   (severity: block|soft)
+# Kuratiert aus LDNOOBW (de) + Shutterstock-Fork; Schimpfworte in entschärfter
+# Form, CSAM- und Gewaltanleitungen vollständig. Tier-2 übernimmt den Rest.
+
+# --- Historic seed (Sprint 1.2 Regressions-Baseline) ---
+bring dich um|block
+anleitung (bombe|sprengstoff)|block
+kinderpornografie|block
+
+# --- Selbstverletzung / Suizid ---
+begehe selbstmord|block
+erhänge dich|block
+töte dich selbst|block
+ritze dich|block
+
+# --- Gewalt / Terror / Waffen ---
+amoklauf (planen|anleitung)|block
+rohrbombe bauen|block
+sprengstoff (herstellen|selber machen)|block
+waffe selbst bauen|block
+biowaffe synthese|block
+
+# --- Sexueller Kindesmissbrauch ---
+kinderpornos|block
+kinderschänder anleitung|block
+missbrauchsbilder|block
+
+# --- Hass / Entmenschlichung ---
+vergase die (juden|schwarzen|ausländer)|block
+lyncht die|block
+ausrotten (juden|muslime|ausländer)|block
+
+# --- Soft-Flags (Tier-2 entscheidet) ---
+verpiss dich|soft
+halt die fresse|soft
+du hurensohn|soft
+arschloch|soft
+scheisskerl|soft

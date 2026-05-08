@@ -22,7 +22,10 @@ export const PAGE_PATHS: Record<Page, string> = {
   'documents': '/wissen',
   'business': '/cockpit',
   'my-ai': '/meine-ki',
-  'settings': '/system',
+  'settings-user': '/system/benutzer',
+  'settings-ai': '/system/ki',
+  'settings-integrations': '/system/integrationen',
+  'settings-admin': '/system/admin',
 
   // ── Active sub-pages ──
   'contacts': '/planer/kontakte',
@@ -42,12 +45,14 @@ export const PAGE_PATHS: Record<Page, string> = {
   'media': '/wissen/medien',
   'analytics': '/cockpit/trends',
   'digest': '/cockpit/digest',
-  'knowledge-graph': '/wissen/connections',
+  'knowledge-graph': '/wissen',
   'graphrag': '/cockpit/graphrag',
   'voice-chat': '/meine-ki/voice-chat',
   'procedural-memory': '/meine-ki/procedures',
   'digital-twin': '/meine-ki/digital-twin',
-  'system-admin': '/system/admin',
+  'system-admin': '/system/admin/system',
+  'billing': '/system/benutzer/billing',
+  'social': '/cockpit/social',
 
   // ── Legacy redirect-only (all map to canonical paths) ──
   'home': '/',
@@ -61,33 +66,70 @@ export const PAGE_PATHS: Record<Page, string> = {
   'evolution': '/ideen/evolution',
   'agent-teams': '/',
   'learning-tasks': '/planer/tasks',
-  'personalization': '/meine-ki',
-  'stories': '/wissen/connections',
-  'dashboard': '/dashboard',
+  // 'personalization', 'stories', 'dashboard' removed from Page type — see LEGACY_REDIRECTS
   'ai-workshop': '/ideen/workshop',
-  'mcp-servers': '/system/integrations/mcp',
-  'automations': '/system/automations',
-  'integrations': '/system/integrations',
-  'export': '/system/data',
-  'sync': '/system/data',
-  'profile': '/system/profile',
+  'mcp-servers': '/system/integrationen/mcp-servers',
+  'automations': '/system/ki/automations',
+  'integrations': '/system/integrationen',
+  'export': '/system/benutzer/data',
+  'sync': '/system/benutzer/data',
+  'profile': '/system/benutzer/profile',
 };
 
-/** Maps canonical URL paths to Page identifiers */
+/** Maps canonical URL paths to Page identifiers.
+ *  Sub-page paths MUST be listed here so resolvePathToPage() matches them
+ *  before falling back to parent prefix matching.
+ */
 export const PATH_PAGES: Record<string, Page> = {
   '/': 'hub',
-  '/dashboard': 'dashboard',
+  '/chat': 'hub',
   '/ideen': 'ideas',
   '/planer': 'calendar',
   '/inbox': 'email',
   '/wissen': 'documents',
   '/cockpit': 'business',
   '/meine-ki': 'my-ai',
-  '/system': 'settings',
+  '/system/benutzer': 'settings-user',
+  '/system/ki': 'settings-ai',
+  '/system/integrationen': 'settings-integrations',
+  '/system/admin': 'settings-admin',
+
+  // ── Workspace sub-pages (promoted to sidebar-level navigation) ──
+  '/planer/kontakte': 'contacts',
+  '/cockpit/finanzen': 'finance',
+  '/cockpit/trends': 'insights',
+  '/wissen/lernen': 'learning',
+  '/ideen/workshop': 'workshop',
+
+  // ── Sub-tabs that need specific page resolution ──
+  '/planer/tasks': 'tasks',
+  '/planer/aufgaben': 'tasks',   // German alias for /planer/tasks
+  '/planer/kanban': 'kanban',
+  '/planer/gantt': 'gantt',
+  '/planer/meetings': 'meetings',
+  '/wissen/editor': 'canvas',
+  '/wissen/medien': 'media',
+  '/wissen/connections': 'documents',
+  '/cockpit/digest': 'digest',
+  '/cockpit/graphrag': 'graphrag',
+  '/meine-ki/voice-chat': 'voice-chat',
+  '/meine-ki/procedures': 'procedural-memory',
+  '/meine-ki/digital-twin': 'digital-twin',
+  '/meine-ki/memory-insights': 'memory-insights',
+  '/inbox/benachrichtigungen': 'notifications',
+  '/system/admin/system': 'system-admin',
+  '/system/benutzer/billing': 'billing',
+  '/cockpit/social': 'social',
+  '/ideen/incubator': 'incubator',
+  '/ideen/archive': 'archive',
+  '/ideen/triage': 'triage',
+  '/ideen/proactive': 'proactive',
+  '/ideen/evolution': 'evolution',
 };
 
 // ============================================
 // LEGACY REDIRECTS — every old URL still works
+// Legacy redirects — scheduled for removal 2026-09-26
 // ============================================
 
 /** Legacy paths that should redirect to their new canonical locations.
@@ -109,8 +151,9 @@ export const LEGACY_REDIRECTS: Array<{ from: string; to: string; rewritePrefix?:
   { from: '/business/*', to: '/cockpit/*', rewritePrefix: true },
   { from: '/my-ai', to: '/meine-ki' },
   { from: '/my-ai/*', to: '/meine-ki/*', rewritePrefix: true },
-  { from: '/settings', to: '/system' },
-  { from: '/settings/*', to: '/system/*', rewritePrefix: true },
+  { from: '/settings', to: '/system/benutzer' },
+  { from: '/settings/*', to: '/system/benutzer', },
+  { from: '/einstellungen/abonnement', to: '/system/benutzer/billing' },
 
   // Old standalone pages → merged into Smart Pages
   { from: '/browser', to: '/' },
@@ -119,36 +162,41 @@ export const LEGACY_REDIRECTS: Array<{ from: string; to: string; rewritePrefix?:
   { from: '/contacts', to: '/planer/kontakte' },
   { from: '/finance', to: '/cockpit/finanzen' },
   { from: '/insights', to: '/cockpit/trends' },
-  { from: '/insights/*', to: '/cockpit/*', rewritePrefix: true },
+  { from: '/insights/*', to: '/cockpit/trends/*', rewritePrefix: true },
   { from: '/learning', to: '/wissen/lernen' },
-  { from: '/learning/*', to: '/wissen/*', rewritePrefix: true },
+  { from: '/learning/*', to: '/wissen/lernen/*', rewritePrefix: true },
   { from: '/screen-memory', to: '/' },
   { from: '/notifications', to: '/inbox/benachrichtigungen' },
+  { from: '/system', to: '/system/benutzer' },
+  { from: '/system/profile', to: '/system/benutzer' },
+  { from: '/system/automations', to: '/system/ki' },
+  { from: '/system/integrations', to: '/system/integrationen' },
+  { from: '/system/data', to: '/system/benutzer/data' },
   { from: '/admin', to: '/system/admin' },
-  { from: '/admin/*', to: '/system' },
+  { from: '/admin/*', to: '/system/admin' },
 
   // Old double-legacy redirects (pre-Phase 105 legacy paths)
   { from: '/incubator', to: '/ideen/incubator' },
   { from: '/ai-workshop', to: '/ideen' },
   { from: '/ai-workshop/*', to: '/ideen' },
   { from: '/meetings', to: '/planer/meetings' },
-  { from: '/automations', to: '/system/automations' },
-  { from: '/integrations', to: '/system/integrations' },
-  { from: '/export', to: '/system/data' },
-  { from: '/sync', to: '/system/data' },
-  { from: '/profile', to: '/system/profile' },
+  { from: '/automations', to: '/system/ki' },
+  { from: '/integrations', to: '/system/integrationen' },
+  { from: '/export', to: '/system/benutzer/data' },
+  { from: '/sync', to: '/system/benutzer/data' },
+  { from: '/profile', to: '/system/benutzer' },
   { from: '/archive', to: '/ideen/archive' },
   { from: '/triage', to: '/ideen/triage' },
-  { from: '/stories', to: '/wissen/connections' },
+  { from: '/stories', to: '/wissen' },
   { from: '/media', to: '/wissen/medien' },
   { from: '/canvas', to: '/wissen/editor' },
   { from: '/personalization', to: '/meine-ki' },
   { from: '/voice-chat', to: '/meine-ki/voice-chat' },
   { from: '/agent-teams', to: '/' },
-  // /dashboard is a valid cockpit-mode route — no redirect needed
+  { from: '/dashboard', to: '/' },
   { from: '/analytics', to: '/cockpit/trends' },
   { from: '/digest', to: '/cockpit/digest' },
-  { from: '/knowledge-graph', to: '/wissen/connections' },
+  { from: '/knowledge-graph', to: '/wissen' },
   { from: '/learning-tasks', to: '/planer/tasks' },
 ];
 
@@ -181,27 +229,6 @@ export function createLegacyRedirects() {
   });
 }
 
-// ============================================
-// COCKPIT MODE ROUTES (Phase 142)
-// ============================================
-
-export const COCKPIT_ROUTES = {
-  chat: '/chat',
-  dashboard: '/dashboard',
-  settings: '/settings',
-} as const;
-
-export function legacyPageToPanel(page: string): string | null {
-  const mapping: Record<string, string> = {
-    'ideas': 'ideas', 'ideas/incubator': 'ideas', 'ideas/archive': 'ideas', 'ideas/triage': 'ideas',
-    'calendar': 'calendar', 'calendar/tasks': 'tasks', 'calendar/kanban': 'tasks',
-    'email': 'email', 'contacts': 'contacts', 'documents': 'documents',
-    'finance': 'finance', 'my-ai': 'memory', 'my-ai/memory': 'memory',
-    'workshop': 'agents', 'workshop/agent-teams': 'agents',
-  };
-  return mapping[page] ?? null;
-}
-
 /**
  * Resolve a Page to its URL path, with optional tab suffix.
  */
@@ -211,7 +238,7 @@ export function resolvePagePath(page: Page, tab?: string): string {
   if (tab) {
     const tabPages: Page[] = [
       'ideas', 'calendar', 'email', 'documents', 'business',
-      'my-ai', 'settings', 'hub',
+      'my-ai', 'settings-user', 'settings-ai', 'settings-integrations', 'settings-admin', 'hub',
     ];
     if (tabPages.includes(page)) {
       path = `${PAGE_PATHS[page]}/${tab}`;
@@ -224,21 +251,30 @@ export function resolvePagePath(page: Page, tab?: string): string {
 /**
  * Resolve a pathname to its Page identifier.
  * Handles both new German slugs and old English paths (for transition period).
+ * Returns undefined for unknown paths so callers can render a 404 page.
  */
-export function resolvePathToPage(pathname: string): Page {
+export function resolvePathToPage(pathname: string): Page | undefined {
   // Direct match
   if (PATH_PAGES[pathname]) {
     return PATH_PAGES[pathname];
   }
 
   // Sub-path matching — new German slug prefixes
+  // More specific prefixes MUST come before their parent prefix
   if (pathname.startsWith('/ideen/')) return 'ideas';
   if (pathname.startsWith('/planer/')) return 'calendar';
   if (pathname.startsWith('/inbox/')) return 'email';
+  if (pathname.startsWith('/wissen/lernen')) return 'learning';
   if (pathname.startsWith('/wissen/')) return 'documents';
+  if (pathname.startsWith('/cockpit/trends')) return 'insights';
+  if (pathname.startsWith('/cockpit/finanzen')) return 'finance';
+  if (pathname.startsWith('/cockpit/social')) return 'social';
   if (pathname.startsWith('/cockpit/')) return 'business';
   if (pathname.startsWith('/meine-ki/')) return 'my-ai';
-  if (pathname.startsWith('/system/')) return 'settings';
+  if (pathname.startsWith('/system/benutzer')) return 'settings-user';
+  if (pathname.startsWith('/system/ki')) return 'settings-ai';
+  if (pathname.startsWith('/system/integrationen')) return 'settings-integrations';
+  if (pathname.startsWith('/system/admin')) return 'settings-admin';
 
   // Sub-path matching — old English prefixes (fallback before redirect)
   if (pathname.startsWith('/ideas/')) return 'ideas';
@@ -247,16 +283,61 @@ export function resolvePathToPage(pathname: string): Page {
   if (pathname.startsWith('/documents/')) return 'documents';
   if (pathname.startsWith('/business/')) return 'business';
   if (pathname.startsWith('/my-ai/')) return 'my-ai';
-  if (pathname.startsWith('/settings/')) return 'settings';
+  if (pathname.startsWith('/settings/')) return 'settings-user';
   if (pathname.startsWith('/workshop/')) return 'ideas';
   if (pathname.startsWith('/insights/')) return 'business';
   if (pathname.startsWith('/learning/')) return 'documents';
-  if (pathname.startsWith('/admin/')) return 'settings';
+  if (pathname.startsWith('/admin/')) return 'settings-admin';
   if (pathname.startsWith('/browser/')) return 'hub';
   if (pathname.startsWith('/contacts/')) return 'calendar';
-  if (pathname.startsWith('/finance/')) return 'business';
+  if (pathname.startsWith('/finance/')) return 'finance';
   if (pathname.startsWith('/screen-memory/')) return 'hub';
 
-  // Default: unknown path → hub
-  return 'hub';
+  // Legacy exact-path matching — old English slugs without trailing slash
+  const LEGACY_EXACT: Record<string, Page> = {
+    '/ideas': 'ideas',
+    '/calendar': 'calendar',
+    '/email': 'email',
+    '/documents': 'documents',
+    '/business': 'business',
+    '/my-ai': 'my-ai',
+    '/settings': 'settings-user',
+    '/workshop': 'ideas',
+    '/contacts': 'contacts',
+    '/finance': 'finance',
+    '/insights': 'insights',
+    '/learning': 'learning',
+    '/notifications': 'notifications',
+    '/browser': 'hub',
+    '/screen-memory': 'hub',
+    '/admin': 'settings-admin',
+    '/incubator': 'ideas',
+    '/ai-workshop': 'ideas',
+    '/meetings': 'calendar',
+    '/automations': 'settings-ai',
+    '/integrations': 'settings-integrations',
+    '/export': 'settings-user',
+    '/sync': 'settings-user',
+    '/profile': 'settings-user',
+    '/archive': 'ideas',
+    '/triage': 'ideas',
+    '/stories': 'documents',
+    '/media': 'documents',
+    '/canvas': 'documents',
+    '/personalization': 'my-ai',
+    '/voice-chat': 'my-ai',
+    '/agent-teams': 'hub',
+    '/dashboard': 'hub',
+    '/analytics': 'insights',
+    '/digest': 'insights',
+    '/knowledge-graph': 'documents',
+    '/learning-tasks': 'calendar',
+    '/system': 'settings-user',
+  };
+  if (LEGACY_EXACT[pathname]) {
+    return LEGACY_EXACT[pathname];
+  }
+
+  // Unknown path — return undefined to trigger 404
+  return undefined;
 }

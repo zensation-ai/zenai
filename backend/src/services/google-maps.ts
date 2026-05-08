@@ -10,7 +10,7 @@
  * Falls back to existing travel-estimator when GOOGLE_MAPS_API_KEY is not set.
  */
 
-import axios from 'axios';
+import { checkedAxiosGet } from '../utils/checked-http';
 import { logger } from '../utils/logger';
 
 // ============================================================
@@ -138,7 +138,7 @@ export async function geocode(address: string): Promise<GeocodingResult | null> 
   }
 
   try {
-    const response = await axios.get(`${BASE_URL}/geocode/json`, {
+    const response = await checkedAxiosGet<Record<string, any>>(`${BASE_URL}/geocode/json`, {
       params: {
         address,
         key: getApiKey(),
@@ -174,7 +174,7 @@ export async function reverseGeocode(lat: number, lng: number): Promise<Geocodin
   if (!getApiKey()) {return null;}
 
   try {
-    const response = await axios.get(`${BASE_URL}/geocode/json`, {
+    const response = await checkedAxiosGet<Record<string, any>>(`${BASE_URL}/geocode/json`, {
       params: {
         latlng: `${lat},${lng}`,
         key: getApiKey(),
@@ -228,7 +228,7 @@ export async function autocomplete(
       params.types = options.types;
     }
 
-    const response = await axios.get(`${BASE_URL}/place/autocomplete/json`, {
+    const response = await checkedAxiosGet<Record<string, any>>(`${BASE_URL}/place/autocomplete/json`, {
       params,
       timeout: TIMEOUT,
     });
@@ -262,7 +262,7 @@ export async function getPlaceDetails(placeId: string): Promise<PlaceDetails | n
   if (!getApiKey()) {return null;}
 
   try {
-    const response = await axios.get(`${BASE_URL}/place/details/json`, {
+    const response = await checkedAxiosGet<Record<string, any>>(`${BASE_URL}/place/details/json`, {
       params: {
         place_id: placeId,
         key: getApiKey(),
@@ -337,7 +337,7 @@ export async function getDirections(
       params.traffic_model = 'best_guess';
     }
 
-    const response = await axios.get(`${BASE_URL}/directions/json`, {
+    const response = await checkedAxiosGet<Record<string, any>>(`${BASE_URL}/directions/json`, {
       params,
       timeout: TIMEOUT,
     });
@@ -404,7 +404,7 @@ export async function getDistanceMatrix(
       params.traffic_model = 'best_guess';
     }
 
-    const response = await axios.get(`${BASE_URL}/distancematrix/json`, {
+    const response = await checkedAxiosGet<Record<string, any>>(`${BASE_URL}/distancematrix/json`, {
       params,
       timeout: TIMEOUT,
     });
@@ -466,7 +466,7 @@ export async function searchNearby(
     if (options?.type) {params.type = options.type;}
     if (options?.keyword) {params.keyword = options.keyword;}
 
-    const response = await axios.get(`${BASE_URL}/place/nearbysearch/json`, {
+    const response = await checkedAxiosGet<Record<string, any>>(`${BASE_URL}/place/nearbysearch/json`, {
       params,
       timeout: TIMEOUT,
     });

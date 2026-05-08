@@ -57,7 +57,7 @@ router.get('/:context/learning-tasks', apiKeyAuth, asyncHandler(async (req: Requ
   const { status, category, limit, offset } = req.query;
 
   if (!isValidContext(context)) {
-    throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
+    throw new ValidationError('Invalid context. Use "operations", "finance", "people", or "strategy".');
   }
 
   // Validate and parse pagination parameters
@@ -107,7 +107,7 @@ router.post('/:context/learning-tasks', apiKeyAuth, requireScope('write'), async
   const { topic, description, category, priority, target_completion_date, generate_outline } = req.body;
 
   if (!isValidContext(context)) {
-    throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
+    throw new ValidationError('Invalid context. Use "operations", "finance", "people", or "strategy".');
   }
 
   if (!topic || topic.trim().length === 0) {
@@ -165,7 +165,7 @@ router.get('/:context/learning-tasks/:id', apiKeyAuth, asyncHandler(async (req: 
   getUserId(req); // auth check
 
   if (!isValidContext(context)) {
-    throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
+    throw new ValidationError('Invalid context. Use "operations", "finance", "people", or "strategy".');
   }
 
   validateTaskId(id);
@@ -196,7 +196,7 @@ router.put('/:context/learning-tasks/:id', apiKeyAuth, requireScope('write'), as
   const { topic, description, category, priority, status, target_completion_date, learning_outline, summary } = req.body;
 
   if (!isValidContext(context)) {
-    throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
+    throw new ValidationError('Invalid context. Use "operations", "finance", "people", or "strategy".');
   }
 
   validateTaskId(id);
@@ -249,7 +249,7 @@ router.delete('/:context/learning-tasks/:id', apiKeyAuth, requireScope('write'),
   getUserId(req); // auth check
 
   if (!isValidContext(context)) {
-    throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
+    throw new ValidationError('Invalid context. Use "operations", "finance", "people", or "strategy".');
   }
 
   validateTaskId(id);
@@ -276,7 +276,7 @@ router.post('/:context/learning-tasks/:id/session', apiKeyAuth, requireScope('wr
   const { session_type, duration_minutes, notes, key_learnings, questions, understanding_level } = req.body;
 
   if (!isValidContext(context)) {
-    throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
+    throw new ValidationError('Invalid context. Use "operations", "finance", "people", or "strategy".');
   }
 
   validateTaskId(id);
@@ -345,7 +345,7 @@ router.get('/:context/learning-tasks/:id/sessions', apiKeyAuth, asyncHandler(asy
   const { limit } = req.query;
 
   if (!isValidContext(context)) {
-    throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
+    throw new ValidationError('Invalid context. Use "operations", "finance", "people", or "strategy".');
   }
 
   validateTaskId(id);
@@ -380,7 +380,7 @@ router.post('/:context/learning-tasks/:id/generate-outline', apiKeyAuth, require
   getUserId(req); // auth check
 
   if (!isValidContext(context)) {
-    throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
+    throw new ValidationError('Invalid context. Use "operations", "finance", "people", or "strategy".');
   }
 
   validateTaskId(id);
@@ -413,7 +413,7 @@ router.get('/:context/learning-stats', apiKeyAuth, asyncHandler(async (req: Requ
   getUserId(req); // auth check
 
   if (!isValidContext(context)) {
-    throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
+    throw new ValidationError('Invalid context. Use "operations", "finance", "people", or "strategy".');
   }
 
   const stats = await getLearningStats('default', context as AIContext);
@@ -434,7 +434,7 @@ router.get('/:context/learning-daily-summary', apiKeyAuth, asyncHandler(async (r
   getUserId(req); // auth check
 
   if (!isValidContext(context)) {
-    throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
+    throw new ValidationError('Invalid context. Use "operations", "finance", "people", or "strategy".');
   }
 
   const summary = await getDailyLearningSummary('default', context as AIContext);
@@ -455,7 +455,7 @@ router.get('/:context/learning-insights', apiKeyAuth, asyncHandler(async (req: R
   getUserId(req); // auth check
 
   if (!isValidContext(context)) {
-    throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
+    throw new ValidationError('Invalid context. Use "operations", "finance", "people", or "strategy".');
   }
 
   const insights = await getLearningInsights('default', context as AIContext);
@@ -475,7 +475,7 @@ router.post('/:context/learning-insights/:insightId/acknowledge', apiKeyAuth, re
   getUserId(req); // auth check
 
   if (!isValidContext(context)) {
-    throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
+    throw new ValidationError('Invalid context. Use "operations", "finance", "people", or "strategy".');
   }
 
   if (!isValidUUID(insightId)) {

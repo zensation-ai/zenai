@@ -5,48 +5,26 @@
 
 import { v4 as uuidv4 } from 'uuid';
 import crypto from 'crypto';
-import axios from 'axios';
-import dns from 'dns/promises';
-import { URL } from 'url';
 // pool.query() is intentional here: webhooks/webhook_deliveries are global tables (not per-context)
 import { pool } from '../utils/database';
 import { logger } from '../utils/logger';
+import { checkPublicUrl } from './security/ssrf-guard';
+import { checkedFetch, BlockedAddressError } from '../utils/checked-http';
 
 /**
- * Validate a webhook URL is not targeting internal/private networks (SSRF protection)
+ * Validate a webhook URL is not targeting internal/private networks.
+ *
+ * Sprint 1.6: delegated to the shared `ssrf-guard` so webhooks, A2A client,
+ * automation-core, and url-fetch all share the same allowlist/blocklist.
+ * In production we also require HTTPS (this was the one rule the old inline
+ * validator had that the shared guard doesn't enforce by default).
  */
 async function validateWebhookUrl(url: string): Promise<{ safe: boolean; reason?: string }> {
-  try {
-    const parsed = new URL(url);
-
-    // Must be HTTPS in production
-    if (process.env.NODE_ENV === 'production' && parsed.protocol !== 'https:') {
-      return { safe: false, reason: 'Webhook URLs must use HTTPS in production' };
-    }
-
-    // Block localhost
-    const hostname = parsed.hostname.toLowerCase();
-    if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '::1' || hostname === '0.0.0.0') {
-      return { safe: false, reason: 'Localhost URLs are not allowed' };
-    }
-
-    // Block internal metadata endpoints (AWS, GCP, Azure)
-    if (hostname === '169.254.169.254' || hostname === 'metadata.google.internal') {
-      return { safe: false, reason: 'Cloud metadata endpoints are not allowed' };
-    }
-
-    // DNS resolve and check for private IPs
-    const addresses = await dns.resolve4(hostname).catch(() => []);
-    for (const addr of addresses) {
-      if (addr.startsWith('10.') || addr.startsWith('172.') || addr.startsWith('192.168.') || addr.startsWith('127.') || addr === '0.0.0.0') {
-        return { safe: false, reason: 'Private IP addresses are not allowed' };
-      }
-    }
-
-    return { safe: true };
-  } catch {
-    return { safe: false, reason: 'Invalid URL' };
-  }
+  const result = await checkPublicUrl(url, {
+    requireHttps: process.env.NODE_ENV === 'production',
+  });
+  if (result.safe) {return { safe: true };}
+  return { safe: false, reason: result.reason };
 }
 
 // Webhook event types
@@ -154,13 +132,15 @@ async function deliverWebhook(
       headers['X-Webhook-Signature'] = `sha256=${signPayload(payloadString, webhook.secret)}`;
     }
 
-    const response = await axios.post(webhook.url, payload, {
+    const response = await checkedFetch(webhook.url, {
+      method: 'POST',
       headers,
-      timeout: 10000, // 10 second timeout
-      validateStatus: () => true // Accept any status code
+      body: payloadString,
+      signal: AbortSignal.timeout(10000),
     });
 
     const success = response.status >= 200 && response.status < 300;
+    const responseText = await response.text().catch(() => '');
 
     // Log delivery
     await pool.query(
@@ -173,7 +153,7 @@ async function deliverWebhook(
         payload.event,
         payload,
         response.status,
-        typeof response.data === 'string' ? response.data.substring(0, 1000) : JSON.stringify(response.data).substring(0, 1000),
+        responseText.substring(0, 1000),
         attempt,
         success ? 'success' : 'failed'
       ]
@@ -199,6 +179,15 @@ async function deliverWebhook(
     return { success, statusCode: response.status };
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+
+    if (error instanceof BlockedAddressError) {
+      logger.warn('Webhook delivery blocked by outbound IP guard', {
+        webhookId: webhook.id,
+        ip: error.ip,
+        host: error.host,
+        operation: 'deliverWebhook',
+      });
+    }
 
     // Log failed delivery
     await pool.query(

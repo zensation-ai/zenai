@@ -312,7 +312,7 @@ describe('Claude Vision Service', () => {
         }],
       });
 
-      const result = await claudeVision.extractIdeas(createTestImage(), 'work');
+      const result = await claudeVision.extractIdeas(createTestImage(), 'finance');
 
       expect(Array.isArray(result)).toBe(true);
       expect(result).toHaveLength(2);
@@ -325,7 +325,7 @@ describe('Claude Vision Service', () => {
         content: [{ type: 'text', text: 'No ideas could be extracted.' }],
       });
 
-      const result = await claudeVision.extractIdeas(createTestImage(), 'personal');
+      const result = await claudeVision.extractIdeas(createTestImage(), 'operations');
 
       expect(Array.isArray(result)).toBe(true);
       expect(result).toHaveLength(0);

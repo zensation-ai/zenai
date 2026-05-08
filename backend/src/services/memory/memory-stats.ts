@@ -7,7 +7,7 @@
  */
 
 import { logger } from '../../utils/logger';
-import type { ContextPart } from './memory-coordinator';
+import type { ContextPart } from './memory-types';
 
 // ===========================================
 // Configuration

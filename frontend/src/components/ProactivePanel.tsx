@@ -9,8 +9,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { AIContext } from './ContextSwitcher';
 import { getApiBaseUrl, getApiFetchHeaders } from '../utils/apiConfig';
-import './ProactivePanel.css';
-
 interface ProactiveEvent {
   id: string;
   event_type: string;

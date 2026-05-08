@@ -3,12 +3,15 @@
  */
 
 import { useState, useCallback } from 'react';
+import { Wallet } from 'lucide-react';
 import type { Transaction, FinancialAccount, TransactionType } from './types';
 import { TRANSACTION_TYPE_LABELS, DEFAULT_CATEGORIES } from './types';
 import { useEscapeKey } from '../../hooks/useClickOutside';
 import { useFocusTrap } from '../../hooks/useFocusTrap';
 import { useAnnounce } from '../../hooks/useAnnounce';
 import { useConfirm } from '../ConfirmDialog';
+import { Button } from '@/components/ui/button';
+import { EmptyState } from '@/components/ui/empty-state';
 
 interface TransactionsTabProps {
   transactions: Transaction[];
@@ -107,7 +110,7 @@ export function TransactionsTab({ transactions, total, accounts, onSearch, onCre
             >{TRANSACTION_TYPE_LABELS[type]}</button>
           ))}
         </div>
-        <button className="btn-primary" onClick={() => setShowForm(true)}>+ Transaktion</button>
+        <button className="btn-primary active:scale-[0.97] transition-transform duration-100" onClick={() => setShowForm(true)}>+ Transaktion</button>
       </div>
 
       {/* Transaction List */}
@@ -135,15 +138,22 @@ export function TransactionsTab({ transactions, total, accounts, onSearch, onCre
                 className="contact-action-btn danger"
                 onClick={() => handleDelete(tx.id)}
                 title="Löschen"
+                aria-label="Löschen"
               >✕</button>
             </div>
           </div>
         ))}
         {transactions.length === 0 && (
-          <div className="finance-empty">
-            <span className="finance-empty-icon">📝</span>
-            <p>Keine Transaktionen</p>
-          </div>
+          <EmptyState
+            icon={<Wallet size={40} strokeWidth={1.5} />}
+            title="Keine Transaktionen"
+            description="Erfasse Einnahmen und Ausgaben für den Überblick."
+            action={
+              <Button variant="default" size="sm" onClick={() => setShowForm(true)}>
+                Transaktion hinzufügen
+              </Button>
+            }
+          />
         )}
       </div>
 
@@ -153,7 +163,7 @@ export function TransactionsTab({ transactions, total, accounts, onSearch, onCre
           <div ref={focusTrapRef} className="contact-form-modal" onClick={e => e.stopPropagation()} role="dialog" aria-modal="true" aria-label="Neue Transaktion">
             <div className="contact-form-header">
               <h2>Neue Transaktion</h2>
-              <button className="contact-form-close" onClick={() => setShowForm(false)} aria-label="Schliessen">✕</button>
+              <button className="contact-form-close" onClick={() => setShowForm(false)} aria-label="Schließen">✕</button>
             </div>
             <div className="contact-form">
               <div className="form-row two-col">
@@ -244,7 +254,7 @@ export function TransactionsTab({ transactions, total, accounts, onSearch, onCre
               </div>
               <div className="contact-form-actions">
                 <button className="btn-secondary" onClick={() => setShowForm(false)}>Abbrechen</button>
-                <button className="btn-primary" onClick={handleSubmit} disabled={!formData.amount}>Speichern</button>
+                <button className="btn-primary active:scale-[0.97] transition-transform duration-100" onClick={handleSubmit} disabled={!formData.amount}>Speichern</button>
               </div>
             </div>
           </div>

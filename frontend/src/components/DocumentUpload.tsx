@@ -5,15 +5,13 @@
  * Supports multiple files, progress tracking, and validation.
  */
 
-import React, { useState, useCallback, useRef } from 'react';
+import React, { useState, useCallback, useRef, type CSSProperties } from 'react';
 import axios from 'axios';
 import {
   DocumentUploadResult,
   formatFileSize,
   getFileTypeLabel,
 } from '../types/document';
-import './DocumentUpload.css';
-
 interface DocumentUploadProps {
   onUploadComplete: (result: DocumentUploadResult) => void;
   context: string;
@@ -240,7 +238,7 @@ export function DocumentUpload({
           accept={ACCEPTED_TYPES.join(',')}
           onChange={handleFileInputChange}
           disabled={disabled}
-          style={{ display: 'none' }}
+          className="hidden"
         />
 
         <button
@@ -292,7 +290,7 @@ export function DocumentUpload({
         accept={ACCEPTED_TYPES.join(',')}
         onChange={handleFileInputChange}
         disabled={disabled}
-        style={{ display: 'none' }}
+        className="hidden"
       />
 
       {/* Dropzone */}
@@ -356,7 +354,7 @@ export function DocumentUpload({
 
                 {f.status === 'uploading' && (
                   <div className="file-progress">
-                    <div className="progress-bar" style={{ width: `${f.progress}%` }} />
+                    <div className="progress-bar w-[var(--bar)]" style={{ '--bar': `${f.progress}%` } as CSSProperties} />
                   </div>
                 )}
 

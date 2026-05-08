@@ -30,7 +30,7 @@ import {
 jest.mock('../../../utils/database-context', () => ({
   queryContext: jest.fn(),
   isValidContext: (ctx: string) =>
-    ['personal', 'work', 'learning', 'creative'].includes(ctx),
+    ['operations', 'finance', 'people', 'strategy'].includes(ctx),
 }));
 
 jest.mock('../../../utils/logger', () => ({
@@ -54,7 +54,7 @@ const mockQueryContext = queryContext as jest.MockedFunction<typeof queryContext
 
 const mockAction = {
   id: 'act-001',
-  context: 'personal' as const,
+  context: 'operations' as const,
   action_type: 'send_email' as const,
   action_source: 'agent' as const,
   source_id: 'agent-researcher',
@@ -82,7 +82,7 @@ const mockApprovedAction = {
 
 const mockPolicy = {
   id: 'pol-001',
-  context: 'personal' as const,
+  context: 'operations' as const,
   name: 'Auto-approve low-risk tasks',
   description: 'Automatically approve task creation with low risk',
   action_type: 'create_task',
@@ -97,7 +97,7 @@ const mockPolicy = {
 
 const mockAuditEntry = {
   id: 'aud-001',
-  context: 'personal' as const,
+  context: 'operations' as const,
   event_type: 'action.requested',
   actor: 'agent',
   target_type: 'send_email',
@@ -127,11 +127,11 @@ describe('Governance Service', () => {
         rows: [mockAction],
       } as never);
 
-      const result = await getPendingActions('personal');
+      const result = await getPendingActions('operations');
       expect(result).toHaveLength(1);
       expect(result[0].status).toBe('pending');
       expect(mockQueryContext).toHaveBeenCalledWith(
-        'personal',
+        'operations',
         expect.stringContaining("status = 'pending'"),
         expect.arrayContaining([50, 0])
       );
@@ -140,9 +140,9 @@ describe('Governance Service', () => {
     it('should filter by action_type when provided', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [] } as never);
 
-      await getPendingActions('work', { action_type: 'send_email' });
+      await getPendingActions('finance', { action_type: 'send_email' });
       expect(mockQueryContext).toHaveBeenCalledWith(
-        'work',
+        'finance',
         expect.stringContaining('action_type'),
         expect.arrayContaining(['send_email'])
       );
@@ -151,9 +151,9 @@ describe('Governance Service', () => {
     it('should apply limit and offset', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [] } as never);
 
-      await getPendingActions('personal', { limit: 10, offset: 5 });
+      await getPendingActions('operations', { limit: 10, offset: 5 });
       expect(mockQueryContext).toHaveBeenCalledWith(
-        'personal',
+        'operations',
         expect.any(String),
         expect.arrayContaining([10, 5])
       );
@@ -170,7 +170,7 @@ describe('Governance Service', () => {
         rows: [mockAction, mockApprovedAction],
       } as never);
 
-      const result = await getActionHistory('personal');
+      const result = await getActionHistory('operations');
       expect(result).toHaveLength(2);
     });
 
@@ -179,9 +179,9 @@ describe('Governance Service', () => {
         rows: [mockApprovedAction],
       } as never);
 
-      await getActionHistory('work', { status: 'approved' });
+      await getActionHistory('finance', { status: 'approved' });
       expect(mockQueryContext).toHaveBeenCalledWith(
-        'work',
+        'finance',
         expect.stringContaining('status'),
         expect.arrayContaining(['approved'])
       );
@@ -190,9 +190,9 @@ describe('Governance Service', () => {
     it('should filter by action_type', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [] } as never);
 
-      await getActionHistory('personal', { action_type: 'agent_action' });
+      await getActionHistory('operations', { action_type: 'agent_action' });
       expect(mockQueryContext).toHaveBeenCalledWith(
-        'personal',
+        'operations',
         expect.stringContaining('action_type'),
         expect.arrayContaining(['agent_action'])
       );
@@ -209,7 +209,7 @@ describe('Governance Service', () => {
         rows: [mockAction],
       } as never);
 
-      const result = await getActionById('personal', 'act-001');
+      const result = await getActionById('operations', 'act-001');
       expect(result).not.toBeNull();
       expect(result!.id).toBe('act-001');
     });
@@ -217,7 +217,7 @@ describe('Governance Service', () => {
     it('should return null when not found', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [] } as never);
 
-      const result = await getActionById('personal', 'nonexistent');
+      const result = await getActionById('operations', 'nonexistent');
       expect(result).toBeNull();
     });
   });
@@ -237,7 +237,7 @@ describe('Governance Service', () => {
       // logAudit (action.requested)
       mockQueryContext.mockResolvedValueOnce({ rows: [] } as never);
 
-      const result = await requestApproval('personal', {
+      const result = await requestApproval('operations', {
         action_type: 'send_email',
         action_source: 'agent',
         description: 'Send email',
@@ -246,7 +246,7 @@ describe('Governance Service', () => {
 
       expect(result.status).toBe('pending');
       expect(mockQueryContext).toHaveBeenCalledWith(
-        'personal',
+        'operations',
         expect.stringContaining('INSERT INTO governance_actions'),
         expect.any(Array)
       );
@@ -266,7 +266,7 @@ describe('Governance Service', () => {
       // logAudit (action.auto_approved)
       mockQueryContext.mockResolvedValueOnce({ rows: [] } as never);
 
-      const result = await requestApproval('personal', {
+      const result = await requestApproval('operations', {
         action_type: 'create_task',
         action_source: 'automation',
         description: 'Create follow-up task',
@@ -287,7 +287,7 @@ describe('Governance Service', () => {
       // logAudit (action.auto_approved)
       mockQueryContext.mockResolvedValueOnce({ rows: [] } as never);
 
-      await requestApproval('personal', {
+      await requestApproval('operations', {
         action_type: 'create_task',
         action_source: 'user',
         description: 'Create task',
@@ -311,10 +311,10 @@ describe('Governance Service', () => {
       // logAudit
       mockQueryContext.mockResolvedValueOnce({ rows: [] } as never);
 
-      const result = await approveAction('personal', 'act-001', 'admin-user');
+      const result = await approveAction('operations', 'act-001', 'admin-user');
       expect(result.status).toBe('approved');
       expect(mockQueryContext).toHaveBeenCalledWith(
-        'personal',
+        'operations',
         expect.stringContaining("status = 'approved'"),
         ['admin-user', 'act-001']
       );
@@ -324,7 +324,7 @@ describe('Governance Service', () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [] } as never);
 
       await expect(
-        approveAction('personal', 'nonexistent', 'user')
+        approveAction('operations', 'nonexistent', 'user')
       ).rejects.toThrow('not found or not pending');
     });
   });
@@ -346,11 +346,11 @@ describe('Governance Service', () => {
       // logAudit
       mockQueryContext.mockResolvedValueOnce({ rows: [] } as never);
 
-      const result = await rejectAction('personal', 'act-001', 'admin', 'Too risky');
+      const result = await rejectAction('operations', 'act-001', 'admin', 'Too risky');
       expect(result.status).toBe('rejected');
       expect(result.rejection_reason).toBe('Too risky');
       expect(mockQueryContext).toHaveBeenCalledWith(
-        'personal',
+        'operations',
         expect.stringContaining("status = 'rejected'"),
         ['admin', 'Too risky', 'act-001']
       );
@@ -360,7 +360,7 @@ describe('Governance Service', () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [] } as never);
 
       await expect(
-        rejectAction('personal', 'nonexistent', 'user', 'reason')
+        rejectAction('operations', 'nonexistent', 'user', 'reason')
       ).rejects.toThrow('not found or not pending');
     });
   });
@@ -375,11 +375,11 @@ describe('Governance Service', () => {
         rows: [mockAuditEntry],
       } as never);
 
-      const result = await getAuditLog('personal');
+      const result = await getAuditLog('operations');
       expect(result).toHaveLength(1);
       expect(result[0].event_type).toBe('action.requested');
       expect(mockQueryContext).toHaveBeenCalledWith(
-        'personal',
+        'operations',
         expect.stringContaining('audit_log'),
         expect.arrayContaining([30, 50, 0])
       );
@@ -388,9 +388,9 @@ describe('Governance Service', () => {
     it('should filter by event_type and actor', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [] } as never);
 
-      await getAuditLog('work', { event_type: 'action.approved', actor: 'admin' });
+      await getAuditLog('finance', { event_type: 'action.approved', actor: 'admin' });
       expect(mockQueryContext).toHaveBeenCalledWith(
-        'work',
+        'finance',
         expect.stringContaining('event_type'),
         expect.arrayContaining(['action.approved', 'admin'])
       );
@@ -399,9 +399,9 @@ describe('Governance Service', () => {
     it('should filter by target_id', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [] } as never);
 
-      await getAuditLog('personal', { target_id: 'act-001' });
+      await getAuditLog('operations', { target_id: 'act-001' });
       expect(mockQueryContext).toHaveBeenCalledWith(
-        'personal',
+        'operations',
         expect.stringContaining('target_id'),
         expect.arrayContaining(['act-001'])
       );
@@ -418,7 +418,7 @@ describe('Governance Service', () => {
         rows: [mockPolicy],
       } as never);
 
-      const result = await listPolicies('personal');
+      const result = await listPolicies('operations');
       expect(result).toHaveLength(1);
       expect(result[0].name).toBe('Auto-approve low-risk tasks');
     });
@@ -426,9 +426,9 @@ describe('Governance Service', () => {
     it('should filter active only', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [] } as never);
 
-      await listPolicies('personal', true);
+      await listPolicies('operations', true);
       expect(mockQueryContext).toHaveBeenCalledWith(
-        'personal',
+        'operations',
         expect.stringContaining('is_active = true')
       );
     });
@@ -440,7 +440,7 @@ describe('Governance Service', () => {
         rows: [mockPolicy],
       } as never);
 
-      const result = await createPolicy('personal', {
+      const result = await createPolicy('operations', {
         name: 'Auto-approve low-risk tasks',
         description: 'Auto-approve task creation',
         action_type: 'create_task',
@@ -453,7 +453,7 @@ describe('Governance Service', () => {
 
       expect(result.name).toBe('Auto-approve low-risk tasks');
       expect(mockQueryContext).toHaveBeenCalledWith(
-        'personal',
+        'operations',
         expect.stringContaining('INSERT INTO governance_policies'),
         expect.any(Array)
       );
@@ -465,13 +465,13 @@ describe('Governance Service', () => {
       const updated = { ...mockPolicy, auto_approve: false };
       mockQueryContext.mockResolvedValueOnce({ rows: [updated] } as never);
 
-      const result = await updatePolicy('personal', 'pol-001', { auto_approve: false });
+      const result = await updatePolicy('operations', 'pol-001', { auto_approve: false });
       expect(result.auto_approve).toBe(false);
     });
 
     it('should throw when no fields to update', async () => {
       await expect(
-        updatePolicy('personal', 'pol-001', {})
+        updatePolicy('operations', 'pol-001', {})
       ).rejects.toThrow('No fields to update');
     });
 
@@ -479,7 +479,7 @@ describe('Governance Service', () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [] } as never);
 
       await expect(
-        updatePolicy('personal', 'nonexistent', { name: 'New name' })
+        updatePolicy('operations', 'nonexistent', { name: 'New name' })
       ).rejects.toThrow('not found');
     });
   });
@@ -488,9 +488,9 @@ describe('Governance Service', () => {
     it('should delete a policy', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [] } as never);
 
-      await deletePolicy('personal', 'pol-001');
+      await deletePolicy('operations', 'pol-001');
       expect(mockQueryContext).toHaveBeenCalledWith(
-        'personal',
+        'operations',
         expect.stringContaining('DELETE FROM governance_policies'),
         ['pol-001']
       );
@@ -507,10 +507,10 @@ describe('Governance Service', () => {
         rows: [{ id: 'act-001' }, { id: 'act-002' }],
       } as never);
 
-      const count = await expireStaleActions('personal');
+      const count = await expireStaleActions('operations');
       expect(count).toBe(2);
       expect(mockQueryContext).toHaveBeenCalledWith(
-        'personal',
+        'operations',
         expect.stringContaining("status = 'expired'")
       );
     });
@@ -518,7 +518,7 @@ describe('Governance Service', () => {
     it('should return 0 when no stale actions', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [] } as never);
 
-      const count = await expireStaleActions('work');
+      const count = await expireStaleActions('finance');
       expect(count).toBe(0);
     });
   });
@@ -565,7 +565,7 @@ describe('Governance Routes', () => {
         rows: [mockAction],
       } as never);
 
-      const res = await request(app).get('/api/personal/governance/pending');
+      const res = await request(app).get('/api/operations/governance/pending');
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
@@ -584,7 +584,7 @@ describe('Governance Routes', () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [] } as never);
 
       await request(app)
-        .get('/api/work/governance/pending?action_type=send_email&limit=10&offset=5');
+        .get('/api/finance/governance/pending?action_type=send_email&limit=10&offset=5');
 
       expect(mockQueryContext).toHaveBeenCalled();
     });
@@ -600,7 +600,7 @@ describe('Governance Routes', () => {
         rows: [mockAction, mockApprovedAction],
       } as never);
 
-      const res = await request(app).get('/api/personal/governance/history');
+      const res = await request(app).get('/api/operations/governance/history');
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
@@ -611,7 +611,7 @@ describe('Governance Routes', () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [] } as never);
 
       const res = await request(app)
-        .get('/api/learning/governance/history?status=approved&action_type=create_task');
+        .get('/api/people/governance/history?status=approved&action_type=create_task');
 
       expect(res.status).toBe(200);
     });
@@ -627,7 +627,7 @@ describe('Governance Routes', () => {
         rows: [mockAction],
       } as never);
 
-      const res = await request(app).get('/api/personal/governance/actions/act-001');
+      const res = await request(app).get('/api/operations/governance/actions/act-001');
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
@@ -637,7 +637,7 @@ describe('Governance Routes', () => {
     it('should return 404 when not found', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [] } as never);
 
-      const res = await request(app).get('/api/personal/governance/actions/nonexistent');
+      const res = await request(app).get('/api/operations/governance/actions/nonexistent');
 
       expect(res.status).toBe(404);
       expect(res.body.success).toBe(false);
@@ -658,7 +658,7 @@ describe('Governance Routes', () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [] } as never);
 
       const res = await request(app)
-        .post('/api/personal/governance/request')
+        .post('/api/operations/governance/request')
         .send({
           action_type: 'send_email',
           action_source: 'agent',
@@ -673,7 +673,7 @@ describe('Governance Routes', () => {
 
     it('should return 400 when required fields are missing', async () => {
       const res = await request(app)
-        .post('/api/personal/governance/request')
+        .post('/api/operations/governance/request')
         .send({ action_type: 'send_email' });
 
       expect(res.status).toBe(400);
@@ -705,7 +705,7 @@ describe('Governance Routes', () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [] } as never);
 
       const res = await request(app)
-        .post('/api/personal/governance/act-001/approve')
+        .post('/api/operations/governance/act-001/approve')
         .send({ approved_by: 'admin-user' });
 
       expect(res.status).toBe(200);
@@ -718,12 +718,12 @@ describe('Governance Routes', () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [] } as never);
 
       const res = await request(app)
-        .post('/api/personal/governance/act-001/approve')
+        .post('/api/operations/governance/act-001/approve')
         .send({});
 
       expect(res.status).toBe(200);
       expect(mockQueryContext).toHaveBeenCalledWith(
-        'personal',
+        'operations',
         expect.any(String),
         ['user', 'act-001']
       );
@@ -741,7 +741,7 @@ describe('Governance Routes', () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [] } as never);
 
       const res = await request(app)
-        .post('/api/personal/governance/act-001/reject')
+        .post('/api/operations/governance/act-001/reject')
         .send({ rejected_by: 'admin', reason: 'Not allowed' });
 
       expect(res.status).toBe(200);
@@ -751,7 +751,7 @@ describe('Governance Routes', () => {
 
     it('should return 400 when reason is missing', async () => {
       const res = await request(app)
-        .post('/api/personal/governance/act-001/reject')
+        .post('/api/operations/governance/act-001/reject')
         .send({ rejected_by: 'admin' });
 
       expect(res.status).toBe(400);
@@ -769,7 +769,7 @@ describe('Governance Routes', () => {
         rows: [mockAuditEntry],
       } as never);
 
-      const res = await request(app).get('/api/personal/governance/audit');
+      const res = await request(app).get('/api/operations/governance/audit');
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
@@ -781,7 +781,7 @@ describe('Governance Routes', () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [] } as never);
 
       const res = await request(app)
-        .get('/api/creative/governance/audit?event_type=action.approved&actor=admin&days=7');
+        .get('/api/strategy/governance/audit?event_type=action.approved&actor=admin&days=7');
 
       expect(res.status).toBe(200);
     });
@@ -797,7 +797,7 @@ describe('Governance Routes', () => {
         rows: [mockPolicy],
       } as never);
 
-      const res = await request(app).get('/api/personal/governance/policies');
+      const res = await request(app).get('/api/operations/governance/policies');
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
@@ -808,7 +808,7 @@ describe('Governance Routes', () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [] } as never);
 
       const res = await request(app)
-        .get('/api/personal/governance/policies?active_only=true');
+        .get('/api/operations/governance/policies?active_only=true');
 
       expect(res.status).toBe(200);
     });
@@ -822,7 +822,7 @@ describe('Governance Routes', () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [] } as never);
 
       const res = await request(app)
-        .post('/api/personal/governance/policies')
+        .post('/api/operations/governance/policies')
         .send({
           name: 'Auto-approve low-risk tasks',
           action_type: 'create_task',
@@ -837,7 +837,7 @@ describe('Governance Routes', () => {
 
     it('should return 400 when name is missing', async () => {
       const res = await request(app)
-        .post('/api/personal/governance/policies')
+        .post('/api/operations/governance/policies')
         .send({ action_type: 'create_task' });
 
       expect(res.status).toBe(400);
@@ -845,7 +845,7 @@ describe('Governance Routes', () => {
 
     it('should return 400 when action_type is missing', async () => {
       const res = await request(app)
-        .post('/api/personal/governance/policies')
+        .post('/api/operations/governance/policies')
         .send({ name: 'Test policy' });
 
       expect(res.status).toBe(400);
@@ -858,7 +858,7 @@ describe('Governance Routes', () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [updated] } as never);
 
       const res = await request(app)
-        .put('/api/personal/governance/policies/pol-001')
+        .put('/api/operations/governance/policies/pol-001')
         .send({ name: 'Updated policy' });
 
       expect(res.status).toBe(200);
@@ -872,7 +872,7 @@ describe('Governance Routes', () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [{ id: 'pol-001' }], rowCount: 1 } as never);
 
       const res = await request(app)
-        .delete('/api/personal/governance/policies/pol-001');
+        .delete('/api/operations/governance/policies/pol-001');
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
@@ -891,7 +891,7 @@ describe('Governance Routes', () => {
       } as never);
 
       const res = await request(app)
-        .post('/api/personal/governance/expire');
+        .post('/api/operations/governance/expire');
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
@@ -902,7 +902,7 @@ describe('Governance Routes', () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [] } as never);
 
       const res = await request(app)
-        .post('/api/work/governance/expire');
+        .post('/api/finance/governance/expire');
 
       expect(res.status).toBe(200);
       expect(res.body.expired).toBe(0);

@@ -350,10 +350,10 @@ describe('Error Handler Middleware', () => {
       const asyncFn = jest.fn().mockRejectedValue(error);
       const wrapped = asyncHandler(asyncFn);
 
-      await wrapped(mockReq as Request, mockRes as Response, mockNext);
+      wrapped(mockReq as Request, mockRes as Response, mockNext);
 
-      // Need to wait for the promise to resolve
-      await new Promise(resolve => setImmediate(resolve));
+      // Flush microtask queue (Promise.resolve().catch runs as microtask)
+      await new Promise(resolve => setTimeout(resolve, 10));
 
       expect(mockNext).toHaveBeenCalledWith(error);
     });
@@ -365,9 +365,10 @@ describe('Error Handler Middleware', () => {
       });
       const wrapped = asyncHandler(asyncFn);
 
-      await wrapped(mockReq as Request, mockRes as Response, mockNext);
+      wrapped(mockReq as Request, mockRes as Response, mockNext);
 
-      await new Promise(resolve => setImmediate(resolve));
+      // Flush microtask queue (Promise.resolve().catch runs as microtask)
+      await new Promise(resolve => setTimeout(resolve, 10));
 
       expect(mockNext).toHaveBeenCalledWith(error);
     });
@@ -416,8 +417,8 @@ describe('Error Handler Middleware', () => {
 
   describe('validateContext', () => {
     it('should not throw for valid contexts', () => {
-      expect(() => validateContext('personal')).not.toThrow();
-      expect(() => validateContext('work')).not.toThrow();
+      expect(() => validateContext('operations')).not.toThrow();
+      expect(() => validateContext('finance')).not.toThrow();
     });
 
     it('should throw for invalid context', () => {
@@ -430,8 +431,8 @@ describe('Error Handler Middleware', () => {
         fail('Should have thrown');
       } catch (error) {
         expect(error).toBeInstanceOf(ValidationError);
-        expect((error as ValidationError).message).toContain('personal');
-        expect((error as ValidationError).message).toContain('work');
+        expect((error as ValidationError).message).toContain('operations');
+        expect((error as ValidationError).message).toContain('finance');
       }
     });
   });

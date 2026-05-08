@@ -20,7 +20,7 @@ const mockQueryContext = jest.fn();
 jest.mock('../../../../utils/database-context', () => ({
   queryContext: (...args: unknown[]) => mockQueryContext(...args),
   isValidContext: (c: string) =>
-    ['personal', 'work', 'learning', 'creative'].includes(c),
+    ['operations', 'finance', 'people', 'strategy'].includes(c),
 }));
 
 jest.mock('../../../../utils/logger', () => ({
@@ -205,7 +205,7 @@ describe('loadFeedbackSummary', () => {
       ],
     });
 
-    const summaries = await loadFeedbackSummary('personal');
+    const summaries = await loadFeedbackSummary('operations');
 
     expect(mockQueryContext).toHaveBeenCalledTimes(1);
     const sql: string = mockQueryContext.mock.calls[0][1];
@@ -219,7 +219,7 @@ describe('loadFeedbackSummary', () => {
   it('queries with type filter when type is provided', async () => {
     mockQueryContext.mockResolvedValue({ rows: [] });
 
-    await loadFeedbackSummary('work', 'tool_success');
+    await loadFeedbackSummary('finance', 'tool_success');
 
     const sql: string = mockQueryContext.mock.calls[0][1];
     expect(sql).toContain('WHERE type = $1');
@@ -228,7 +228,7 @@ describe('loadFeedbackSummary', () => {
 
   it('returns empty array on DB error', async () => {
     mockQueryContext.mockRejectedValue(new Error('DB fail'));
-    const result = await loadFeedbackSummary('personal');
+    const result = await loadFeedbackSummary('operations');
 
     expect(result).toEqual([]);
     const { logger } = jest.requireMock('../../../../utils/logger');
@@ -237,7 +237,7 @@ describe('loadFeedbackSummary', () => {
 
   it('returns empty array when no rows', async () => {
     mockQueryContext.mockResolvedValue({ rows: [] });
-    const result = await loadFeedbackSummary('learning');
+    const result = await loadFeedbackSummary('people');
     expect(result).toEqual([]);
   });
 
@@ -249,7 +249,7 @@ describe('loadFeedbackSummary', () => {
       ],
     });
 
-    const result = await loadFeedbackSummary('creative');
+    const result = await loadFeedbackSummary('strategy');
     expect(result).toHaveLength(2);
     expect(result[0].totalCount).toBe(5);
     expect(result[1].type).toBe('agent_performance');

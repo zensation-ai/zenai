@@ -31,18 +31,18 @@ describe('ChatHub', () => {
   });
 
   it('renders GeneralChat as the conversation stream', async () => {
-    render(<ChatHub context="personal" />);
+    render(<ChatHub context="operations" />);
     await waitFor(() => expect(screen.getByTestId('general-chat')).toBeInTheDocument());
   });
 
   it('passes context to GeneralChat', async () => {
-    render(<ChatHub context="work" />);
+    render(<ChatHub context="finance" />);
     await waitFor(() => expect(screen.getByTestId('general-chat')).toBeInTheDocument());
-    expect(screen.getByTestId('general-chat')).toHaveAttribute('data-context', 'work');
+    expect(screen.getByTestId('general-chat')).toHaveAttribute('data-context', 'finance');
   });
 
   it('has a main landmark for the hub', () => {
-    render(<ChatHub context="personal" />);
+    render(<ChatHub context="operations" />);
     expect(screen.getByRole('main')).toHaveAttribute('aria-label', 'Chat Hub');
   });
 });

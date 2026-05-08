@@ -24,8 +24,6 @@ import {
   type ReactNode,
 } from 'react';
 import { safeLocalStorage } from '../utils/storage';
-import './ShortcutHint.css';
-
 // ============================================
 // Types
 // ============================================

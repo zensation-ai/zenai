@@ -58,6 +58,9 @@ import {
   TOOL_GENERATE_BUSINESS_REPORT,
   TOOL_IDENTIFY_ANOMALIES,
   TOOL_COMPARE_PERIODS,
+  TOOL_GET_BUSINESS_KPIS,
+  TOOL_ANALYZE_BUSINESS_TREND,
+  TOOL_GET_BUSINESS_ANOMALIES,
   TOOL_CREATE_CALENDAR_EVENT,
   TOOL_LIST_CALENDAR_EVENTS,
   TOOL_DRAFT_EMAIL,
@@ -85,6 +88,8 @@ import {
   TOOL_CORE_MEMORY_UPDATE,
   TOOL_CORE_MEMORY_APPEND,
   TOOL_OPEN_PANEL,
+  TOOL_CREATE_DOCUMENT,
+  TOOL_PREPARE_DOCUMENT_CONTEXT,
 } from '../claude/tool-use';
 
 // Sub-module imports — extracted handlers
@@ -108,6 +113,11 @@ import {
   handleComparePeriods,
 } from './business-tools';
 import {
+  handleGetBusinessKPIs,
+  handleAnalyzeBusinessTrend,
+  handleGetBusinessAnomalies,
+} from './business-intelligence-tools';
+import {
   handleGetDirections,
   handleGetOpeningHours,
   handleFindNearbyPlaces,
@@ -120,6 +130,14 @@ import {
   handleMemoryRethink,
   handleMemoryRestructure,
 } from './memory-tools';
+import {
+  TOOL_MEMORY_PROMOTE,
+  TOOL_MEMORY_DEMOTE,
+  TOOL_MEMORY_FORGET,
+  handleMemoryPromote,
+  handleMemoryDemote,
+  handleMemoryForget,
+} from './memory-management';
 import {
   handleAskInbox,
   handleInboxSummary,
@@ -144,6 +162,10 @@ import {
   handleCoreMemoryUpdate,
   handleCoreMemoryAppend,
 } from './core-memory-tools';
+import { handleCreateDocument } from './generate-document-tools';
+import { handlePrepareDocumentContext } from './document-context-tools';
+import { socialToolDefinitions, handleSocialTool } from './social-tools';
+import type { AIContext } from '../../utils/database-context';
 
 // ===========================================
 // Registration
@@ -206,6 +228,11 @@ export function registerAllToolHandlers(): void {
   toolRegistry.register(TOOL_IDENTIFY_ANOMALIES, handleIdentifyAnomalies);
   toolRegistry.register(TOOL_COMPARE_PERIODS, handleComparePeriods);
 
+  // Business Intelligence tools (business-intelligence-tools.ts) — memory-connected
+  toolRegistry.register(TOOL_GET_BUSINESS_KPIS, handleGetBusinessKPIs);
+  toolRegistry.register(TOOL_ANALYZE_BUSINESS_TREND, handleAnalyzeBusinessTrend);
+  toolRegistry.register(TOOL_GET_BUSINESS_ANOMALIES, handleGetBusinessAnomalies);
+
   // Calendar, Email, Travel tools (assistant-tools.ts)
   toolRegistry.register(TOOL_CREATE_CALENDAR_EVENT, handleCreateCalendarEvent);
   toolRegistry.register(TOOL_LIST_CALENDAR_EVENTS, handleListCalendarEvents);
@@ -224,6 +251,11 @@ export function registerAllToolHandlers(): void {
   toolRegistry.register(TOOL_MEMORY_UPDATE_PROFILE, handleMemoryUpdateProfile);
   toolRegistry.register(TOOL_MEMORY_RETHINK, handleMemoryRethink);
   toolRegistry.register(TOOL_MEMORY_RESTRUCTURE, handleMemoryRestructure);
+
+  // Agent-managed memory tools (memory-management.ts)
+  toolRegistry.register(TOOL_MEMORY_PROMOTE, handleMemoryPromote);
+  toolRegistry.register(TOOL_MEMORY_DEMOTE, handleMemoryDemote);
+  toolRegistry.register(TOOL_MEMORY_FORGET, handleMemoryForget);
 
   // Email Intelligence tools (email-tools.ts)
   toolRegistry.register(TOOL_ASK_INBOX, handleAskInbox);
@@ -252,6 +284,19 @@ export function registerAllToolHandlers(): void {
   toolRegistry.register(TOOL_CORE_MEMORY_UPDATE, handleCoreMemoryUpdate);
   toolRegistry.register(TOOL_CORE_MEMORY_APPEND, handleCoreMemoryAppend);
 
+  // Document generation tools (Phase 131 integration)
+  toolRegistry.register(TOOL_CREATE_DOCUMENT, handleCreateDocument);
+  toolRegistry.register(TOOL_PREPARE_DOCUMENT_CONTEXT, handlePrepareDocumentContext);
+
+  // Social Media tools (social-tools.ts)
+  for (const def of socialToolDefinitions) {
+    const toolName = def.name;
+    toolRegistry.register(
+      def as unknown as import('../claude/tool-types').ToolDefinition,
+      (input, ctx) => handleSocialTool(toolName, input, ctx.aiContext as AIContext)
+    );
+  }
+
   logger.info('Tool handlers registered', {
     tools: [
       'search_ideas', 'create_idea', 'get_related_ideas', 'calculate',
@@ -264,16 +309,20 @@ export function registerAllToolHandlers(): void {
       'create_meeting', 'navigate_to', 'app_help', 'open_panel',
       'get_revenue_metrics', 'get_traffic_analytics', 'get_seo_performance',
       'get_system_health', 'generate_business_report', 'identify_anomalies', 'compare_periods',
+      'get_business_kpis', 'analyze_business_trend', 'get_business_anomalies',
       'create_calendar_event', 'list_calendar_events', 'draft_email', 'estimate_travel',
       'get_directions', 'get_opening_hours', 'find_nearby_places', 'optimize_day_route',
       'memory_update', 'memory_delete', 'memory_update_profile',
       'memory_rethink', 'memory_restructure',
+      'memory_promote', 'memory_demote', 'memory_forget',
       'ask_inbox', 'inbox_summary',
       'mcp_call_tool', 'mcp_list_tools',
       'memory_replace', 'memory_abstract', 'memory_search_and_link',
       'update_idea', 'archive_idea', 'delete_idea',
       'conversation_search', 'conversation_search_date',
       'core_memory_read', 'core_memory_update', 'core_memory_append',
+      'create_document', 'prepare_document_context',
+      'draft_social_post', 'list_social_posts', 'schedule_social_post',
     ],
   });
 }

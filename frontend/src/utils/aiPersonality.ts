@@ -298,7 +298,7 @@ export const CONTEXTUAL_TIPS = {
   general: [
     'Tipp: Gib mir Feedback mit den Daumen-Buttons – so lerne ich dazu.',
     'Tipp: Im Lernzentrum siehst du, was ich über dich gelernt habe.',
-    'Tipp: Wechsle zwischen Privat und Arbeit für verschiedene Kontexte.',
+    'Tipp: Wechsle zwischen Operativ und Finanzen für verschiedene Kontexte.',
   ],
 };
 

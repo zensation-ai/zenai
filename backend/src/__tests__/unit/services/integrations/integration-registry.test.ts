@@ -23,7 +23,7 @@ function createMockConnector(overrides: Partial<ConnectorDefinition> = {}): Conn
       requiredScopes: ['mock.read'],
       webhookSupported: false,
       syncSupported: true,
-      defaultContext: 'personal',
+      defaultContext: 'operations',
       ...overrides,
     },
     connect: jest.fn().mockResolvedValue(undefined),
@@ -113,7 +113,7 @@ describe('IntegrationRegistry', () => {
       mockQueryPublic.mockResolvedValueOnce({ rows: [] });
 
       await registry.install('user-1', 'gmail', {
-        targetContext: 'work',
+        targetContext: 'finance',
         syncEnabled: true,
         syncIntervalMinutes: 30,
       });
@@ -121,12 +121,12 @@ describe('IntegrationRegistry', () => {
       expect(mockQueryPublic).toHaveBeenCalledTimes(1);
       const [sql, params] = mockQueryPublic.mock.calls[0];
       expect(sql).toMatch(/INSERT INTO public\.user_integrations/i);
-      expect(params).toEqual(expect.arrayContaining(['user-1', 'gmail', 'work']));
+      expect(params).toEqual(expect.arrayContaining(['user-1', 'gmail', 'finance']));
     });
 
     it('should throw for unknown connector', async () => {
       await expect(
-        registry.install('user-1', 'nonexistent', { targetContext: 'personal', syncEnabled: false }),
+        registry.install('user-1', 'nonexistent', { targetContext: 'operations', syncEnabled: false }),
       ).rejects.toThrow(/nonexistent/);
 
       expect(mockQueryPublic).not.toHaveBeenCalled();
@@ -160,7 +160,7 @@ describe('IntegrationRegistry', () => {
           {
             connector_id: 'gmail',
             status: 'connected',
-            target_context: 'work',
+            target_context: 'finance',
             sync_enabled: true,
             sync_interval_minutes: 15,
             last_sync_at: null,
@@ -175,7 +175,7 @@ describe('IntegrationRegistry', () => {
       expect(result[0].connectorId).toBe('gmail');
       expect(result[0].definition).toBe(connector.definition);
       expect(result[0].status).toBe('connected');
-      expect(result[0].config.targetContext).toBe('work');
+      expect(result[0].config.targetContext).toBe('finance');
       expect(result[0].config.syncEnabled).toBe(true);
     });
 
@@ -185,7 +185,7 @@ describe('IntegrationRegistry', () => {
           {
             connector_id: 'unknown-connector',
             status: 'connected',
-            target_context: 'personal',
+            target_context: 'operations',
             sync_enabled: false,
             sync_interval_minutes: 15,
             last_sync_at: null,
@@ -208,7 +208,7 @@ describe('IntegrationRegistry', () => {
       mockQueryPublic.mockResolvedValueOnce({ rows: [] });
 
       await registry.updateConfig('user-1', 'gmail', {
-        targetContext: 'creative',
+        targetContext: 'strategy',
         syncEnabled: false,
         syncIntervalMinutes: 60,
       });
@@ -216,7 +216,7 @@ describe('IntegrationRegistry', () => {
       expect(mockQueryPublic).toHaveBeenCalledTimes(1);
       const [sql, params] = mockQueryPublic.mock.calls[0];
       expect(sql).toMatch(/UPDATE public\.user_integrations/i);
-      expect(params).toEqual(expect.arrayContaining(['user-1', 'gmail', 'creative']));
+      expect(params).toEqual(expect.arrayContaining(['user-1', 'gmail', 'strategy']));
     });
 
     it('should clamp syncIntervalMinutes to [5, 1440]', async () => {
@@ -226,7 +226,7 @@ describe('IntegrationRegistry', () => {
       mockQueryPublic.mockResolvedValueOnce({ rows: [] });
 
       await registry.updateConfig('user-1', 'gmail', {
-        targetContext: 'personal',
+        targetContext: 'operations',
         syncEnabled: true,
         syncIntervalMinutes: 1, // below minimum of 5
       });
@@ -244,7 +244,7 @@ describe('IntegrationRegistry', () => {
       mockQueryPublic.mockResolvedValueOnce({ rows: [] });
 
       await registry.updateConfig('user-1', 'gmail', {
-        targetContext: 'personal',
+        targetContext: 'operations',
         syncEnabled: true,
         syncIntervalMinutes: 9999, // above maximum of 1440
       });

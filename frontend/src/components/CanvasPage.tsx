@@ -14,9 +14,9 @@ import axios from 'axios';
 import { CanvasEditorPanel, type ViewMode, type CanvasEditorPanelHandle } from './canvas/CanvasEditorPanel';
 import { CanvasToolbar } from './canvas/CanvasToolbar';
 import { CanvasDocumentList } from './canvas/CanvasDocumentList';
+import { CanvasBoardPanel, type BoardData } from './canvas/CanvasBoardPanel';
 import { showToast } from './Toast';
 import { logError } from '../utils/errors';
-import './canvas/Canvas.css';
 
 interface CanvasDocument {
   id: string;
@@ -25,6 +25,7 @@ interface CanvasDocument {
   content: string;
   type: 'markdown' | 'code' | 'html';
   language?: string;
+  boardData?: BoardData;
   chatSessionId?: string;
   createdAt: string;
   updatedAt: string;
@@ -261,11 +262,11 @@ export function CanvasPage({ context }: CanvasPageProps) {
 
       const file = files[0];
       if (!file.type.startsWith('image/')) {
-        showToast('Nur Bilddateien werden unterstuetzt', 'error');
+        showToast('Nur Bilddateien werden unterstützt', 'error');
         return;
       }
       if (file.size > MAX_IMAGE_SIZE_BYTES) {
-        showToast(`Bild ist groesser als ${MAX_IMAGE_SIZE_MB}MB`, 'error');
+        showToast(`Bild ist größer als ${MAX_IMAGE_SIZE_MB}MB`, 'error');
         return;
       }
 
@@ -288,7 +289,7 @@ export function CanvasPage({ context }: CanvasPageProps) {
           activeDocument.content.substring(cursorPos);
 
         handleContentChange(newContent);
-        showToast(`Bild "${file.name}" eingefuegt`, 'success');
+        showToast(`Bild "${file.name}" eingefügt`, 'success');
       } catch (err) {
         logError('canvas-image-insert', err);
         showToast('Fehler beim Einfuegen des Bildes', 'error');
@@ -298,6 +299,24 @@ export function CanvasPage({ context }: CanvasPageProps) {
       e.target.value = '';
     },
     [activeDocument, handleContentChange]
+  );
+
+  // Board data change handler (auto-save)
+  const handleBoardChange = useCallback(
+    async (boardData: BoardData) => {
+      if (!activeDocument) return;
+      const documentId = activeDocument.id;
+      setActiveDocument((prev) => (prev ? { ...prev, boardData } : null));
+      setSaveStatus('saving');
+      try {
+        await axios.patch(`/api/canvas/${documentId}`, { board_data: boardData });
+        if (isMountedRef.current) setSaveStatus('saved');
+      } catch (error) {
+        logError('canvas-board-save', error);
+        if (isMountedRef.current) setSaveStatus('unsaved');
+      }
+    },
+    [activeDocument]
   );
 
   // Keyboard shortcut: Ctrl+S
@@ -334,7 +353,7 @@ export function CanvasPage({ context }: CanvasPageProps) {
       ref={fileInputRef}
       type="file"
       accept="image/*"
-      style={{ display: 'none' }}
+      className="hidden"
       onChange={handleFileInputChange}
       aria-hidden="true"
     />
@@ -417,14 +436,21 @@ export function CanvasPage({ context }: CanvasPageProps) {
             onInsertImage={handleInsertImage}
           />
 
-          <CanvasEditorPanel
-            ref={editorPanelRef}
-            content={activeDocument.content}
-            onChange={handleContentChange}
-            type={activeDocument.type}
-            language={activeDocument.language}
-            viewMode={viewMode}
-          />
+          {viewMode === 'board' ? (
+            <CanvasBoardPanel
+              boardData={activeDocument.boardData || { nodes: [], edges: [] }}
+              onBoardChange={handleBoardChange}
+            />
+          ) : (
+            <CanvasEditorPanel
+              ref={editorPanelRef}
+              content={activeDocument.content}
+              onChange={handleContentChange}
+              type={activeDocument.type}
+              language={activeDocument.language}
+              viewMode={viewMode}
+            />
+          )}
         </div>
       </div>
 

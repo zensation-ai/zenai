@@ -12,7 +12,7 @@ import { ideasRouter } from '../../routes/ideas';
 // Mock all external dependencies
 jest.mock('../../utils/database-context', () => ({
   queryContext: jest.fn(),
-  isValidContext: jest.fn((ctx: string) => ['personal', 'work', 'learning', 'creative'].includes(ctx)),
+  isValidContext: jest.fn((ctx: string) => ['operations', 'finance', 'people', 'strategy'].includes(ctx)),
   isValidUUID: jest.fn((id: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id)),
   AIContext: {},
 }));
@@ -136,7 +136,7 @@ describe('Ideas API Integration Tests', () => {
         .expect(200);
 
       expect(mockQueryContext).toHaveBeenCalledWith(
-        'personal',
+        'operations',
         expect.stringContaining('type = $2'),
         expect.arrayContaining(['00000000-0000-0000-0000-000000000001', 'task'])
       );
@@ -166,11 +166,11 @@ describe('Ideas API Integration Tests', () => {
 
       await request(app)
         .get('/api/ideas')
-        .set('x-ai-context', 'work')
+        .set('x-ai-context', 'finance')
         .expect(200);
 
       expect(mockQueryContext).toHaveBeenCalledWith(
-        'work',
+        'finance',
         expect.any(String),
         expect.any(Array)
       );

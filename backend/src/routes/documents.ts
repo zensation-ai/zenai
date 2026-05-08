@@ -26,7 +26,7 @@ import { getUserId } from '../utils/user-context';
 
 function validateContext(context: string): asserts context is AIContext {
   if (!isValidContext(context)) {
-    throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
+    throw new ValidationError('Invalid context. Use "operations", "finance", "people", or "strategy".');
   }
 }
 
@@ -317,7 +317,7 @@ router.post(
 
     // Search all contexts
     let doc: Document | null = null;
-    for (const ctx of ['personal', 'work', 'learning', 'creative'] as const) {
+    for (const ctx of ['operations', 'finance', 'people', 'strategy'] as const) {
       doc = await documentService.getDocument(id, ctx, userId);
       if (doc) {
         break;
@@ -355,8 +355,8 @@ router.post(
 
     // Search all contexts
     let doc: Document | null = null;
-    let context: AIContext = 'personal';
-    for (const ctx of ['personal', 'work', 'learning', 'creative'] as const) {
+    let context: AIContext = 'operations';
+    for (const ctx of ['operations', 'finance', 'people', 'strategy'] as const) {
       doc = await documentService.getDocument(id, ctx, userId);
       if (doc) { context = ctx; break; }
     }
@@ -593,7 +593,7 @@ router.get(
     const contextParam = req.query.context as string | undefined;
     const contexts: readonly AIContext[] = contextParam && isValidContext(contextParam)
       ? [contextParam as AIContext]
-      : ['personal', 'work', 'learning', 'creative'];
+      : ['operations', 'finance', 'people', 'strategy'];
 
     let doc: Document | null = null;
     for (const ctx of contexts) {
@@ -646,7 +646,7 @@ router.get(
     const contextParam = req.query.context as string | undefined;
     const contexts: readonly AIContext[] = contextParam && isValidContext(contextParam)
       ? [contextParam as AIContext]
-      : ['personal', 'work', 'learning', 'creative'];
+      : ['operations', 'finance', 'people', 'strategy'];
 
     let doc: Document | null = null;
     for (const ctx of contexts) {

@@ -9,8 +9,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import type { AIContext } from '../ContextSwitcher';
 import { RadarChart, type RadarScores } from './RadarChart';
-import './DigitalTwinPage.css';
-
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 const API_KEY = import.meta.env.VITE_API_KEY || '';
 
@@ -40,12 +38,12 @@ interface DigitalTwinPageProps {
 }
 
 const SECTION_META: Record<string, { icon: string; label: string }> = {
-  personality: { icon: '\uD83E\uDDE0', label: 'Persoenlichkeit' },
+  personality: { icon: '\uD83E\uDDE0', label: 'Persönlichkeit' },
   expertise: { icon: '\uD83C\uDF93', label: 'Expertise' },
   work_patterns: { icon: '\u23F0', label: 'Arbeitsmuster' },
   interests: { icon: '\u2B50', label: 'Interessen' },
   goals: { icon: '\uD83C\uDFAF', label: 'Ziele' },
-  preferences: { icon: '\u2699\uFE0F', label: 'Praeferenzen' },
+  preferences: { icon: '\u2699\uFE0F', label: 'Präferenzen' },
 };
 
 async function apiRequest<T>(
@@ -179,7 +177,7 @@ export const DigitalTwinPage: React.FC<DigitalTwinPageProps> = ({ context }) => 
         </div>
         <div className="dt-header-actions">
           <button className="dt-btn" onClick={handleExport} title="Profil exportieren">
-            Export
+            Exportieren
           </button>
           <button
             className="dt-btn dt-btn--primary"
@@ -272,10 +270,10 @@ export const DigitalTwinPage: React.FC<DigitalTwinPageProps> = ({ context }) => 
               autoFocus
             />
             <textarea
-              placeholder="Grund fuer die Korrektur (optional)"
+              placeholder="Grund für die Korrektur (optional)"
               value={correctionReason}
               onChange={(e) => setCorrectionReason(e.target.value)}
-              style={{ minHeight: '48px' }}
+              className="min-h-[48px]"
             />
             <div className="dt-correction-actions">
               <button className="dt-btn" onClick={() => setCorrectionSection(null)}>
@@ -306,7 +304,7 @@ function renderSectionContent(entry: ProfileEntry): React.ReactNode {
         return (
           <div>
             <p>Kommunikationsstil: <strong>{String(comm.style ?? 'unbekannt')}</strong></p>
-            <p>Nachrichten: {String(comm.message_count ?? 0)}, Durchschn. Laenge: {String(comm.average_length ?? 0)} Zeichen</p>
+            <p>Nachrichten: {String(comm.message_count ?? 0)}, Durchschn. Länge: {String(comm.average_length ?? 0)} Zeichen</p>
           </div>
         );
       }
@@ -372,7 +370,7 @@ function renderSectionContent(entry: ProfileEntry): React.ReactNode {
     case 'preferences': {
       const prefs = Array.isArray(data.learned_preferences) ? data.learned_preferences as string[] : [];
       if (prefs.length === 0 && data.user_note) return <p>{String(data.user_note)}</p>;
-      if (prefs.length === 0) return <p>Noch keine Praeferenzen erkannt</p>;
+      if (prefs.length === 0) return <p>Noch keine Präferenzen erkannt</p>;
       return (
         <ul>
           {prefs.slice(0, 6).map((pref, i) => (

@@ -17,13 +17,14 @@
  */
 
 import { logger } from '../../utils/logger';
+import { evaluateIgnitionWithHysteresis, type ModuleActivation, type IgnitionResult } from './gwt-ignition';
 
 // ─── Public types ─────────────────────────────────────────────────────────────
 
 export interface QueryAnalysis {
   /** High-level intent of the user's message */
   intent: 'question' | 'task' | 'discussion' | 'creative' | 'recall';
-  /** Detected domain: 'general' | 'personal' | 'work' | 'code' | 'finance' | … */
+  /** Detected domain: 'general' | 'operations' | 'finance' | 'code' | 'finance' | … */
   domain: string;
   /** Normalised complexity 0–1 */
   complexity: number;
@@ -49,7 +50,7 @@ export interface SalienceResult {
 }
 
 export interface ModuleContext {
-  /** One of: 'personal' | 'work' | 'learning' | 'creative' */
+  /** One of: 'operations' | 'finance' | 'people' | 'strategy' */
   aiContext: string;
   userId: string;
   sessionId: string;
@@ -104,6 +105,8 @@ export interface GWTResult {
   tokenUsage: number;
   /** True if all competitive modules scored below fallbackThreshold */
   usedFallback: boolean;
+  /** GWT ignition result with hysteresis (Nature 2025) */
+  ignition?: IgnitionResult;
 }
 
 // ─── Internal helpers ─────────────────────────────────────────────────────────
@@ -127,10 +130,42 @@ const FALLBACK_SALIENCE: SalienceResult = {
 export class GlobalWorkspace {
   private readonly modules: WorkspaceModule[];
   private readonly config: GWTConfig;
+  /** Track previously broadcasting modules for hysteresis stability */
+  private previouslyBroadcasting: string[] = [];
+  /** Optional PriorityMap scorer for blended salience adjustment */
+  private priorityScorer?: {
+    score(input: {
+      saliency: number;
+      emotionalValence: number;
+      rewardRelevance: number;
+      goalAlignment: number;
+    }): { composite: number };
+  };
 
   constructor(modules: WorkspaceModule[], config: Partial<GWTConfig> = {}) {
     this.modules = modules;
     this.config = { ...DEFAULT_GWT_CONFIG, ...config };
+  }
+
+  /**
+   * Attach a PriorityMap scorer to adjust module salience during competition.
+   * When set, each competitive module's salience is blended: 70% original + 30% PriorityMap composite.
+   * Always-include modules are unaffected.
+   * Pass `undefined` to remove the scorer.
+   */
+  setPriorityScorer(
+    scorer:
+      | {
+          score(input: {
+            saliency: number;
+            emotionalValence: number;
+            rewardRelevance: number;
+            goalAlignment: number;
+          }): { composite: number };
+        }
+      | undefined,
+  ): void {
+    this.priorityScorer = scorer;
   }
 
   /**
@@ -182,23 +217,62 @@ export class GlobalWorkspace {
       salienceScores[module.id] = salience.score;
     }
 
+    // PMA: Apply PriorityMap adjustment to salience scores
+    if (this.priorityScorer) {
+      for (const { module, salience } of salienceResults) {
+        if (module.alwaysInclude) continue; // Don't modify always-include modules
+        const pmScore = this.priorityScorer.score({
+          saliency: salience.score,
+          emotionalValence: 0, // Module-level emotional relevance not available yet
+          rewardRelevance: 0.5, // Neutral default
+          goalAlignment: salience.score, // Use salience as proxy for goal alignment
+        });
+        // Blend: 70% original salience + 30% PriorityMap composite
+        const adjusted = 0.7 * salience.score + 0.3 * pmScore.composite;
+        salienceScores[module.id] = adjusted;
+        salience.score = adjusted; // Update for downstream sorting
+      }
+    }
+
     // ── Step 2: Separate always-include from competitive ──────────────────────
     const alwaysModules = salienceResults.filter(r => r.module.alwaysInclude);
     const competitiveModules = salienceResults
       .filter(r => !r.module.alwaysInclude)
       .sort((a, b) => b.salience.score - a.salience.score);
 
-    // ── Step 3 & 4: Determine fallback + select top N competitive modules ──────
-    const bestScore = competitiveModules[0]?.salience.score ?? 0;
-    const usedFallback = competitiveModules.length > 0 && bestScore < this.config.fallbackThreshold;
+    // ── Step 3 & 4: GWT Ignition with hysteresis (Nature 2025) ──────────────
+    // Use ignition threshold to determine which modules achieve broadcast status
+    const ignitionModules: ModuleActivation[] = competitiveModules.map(r => ({
+      id: r.module.id,
+      activation: r.salience.score,
+    }));
 
-    const selectedCompetitive = competitiveModules.slice(0, this.config.maxModules);
+    const ignitionResult = evaluateIgnitionWithHysteresis(
+      ignitionModules,
+      this.previouslyBroadcasting,
+    );
+
+    // Modules that pass ignition threshold are selected; others filtered out
+    const ignitedIds = new Set(ignitionResult.broadcast);
+    let selectedCompetitive = competitiveModules.filter(r => ignitedIds.has(r.module.id));
+
+    // Fallback: if ignition is too restrictive, fall back to top-N by salience
+    const bestScore = competitiveModules[0]?.salience.score ?? 0;
+    const usedFallback = selectedCompetitive.length === 0 && competitiveModules.length > 0;
+
+    if (usedFallback || selectedCompetitive.length === 0) {
+      selectedCompetitive = competitiveModules.slice(0, this.config.maxModules);
+    } else {
+      selectedCompetitive = selectedCompetitive.slice(0, this.config.maxModules);
+    }
 
     // When fallback is triggered, ensure at least 2 competitive modules are selected
     if (usedFallback && selectedCompetitive.length < 2 && competitiveModules.length >= 2) {
-      // Already sliced top-2 above (maxModules >= 2 in most configs, but ensure it)
-      selectedCompetitive.push(...competitiveModules.slice(selectedCompetitive.length, 2));
+      selectedCompetitive = competitiveModules.slice(0, 2);
     }
+
+    // Update hysteresis state for next call
+    this.previouslyBroadcasting = selectedCompetitive.map(r => r.module.id);
 
     // ── Step 5: Token budget allocation ──────────────────────────────────────
     const numAlways = alwaysModules.length;
@@ -279,6 +353,7 @@ export class GlobalWorkspace {
       salienceScores,
       tokenUsage,
       usedFallback,
+      ignition: ignitionResult,
     };
   }
 }

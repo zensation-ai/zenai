@@ -4,7 +4,7 @@
 
 jest.mock('../../../../utils/database-context', () => ({
   queryContext: jest.fn(),
-  isValidContext: jest.fn((ctx: string) => ['personal', 'work', 'learning', 'creative'].includes(ctx)),
+  isValidContext: jest.fn((ctx: string) => ['operations', 'finance', 'people', 'strategy'].includes(ctx)),
 }));
 
 jest.mock('../../../../utils/logger', () => ({
@@ -61,7 +61,7 @@ describe('A2ATaskManager', () => {
       // processTask calls - update to working, then orchestrator runs async
       mockQueryContext.mockResolvedValue({ rows: [], rowCount: 0 } as any);
 
-      const task = await manager.createTask('personal' as any, {
+      const task = await manager.createTask('operations' as any, {
         skill_id: 'research',
         message: { role: 'user', parts: [{ type: 'text', text: 'Research AI trends' }] },
       });
@@ -70,7 +70,7 @@ describe('A2ATaskManager', () => {
       expect(task.skill_id).toBe('research');
       expect(task.status).toBe('submitted');
       expect(mockQueryContext).toHaveBeenCalledWith(
-        'personal',
+        'operations',
         expect.stringContaining('INSERT INTO a2a_tasks'),
         expect.any(Array)
       );
@@ -78,7 +78,7 @@ describe('A2ATaskManager', () => {
 
     it('should throw for invalid skill_id', async () => {
       await expect(
-        manager.createTask('personal' as any, {
+        manager.createTask('operations' as any, {
           skill_id: 'invalid-skill',
           message: { role: 'user', parts: [{ type: 'text', text: 'test' }] },
         })
@@ -103,7 +103,7 @@ describe('A2ATaskManager', () => {
         memoryStats: { totalEntries: 0, byAgent: {} },
       });
 
-      await manager.createTask('personal' as any, {
+      await manager.createTask('operations' as any, {
         skill_id: 'research',
         message: { role: 'user', parts: [{ type: 'text', text: 'Research AI trends' }] },
       });
@@ -118,7 +118,7 @@ describe('A2ATaskManager', () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [mockTaskRow], rowCount: 1 } as any);
       mockQueryContext.mockResolvedValue({ rows: [], rowCount: 0 } as any);
 
-      await manager.createTask('personal' as any, {
+      await manager.createTask('operations' as any, {
         skill_id: 'research',
         message: { role: 'user', parts: [{ type: 'text', text: 'test' }] },
         metadata: { key: 'value' },
@@ -128,7 +128,7 @@ describe('A2ATaskManager', () => {
       });
 
       expect(mockQueryContext).toHaveBeenCalledWith(
-        'personal',
+        'operations',
         expect.any(String),
         expect.arrayContaining(['research', expect.any(String), expect.any(String), 'https://agent.example.com', 'TestAgent', 'ext-123'])
       );
@@ -139,7 +139,7 @@ describe('A2ATaskManager', () => {
     it('should return a task by ID', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [mockTaskRow], rowCount: 1 } as any);
 
-      const task = await manager.getTask('personal' as any, mockTaskRow.id);
+      const task = await manager.getTask('operations' as any, mockTaskRow.id);
 
       expect(task).not.toBeNull();
       expect(task!.id).toBe(mockTaskRow.id);
@@ -149,7 +149,7 @@ describe('A2ATaskManager', () => {
     it('should return null when task not found', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any);
 
-      const task = await manager.getTask('personal' as any, 'nonexistent');
+      const task = await manager.getTask('operations' as any, 'nonexistent');
 
       expect(task).toBeNull();
     });
@@ -159,11 +159,11 @@ describe('A2ATaskManager', () => {
     it('should list tasks without filters', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [mockTaskRow, { ...mockTaskRow, id: '456' }], rowCount: 2 } as any);
 
-      const tasks = await manager.listTasks('personal' as any);
+      const tasks = await manager.listTasks('operations' as any);
 
       expect(tasks).toHaveLength(2);
       expect(mockQueryContext).toHaveBeenCalledWith(
-        'personal',
+        'operations',
         expect.stringContaining('ORDER BY created_at DESC'),
         expect.any(Array)
       );
@@ -172,10 +172,10 @@ describe('A2ATaskManager', () => {
     it('should apply status filter', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [mockTaskRow], rowCount: 1 } as any);
 
-      await manager.listTasks('personal' as any, { status: 'submitted' });
+      await manager.listTasks('operations' as any, { status: 'submitted' });
 
       expect(mockQueryContext).toHaveBeenCalledWith(
-        'personal',
+        'operations',
         expect.stringContaining('status = $1'),
         expect.arrayContaining(['submitted'])
       );
@@ -184,10 +184,10 @@ describe('A2ATaskManager', () => {
     it('should apply skill_id filter', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [mockTaskRow], rowCount: 1 } as any);
 
-      await manager.listTasks('personal' as any, { skill_id: 'research' });
+      await manager.listTasks('operations' as any, { skill_id: 'research' });
 
       expect(mockQueryContext).toHaveBeenCalledWith(
-        'personal',
+        'operations',
         expect.stringContaining('skill_id = $1'),
         expect.arrayContaining(['research'])
       );
@@ -196,10 +196,10 @@ describe('A2ATaskManager', () => {
     it('should apply limit and offset', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any);
 
-      await manager.listTasks('personal' as any, { limit: 10, offset: 20 });
+      await manager.listTasks('operations' as any, { limit: 10, offset: 20 });
 
       expect(mockQueryContext).toHaveBeenCalledWith(
-        'personal',
+        'operations',
         expect.stringContaining('LIMIT'),
         expect.arrayContaining([10, 20])
       );
@@ -208,7 +208,7 @@ describe('A2ATaskManager', () => {
     it('should apply multiple filters', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any);
 
-      await manager.listTasks('personal' as any, { status: 'working', skill_id: 'research' });
+      await manager.listTasks('operations' as any, { status: 'working', skill_id: 'research' });
 
       const call = mockQueryContext.mock.calls[0];
       expect(call[1]).toContain('status = $1');
@@ -220,10 +220,10 @@ describe('A2ATaskManager', () => {
     it('should cancel a submitted task', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [{ id: mockTaskRow.id }], rowCount: 1 } as any);
 
-      await expect(manager.cancelTask('personal' as any, mockTaskRow.id)).resolves.not.toThrow();
+      await expect(manager.cancelTask('operations' as any, mockTaskRow.id)).resolves.not.toThrow();
 
       expect(mockQueryContext).toHaveBeenCalledWith(
-        'personal',
+        'operations',
         expect.stringContaining("status = 'canceled'"),
         [mockTaskRow.id]
       );
@@ -233,7 +233,7 @@ describe('A2ATaskManager', () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any);
 
       await expect(
-        manager.cancelTask('personal' as any, 'nonexistent')
+        manager.cancelTask('operations' as any, 'nonexistent')
       ).rejects.toThrow('not found or cannot be canceled');
     });
   });
@@ -248,14 +248,14 @@ describe('A2ATaskManager', () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [{ ...mockTaskRow, status: 'working' }], rowCount: 1 } as any);
 
       const result = await manager.sendMessage(
-        'personal' as any,
+        'operations' as any,
         mockTaskRow.id,
         { role: 'user', parts: [{ type: 'text', text: 'Additional context' }] }
       );
 
       expect(result).toBeTruthy();
       expect(mockQueryContext).toHaveBeenCalledWith(
-        'personal',
+        'operations',
         expect.stringContaining('UPDATE a2a_tasks SET metadata'),
         expect.any(Array)
       );
@@ -266,7 +266,7 @@ describe('A2ATaskManager', () => {
 
       await expect(
         manager.sendMessage(
-          'personal' as any,
+          'operations' as any,
           'nonexistent',
           { role: 'user', parts: [{ type: 'text', text: 'test' }] }
         )
@@ -278,7 +278,7 @@ describe('A2ATaskManager', () => {
 
       await expect(
         manager.sendMessage(
-          'personal' as any,
+          'operations' as any,
           mockTaskRow.id,
           { role: 'user', parts: [{ type: 'text', text: 'test' }] }
         )
@@ -303,7 +303,7 @@ describe('A2ATaskManager', () => {
         memoryStats: { totalEntries: 0, byAgent: {} },
       });
 
-      await manager.createTask('personal' as any, {
+      await manager.createTask('operations' as any, {
         skill_id: 'research',
         message: { role: 'user', parts: [{ type: 'text', text: 'Test' }] },
       });
@@ -313,7 +313,7 @@ describe('A2ATaskManager', () => {
       expect(mockExecuteTeamTask).toHaveBeenCalledWith(
         expect.objectContaining({
           strategy: 'research_only',
-          aiContext: 'personal',
+          aiContext: 'operations',
         })
       );
     });
@@ -335,7 +335,7 @@ describe('A2ATaskManager', () => {
         memoryStats: { totalEntries: 0, byAgent: {} },
       });
 
-      await manager.createTask('personal' as any, {
+      await manager.createTask('operations' as any, {
         skill_id: 'code-review',
         message: { role: 'user', parts: [{ type: 'text', text: 'Review this code' }] },
       });
@@ -364,7 +364,7 @@ describe('A2ATaskManager', () => {
         memoryStats: { totalEntries: 0, byAgent: {} },
       });
 
-      await manager.createTask('personal' as any, {
+      await manager.createTask('operations' as any, {
         skill_id: 'content-creation',
         message: { role: 'user', parts: [{ type: 'text', text: 'Write article' }] },
       });
@@ -383,7 +383,7 @@ describe('A2ATaskManager', () => {
 
       mockExecuteTeamTask.mockRejectedValueOnce(new Error('Orchestrator crashed'));
 
-      await manager.createTask('personal' as any, {
+      await manager.createTask('operations' as any, {
         skill_id: 'research',
         message: { role: 'user', parts: [{ type: 'text', text: 'Test' }] },
       });
@@ -415,7 +415,7 @@ describe('A2ATaskManager', () => {
         memoryStats: { totalEntries: 0, byAgent: {} },
       });
 
-      await manager.createTask('personal' as any, {
+      await manager.createTask('operations' as any, {
         skill_id: 'research',
         message: { role: 'user', parts: [{ type: 'text', text: 'Test' }] },
       });

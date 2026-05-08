@@ -14,7 +14,7 @@ import { logger } from '../../utils/logger';
 // ---------------------------------------------------------------------------
 
 export interface PipelineContext {
-  context: string; // 'personal' | 'work' | etc
+  context: string; // 'operations' | 'finance' | etc
   query: string;
   response: string;
   domain: string;

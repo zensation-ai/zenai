@@ -308,7 +308,7 @@ function keywordOverlap(kwA: string[], kwB: string[]): number {
  *  - Among returned facts, use heuristic contradiction detection
  *  - Return contradictions with confidence 0.3 – 0.7
  *
- * @param context  DB context (personal | work | learning | creative)
+ * @param context  DB context (operations | finance | people | strategy)
  * @param statements  Factual sentences to check
  * @param limit  Max facts to fetch per statement (default 5)
  */

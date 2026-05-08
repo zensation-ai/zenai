@@ -56,14 +56,14 @@ describe('OfflineIndicator', () => {
     mockIsOnline = false;
     mockPendingSync = 3;
     render(<OfflineIndicator />);
-    expect(screen.getByText(/3 Aenderungen warten/)).toBeInTheDocument();
+    expect(screen.getByText(/3 Änderungen warten/)).toBeInTheDocument();
   });
 
   it('should use singular for single pending change', () => {
     mockIsOnline = false;
     mockPendingSync = 1;
     render(<OfflineIndicator />);
-    expect(screen.getByText(/1 Aenderung warten/)).toBeInTheDocument();
+    expect(screen.getByText(/1 Änderung warten/)).toBeInTheDocument();
   });
 
   it('should have aria-live attribute for accessibility', () => {

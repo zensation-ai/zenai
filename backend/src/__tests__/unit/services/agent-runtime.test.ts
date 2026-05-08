@@ -8,7 +8,7 @@ import { AGENT_TEMPLATES } from '../../../services/agents/agent-templates';
 // Mock dependencies
 jest.mock('../../../utils/database-context', () => ({
   queryContext: jest.fn(),
-  isValidContext: jest.fn((c: string) => ['personal', 'work', 'learning', 'creative'].includes(c)),
+  isValidContext: jest.fn((c: string) => ['operations', 'finance', 'people', 'strategy'].includes(c)),
 }));
 
 jest.mock('../../../utils/logger', () => ({
@@ -53,8 +53,8 @@ describe('Agent Runtime', () => {
 
       // Should query all 4 contexts
       expect(mockQueryContext).toHaveBeenCalledTimes(4);
-      expect(mockQueryContext).toHaveBeenCalledWith('personal', expect.stringContaining('agent_definitions'), []);
-      expect(mockQueryContext).toHaveBeenCalledWith('work', expect.stringContaining('agent_definitions'), []);
+      expect(mockQueryContext).toHaveBeenCalledWith('operations', expect.stringContaining('agent_definitions'), []);
+      expect(mockQueryContext).toHaveBeenCalledWith('finance', expect.stringContaining('agent_definitions'), []);
     });
 
     it('should handle missing tables gracefully', async () => {
@@ -76,7 +76,7 @@ describe('Agent Runtime', () => {
           instructions: 'Do stuff',
           triggers: JSON.stringify([{ type: 'manual', config: {} }]),
           tools: ['search_ideas'],
-          context: 'personal',
+          context: 'operations',
           status: 'active',
           approval_required: false,
           max_actions_per_day: 50,
@@ -107,7 +107,7 @@ describe('Agent Runtime', () => {
           instructions: 'Handle emails',
           triggers: JSON.stringify([{ type: 'email_received', config: {} }]),
           tools: [],
-          context: 'work',
+          context: 'finance',
           status: 'active',
           approval_required: false,
           max_actions_per_day: 50,
@@ -125,7 +125,7 @@ describe('Agent Runtime', () => {
 
       const event: AgentEvent = {
         type: 'email_received',
-        context: 'work',
+        context: 'finance',
         data: { subject: 'Test email' },
       };
 
@@ -143,7 +143,7 @@ describe('Agent Runtime', () => {
           instructions: 'Handle stuff',
           triggers: JSON.stringify([{ type: 'manual', config: {} }]),
           tools: [],
-          context: 'personal',
+          context: 'operations',
           status: 'active',
           approval_required: false,
           max_actions_per_day: 50,
@@ -159,7 +159,7 @@ describe('Agent Runtime', () => {
 
       const event: AgentEvent = {
         type: 'manual',
-        context: 'work', // Different context
+        context: 'finance', // Different context
         data: {},
       };
 
@@ -176,7 +176,7 @@ describe('Agent Runtime', () => {
           instructions: 'Do things',
           triggers: JSON.stringify([{ type: 'manual', config: {} }]),
           tools: [],
-          context: 'personal',
+          context: 'operations',
           status: 'active',
           approval_required: false,
           max_actions_per_day: 1, // Only 1 action per day
@@ -190,7 +190,7 @@ describe('Agent Runtime', () => {
       await agentRuntime.start();
       mockQueryContext.mockResolvedValue({ rows: [] });
 
-      const event: AgentEvent = { type: 'manual', context: 'personal', data: {} };
+      const event: AgentEvent = { type: 'manual', context: 'operations', data: {} };
 
       // First execution should work
       const first = await agentRuntime.processEvent(event);
@@ -212,7 +212,7 @@ describe('Agent Runtime', () => {
           instructions: 'Do things',
           triggers: '[]',
           tools: ['search_ideas'],
-          context: 'personal',
+          context: 'operations',
           status: 'active',
           approval_required: false,
           max_actions_per_day: 50,
@@ -223,7 +223,7 @@ describe('Agent Runtime', () => {
         }],
       });
 
-      const agent = await agentRuntime.createAgent('personal' as const, {
+      const agent = await agentRuntime.createAgent('operations' as const, {
         name: 'New Agent',
         description: 'Test',
         instructions: 'Do things',
@@ -249,7 +249,7 @@ describe('Agent Runtime', () => {
           instructions: 'Test',
           triggers: '[]',
           tools: [],
-          context: 'personal',
+          context: 'operations',
           status: 'active',
           approval_required: false,
           max_actions_per_day: 50,
@@ -260,7 +260,7 @@ describe('Agent Runtime', () => {
         }],
       });
 
-      await agentRuntime.createAgent('personal' as const, {
+      await agentRuntime.createAgent('operations' as const, {
         name: 'Delete Me',
         instructions: 'Test',
         triggers: [],
@@ -269,7 +269,7 @@ describe('Agent Runtime', () => {
 
       // Then delete
       mockQueryContext.mockResolvedValueOnce({ rows: [{ id: 'del-agent' }] });
-      const deleted = await agentRuntime.deleteAgent('personal' as const, 'del-agent');
+      const deleted = await agentRuntime.deleteAgent('operations' as const, 'del-agent');
       expect(deleted).toBe(true);
 
       // Should be removed from runtime

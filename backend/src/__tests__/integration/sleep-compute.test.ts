@@ -26,7 +26,7 @@ const mockQueryContext = jest.fn();
 
 jest.mock('../../utils/database-context', () => ({
   queryContext: (...args: unknown[]) => mockQueryContext(...args),
-  isValidContext: jest.fn((ctx: string) => ['personal', 'work', 'learning', 'creative'].includes(ctx)),
+  isValidContext: jest.fn((ctx: string) => ['operations', 'finance', 'people', 'strategy'].includes(ctx)),
   AIContext: {},
 }));
 
@@ -54,6 +54,10 @@ jest.mock('../../services/context-engine-v2', () => ({
     assembleContext: (...args: unknown[]) => mockAssembleContext(...args),
     cleanExpiredCache: (...args: unknown[]) => mockCleanExpiredCache(...args),
   })),
+}));
+
+jest.mock('../../middleware/plan-gate', () => ({
+  requirePlan: jest.fn(() => (_req: unknown, _res: unknown, next: () => void) => next()),
 }));
 
 import { sleepComputeRouter } from '../../routes/sleep-compute';
@@ -86,7 +90,7 @@ describe('Sleep Compute API Integration Tests', () => {
       mockQueryContext.mockResolvedValueOnce({ rows: logs });
 
       const res = await request(app)
-        .get('/api/personal/sleep-compute/logs')
+        .get('/api/operations/sleep-compute/logs')
         .expect(200);
 
       expect(res.body.success).toBe(true);
@@ -98,7 +102,7 @@ describe('Sleep Compute API Integration Tests', () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [] });
 
       await request(app)
-        .get('/api/personal/sleep-compute/logs?limit=200')
+        .get('/api/operations/sleep-compute/logs?limit=200')
         .expect(200);
 
       const params = mockQueryContext.mock.calls[0][2] as unknown[];
@@ -132,7 +136,7 @@ describe('Sleep Compute API Integration Tests', () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [stats] });
 
       const res = await request(app)
-        .get('/api/personal/sleep-compute/stats')
+        .get('/api/operations/sleep-compute/stats')
         .expect(200);
 
       expect(res.body.success).toBe(true);
@@ -143,7 +147,7 @@ describe('Sleep Compute API Integration Tests', () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [] });
 
       const res = await request(app)
-        .get('/api/personal/sleep-compute/stats')
+        .get('/api/operations/sleep-compute/stats')
         .expect(200);
 
       expect(res.body.data).toEqual({});
@@ -160,12 +164,12 @@ describe('Sleep Compute API Integration Tests', () => {
       mockRunSleepCycle.mockResolvedValueOnce(cycleResult);
 
       const res = await request(app)
-        .post('/api/personal/sleep-compute/trigger')
+        .post('/api/operations/sleep-compute/trigger')
         .expect(200);
 
       expect(res.body.success).toBe(true);
       expect(res.body.data.processed).toBe(15);
-      expect(mockRunSleepCycle).toHaveBeenCalledWith('personal');
+      expect(mockRunSleepCycle).toHaveBeenCalledWith('operations');
     });
 
     it('should reject invalid context', async () => {
@@ -186,7 +190,7 @@ describe('Sleep Compute API Integration Tests', () => {
       mockIsSystemIdle.mockResolvedValueOnce(true);
 
       const res = await request(app)
-        .get('/api/personal/sleep-compute/idle-status')
+        .get('/api/operations/sleep-compute/idle-status')
         .expect(200);
 
       expect(res.body.success).toBe(true);
@@ -197,7 +201,7 @@ describe('Sleep Compute API Integration Tests', () => {
       mockIsSystemIdle.mockResolvedValueOnce(false);
 
       const res = await request(app)
-        .get('/api/personal/sleep-compute/idle-status')
+        .get('/api/operations/sleep-compute/idle-status')
         .expect(200);
 
       expect(res.body.data.idle).toBe(false);
@@ -215,7 +219,7 @@ describe('Sleep Compute API Integration Tests', () => {
       mockSelectModel.mockReturnValueOnce('claude-sonnet-4-20250514');
 
       const res = await request(app)
-        .post('/api/personal/context-v2/classify')
+        .post('/api/operations/context-v2/classify')
         .send({ query: 'What is my revenue?' })
         .expect(200);
 
@@ -225,7 +229,7 @@ describe('Sleep Compute API Integration Tests', () => {
 
     it('should require query parameter', async () => {
       const res = await request(app)
-        .post('/api/personal/context-v2/classify')
+        .post('/api/operations/context-v2/classify')
         .send({})
         .expect(400);
 
@@ -242,7 +246,7 @@ describe('Sleep Compute API Integration Tests', () => {
       mockAssembleContext.mockResolvedValueOnce({ systemPrompt: 'test', tokens: 500 });
 
       const res = await request(app)
-        .post('/api/personal/context-v2/assemble')
+        .post('/api/operations/context-v2/assemble')
         .send({ query: 'Help me' })
         .expect(200);
 
@@ -252,7 +256,7 @@ describe('Sleep Compute API Integration Tests', () => {
 
     it('should require query parameter', async () => {
       const res = await request(app)
-        .post('/api/personal/context-v2/assemble')
+        .post('/api/operations/context-v2/assemble')
         .send({})
         .expect(400);
 
@@ -269,7 +273,7 @@ describe('Sleep Compute API Integration Tests', () => {
       mockCleanExpiredCache.mockResolvedValueOnce(5);
 
       const res = await request(app)
-        .post('/api/personal/context-v2/cache/clean')
+        .post('/api/operations/context-v2/cache/clean')
         .expect(200);
 
       expect(res.body.success).toBe(true);

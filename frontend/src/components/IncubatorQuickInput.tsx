@@ -17,11 +17,11 @@ export function IncubatorQuickInput({
       <div className="quick-input-card liquid-glass neuro-chunk">
         <h2>Schneller Gedanke</h2>
         <p className="hint neuro-inspirational">
-          Keine Struktur noetig – {AI_PERSONALITY.name} kuemmert sich darum!
+          Keine Struktur nötig – {AI_PERSONALITY.name} kümmert sich darum!
         </p>
         <div className="quick-input-container">
           <textarea
-            className="liquid-glass-input neuro-placeholder-animated"
+            className="bg-[var(--color-glass-bg)] backdrop-blur-md border border-[var(--color-glass-border)] rounded-lg px-4 py-2.5 text-sm text-[var(--color-text)] placeholder:text-[var(--color-text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/50 transition-shadow"
             placeholder={suggestedAction || 'Was geht dir durch den Kopf...'}
             value={quickThought}
             onChange={(e) => onQuickThoughtChange(e.target.value)}

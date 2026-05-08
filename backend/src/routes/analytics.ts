@@ -52,7 +52,7 @@ analyticsRouter.get('/:context/analytics/overview', apiKeyAuth, asyncHandler(asy
   const userId = getUserId(req);
 
   if (!isValidContext(context)) {
-    throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
+    throw new ValidationError('Invalid context. Use "operations", "finance", "people", or "strategy".');
   }
 
   const ctx = context as AIContext;
@@ -172,7 +172,7 @@ analyticsRouter.get('/:context/analytics/timeline', apiKeyAuth, asyncHandler(asy
   const userId = getUserId(req);
 
   if (!isValidContext(context)) {
-    throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
+    throw new ValidationError('Invalid context. Use "operations", "finance", "people", or "strategy".');
   }
 
   // Whitelist-based interval mapping (prevents SQL injection)
@@ -242,7 +242,7 @@ analyticsRouter.get('/:context/analytics/engagement', apiKeyAuth, asyncHandler(a
   const userId = getUserId(req);
 
   if (!isValidContext(context)) {
-    throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
+    throw new ValidationError('Invalid context. Use "operations", "finance", "people", or "strategy".');
   }
 
   const ctx = context as AIContext;
@@ -366,7 +366,7 @@ analyticsRouter.get('/:context/analytics/dashboard-summary', apiKeyAuth, asyncHa
   const userId = getUserId(req);
 
   if (!isValidContext(context)) {
-    throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
+    throw new ValidationError('Invalid context. Use "operations", "finance", "people", or "strategy".');
   }
 
   const ctx = context as AIContext;

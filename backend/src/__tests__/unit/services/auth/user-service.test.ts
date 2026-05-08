@@ -4,10 +4,31 @@
 
 import bcrypt from 'bcrypt';
 
-// Mock database
+// Mock database — Sprint 1.1 (2026-04-16): also stubs queryContext + withTransaction
+// for deleteUserCascade(), which runs schema-isolated DELETEs across all 4 contexts.
 const mockQuery = jest.fn();
+const mockQueryContext = jest.fn();
+const mockWithTransaction = jest.fn(async (_ctx: string, fn: (q: unknown) => Promise<unknown>) =>
+  fn(async () => ({ rows: [], rowCount: 0 })),
+);
 jest.mock('../../../../utils/database-context', () => ({
   queryPublic: (...args: unknown[]) => mockQuery(...args),
+  queryContext: (...args: unknown[]) => mockQueryContext(...args),
+  withTransaction: (...args: unknown[]) => mockWithTransaction(...(args as [string, (q: unknown) => Promise<unknown>])),
+}));
+
+// Stub auxiliary cascade dependencies so the test focuses on SQL behavior.
+jest.mock('../../../../services/auth/session-store', () => ({
+  sessionStore: { revokeAllUserSessions: jest.fn().mockResolvedValue(undefined) },
+}));
+jest.mock('../../../../utils/cache', () => ({
+  cache: {
+    isAvailable: () => false,
+    delPattern: jest.fn().mockResolvedValue(0),
+  },
+}));
+jest.mock('../../../../services/observability/sentry', () => ({
+  setUser: jest.fn(),
 }));
 
 // Mock logger
@@ -30,6 +51,8 @@ import {
   setMfaSecret,
   setMfaEnabled,
   toUserProfile,
+  deleteUserCascade,
+  markOnboardingComplete,
   UserServiceError,
 } from '../../../../services/auth/user-service';
 import type { User } from '../../../../services/auth/user-service';
@@ -213,7 +236,7 @@ describe('UserService', () => {
       // Context grants are calls 3-6 (0-indexed: 2-5)
       const contextCalls = mockQuery.mock.calls.slice(2, 6);
       const contexts = contextCalls.map(call => call[1][1]);
-      expect(contexts).toEqual(['personal', 'work', 'learning', 'creative']);
+      expect(contexts).toEqual(['operations', 'finance', 'people', 'strategy']);
     });
   });
 
@@ -439,6 +462,113 @@ describe('UserService', () => {
         expect.stringContaining('mfa_enabled'),
         [false, 'usr_123']
       );
+    });
+  });
+
+  // ----- deleteUserCascade (Sprint 1.1, DSGVO Art. 17) -----
+  describe('deleteUserCascade', () => {
+    beforeEach(() => {
+      mockQueryContext.mockReset();
+      mockWithTransaction.mockReset();
+      mockWithTransaction.mockImplementation(async (_ctx: string, fn: (q: unknown) => Promise<unknown>) =>
+        fn(async () => ({ rows: [], rowCount: 0 })),
+      );
+    });
+
+    it('returns existed=false and skips deletes when user not found (idempotent)', async () => {
+      mockQuery.mockResolvedValueOnce({ rows: [] }); // SELECT id from users → empty
+
+      const result = await deleteUserCascade('missing-user');
+
+      expect(result.existed).toBe(false);
+      expect(result.userId).toBe('missing-user');
+      expect(result.rowsDeletedPublic).toBe(0);
+      // No further queries should run for the missing user.
+      expect(mockQueryContext).not.toHaveBeenCalled();
+    });
+
+    it('iterates all 4 contexts and deletes from public.users when user exists', async () => {
+      // 1) SELECT id (existence check) — returns the user.
+      mockQuery.mockResolvedValueOnce({ rows: [{ id: 'usr_123' }] });
+      // 2..N) public-table deletes (10 default tables) + final users delete.
+      // We just resolve every public-schema call with rowCount=1 except the 'tables not present' ones.
+      mockQuery.mockResolvedValue({ rows: [], rowCount: 1 });
+      // queryContext: information_schema lookup returns one table per context for simplicity.
+      mockQueryContext.mockResolvedValue({ rows: [{ table_name: 'memory' }] });
+
+      const result = await deleteUserCascade('usr_123');
+
+      expect(result.existed).toBe(true);
+      // All 4 contexts must be visited at least for the information_schema lookup.
+      const contextsLookedUp = mockQueryContext.mock.calls
+        .map(call => call[0] as string)
+        .filter(ctx => ['operations', 'finance', 'people', 'strategy'].includes(ctx));
+      expect(new Set(contextsLookedUp)).toEqual(
+        new Set(['operations', 'finance', 'people', 'strategy']),
+      );
+      // withTransaction was invoked once per context (4 times).
+      expect(mockWithTransaction).toHaveBeenCalledTimes(4);
+      // Final public.users DELETE happened.
+      const userDeleteCalls = mockQuery.mock.calls.filter(call =>
+        typeof call[0] === 'string' && call[0].includes('DELETE FROM public.users'),
+      );
+      expect(userDeleteCalls.length).toBeGreaterThan(0);
+    });
+  });
+
+  // ----- markOnboardingComplete (Sprint 1.6) -----
+  describe('markOnboardingComplete', () => {
+    it('should set onboarding_completed_at via COALESCE and return timestamp', async () => {
+      const now = '2026-04-19T10:00:00Z';
+      mockQuery.mockResolvedValueOnce({
+        rows: [{ onboarding_completed_at: now }],
+      });
+
+      const result = await markOnboardingComplete('usr_123');
+
+      expect(result).toBe(now);
+      expect(mockQuery).toHaveBeenCalledWith(
+        expect.stringContaining('COALESCE(onboarding_completed_at, NOW())'),
+        ['usr_123'],
+      );
+    });
+
+    it('should be idempotent — returns preexisting timestamp when already onboarded', async () => {
+      const existing = '2026-04-01T08:30:00Z';
+      mockQuery.mockResolvedValueOnce({
+        rows: [{ onboarding_completed_at: existing }],
+      });
+
+      const result = await markOnboardingComplete('usr_123');
+
+      expect(result).toBe(existing);
+      // COALESCE keeps the earlier value — function is safe to call repeatedly.
+    });
+
+    it('should throw UserServiceError(404) when user does not exist', async () => {
+      mockQuery.mockResolvedValueOnce({ rows: [] });
+
+      await expect(markOnboardingComplete('missing')).rejects.toMatchObject({
+        name: 'UserServiceError',
+        code: 'NOT_FOUND',
+        statusCode: 404,
+      });
+    });
+  });
+
+  // ----- toUserProfile onboarding_completed_at (Sprint 1.6) -----
+  describe('toUserProfile — onboarding_completed_at', () => {
+    it('exposes onboarding_completed_at when set', () => {
+      const profile = toUserProfile({
+        ...mockUser,
+        onboarding_completed_at: '2026-04-19T12:00:00Z',
+      });
+      expect(profile.onboarding_completed_at).toBe('2026-04-19T12:00:00Z');
+    });
+
+    it('defaults onboarding_completed_at to null when not set', () => {
+      const profile = toUserProfile({ ...mockUser, onboarding_completed_at: null });
+      expect(profile.onboarding_completed_at).toBeNull();
     });
   });
 

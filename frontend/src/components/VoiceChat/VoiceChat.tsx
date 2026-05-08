@@ -11,8 +11,6 @@ import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { AudioVisualizer } from './AudioVisualizer';
 import { useWebRTC } from '../../hooks/useWebRTC';
 import { useVoiceActivity } from '../../hooks/useVoiceActivity';
-import './VoiceChat.css';
-
 interface VoiceChatProps {
   context?: string;
   onClose?: () => void;
@@ -28,7 +26,7 @@ interface TranscriptEntry {
 type VoiceChatState = 'idle' | 'connecting' | 'listening' | 'processing' | 'speaking';
 
 export const VoiceChat: React.FC<VoiceChatProps> = ({
-  context = 'personal',
+  context = 'operations',
   onClose,
   embedded = false,
 }) => {
@@ -41,6 +39,7 @@ export const VoiceChat: React.FC<VoiceChatProps> = ({
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioQueueRef = useRef<ArrayBuffer[]>([]);
   const isPlayingRef = useRef(false);
+  const playNextAudioRef = useRef<() => void>(() => {});
   const transcriptEndRef = useRef<HTMLDivElement>(null);
 
   // Voice activity detection
@@ -74,7 +73,7 @@ export const VoiceChat: React.FC<VoiceChatProps> = ({
     }, []),
     onResponseAudio: useCallback((audio: ArrayBuffer) => {
       audioQueueRef.current.push(audio);
-      playNextAudio();
+      playNextAudioRef.current();
     }, []),
     onVAD: useCallback((_isSpeaking: boolean, _volume: number) => {
       // Server-side VAD feedback (optional)
@@ -137,6 +136,9 @@ export const VoiceChat: React.FC<VoiceChatProps> = ({
       setState('listening');
     });
   }, []);
+
+  // Keep ref in sync so the WebRTC callback always calls the latest version
+  playNextAudioRef.current = playNextAudio;
 
   // Start recording
   const startRecording = useCallback(async () => {

@@ -6,6 +6,7 @@
  * and a Health Score ring.
  */
 
+import type { CSSProperties } from 'react';
 import type { AIContext } from '../ContextSwitcher';
 import {
   useCognitiveOverview,
@@ -13,6 +14,8 @@ import {
   type KnowledgeGap,
   type PredictionEntry,
 } from '../../hooks/queries/useCognitive';
+import { NeuromodulatorGauges } from './NeuromodulatorGauges';
+import { MemoryHealthPMA } from './MemoryHealthPMA';
 
 interface CognitiveOverviewProps {
   context: AIContext;
@@ -32,7 +35,7 @@ const SEVERITY_LABELS: Record<string, string> = {
 
 const STATUS_LABELS: Record<string, string> = {
   pending: 'Offen',
-  confirmed: 'Bestaetigt',
+  confirmed: 'Bestätigt',
   refuted: 'Widerlegt',
 };
 
@@ -88,7 +91,7 @@ function MetricCards({ data }: { data: CognitiveOverviewData }) {
     },
     {
       icon: '\u{1F4AA}',
-      label: 'Staerken',
+      label: 'Stärken',
       value: String(data.strengths.length),
       sub: data.strengths.length > 0
         ? `Top: ${data.strengths[0]?.domain ?? '-'}`
@@ -98,7 +101,7 @@ function MetricCards({ data }: { data: CognitiveOverviewData }) {
       icon: '\u{1F52E}',
       label: 'Vorhersagen',
       value: String(data.predictions.length),
-      sub: `${data.predictions.filter(p => p.status === 'confirmed').length} bestaetigt`,
+      sub: `${data.predictions.filter(p => p.status === 'confirmed').length} bestätigt`,
     },
     {
       icon: '\u{2728}',
@@ -134,7 +137,7 @@ function MetricCards({ data }: { data: CognitiveOverviewData }) {
 function ProgressBars({ data }: { data: CognitiveOverviewData }) {
   const bars = [
     { label: 'Konfidenz', value: data.confidence_score },
-    { label: 'Kohaerenz', value: data.coherence_score },
+    { label: 'Kohärenz', value: data.coherence_score },
     { label: 'Abdeckung', value: data.coverage_score },
   ];
 
@@ -152,8 +155,8 @@ function ProgressBars({ data }: { data: CognitiveOverviewData }) {
               </div>
               <div className="cognitive-progress-bar" role="progressbar" aria-valuenow={Math.round(bar.value * 100)} aria-valuemin={0} aria-valuemax={100} aria-label={bar.label}>
                 <div
-                  className={`cognitive-progress-fill ${level}`}
-                  style={{ width: formatPercent(bar.value) }}
+                  className={`cognitive-progress-fill w-[var(--bar)] ${level}`}
+                  style={{ '--bar': formatPercent(bar.value) } as CSSProperties}
                 />
               </div>
             </div>
@@ -167,11 +170,11 @@ function ProgressBars({ data }: { data: CognitiveOverviewData }) {
 function KnowledgeGapsList({ gaps }: { gaps: KnowledgeGap[] }) {
   return (
     <div className="cognitive-list-card">
-      <div className="cognitive-section-title">Wissensluecken</div>
+      <div className="cognitive-section-title">Wissenslücken</div>
       {gaps.length === 0 ? (
         <div className="cognitive-empty">
           <div className="cognitive-empty-icon">{'\u{2705}'}</div>
-          <div>Keine Wissensluecken erkannt</div>
+          <div>Keine Wissenslücken erkannt</div>
         </div>
       ) : (
         <div className="cognitive-list-items">
@@ -227,7 +230,7 @@ export function CognitiveOverview({ context }: CognitiveOverviewProps) {
     return (
       <div className="cognitive-loading" role="status" aria-live="polite">
         <span aria-hidden="true">{'\u{1F9E0}'}</span>
-        Lade Uebersicht...
+        Lade Übersicht...
       </div>
     );
   }
@@ -236,7 +239,7 @@ export function CognitiveOverview({ context }: CognitiveOverviewProps) {
     return (
       <div className="cognitive-error">
         <div className="cognitive-error-message">
-          Uebersichtsdaten konnten nicht geladen werden.
+          Übersichtsdaten konnten nicht geladen werden.
         </div>
         <button className="cognitive-retry-btn" onClick={() => refetch()} type="button">
           Erneut versuchen
@@ -246,7 +249,7 @@ export function CognitiveOverview({ context }: CognitiveOverviewProps) {
   }
 
   return (
-    <div role="region" aria-label="Kognitive Uebersicht">
+    <div role="region" aria-label="Kognitive Übersicht">
       <div className="cognitive-overview-top">
         <HealthScoreRing data={data} />
       </div>
@@ -256,6 +259,8 @@ export function CognitiveOverview({ context }: CognitiveOverviewProps) {
         <KnowledgeGapsList gaps={data.knowledge_gaps} />
         <PredictionsList predictions={data.predictions} />
       </div>
+      <NeuromodulatorGauges context={context} />
+      <MemoryHealthPMA context={context} />
     </div>
   );
 }

@@ -13,7 +13,7 @@
  * @module services/github
  */
 
-import axios from 'axios';
+import { checkedAxiosGet, checkedAxiosPost } from '../utils/checked-http';
 // pool.query() is intentional here: user_integrations is a global table (not per-context)
 import { pool } from '../utils/database';
 import { logger } from '../utils/logger';
@@ -183,7 +183,13 @@ export async function exchangeCodeForTokens(
 ): Promise<GitHubTokens> {
   const config = getConfig();
 
-  const response = await axios.post(
+  const response = await checkedAxiosPost<{
+    access_token: string;
+    token_type: string;
+    scope: string;
+    error?: string;
+    error_description?: string;
+  }>(
     GITHUB_TOKEN_URL,
     {
       client_id: config.clientId,
@@ -250,7 +256,13 @@ export async function getStoredTokens(userId: string): Promise<string | null> {
  * Get authenticated user info
  */
 export async function getAuthenticatedUser(accessToken?: string): Promise<GitHubUser> {
-  const response = await axios.get(`${GITHUB_API_BASE}/user`, {
+  const response = await checkedAxiosGet<{
+    id: number;
+    login: string;
+    name: string | null;
+    email: string | null;
+    avatar_url: string;
+  }>(`${GITHUB_API_BASE}/user`, {
     headers: getAuthHeaders(accessToken),
   });
 
@@ -274,7 +286,10 @@ export async function searchRepositories(
 ): Promise<GitHubSearchResult> {
   const { limit = 10, sort = 'stars' } = options;
 
-  const response = await axios.get(`${GITHUB_API_BASE}/search/repositories`, {
+  const response = await checkedAxiosGet<{
+    total_count: number;
+    items: Array<Record<string, unknown>>;
+  }>(`${GITHUB_API_BASE}/search/repositories`, {
     headers: getAuthHeaders(accessToken),
     params: {
       q: query,
@@ -298,7 +313,7 @@ export async function getRepository(
   repo: string,
   accessToken?: string
 ): Promise<GitHubRepository> {
-  const response = await axios.get(
+  const response = await checkedAxiosGet<Record<string, unknown>>(
     `${GITHUB_API_BASE}/repos/${owner}/${repo}`,
     { headers: getAuthHeaders(accessToken) }
   );
@@ -317,7 +332,7 @@ export async function listIssues(
 ): Promise<GitHubIssue[]> {
   const { state = 'open', limit = 10 } = options;
 
-  const response = await axios.get(
+  const response = await checkedAxiosGet<Array<Record<string, unknown> & { pull_request?: unknown }>>(
     `${GITHUB_API_BASE}/repos/${owner}/${repo}/issues`,
     {
       headers: getAuthHeaders(accessToken),
@@ -331,7 +346,7 @@ export async function listIssues(
   );
 
   return response.data
-    .filter((item: { pull_request?: unknown }) => !item.pull_request) // Exclude PRs
+    .filter((item) => !item.pull_request) // Exclude PRs
     .map(mapIssue);
 }
 
@@ -344,7 +359,7 @@ export async function createIssue(
 ): Promise<GitHubIssue> {
   const { owner, repo, title, body, labels, assignees } = params;
 
-  const response = await axios.post(
+  const response = await checkedAxiosPost<Record<string, unknown> & { number: number }>(
     `${GITHUB_API_BASE}/repos/${owner}/${repo}/issues`,
     {
       title,
@@ -369,7 +384,7 @@ export async function getIssue(
   issueNumber: number,
   accessToken?: string
 ): Promise<GitHubIssue> {
-  const response = await axios.get(
+  const response = await checkedAxiosGet<Record<string, unknown>>(
     `${GITHUB_API_BASE}/repos/${owner}/${repo}/issues/${issueNumber}`,
     { headers: getAuthHeaders(accessToken) }
   );
@@ -388,7 +403,7 @@ export async function listPullRequests(
 ): Promise<GitHubPullRequest[]> {
   const { state = 'open', limit = 10 } = options;
 
-  const response = await axios.get(
+  const response = await checkedAxiosGet<Array<Record<string, unknown>>>(
     `${GITHUB_API_BASE}/repos/${owner}/${repo}/pulls`,
     {
       headers: getAuthHeaders(accessToken),
@@ -413,7 +428,7 @@ export async function getPullRequest(
   prNumber: number,
   accessToken?: string
 ): Promise<GitHubPullRequest> {
-  const response = await axios.get(
+  const response = await checkedAxiosGet<Record<string, unknown>>(
     `${GITHUB_API_BASE}/repos/${owner}/${repo}/pulls/${prNumber}`,
     { headers: getAuthHeaders(accessToken) }
   );
@@ -430,17 +445,17 @@ export async function getPullRequestFiles(
   prNumber: number,
   accessToken?: string
 ): Promise<Array<{ filename: string; status: string; additions: number; deletions: number }>> {
-  const response = await axios.get(
-    `${GITHUB_API_BASE}/repos/${owner}/${repo}/pulls/${prNumber}/files`,
-    { headers: getAuthHeaders(accessToken) }
-  );
-
-  return response.data.map((file: {
+  const response = await checkedAxiosGet<Array<{
     filename: string;
     status: string;
     additions: number;
     deletions: number;
-  }) => ({
+  }>>(
+    `${GITHUB_API_BASE}/repos/${owner}/${repo}/pulls/${prNumber}/files`,
+    { headers: getAuthHeaders(accessToken) }
+  );
+
+  return response.data.map((file) => ({
     filename: file.filename,
     status: file.status,
     additions: file.additions,
@@ -462,7 +477,14 @@ export async function searchCode(
   if (repo) {searchQuery += ` repo:${repo}`;}
   if (language) {searchQuery += ` language:${language}`;}
 
-  const response = await axios.get(`${GITHUB_API_BASE}/search/code`, {
+  const response = await checkedAxiosGet<{
+    items: Array<{
+      path: string;
+      repository: { full_name: string };
+      html_url: string;
+      score: number;
+    }>;
+  }>(`${GITHUB_API_BASE}/search/code`, {
     headers: getAuthHeaders(accessToken),
     params: {
       q: searchQuery,
@@ -470,12 +492,7 @@ export async function searchCode(
     },
   });
 
-  return response.data.items.map((item: {
-    path: string;
-    repository: { full_name: string };
-    html_url: string;
-    score: number;
-  }) => ({
+  return response.data.items.map((item) => ({
     path: item.path,
     repository: item.repository.full_name,
     htmlUrl: item.html_url,
@@ -492,7 +509,7 @@ export async function listUserRepositories(
 ): Promise<GitHubRepository[]> {
   const { type = 'owner', limit = 30, sort = 'updated' } = options;
 
-  const response = await axios.get(`${GITHUB_API_BASE}/user/repos`, {
+  const response = await checkedAxiosGet<Array<Record<string, unknown>>>(`${GITHUB_API_BASE}/user/repos`, {
     headers: getAuthHeaders(accessToken),
     params: {
       type,

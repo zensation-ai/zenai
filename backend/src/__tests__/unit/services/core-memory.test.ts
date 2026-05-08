@@ -25,7 +25,7 @@ import {
 jest.mock('../../../utils/database-context', () => ({
   queryContext: jest.fn(),
   isValidContext: (ctx: string) =>
-    ['personal', 'work', 'learning', 'creative'].includes(ctx),
+    ['operations', 'finance', 'people', 'strategy'].includes(ctx),
 }));
 
 jest.mock('../../../utils/logger', () => ({
@@ -65,7 +65,7 @@ const makeBlock = (overrides: Partial<{
 });
 
 const USER_ID = 'user-abc';
-const CONTEXT = 'personal';
+const CONTEXT = 'operations';
 
 // ===========================================
 // Tests
@@ -476,7 +476,7 @@ describe('Core Memory Service', () => {
     });
 
     it('should work for all context types', async () => {
-      for (const ctx of ['personal', 'work', 'learning', 'creative']) {
+      for (const ctx of ['operations', 'finance', 'people', 'strategy']) {
         mockQueryContext.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any);
         await expect(initializeDefaultBlocks(ctx, USER_ID)).resolves.toBeUndefined();
       }

@@ -19,13 +19,21 @@ import {
 import { testImapConnection, syncAccount, ImapAccount } from '../services/imap-sync';
 import { encrypt } from '../utils/encryption';
 import { apiKeyAuth, requireScope } from '../middleware/auth';
+import { createModerationMiddleware, extractFromFields } from '../middleware/moderation-factory';
 import { asyncHandler, ValidationError, NotFoundError } from '../middleware/errorHandler';
+
+// Sprint 1.2 + 1.10: Email-Moderation vor Send. body_text wird priorisiert (HTML könnte Markup-Noise haben).
+const emailModeration = createModerationMiddleware({
+  domain: 'email',
+  extractContent: extractFromFields(['body_text', 'body_html', 'body', 'subject']),
+});
 import { isValidUUID, validateEmailAddresses, validateContextParam } from '../utils/validation';
 import { getUserId } from '../utils/user-context';
 import { queryContext } from '../utils/database-context';
 import { logger } from '../utils/logger';
 import { parseNaturalLanguageQuery, searchEmails, getInboxSummary, EmailSearchQuery } from '../services/email-search';
 import { generateEmailDigest, formatDigestForChat } from '../services/email-digest';
+import { buildCursorWhere, buildCursorResponse } from '../utils/cursor-pagination';
 
 export const emailRouter = Router();
 
@@ -169,7 +177,7 @@ emailRouter.delete('/:context/emails/labels/:id', apiKeyAuth, requireScope('writ
 // POST /api/:context/emails/send  (compose & send new email)
 // ============================================================
 
-emailRouter.post('/:context/emails/send', apiKeyAuth, requireScope('write'), asyncHandler(async (req, res) => {
+emailRouter.post('/:context/emails/send', apiKeyAuth, requireScope('write'), emailModeration, asyncHandler(async (req, res) => {
   const context = validateContextParam(req.params.context);
   const userId = getUserId(req);
   const { to_addresses, cc_addresses, bcc_addresses, subject, body_html, body_text, account_id } = req.body;
@@ -237,23 +245,147 @@ emailRouter.get('/:context/emails', apiKeyAuth, asyncHandler(async (req, res) =>
     throw new ValidationError(`folder must be one of: ${VALID_FOLDERS.join(', ')}`);
   }
 
-  const filters = {
-    folder,
-    status: req.query.status as EmailStatus | undefined,
-    direction: req.query.direction as EmailDirection | undefined,
-    category: req.query.category as string | undefined,
-    account_id: req.query.account_id as string | undefined,
-    is_starred: req.query.is_starred === 'true' ? true : req.query.is_starred === 'false' ? false : undefined,
-    search: req.query.search as string | undefined,
-    from: req.query.from as string | undefined,
-    thread_id: req.query.thread_id as string | undefined,
-    limit: Math.min(parseInt(req.query.limit as string, 10) || 50, 200),
-    offset: parseInt(req.query.offset as string, 10) || 0,
-  };
+  const limit = Math.min(parseInt(req.query.limit as string, 10) || 50, 200);
+  const offset = parseInt(req.query.offset as string, 10) || 0;
+  const cursorParam = req.query.cursor as string | undefined;
 
-  const { emails, total } = await getEmails(context, filters, userId);
+  if (cursorParam) {
+    // Cursor mode: build WHERE clause and query directly
+    const conditions: string[] = [];
+    const params: (string | number | boolean)[] = [];
+    let paramIdx = 1;
 
-  res.json({ success: true, data: emails, total, count: emails.length });
+    if (userId) {
+      conditions.push(`e.user_id = $${paramIdx++}`);
+      params.push(userId);
+    }
+
+    // Folder-based filtering
+    if (folder) {
+      switch (folder) {
+        case 'inbox':
+          conditions.push(`e.direction = 'inbound'`);
+          conditions.push(`e.status NOT IN ('archived', 'trash')`);
+          break;
+        case 'sent':
+          conditions.push(`e.direction = 'outbound'`);
+          conditions.push(`e.status = 'sent'`);
+          break;
+        case 'drafts':
+          conditions.push(`e.status = 'draft'`);
+          break;
+        case 'archived':
+          conditions.push(`e.status = 'archived'`);
+          break;
+        case 'trash':
+          conditions.push(`e.status = 'trash'`);
+          break;
+        case 'starred':
+          conditions.push(`e.is_starred = TRUE`);
+          conditions.push(`e.status NOT IN ('trash')`);
+          break;
+      }
+    } else {
+      conditions.push(`e.status != 'trash'`);
+    }
+
+    if (req.query.status) {
+      conditions.push(`e.status = $${paramIdx++}`);
+      params.push(req.query.status as string);
+    }
+    if (req.query.direction) {
+      conditions.push(`e.direction = $${paramIdx++}`);
+      params.push(req.query.direction as string);
+    }
+    if (req.query.category) {
+      conditions.push(`e.ai_category = $${paramIdx++}`);
+      params.push(req.query.category as string);
+    }
+    if (req.query.account_id) {
+      conditions.push(`e.account_id = $${paramIdx++}`);
+      params.push(req.query.account_id as string);
+    }
+    if (req.query.is_starred === 'true') {
+      conditions.push(`e.is_starred = $${paramIdx++}`);
+      params.push(true);
+    } else if (req.query.is_starred === 'false') {
+      conditions.push(`e.is_starred = $${paramIdx++}`);
+      params.push(false);
+    }
+    if (req.query.from) {
+      conditions.push(`e.from_address ILIKE $${paramIdx++}`);
+      params.push(`%${req.query.from}%`);
+    }
+    if (req.query.thread_id) {
+      conditions.push(`e.thread_id = $${paramIdx++}`);
+      params.push(req.query.thread_id as string);
+    }
+    if (req.query.search) {
+      conditions.push(`(e.subject ILIKE $${paramIdx} OR e.body_text ILIKE $${paramIdx + 1} OR e.from_address ILIKE $${paramIdx + 2})`);
+      const sp = `%${req.query.search}%`;
+      params.push(sp, sp, sp);
+      paramIdx += 3;
+    }
+
+    // Cursor WHERE clause (received_at + id)
+    const cursorResult = buildCursorWhere(cursorParam, 'e.received_at', 'e.id', paramIdx);
+    if (cursorResult.where) {
+      conditions.push(cursorResult.where);
+      cursorResult.params.forEach(p => params.push(p));
+      paramIdx += cursorResult.params.length;
+    }
+
+    const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
+
+    const result = await queryContext(context, `
+      SELECT e.*,
+        a.email_address as account_email,
+        a.display_name as account_display_name,
+        tc.thread_count
+      FROM emails e
+      LEFT JOIN email_accounts a ON e.account_id = a.id
+      LEFT JOIN LATERAL (
+        SELECT COUNT(*) as thread_count FROM emails t WHERE t.thread_id = e.thread_id
+      ) tc ON TRUE
+      ${whereClause}
+      ORDER BY e.received_at DESC, e.id DESC
+      LIMIT $${paramIdx}
+    `, [...params, limit + 1]);
+
+    const cursorPage = buildCursorResponse(
+      result.rows as Record<string, unknown>[],
+      limit,
+      'received_at',
+      'id',
+    );
+
+    res.json({
+      success: true,
+      data: cursorPage.data,
+      nextCursor: cursorPage.nextCursor,
+      hasMore: cursorPage.hasMore,
+      count: cursorPage.data.length,
+    });
+  } else {
+    // Offset mode (legacy): delegate to service for backward compatibility
+    const filters = {
+      folder,
+      status: req.query.status as EmailStatus | undefined,
+      direction: req.query.direction as EmailDirection | undefined,
+      category: req.query.category as string | undefined,
+      account_id: req.query.account_id as string | undefined,
+      is_starred: req.query.is_starred === 'true' ? true : req.query.is_starred === 'false' ? false : undefined,
+      search: req.query.search as string | undefined,
+      from: req.query.from as string | undefined,
+      thread_id: req.query.thread_id as string | undefined,
+      limit,
+      offset,
+    };
+
+    const { emails, total } = await getEmails(context, filters, userId);
+
+    res.json({ success: true, data: emails, total, count: emails.length });
+  }
 }));
 
 // ============================================================
@@ -436,7 +568,7 @@ emailRouter.post('/:context/emails/:id/send', apiKeyAuth, requireScope('write'),
 // POST /api/:context/emails/:id/reply
 // ============================================================
 
-emailRouter.post('/:context/emails/:id/reply', apiKeyAuth, requireScope('write'), asyncHandler(async (req, res) => {
+emailRouter.post('/:context/emails/:id/reply', apiKeyAuth, requireScope('write'), emailModeration, asyncHandler(async (req, res) => {
   const context = validateContextParam(req.params.context);
   const userId = getUserId(req);
   const { id } = req.params;
@@ -458,7 +590,7 @@ emailRouter.post('/:context/emails/:id/reply', apiKeyAuth, requireScope('write')
 // POST /api/:context/emails/:id/forward
 // ============================================================
 
-emailRouter.post('/:context/emails/:id/forward', apiKeyAuth, requireScope('write'), asyncHandler(async (req, res) => {
+emailRouter.post('/:context/emails/:id/forward', apiKeyAuth, requireScope('write'), emailModeration, asyncHandler(async (req, res) => {
   const context = validateContextParam(req.params.context);
   const userId = getUserId(req);
   const { id } = req.params;

@@ -2,9 +2,12 @@
  * EmailListView - Virtualized email list using TanStack Virtual
  */
 import React, { useRef } from 'react';
+import type { CSSProperties } from 'react';
+import { Mail } from 'lucide-react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import type { Email } from './types';
 import { EmailCard } from './EmailCard';
+import { EmptyStateWithDemoSeed } from '../shared/EmptyStateWithDemoSeed';
 
 interface EmailListViewProps {
   emails: Email[];
@@ -32,9 +35,12 @@ export const EmailListView: React.FC<EmailListViewProps> = ({
 
   if (emails.length === 0) {
     return (
-      <div className="email-list-empty" role="status">
-        <p>Keine E-Mails gefunden</p>
-      </div>
+      <EmptyStateWithDemoSeed
+        icon={<Mail size={40} strokeWidth={1.5} />}
+        title="Keine E-Mails"
+        description="Passe die Filter an oder lade Demo-Daten, um den Inbox-Flow auszuprobieren."
+        createLabel={null}
+      />
     );
   }
 
@@ -42,23 +48,17 @@ export const EmailListView: React.FC<EmailListViewProps> = ({
     <div
       ref={parentRef}
       data-view="list"
-      style={{ height: '100%', minHeight: 200, overflow: 'auto' }}
+      className="h-full min-h-[200px] overflow-auto"
       role="list"
       aria-label="E-Mail Liste"
     >
-      <div style={{ height: `${virtualizer.getTotalSize()}px`, width: '100%', position: 'relative' }}>
+      <div className="relative w-full h-[var(--total-h)]" style={{ '--total-h': `${virtualizer.getTotalSize()}px` } as CSSProperties}>
         {virtualizer.getVirtualItems().map(virtualItem => (
           <div
             key={virtualItem.key}
             role="listitem"
-            style={{
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              width: '100%',
-              height: `${virtualItem.size}px`,
-              transform: `translateY(${virtualItem.start}px)`,
-            }}
+            className="absolute left-0 w-full h-[var(--h)]"
+            style={{ '--h': `${virtualItem.size}px`, transform: `translateY(${virtualItem.start}px)` } as CSSProperties}
           >
             <EmailCard
               email={emails[virtualItem.index]}

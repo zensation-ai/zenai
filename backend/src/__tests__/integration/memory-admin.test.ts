@@ -38,7 +38,7 @@ jest.mock('../../utils/logger', () => ({
 jest.mock('../../utils/database-context', () => ({
   queryContext: jest.fn().mockResolvedValue({ rows: [] }),
   isValidContext: jest.fn((ctx: string) =>
-    ['personal', 'work', 'learning', 'creative'].includes(ctx)
+    ['operations', 'finance', 'people', 'strategy'].includes(ctx)
   ),
   AIContext: {},
 }));
@@ -68,7 +68,7 @@ var mockGetConfig = jest.fn().mockReturnValue({
   ENABLE_CONSOLIDATION: true,
   ENABLE_DECAY: true,
   ENABLE_STATS_LOGGING: true,
-  CONTEXTS: ['personal', 'work', 'learning', 'creative'] as const,
+  CONTEXTS: ['operations', 'finance', 'people', 'strategy'] as const,
 });
 
 var mockTriggerConsolidation = jest.fn().mockResolvedValue({
@@ -148,7 +148,7 @@ jest.mock('../../services/memory', () => ({
   },
   memoryGovernance: {
     getPrivacySettings: jest.fn().mockResolvedValue({
-      context: 'personal',
+      context: 'operations',
       enabledLayers: ['working', 'episodic', 'short_term', 'long_term'],
       enableImplicitFeedback: true,
       enableCrossContextSharing: true,
@@ -158,7 +158,7 @@ jest.mock('../../services/memory', () => ({
       updatedAt: new Date(),
     }),
     updatePrivacySettings: jest.fn().mockResolvedValue({
-      context: 'personal',
+      context: 'operations',
       enabledLayers: ['working', 'long_term'],
       enableImplicitFeedback: false,
       enableCrossContextSharing: true,
@@ -168,7 +168,7 @@ jest.mock('../../services/memory', () => ({
       updatedAt: new Date(),
     }),
     eraseAllMemory: jest.fn().mockResolvedValue({
-      context: 'personal',
+      context: 'operations',
       factsDeleted: 10,
       episodesDeleted: 5,
       patternsDeleted: 3,
@@ -181,7 +181,7 @@ jest.mock('../../services/memory', () => ({
     deleteFact: jest.fn().mockResolvedValue(true),
     exportMemory: jest.fn().mockResolvedValue({
       exportedAt: new Date().toISOString(),
-      context: 'personal',
+      context: 'operations',
       facts: [],
       episodes: [],
       patterns: [],
@@ -190,7 +190,7 @@ jest.mock('../../services/memory', () => ({
       settings: {},
     }),
     getAuditTrail: jest.fn().mockResolvedValue([]),
-    getMemoryOverview: jest.fn().mockResolvedValue({ context: 'personal', facts: 0 }),
+    getMemoryOverview: jest.fn().mockResolvedValue({ context: 'operations', facts: 0 }),
   },
 }));
 
@@ -293,31 +293,31 @@ describe('Memory Admin API Integration Tests', () => {
     it('should trigger consolidation for a specific context', async () => {
       const res = await request(app)
         .post('/api/memory/consolidate')
-        .send({ context: 'personal' })
+        .send({ context: 'operations' })
         .expect(200);
 
       expect(res.body.success).toBe(true);
-      expect(mockTriggerConsolidation).toHaveBeenCalledWith('personal');
+      expect(mockTriggerConsolidation).toHaveBeenCalledWith('operations');
     });
 
     it('should accept learning context', async () => {
       const res = await request(app)
         .post('/api/memory/consolidate')
-        .send({ context: 'learning' })
+        .send({ context: 'people' })
         .expect(200);
 
       expect(res.body.success).toBe(true);
-      expect(mockTriggerConsolidation).toHaveBeenCalledWith('learning');
+      expect(mockTriggerConsolidation).toHaveBeenCalledWith('people');
     });
 
     it('should accept creative context', async () => {
       const res = await request(app)
         .post('/api/memory/consolidate')
-        .send({ context: 'creative' })
+        .send({ context: 'strategy' })
         .expect(200);
 
       expect(res.body.success).toBe(true);
-      expect(mockTriggerConsolidation).toHaveBeenCalledWith('creative');
+      expect(mockTriggerConsolidation).toHaveBeenCalledWith('strategy');
     });
 
     it('should reject invalid context', async () => {
@@ -352,11 +352,11 @@ describe('Memory Admin API Integration Tests', () => {
     it('should trigger decay for a specific context', async () => {
       const res = await request(app)
         .post('/api/memory/decay')
-        .send({ context: 'work' })
+        .send({ context: 'finance' })
         .expect(200);
 
       expect(res.body.success).toBe(true);
-      expect(mockTriggerDecay).toHaveBeenCalledWith('work');
+      expect(mockTriggerDecay).toHaveBeenCalledWith('finance');
     });
 
     it('should reject invalid context', async () => {
@@ -375,13 +375,13 @@ describe('Memory Admin API Integration Tests', () => {
   // ===========================================
 
   describe('GET /api/memory/stats/:context', () => {
-    it('should return memory stats for personal context', async () => {
+    it('should return memory stats for operations context', async () => {
       const res = await request(app)
-        .get('/api/memory/stats/personal')
+        .get('/api/memory/stats/operations')
         .expect(200);
 
       expect(res.body.success).toBe(true);
-      expect(res.body.data.context).toBe('personal');
+      expect(res.body.data.context).toBe('operations');
       expect(res.body.data.longTermMemory).toBeDefined();
       expect(res.body.data.longTermMemory.factCount).toBe(25);
       expect(res.body.data.longTermMemory.patternCount).toBe(8);
@@ -390,30 +390,30 @@ describe('Memory Admin API Integration Tests', () => {
       expect(res.body.data.timestamp).toBeDefined();
     });
 
-    it('should return stats for work context', async () => {
+    it('should return stats for finance context', async () => {
       const res = await request(app)
-        .get('/api/memory/stats/work')
+        .get('/api/memory/stats/finance')
         .expect(200);
 
-      expect(res.body.data.context).toBe('work');
-      expect(mockGetLtStats).toHaveBeenCalledWith('work');
-      expect(mockGetEpStats).toHaveBeenCalledWith('work');
+      expect(res.body.data.context).toBe('finance');
+      expect(mockGetLtStats).toHaveBeenCalledWith('finance');
+      expect(mockGetEpStats).toHaveBeenCalledWith('finance');
     });
 
-    it('should return stats for learning context', async () => {
+    it('should return stats for people context', async () => {
       const res = await request(app)
-        .get('/api/memory/stats/learning')
+        .get('/api/memory/stats/people')
         .expect(200);
 
-      expect(res.body.data.context).toBe('learning');
+      expect(res.body.data.context).toBe('people');
     });
 
-    it('should return stats for creative context', async () => {
+    it('should return stats for strategy context', async () => {
       const res = await request(app)
-        .get('/api/memory/stats/creative')
+        .get('/api/memory/stats/strategy')
         .expect(200);
 
-      expect(res.body.data.context).toBe('creative');
+      expect(res.body.data.context).toBe('strategy');
     });
 
     it('should reject invalid context', async () => {
@@ -426,11 +426,11 @@ describe('Memory Admin API Integration Tests', () => {
 
     it('should call both long-term and episodic stats in parallel', async () => {
       await request(app)
-        .get('/api/memory/stats/personal')
+        .get('/api/memory/stats/operations')
         .expect(200);
 
-      expect(mockGetLtStats).toHaveBeenCalledWith('personal');
-      expect(mockGetEpStats).toHaveBeenCalledWith('personal');
+      expect(mockGetLtStats).toHaveBeenCalledWith('operations');
+      expect(mockGetEpStats).toHaveBeenCalledWith('operations');
     });
   });
 
@@ -441,11 +441,11 @@ describe('Memory Admin API Integration Tests', () => {
   describe('GET /api/memory/facts/:context', () => {
     it('should return facts for a context', async () => {
       const res = await request(app)
-        .get('/api/memory/facts/personal')
+        .get('/api/memory/facts/operations')
         .expect(200);
 
       expect(res.body.success).toBe(true);
-      expect(res.body.data.context).toBe('personal');
+      expect(res.body.data.context).toBe('operations');
       expect(res.body.data.facts).toBeInstanceOf(Array);
       expect(res.body.data.facts).toHaveLength(2);
       expect(res.body.data.count).toBe(2);
@@ -453,7 +453,7 @@ describe('Memory Admin API Integration Tests', () => {
 
     it('should include fact details', async () => {
       const res = await request(app)
-        .get('/api/memory/facts/personal')
+        .get('/api/memory/facts/operations')
         .expect(200);
 
       const fact = res.body.data.facts[0];
@@ -468,7 +468,7 @@ describe('Memory Admin API Integration Tests', () => {
       mockGetFacts.mockResolvedValueOnce([]);
 
       const res = await request(app)
-        .get('/api/memory/facts/creative')
+        .get('/api/memory/facts/strategy')
         .expect(200);
 
       expect(res.body.data.facts).toEqual([]);
@@ -491,11 +491,11 @@ describe('Memory Admin API Integration Tests', () => {
   describe('GET /api/memory/patterns/:context', () => {
     it('should return patterns for a context', async () => {
       const res = await request(app)
-        .get('/api/memory/patterns/personal')
+        .get('/api/memory/patterns/operations')
         .expect(200);
 
       expect(res.body.success).toBe(true);
-      expect(res.body.data.context).toBe('personal');
+      expect(res.body.data.context).toBe('operations');
       expect(res.body.data.patterns).toBeInstanceOf(Array);
       expect(res.body.data.patterns).toHaveLength(1);
       expect(res.body.data.count).toBe(1);
@@ -503,7 +503,7 @@ describe('Memory Admin API Integration Tests', () => {
 
     it('should include pattern details', async () => {
       const res = await request(app)
-        .get('/api/memory/patterns/personal')
+        .get('/api/memory/patterns/operations')
         .expect(200);
 
       const pattern = res.body.data.patterns[0];
@@ -531,7 +531,7 @@ describe('Memory Admin API Integration Tests', () => {
   describe('GET /api/memory/transparency/:context', () => {
     it('should return transparency report for a context', async () => {
       const res = await request(app)
-        .get('/api/memory/transparency/personal')
+        .get('/api/memory/transparency/operations')
         .expect(200);
 
       expect(res.body.success).toBe(true);
@@ -545,7 +545,7 @@ describe('Memory Admin API Integration Tests', () => {
 
     it('should include memory health metrics', async () => {
       const res = await request(app)
-        .get('/api/memory/transparency/personal')
+        .get('/api/memory/transparency/operations')
         .expect(200);
 
       const health = res.body.data.memoryHealth;
@@ -558,7 +558,7 @@ describe('Memory Admin API Integration Tests', () => {
 
     it('should include recent learnings from last 7 days', async () => {
       const res = await request(app)
-        .get('/api/memory/transparency/personal')
+        .get('/api/memory/transparency/operations')
         .expect(200);
 
       // Both mock facts have lastConfirmed within 7 days
@@ -604,7 +604,7 @@ describe('Memory Admin API Integration Tests', () => {
       mockGetLtStats.mockRejectedValueOnce(new Error('Service unavailable'));
 
       const res = await request(app)
-        .get('/api/memory/stats/personal');
+        .get('/api/memory/stats/operations');
 
       expect(res.status).toBe(500);
     });

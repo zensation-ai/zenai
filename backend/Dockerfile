@@ -30,8 +30,11 @@ FROM node:20-alpine AS production
 
 WORKDIR /app
 
-# Install dumb-init for proper signal handling
-RUN apk add --no-cache dumb-init
+# Upgrade all system packages first to pick up security patches (e.g. musl CVEs)
+RUN apk upgrade --no-cache
+
+# Install dumb-init for proper signal handling + curl for health checks
+RUN apk add --no-cache dumb-init curl
 
 # Create non-root user for security
 RUN addgroup -g 1001 -S nodejs && \
@@ -68,6 +71,10 @@ WORKDIR /app/backend
 
 # Expose port
 EXPOSE 3000
+
+# Container health check (used by Docker/Kubernetes/ECS)
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+  CMD curl -f http://localhost:3000/api/health/live || exit 1
 
 # Start with dumb-init
 ENTRYPOINT ["dumb-init", "--"]

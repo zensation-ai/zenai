@@ -4,7 +4,7 @@
  * Full-screen modal showing document details, preview, and actions.
  */
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, type CSSProperties } from 'react';
 import axios from 'axios';
 import {
   Document,
@@ -17,8 +17,6 @@ import { getApiBaseUrl } from '../utils/apiConfig';
 import { logError } from '../utils/errors';
 import { useConfirm } from './ConfirmDialog';
 import { useFocusTrap } from '../hooks/useFocusTrap';
-import './DocumentDetailModal.css';
-
 import type { AIContext } from './ContextSwitcher';
 
 interface DocumentDetailModalProps {
@@ -305,8 +303,8 @@ export function DocumentDetailModal({
                   {/* Processing Status */}
                   {(isProcessing || isPending || hasFailed) && (
                     <div
-                      className="status-banner"
-                      style={{ backgroundColor: PROCESSING_STATUS_COLORS[doc.processingStatus] }}
+                      className="status-banner bg-[var(--bg)]"
+                      style={{ '--bg': PROCESSING_STATUS_COLORS[doc.processingStatus] } as CSSProperties}
                     >
                       {isProcessing && <span className="spinner-small" />}
                       <span>{PROCESSING_STATUS_LABELS[doc.processingStatus]}</span>
@@ -417,8 +415,8 @@ export function DocumentDetailModal({
                       {doc.keywords.map((kw, i) => (
                         <span
                           key={i}
-                          className="keyword"
-                          style={{ fontSize: `${Math.max(0.8, 1.2 - i * 0.05)}rem` }}
+                          className="keyword text-[length:var(--fs)]"
+                          style={{ '--fs': `${Math.max(0.8, 1.2 - i * 0.05)}rem` } as CSSProperties}
                         >
                           {kw}
                         </span>

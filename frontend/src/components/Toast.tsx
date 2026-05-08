@@ -1,7 +1,4 @@
-import { useState, useEffect, useRef, memo } from 'react';
-import '../neurodesign.css';
-import './Toast.css';
-
+import { useState, useEffect, useRef, memo, type CSSProperties } from 'react';
 export type ToastType = 'success' | 'error' | 'warning' | 'info';
 
 /** Default toast duration in milliseconds */
@@ -225,8 +222,8 @@ const ToastItem = memo(function ToastItem({ toast }: { toast: Toast }) {
       </button>
       {duration > 0 && (
         <div
-          className="toast-progress"
-          style={{ width: `${progress}%` }}
+          className="toast-progress w-[var(--bar)]"
+          style={{ '--bar': `${progress}%` } as CSSProperties}
           aria-hidden="true"
         />
       )}

@@ -8,6 +8,28 @@ import { queryContext, AIContext, QueryParam } from '../utils/database-context';
 import { logger } from '../utils/logger';
 import { SYSTEM_USER_ID } from '../utils/user-context';
 
+/**
+ * Wrapper around queryContext that returns empty rows when finance tables
+ * haven't been migrated yet (PostgreSQL error code 42P01 = undefined_table).
+ */
+async function safeFinanceQuery(
+  context: AIContext,
+  sql: string,
+  params: QueryParam[]
+): Promise<{ rows: Record<string, unknown>[]; rowCount?: number | null }> {
+  try {
+    return await queryContext(context, sql, params);
+  } catch (err: unknown) {
+    const code = (err as { code?: string }).code;
+    const msg = err instanceof Error ? err.message : String(err);
+    if (code === '42P01' || msg.includes('does not exist')) {
+      logger.warn(`Finance table missing, returning empty: ${msg.split('\n')[0]}`);
+      return { rows: [], rowCount: 0 };
+    }
+    throw err;
+  }
+}
+
 // ============================================================
 // Types
 // ============================================================
@@ -122,7 +144,7 @@ export async function createAccount(
   input: Partial<FinancialAccount>,
   userId: string = SYSTEM_USER_ID
 ): Promise<FinancialAccount> {
-  const result = await queryContext(context,
+  const result = await safeFinanceQuery(context,
     `INSERT INTO financial_accounts (name, account_type, currency, balance, institution, metadata, user_id)
      VALUES ($1, $2, $3, $4, $5, $6, $7)
      RETURNING *`,
@@ -136,23 +158,23 @@ export async function createAccount(
       userId,
     ]
   );
-  return result.rows[0];
+  return result.rows[0] as unknown as FinancialAccount;
 }
 
 export async function getAccounts(context: AIContext, userId: string = SYSTEM_USER_ID): Promise<FinancialAccount[]> {
-  const result = await queryContext(context,
+  const result = await safeFinanceQuery(context,
     `SELECT * FROM financial_accounts WHERE user_id = $1 ORDER BY is_active DESC, name ASC`,
     [userId]
   );
-  return result.rows;
+  return result.rows as unknown as FinancialAccount[];
 }
 
 export async function getAccount(context: AIContext, id: string, userId: string = SYSTEM_USER_ID): Promise<FinancialAccount | null> {
-  const result = await queryContext(context,
+  const result = await safeFinanceQuery(context,
     `SELECT * FROM financial_accounts WHERE id = $1 AND user_id = $2`,
     [id, userId]
   );
-  return result.rows[0] || null;
+  return result.rows[0] as unknown as FinancialAccount || null;
 }
 
 export async function updateAccount(
@@ -181,15 +203,15 @@ export async function updateAccount(
   const idIdx = idx++;
   params.push(userId);
 
-  const result = await queryContext(context,
+  const result = await safeFinanceQuery(context,
     `UPDATE financial_accounts SET ${fields.join(', ')} WHERE id = $${idIdx} AND user_id = $${idx} RETURNING *`,
     params
   );
-  return result.rows[0] || null;
+  return result.rows[0] as unknown as FinancialAccount || null;
 }
 
 export async function deleteAccount(context: AIContext, id: string, userId: string = SYSTEM_USER_ID): Promise<boolean> {
-  const result = await queryContext(context,
+  const result = await safeFinanceQuery(context,
     `DELETE FROM financial_accounts WHERE id = $1 AND user_id = $2`,
     [id, userId]
   );
@@ -205,7 +227,7 @@ export async function createTransaction(
   input: Partial<Transaction>,
   userId: string = SYSTEM_USER_ID
 ): Promise<Transaction> {
-  const result = await queryContext(context,
+  const result = await safeFinanceQuery(context,
     `INSERT INTO transactions
        (account_id, amount, currency, transaction_type, category, subcategory,
         payee, description, transaction_date, is_recurring, recurring_id, tags,
@@ -238,7 +260,7 @@ export async function createTransaction(
     const balanceChange = input.transaction_type === 'income'
       ? Math.abs(input.amount)
       : -Math.abs(input.amount);
-    await queryContext(context,
+    await safeFinanceQuery(context,
       `UPDATE financial_accounts SET balance = balance + $1, updated_at = NOW() WHERE id = $2 AND user_id = $3`,
       [balanceChange, input.account_id, userId]
     );
@@ -249,7 +271,7 @@ export async function createTransaction(
     await updateBudgetSpent(context, input.category, Math.abs(input.amount ?? 0), userId);
   }
 
-  return result.rows[0];
+  return result.rows[0] as unknown as Transaction;
 }
 
 export async function getTransactions(
@@ -314,7 +336,7 @@ export async function getTransactions(
   const offsetParam = `$${params.length}`;
 
   const [dataResult, countResult] = await Promise.all([
-    queryContext(context,
+    safeFinanceQuery(context,
       `SELECT t.*, fa.name as account_name
        FROM transactions t
        LEFT JOIN financial_accounts fa ON t.account_id = fa.id
@@ -323,27 +345,27 @@ export async function getTransactions(
        LIMIT ${limitParam} OFFSET ${offsetParam}`,
       params
     ),
-    queryContext(context,
+    safeFinanceQuery(context,
       `SELECT COUNT(*) as total FROM transactions t ${where}`,
       countParams
     ),
   ]);
 
   return {
-    transactions: dataResult.rows,
-    total: parseInt(countResult.rows[0]?.total || '0', 10),
+    transactions: dataResult.rows as unknown as Transaction[],
+    total: parseInt(countResult.rows[0]?.total as string || '0', 10),
   };
 }
 
 export async function getTransaction(context: AIContext, id: string, userId: string = SYSTEM_USER_ID): Promise<Transaction | null> {
-  const result = await queryContext(context,
+  const result = await safeFinanceQuery(context,
     `SELECT t.*, fa.name as account_name
      FROM transactions t
      LEFT JOIN financial_accounts fa ON t.account_id = fa.id
      WHERE t.id = $1 AND t.user_id = $2`,
     [id, userId]
   );
-  return result.rows[0] || null;
+  return result.rows[0] as unknown as Transaction || null;
 }
 
 export async function updateTransaction(
@@ -376,11 +398,11 @@ export async function updateTransaction(
   const idIdx = idx++;
   params.push(userId);
 
-  const result = await queryContext(context,
+  const result = await safeFinanceQuery(context,
     `UPDATE transactions SET ${fields.join(', ')} WHERE id = $${idIdx} AND user_id = $${idx} RETURNING *`,
     params
   );
-  return result.rows[0] || null;
+  return result.rows[0] as unknown as Transaction || null;
 }
 
 export async function deleteTransaction(context: AIContext, id: string, userId: string = SYSTEM_USER_ID): Promise<boolean> {
@@ -388,7 +410,7 @@ export async function deleteTransaction(context: AIContext, id: string, userId: 
   const tx = await getTransaction(context, id, userId);
   if (!tx) {return false;}
 
-  const result = await queryContext(context,
+  const result = await safeFinanceQuery(context,
     `DELETE FROM transactions WHERE id = $1 AND user_id = $2`,
     [id, userId]
   );
@@ -398,7 +420,7 @@ export async function deleteTransaction(context: AIContext, id: string, userId: 
     const reversal = tx.transaction_type === 'income'
       ? -Math.abs(tx.amount)
       : Math.abs(tx.amount);
-    await queryContext(context,
+    await safeFinanceQuery(context,
       `UPDATE financial_accounts SET balance = balance + $1, updated_at = NOW() WHERE id = $2 AND user_id = $3`,
       [reversal, tx.account_id, userId]
     );
@@ -416,7 +438,7 @@ export async function createBudget(
   input: Partial<Budget>,
   userId: string = SYSTEM_USER_ID
 ): Promise<Budget> {
-  const result = await queryContext(context,
+  const result = await safeFinanceQuery(context,
     `INSERT INTO budgets (name, category, amount_limit, period, alert_threshold, user_id)
      VALUES ($1, $2, $3, $4, $5, $6)
      RETURNING *`,
@@ -429,7 +451,7 @@ export async function createBudget(
       userId,
     ]
   );
-  return enrichBudget(result.rows[0]);
+  return enrichBudget(result.rows[0] as unknown as Budget);
 }
 
 export async function getBudgets(context: AIContext, activeOnly = true, userId: string = SYSTEM_USER_ID): Promise<Budget[]> {
@@ -450,11 +472,11 @@ export async function getBudgets(context: AIContext, activeOnly = true, userId: 
 }
 
 export async function getBudget(context: AIContext, id: string, userId: string = SYSTEM_USER_ID): Promise<Budget | null> {
-  const result = await queryContext(context,
+  const result = await safeFinanceQuery(context,
     `SELECT * FROM budgets WHERE id = $1 AND user_id = $2`,
     [id, userId]
   );
-  return result.rows[0] ? enrichBudget(result.rows[0]) : null;
+  return result.rows[0] ? enrichBudget(result.rows[0] as unknown as Budget) : null;
 }
 
 export async function updateBudget(
@@ -482,15 +504,15 @@ export async function updateBudget(
   const idIdx = idx++;
   params.push(userId);
 
-  const result = await queryContext(context,
+  const result = await safeFinanceQuery(context,
     `UPDATE budgets SET ${fields.join(', ')} WHERE id = $${idIdx} AND user_id = $${idx} RETURNING *`,
     params
   );
-  return result.rows[0] ? enrichBudget(result.rows[0]) : null;
+  return result.rows[0] ? enrichBudget(result.rows[0] as unknown as Budget) : null;
 }
 
 export async function deleteBudget(context: AIContext, id: string, userId: string = SYSTEM_USER_ID): Promise<boolean> {
-  const result = await queryContext(context,
+  const result = await safeFinanceQuery(context,
     `DELETE FROM budgets WHERE id = $1 AND user_id = $2`,
     [id, userId]
   );
@@ -530,7 +552,7 @@ export async function createGoal(
   input: Partial<FinancialGoal>,
   userId: string = SYSTEM_USER_ID
 ): Promise<FinancialGoal> {
-  const result = await queryContext(context,
+  const result = await safeFinanceQuery(context,
     `INSERT INTO financial_goals (name, target_amount, current_amount, deadline, category, priority, metadata, user_id)
      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
      RETURNING *`,
@@ -545,24 +567,24 @@ export async function createGoal(
       userId,
     ]
   );
-  return enrichGoal(result.rows[0]);
+  return enrichGoal(result.rows[0] as unknown as FinancialGoal);
 }
 
 export async function getGoals(context: AIContext, activeOnly = true, userId: string = SYSTEM_USER_ID): Promise<FinancialGoal[]> {
   const where = activeOnly ? 'WHERE is_completed = FALSE AND user_id = $1' : 'WHERE user_id = $1';
-  const result = await queryContext(context,
+  const result = await safeFinanceQuery(context,
     `SELECT * FROM financial_goals ${where} ORDER BY deadline ASC NULLS LAST, priority DESC`,
     [userId]
   );
-  return result.rows.map(enrichGoal);
+  return result.rows.map(r => enrichGoal(r as unknown as FinancialGoal));
 }
 
 export async function getGoal(context: AIContext, id: string, userId: string = SYSTEM_USER_ID): Promise<FinancialGoal | null> {
-  const result = await queryContext(context,
+  const result = await safeFinanceQuery(context,
     `SELECT * FROM financial_goals WHERE id = $1 AND user_id = $2`,
     [id, userId]
   );
-  return result.rows[0] ? enrichGoal(result.rows[0]) : null;
+  return result.rows[0] ? enrichGoal(result.rows[0] as unknown as FinancialGoal) : null;
 }
 
 export async function updateGoal(
@@ -591,15 +613,15 @@ export async function updateGoal(
   const idIdx = idx++;
   params.push(userId);
 
-  const result = await queryContext(context,
+  const result = await safeFinanceQuery(context,
     `UPDATE financial_goals SET ${fields.join(', ')} WHERE id = $${idIdx} AND user_id = $${idx} RETURNING *`,
     params
   );
-  return result.rows[0] ? enrichGoal(result.rows[0]) : null;
+  return result.rows[0] ? enrichGoal(result.rows[0] as unknown as FinancialGoal) : null;
 }
 
 export async function deleteGoal(context: AIContext, id: string, userId: string = SYSTEM_USER_ID): Promise<boolean> {
-  const result = await queryContext(context,
+  const result = await safeFinanceQuery(context,
     `DELETE FROM financial_goals WHERE id = $1 AND user_id = $2`,
     [id, userId]
   );
@@ -622,9 +644,64 @@ function enrichGoal(goal: FinancialGoal): FinancialGoal {
 // ============================================================
 
 export async function getOverview(context: AIContext, months = 6, userId: string = SYSTEM_USER_ID): Promise<FinancialOverview> {
+  const emptyRows = { rows: [] as Record<string, unknown>[] };
+  const zeroTotal = { rows: [{ total: 0 }] };
+
+  async function safeQuery(sql: string, params: QueryParam[]): Promise<{ rows: Record<string, unknown>[] }> {
+    try {
+      return await queryContext(context, sql, params);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      if (msg.includes('does not exist')) {
+        logger.warn(`Finance table missing, returning empty: ${msg.split('\n')[0]}`);
+        return emptyRows;
+      }
+      throw err;
+    }
+  }
+
+  async function safeQueryTotal(sql: string, params: QueryParam[]): Promise<{ rows: { total: number }[] }> {
+    try {
+      return await queryContext(context, sql, params);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      if (msg.includes('does not exist')) {
+        logger.warn(`Finance table missing, returning zero: ${msg.split('\n')[0]}`);
+        return zeroTotal;
+      }
+      throw err;
+    }
+  }
+
+  async function safeAccounts(): Promise<FinancialAccount[]> {
+    try {
+      return await getAccounts(context, userId);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      if (msg.includes('does not exist')) {
+        logger.warn(`Finance accounts table missing: ${msg.split('\n')[0]}`);
+        return [];
+      }
+      throw err;
+    }
+  }
+
+  async function safeGoals(): Promise<FinancialGoal[]> {
+    try {
+      return await getGoals(context, true, userId);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      if (msg.includes('does not exist')) {
+        logger.warn(`Finance goals table missing: ${msg.split('\n')[0]}`);
+        return [];
+      }
+      throw err;
+    }
+  }
+
   const [accounts, topCats, monthlyTrend, budgets, goals, incomeTotals, expenseTotals] = await Promise.all([
-    getAccounts(context, userId),
-    queryContext(context,
+    safeAccounts(),
+    safeQuery(
       `SELECT category, SUM(ABS(amount)) as total, COUNT(*) as count
        FROM transactions
        WHERE transaction_type = 'expense' AND category IS NOT NULL
@@ -633,7 +710,7 @@ export async function getOverview(context: AIContext, months = 6, userId: string
        GROUP BY category ORDER BY total DESC LIMIT 10`,
       [months, userId]
     ),
-    queryContext(context,
+    safeQuery(
       `SELECT TO_CHAR(transaction_date, 'YYYY-MM') as month,
               SUM(CASE WHEN transaction_type = 'income' THEN ABS(amount) ELSE 0 END) as income,
               SUM(CASE WHEN transaction_type = 'expense' THEN ABS(amount) ELSE 0 END) as expenses
@@ -645,15 +722,15 @@ export async function getOverview(context: AIContext, months = 6, userId: string
       [months, userId]
     ),
     getBudgets(context, true, userId),
-    getGoals(context, true, userId),
-    queryContext(context,
+    safeGoals(),
+    safeQueryTotal(
       `SELECT COALESCE(SUM(ABS(amount)), 0) as total FROM transactions
        WHERE transaction_type = 'income'
          AND transaction_date >= DATE_TRUNC('month', CURRENT_DATE)
          AND user_id = $1`,
       [userId]
     ),
-    queryContext(context,
+    safeQueryTotal(
       `SELECT COALESCE(SUM(ABS(amount)), 0) as total FROM transactions
        WHERE transaction_type = 'expense'
          AND transaction_date >= DATE_TRUNC('month', CURRENT_DATE)
@@ -675,12 +752,12 @@ export async function getOverview(context: AIContext, months = 6, userId: string
     net: totalIncome - totalExpenses,
     accounts,
     top_categories: topCats.rows.map(r => ({
-      category: r.category,
+      category: String(r.category),
       total: Number(r.total),
       count: Number(r.count),
     })),
     monthly_trend: monthlyTrend.rows.map(r => ({
-      month: r.month,
+      month: String(r.month),
       income: Number(r.income),
       expenses: Number(r.expenses),
     })),
@@ -708,14 +785,24 @@ export async function getCategoryBreakdown(
     params.push(dateTo);
   }
 
-  const result = await queryContext(context,
-    `SELECT COALESCE(category, 'Unkategorisiert') as category,
-            SUM(ABS(amount)) as total, COUNT(*) as count
-     FROM transactions
-     WHERE ${conditions.join(' AND ')}
-     GROUP BY category ORDER BY total DESC`
-    , params
-  );
+  let result;
+  try {
+    result = await queryContext(context,
+      `SELECT COALESCE(category, 'Unkategorisiert') as category,
+              SUM(ABS(amount)) as total, COUNT(*) as count
+       FROM transactions
+       WHERE ${conditions.join(' AND ')}
+       GROUP BY category ORDER BY total DESC`
+      , params
+    );
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    if (msg.includes('does not exist')) {
+      logger.warn(`Finance table missing in getCategoryBreakdown: ${msg.split('\n')[0]}`);
+      return [];
+    }
+    throw err;
+  }
 
   const grandTotal = result.rows.reduce((sum: number, r: Record<string, unknown>) => sum + Number(r.total), 0) || 1;
   return result.rows.map((r: Record<string, unknown>) => ({

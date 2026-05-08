@@ -7,8 +7,9 @@
  * Uses global axios instance (with auth interceptor from main.tsx).
  */
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, type CSSProperties } from 'react';
 import axios from 'axios';
+import { CONFLICT_TYPE_COLORS } from '../../constants/chart-colors';
 
 interface MemoryConflict {
   id: string;
@@ -23,9 +24,9 @@ interface ConflictListProps {
 }
 
 const CONFLICT_TYPE_CONFIG: Record<string, { label: string; color: string }> = {
-  contradiction: { label: 'Widerspruch', color: '#ef4444' },
-  outdated: { label: 'Veraltet', color: '#eab308' },
-  duplicate: { label: 'Duplikat', color: '#3b82f6' },
+  contradiction: { label: 'Widerspruch', color: CONFLICT_TYPE_COLORS.contradiction },
+  outdated: { label: 'Veraltet', color: CONFLICT_TYPE_COLORS.outdated },
+  duplicate: { label: 'Duplikat', color: CONFLICT_TYPE_COLORS.duplicate },
 };
 
 export function ConflictList({ context }: ConflictListProps) {
@@ -58,13 +59,13 @@ export function ConflictList({ context }: ConflictListProps) {
     <div className="conflict-list">
       <p className="conflict-summary">{conflicts.length} potenzielle Konflikte erkannt</p>
       {conflicts.map((conflict) => {
-        const typeConfig = CONFLICT_TYPE_CONFIG[conflict.conflictType] || { label: conflict.conflictType, color: '#666' };
+        const typeConfig = CONFLICT_TYPE_CONFIG[conflict.conflictType] || { label: conflict.conflictType, color: '#6b7280' };
         return (
           <div className="conflict-card" key={conflict.id}>
             <div className="conflict-header">
               <span
-                className="conflict-type-badge"
-                style={{ backgroundColor: typeConfig.color }}
+                className="conflict-type-badge bg-[var(--bg)]"
+                style={{ '--bg': typeConfig.color } as CSSProperties}
               >
                 {typeConfig.label}
               </span>

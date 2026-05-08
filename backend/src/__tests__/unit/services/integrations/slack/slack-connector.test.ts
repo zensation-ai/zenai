@@ -71,13 +71,13 @@ describe('Slack Types', () => {
       channelId: 'C123',
       channelName: 'engineering',
       isMember: true,
-      targetContext: 'work',
+      targetContext: 'finance',
       lastSyncCursor: null,
       muted: false,
       createdAt: new Date(),
       updatedAt: new Date(),
     };
-    expect(['personal', 'work', 'learning', 'creative']).toContain(channel.targetContext);
+    expect(['operations', 'finance', 'people', 'strategy']).toContain(channel.targetContext);
   });
 });
 
@@ -113,7 +113,7 @@ describe('SlackConnector', () => {
       expect(connector.definition.category).toBe('messaging');
       expect(connector.definition.webhookSupported).toBe(true);
       expect(connector.definition.syncSupported).toBe(true);
-      expect(connector.definition.defaultContext).toBe('work');
+      expect(connector.definition.defaultContext).toBe('finance');
       expect(connector.definition.requiredScopes).toContain('channels:history');
       expect(connector.definition.requiredScopes).toContain('chat:write');
     });
@@ -202,7 +202,7 @@ describe('SlackConnector', () => {
         rows: [{ id: 'ws-1', team_id: 'T_TEAM' }],
       });
       queryPublic.mockResolvedValueOnce({
-        rows: [{ channel_id: 'C1', channel_name: 'general', target_context: 'personal', last_sync_cursor: null }],
+        rows: [{ channel_id: 'C1', channel_name: 'general', target_context: 'operations', last_sync_cursor: null }],
       });
       queryPublic.mockResolvedValueOnce({ rows: [] });
 

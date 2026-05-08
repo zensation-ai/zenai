@@ -64,7 +64,7 @@ const CONFIG = {
   /** Minimum query length for search */
   MIN_QUERY_LENGTH: 2,
   /** All searchable contexts */
-  ALL_CONTEXTS: ['personal', 'work', 'learning', 'creative'] as AIContext[],
+  ALL_CONTEXTS: ['operations', 'finance', 'people', 'strategy'] as AIContext[],
   /** All searchable types */
   ALL_TYPES: ['idea', 'document', 'voice_memo', 'meeting', 'fact', 'chat', 'contact', 'email', 'calendar_event', 'transaction', 'screen_capture'] as SearchResultType[],
 };
@@ -441,7 +441,6 @@ class GlobalSearchService {
          LEFT JOIN general_chat_sessions s ON m.session_id = s.id
          WHERE m.context = $1
            AND m.content ILIKE $2
-           AND m.role = 'user'
          ORDER BY m.created_at DESC
          LIMIT $3`,
         [context, pattern, limit]

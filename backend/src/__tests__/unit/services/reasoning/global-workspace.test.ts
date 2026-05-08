@@ -70,7 +70,7 @@ const DEFAULT_ANALYSIS: QueryAnalysis = {
 };
 
 const DEFAULT_CTX: ModuleContext = {
-  aiContext: 'personal',
+  aiContext: 'operations',
   userId: 'user-1',
   sessionId: 'session-1',
 };
@@ -353,7 +353,7 @@ describe('GlobalWorkspace', () => {
       const analysis: QueryAnalysis = {
         ...DEFAULT_ANALYSIS,
         intent: 'task',
-        domain: 'work',
+        domain: 'finance',
       };
       await gw.assembleContext('query', analysis, DEFAULT_CTX);
 

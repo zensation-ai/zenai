@@ -1,8 +1,6 @@
 import { useState, useEffect, useCallback, memo } from 'react';
 import { createPortal } from 'react-dom';
 import { formatShortcut } from '../hooks/useKeyboardShortcut';
-import './KeyboardShortcutsModal.css';
-
 interface ShortcutItem {
   action: string;
   shortcut: string;

@@ -88,7 +88,7 @@ describe('STTService', () => {
       mockIsAvailable.mockReturnValue(false);
       const s = new STTService();
 
-      await expect(s.transcribe(Buffer.from('audio'))).rejects.toThrow('No STT provider available');
+      await expect(s.transcribe(Buffer.from('audio'))).rejects.toThrow(/No STT provider/);
     });
 
     it('should use specified provider', async () => {

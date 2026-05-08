@@ -67,7 +67,7 @@ const BLOCKED_ROUTE_PREFIXES = [
  */
 function isBlockedRoute(path: string): boolean {
   // Normalize: strip /api/:context/ prefix to get the resource path
-  const normalized = path.replace(/^\/api\/(?:personal|work|learning|creative)\//, '/');
+  const normalized = path.replace(/^\/api\/(?:operations|finance|people|strategy)\//, '/');
 
   for (const prefix of BLOCKED_ROUTE_PREFIXES) {
     if (path.includes(prefix) || normalized.startsWith(prefix)) {
@@ -86,7 +86,8 @@ function isBlockedRoute(path: string): boolean {
  */
 export function systemUserGuard(req: Request, res: Response, next: NextFunction): void {
   // Opt-out: Allow SYSTEM_USER_ID access during development/API-key-only mode
-  if (process.env.ALLOW_SYSTEM_USER_ACCESS === 'true') {
+  // Also allow when no JWT_SECRET is configured (single-user / API-key-only deployment)
+  if (process.env.ALLOW_SYSTEM_USER_ACCESS === 'true' || !process.env.JWT_SECRET) {
     return next();
   }
 

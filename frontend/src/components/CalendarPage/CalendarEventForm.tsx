@@ -24,7 +24,7 @@ function toLocalDatetimeString(date: Date): string {
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
 }
 
-export function CalendarEventForm({ event, prefilledStart, onSave, onDelete, onClose, context = 'personal' }: CalendarEventFormProps) {
+export function CalendarEventForm({ event, prefilledStart, onSave, onDelete, onClose, context = 'operations' }: CalendarEventFormProps) {
   const isEditing = Boolean(event);
 
   const defaultStart = prefilledStart || new Date();
@@ -170,7 +170,7 @@ export function CalendarEventForm({ event, prefilledStart, onSave, onDelete, onC
               value={location}
               onChange={setLocation}
               context={context}
-              placeholder="z.B. Buero, Zoom, Adresse..."
+              placeholder="z.B. Büro, Zoom, Adresse..."
             />
           </div>
 
@@ -217,7 +217,7 @@ export function CalendarEventForm({ event, prefilledStart, onSave, onDelete, onC
               {deleting ? 'Wird gelöscht...' : 'Löschen'}
             </button>
           )}
-          <div style={{ display: 'flex', gap: '0.5rem', marginLeft: 'auto' }}>
+          <div className="flex gap-2 ml-auto">
             <button type="button" className="calendar-btn" onClick={onClose}>
               Abbrechen
             </button>

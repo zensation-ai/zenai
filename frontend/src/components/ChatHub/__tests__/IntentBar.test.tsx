@@ -12,7 +12,7 @@ describe('IntentBar', () => {
     sending: false,
     thinkingMode: 'assist' as const,
     onThinkingModeChange: vi.fn(),
-    context: 'personal' as const,
+    context: 'operations' as const,
   };
 
   beforeEach(() => {
@@ -68,7 +68,7 @@ describe('IntentBar', () => {
   it('renders thinking mode toggle with three options', () => {
     render(<IntentBar {...defaultProps} />);
     expect(screen.getByLabelText(/schnell/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/gruendlich/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/gründlich/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/tief/i)).toBeInTheDocument();
   });
 

@@ -22,7 +22,7 @@ import {
 jest.mock('../../../../utils/database-context', () => ({
   queryContext: jest.fn(),
   isValidContext: jest.fn((ctx: string) =>
-    ['personal', 'work', 'learning', 'creative'].includes(ctx),
+    ['operations', 'finance', 'people', 'strategy'].includes(ctx),
   ),
 }));
 
@@ -345,9 +345,9 @@ describe('recordBehaviorSignal', () => {
 
   it('inserts signal into DB', async () => {
     mockQueryContext.mockResolvedValueOnce({ rows: [] });
-    await recordBehaviorSignal('personal', sig('length_feedback', 0.5, { source: 'chat' }));
+    await recordBehaviorSignal('operations', sig('length_feedback', 0.5, { source: 'chat' }));
     expect(mockQueryContext).toHaveBeenCalledWith(
-      'personal',
+      'operations',
       expect.stringContaining('INSERT INTO behavior_signals'),
       expect.arrayContaining(['length_feedback', 0.5]),
     );
@@ -356,7 +356,7 @@ describe('recordBehaviorSignal', () => {
   it('does not throw on DB error', async () => {
     mockQueryContext.mockRejectedValueOnce(new Error('DB down'));
     await expect(
-      recordBehaviorSignal('work', sig('style_feedback', -0.3)),
+      recordBehaviorSignal('finance', sig('style_feedback', -0.3)),
     ).resolves.toBeUndefined();
   });
 });
@@ -373,7 +373,7 @@ describe('loadBehaviorPreferences', () => {
 
   it('returns default preferences when no rows', async () => {
     mockQueryContext.mockResolvedValueOnce({ rows: [] });
-    const prefs = await loadBehaviorPreferences('personal');
+    const prefs = await loadBehaviorPreferences('operations');
     expect(prefs.responseLength).toBe('moderate');
     expect(prefs.detailLevel).toBe('intermediate');
   });
@@ -386,16 +386,16 @@ describe('loadBehaviorPreferences', () => {
         { type: 'detail_feedback', value: 0.9, details: '{}' },
       ],
     });
-    const prefs = await loadBehaviorPreferences('personal');
+    const prefs = await loadBehaviorPreferences('operations');
     expect(prefs.responseLength).toBe('brief');
     expect(prefs.detailLevel).toBe('expert');
   });
 
   it('passes userId when provided', async () => {
     mockQueryContext.mockResolvedValueOnce({ rows: [] });
-    await loadBehaviorPreferences('work', 'user-123');
+    await loadBehaviorPreferences('finance', 'user-123');
     expect(mockQueryContext).toHaveBeenCalledWith(
-      'work',
+      'finance',
       expect.stringContaining('user_id = $1'),
       ['user-123'],
     );
@@ -403,7 +403,7 @@ describe('loadBehaviorPreferences', () => {
 
   it('returns defaults on DB error', async () => {
     mockQueryContext.mockRejectedValueOnce(new Error('timeout'));
-    const prefs = await loadBehaviorPreferences('personal');
+    const prefs = await loadBehaviorPreferences('operations');
     expect(prefs.responseLength).toBe('moderate');
   });
 
@@ -413,7 +413,7 @@ describe('loadBehaviorPreferences', () => {
         { type: 'tool_preference', value: 0.8, details: { toolName: 'web_search' } },
       ],
     });
-    const prefs = await loadBehaviorPreferences('personal');
+    const prefs = await loadBehaviorPreferences('operations');
     expect(prefs.preferredTools).toEqual(['web_search']);
   });
 });

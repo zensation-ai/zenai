@@ -61,7 +61,7 @@ export function QueuesTab() {
               const total = (q.waiting || 0) + (q.active || 0) + (q.completed || 0) + (q.failed || 0);
               return (
                 <div key={q.name} style={styles.statCard}>
-                  <div style={{ fontSize: '14px', fontWeight: 600, marginBottom: '8px', color: 'var(--text-primary, #e2e8f0)' }}>
+                  <div className="text-sm font-semibold mb-2 text-[var(--text-primary,#e2e8f0)]">
                     {q.name}
                   </div>
                   <div style={styles.statValue}>{total}</div>
@@ -94,7 +94,7 @@ export function QueuesTab() {
                       </span>
                     </td>
                     <td style={styles.td}>
-                      <span style={styles.badge(q.active > 0 ? '#818cf8' : '#64748b')}>
+                      <span style={styles.badge(q.active > 0 ? '#2d8a9e' : '#64748b')}>
                         {q.active || 0}
                       </span>
                     </td>
@@ -122,7 +122,7 @@ export function QueuesTab() {
         </>
       )}
 
-      <div style={{ textAlign: 'right' }}>
+      <div className="text-right">
         <button style={styles.button} onClick={loadQueues}>
           Aktualisieren
         </button>

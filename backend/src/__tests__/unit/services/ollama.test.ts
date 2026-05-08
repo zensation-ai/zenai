@@ -46,7 +46,7 @@ describe('Ollama Utilities', () => {
     it('should define valid category options', () => {
       expect(SYSTEM_PROMPT).toContain('business');
       expect(SYSTEM_PROMPT).toContain('technical');
-      expect(SYSTEM_PROMPT).toContain('personal');
+      expect(SYSTEM_PROMPT).toContain('operations');
     });
 
     it('should define valid priority options', () => {

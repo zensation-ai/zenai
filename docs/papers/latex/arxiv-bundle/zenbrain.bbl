@@ -1,0 +1,480 @@
+\begin{thebibliography}{74}
+\providecommand{\natexlab}[1]{#1}
+\providecommand{\url}[1]{\texttt{#1}}
+\expandafter\ifx\csname urlstyle\endcsname\relax
+  \providecommand{\doi}[1]{doi: #1}\else
+  \providecommand{\doi}{doi: \begingroup \urlstyle{rm}\Url}\fi
+
+\bibitem[Anonymous(2026)]{lmneedsleep2026}
+Anonymous.
+\newblock Language models need sleep: Learning to self modify and consolidate
+  memories.
+\newblock In \emph{ICLR 2026 (under review)}, 2026.
+\newblock OpenReview \url{https://openreview.net/forum?id=iiZy6xyVVE}.
+
+\bibitem[{Anthropic}(2024)]{anthropic2024contextual}
+{Anthropic}.
+\newblock Introducing contextual retrieval.
+\newblock Anthropic engineering blog, September 2024.
+\newblock \url{https://www.anthropic.com/news/contextual-retrieval}.
+
+\bibitem[{Anthropic}(2026)]{anthropic2026autodream}
+{Anthropic}.
+\newblock Claude code auto dream: Memory consolidation for {AI} coding agents.
+\newblock Feature release, Claude Code, March 2026.
+\newblock \url{https://claudefa.st/blog/guide/mechanics/auto-dream}.
+
+\bibitem[Aston-Jones and Cohen(2005)]{astonjones2005ne}
+Gary Aston-Jones and Jonathan~D. Cohen.
+\newblock An integrative theory of locus coeruleus--norepinephrine function:
+  Adaptive gain and optimal performance.
+\newblock \emph{Annual Review of Neuroscience}, 28:\penalty0 403--450, 2005.
+
+\bibitem[Atkinson and Shiffrin(1968)]{atkinson1968}
+Richard~C. Atkinson and Richard~M. Shiffrin.
+\newblock Human memory: A proposed system and its control processes.
+\newblock \emph{Psychology of Learning and Motivation}, 2:\penalty0 89--195,
+  1968.
+
+\bibitem[Baars(1988)]{baars1988}
+Bernard~J. Baars.
+\newblock \emph{A Cognitive Theory of Consciousness}.
+\newblock Cambridge University Press, 1988.
+
+\bibitem[Chelazzi et~al.(2014)Chelazzi, Perlato, Santandrea, and
+  Della~Libera]{chelazzi2014}
+Leonardo Chelazzi, Andrea Perlato, Elisa Santandrea, and Chiara Della~Libera.
+\newblock Rewards teach visual selective attention.
+\newblock \emph{Vision Research}, 85:\penalty0 58--72, 2014.
+
+\bibitem[Chen et~al.(2025)Chen, Li, and Wang]{chen2025}
+Yuxiang Chen, Hao Li, and Mengdi Wang.
+\newblock Memory consolidation from a reinforcement learning perspective:
+  Simulation-selection loops in the hippocampal-prefrontal circuit.
+\newblock \emph{Frontiers in Computational Neuroscience}, 19, 2025.
+
+\bibitem[Chhikara et~al.(2025)Chhikara, Khant, Aryan, Singh, and
+  Yadav]{chhikara2025mem0}
+Prateek Chhikara, Dev Khant, Saket Aryan, Taranjeet Singh, and Deshraj Yadav.
+\newblock {Mem0}: Building production-ready {AI} agents with scalable long-term
+  memory.
+\newblock \emph{arXiv preprint arXiv:2504.19413}, 2025.
+
+\bibitem[Cohen(1988)]{cohen1988statistical}
+Jacob Cohen.
+\newblock \emph{Statistical Power Analysis for the Behavioral Sciences}.
+\newblock Lawrence Erlbaum Associates, Hillsdale, NJ, 2nd edition, 1988.
+
+\bibitem[Cohen and Squire(1980)]{cohen1980}
+Neal~J. Cohen and Larry~R. Squire.
+\newblock Preserved learning and retention of pattern-analyzing skill in
+  amnesia: Dissociation of knowing how and knowing that.
+\newblock \emph{Science}, 210\penalty0 (4466):\penalty0 207--210, 1980.
+
+\bibitem[Daw et~al.(2002)Daw, Kakade, and Dayan]{daw2002}
+Nathaniel~D. Daw, Sham Kakade, and Peter Dayan.
+\newblock Opponent interactions between serotonin and dopamine.
+\newblock \emph{Neural Networks}, 15\penalty0 (4--6):\penalty0 603--616, 2002.
+
+\bibitem[Dayan and Huys(2012)]{dayan2012}
+Peter Dayan and Quentin J.~M. Huys.
+\newblock Serotonin in affective control.
+\newblock \emph{Annual Review of Neuroscience}, 35:\penalty0 195--228, 2012.
+
+\bibitem[Du(2026)]{du2026memory}
+Pengfei Du.
+\newblock Memory for autonomous {LLM} agents: Mechanisms, evaluation, and
+  emerging frontiers.
+\newblock \emph{arXiv preprint arXiv:2603.07670}, 2026.
+
+\bibitem[Ebbinghaus(1885)]{ebbinghaus1885}
+Hermann Ebbinghaus.
+\newblock \emph{{\"U}ber das {G}ed{\"a}chtnis: {U}ntersuchungen zur
+  experimentellen {P}sychologie}.
+\newblock Duncker \& Humblot, Leipzig, 1885.
+
+\bibitem[Fang et~al.(2025)Fang, Deng, et~al.]{liu2025lightmem}
+Guobin Fang, Shumin Deng, et~al.
+\newblock {LightMem}: Lightweight and efficient memory-augmented generation.
+\newblock \emph{arXiv preprint arXiv:2510.18866}, 2025.
+\newblock ICLR 2026.
+
+\bibitem[Fleming and Dolan(2012)]{fleming2012}
+Stephen~M. Fleming and Raymond~J. Dolan.
+\newblock The neural basis of metacognitive ability.
+\newblock \emph{Philosophical Transactions of the Royal Society B},
+  367\penalty0 (1594):\penalty0 1338--1349, 2012.
+
+\bibitem[Frey and Morris(1997)]{frey1997}
+Uwe Frey and Richard G.~M. Morris.
+\newblock Synaptic tagging and long-term potentiation.
+\newblock \emph{Nature}, 385:\penalty0 533--536, 1997.
+\newblock \doi{10.1038/385533a0}.
+
+\bibitem[Hasselmo and McGaughy(2004)]{hasselmo2004ach}
+Michael~E. Hasselmo and Jill McGaughy.
+\newblock High acetylcholine levels set circuit dynamics for attention and
+  encoding and low acetylcholine levels set dynamics for consolidation.
+\newblock \emph{Progress in Brain Research}, 145:\penalty0 207--231, 2004.
+
+\bibitem[He et~al.(2025)]{he2025memoryagentbench}
+Yizhuo He et~al.
+\newblock {MemoryAgentBench}: Benchmarking memory capabilities of {LLM}-based
+  agents.
+\newblock \emph{arXiv preprint arXiv:2507.05257}, 2025.
+
+\bibitem[He et~al.(2026)]{he2026memoryarena}
+Yizhuo He et~al.
+\newblock {MemoryArena}: Evaluating agent memory with cross-session
+  dependencies.
+\newblock \emph{arXiv preprint arXiv:2602.16313}, 2026.
+
+\bibitem[Hebb(1949)]{hebb1949}
+Donald~O. Hebb.
+\newblock \emph{The Organization of Behavior: A Neuropsychological Theory}.
+\newblock Wiley, New York, 1949.
+
+\bibitem[Hodges and Lehmann(1956)]{hodges1956are}
+J.~L. Hodges and E.~L. Lehmann.
+\newblock The efficiency of some nonparametric competitors of the {$t$}-test.
+\newblock \emph{The Annals of Mathematical Statistics}, 27\penalty0
+  (2):\penalty0 324--335, 1956.
+
+\bibitem[{ICLR 2026 MemAgents Workshop Organizers}(2026)]{iclr2026memagents}
+{ICLR 2026 MemAgents Workshop Organizers}.
+\newblock {MemAgents}: Memory for {LLM}-based agentic systems.
+\newblock ICLR 2026 Workshop, Rio de Janeiro, 2026.
+\newblock \url{https://sites.google.com/view/memagent-iclr26/}.
+
+\bibitem[Ji and Wilson(2007)]{ji2007}
+Daoyun Ji and Matthew~A. Wilson.
+\newblock Coordinated memory replay in the visual cortex and hippocampus during
+  sleep.
+\newblock \emph{Nature Neuroscience}, 10\penalty0 (1):\penalty0 100--107, 2007.
+
+\bibitem[Jim{\'e}nez~Guti{\'e}rrez et~al.(2024)Jim{\'e}nez~Guti{\'e}rrez, Shu,
+  Gu, Yasunaga, and Su]{gutierrez2024hipporag}
+Bernal Jim{\'e}nez~Guti{\'e}rrez, Yiheng Shu, Yu~Gu, Michihiro Yasunaga, and
+  Yu~Su.
+\newblock {HippoRAG}: Neurobiologically inspired long-term memory for large
+  language models.
+\newblock In \emph{Advances in Neural Information Processing Systems
+  (NeurIPS)}, 2024.
+\newblock arXiv:2405.14831.
+
+\bibitem[Kahneman(2011)]{kahneman2011}
+Daniel Kahneman.
+\newblock \emph{Thinking, Fast and Slow}.
+\newblock Farrar, Straus and Giroux, 2011.
+
+\bibitem[Karl{\'e}n et~al.(2009)Karl{\'e}n, Karlsson, Mattsson,
+  Lundstr{\"o}mer, Codeluppi, Pham, Backman, Ogren, Aberg, Hoffman, Sherling,
+  Lupica, Hoffer, Spenger, Josephson, Brene, and Olson]{karlen2009nogo}
+Andrea Karl{\'e}n, Therese~E. Karlsson, Anders Mattsson, Karin Lundstr{\"o}mer,
+  Simone Codeluppi, Tobias~M. Pham, Cristina~M. Backman, Sven~Ove Ogren, Elin
+  Aberg, Alexander~F. Hoffman, Michael~A. Sherling, Carl~R. Lupica, Barry~J.
+  Hoffer, Christian Spenger, Anna Josephson, Stefan Brene, and Lars Olson.
+\newblock Nogo receptor 1 regulates formation of lasting memories.
+\newblock \emph{Proceedings of the National Academy of Sciences}, 106\penalty0
+  (48):\penalty0 20476--20481, 2009.
+
+\bibitem[Karpathy(2026)]{karpathy2026knowledge}
+Andrej Karpathy.
+\newblock {LLM} knowledge bases.
+\newblock Blog post, April 2026.
+\newblock Published April 2--3, 2026. Describes LLM-compiled Markdown wikis
+  with ``knowledge linting'' for persistent structured knowledge.
+
+\bibitem[Kempf and Schwab(2013)]{kempfblock2014nogoa}
+Anissa Kempf and Martin~E. Schwab.
+\newblock Nogo-{A} represses anatomical and synaptic plasticity in the central
+  nervous system.
+\newblock \emph{Physiology}, 28\penalty0 (3):\penalty0 151--163, 2013.
+
+\bibitem[Kirkpatrick et~al.(2017)Kirkpatrick, Pascanu, Rabinowitz, Veness,
+  Desjardins, Rusu, Milan, Quan, Ramalho, Grabska-Barwinska, Hassabis, Clopath,
+  Kumaran, and Hadsell]{kirkpatrick2017}
+James Kirkpatrick, Razvan Pascanu, Neil~C. Rabinowitz, Joel Veness, Guillaume
+  Desjardins, Andrei~A. Rusu, Kieran Milan, John Quan, Tiago Ramalho, Agnieszka
+  Grabska-Barwinska, Demis Hassabis, Claudia Clopath, Dharshan Kumaran, and
+  Raia Hadsell.
+\newblock Overcoming catastrophic forgetting in neural networks.
+\newblock \emph{Proceedings of the National Academy of Sciences}, 114\penalty0
+  (13):\penalty0 3521--3526, 2017.
+
+\bibitem[Koch et~al.(2025)Koch, Phadke, Guo, Jiang, Zhu, and Xu]{koch2025tmma}
+Nolan Koch, Om~Phadke, Jeffrey Guo, Shanduojiao Jiang, Kevin Zhu, and Andy Xu.
+\newblock Truth-maintained memory agent: Proactive quality control for reliable
+  long-context dialogue.
+\newblock In \emph{NeurIPS Workshop on Socially Responsible and Trustworthy
+  Foundation Models}, 2025.
+
+\bibitem[Kumaran et~al.(2016)Kumaran, Hassabis, and McClelland]{kumaran2016}
+Dharshan Kumaran, Demis Hassabis, and James~L. McClelland.
+\newblock What learning systems do intelligent agents need? {Complementary}
+  learning systems updated.
+\newblock \emph{Trends in Cognitive Sciences}, 20\penalty0 (7):\penalty0
+  512--534, 2016.
+
+\bibitem[Landis and Koch(1977)]{landis1977}
+J.~Richard Landis and Gary~G. Koch.
+\newblock The measurement of observer agreement for categorical data.
+\newblock \emph{Biometrics}, 33\penalty0 (1):\penalty0 159--174, 1977.
+
+\bibitem[{ldclabs}(2026)]{anda2026hippocampus}
+{ldclabs}.
+\newblock Anda hippocampus: Graph-based memory for {AI} agents.
+\newblock \url{https://github.com/ldclabs/anda-hippocampus}, 2026.
+\newblock Open-source, KIP protocol.
+
+\bibitem[Li et~al.(2025)]{li2025hindsight}
+Yuxuan Li et~al.
+\newblock Hindsight: 4-layer memory architecture with temporal retrieval for
+  {LLM} agents.
+\newblock \emph{arXiv preprint}, 2025.
+
+\bibitem[Maharana et~al.(2024)]{maharana2024locomo}
+Adyasha Maharana et~al.
+\newblock {LoCoMo}: Long context multi-session conversation benchmark.
+\newblock \emph{arXiv preprint}, 2024.
+
+\bibitem[Marche et~al.(2025)Marche, Markov, and Bhattacharyya]{marche2025}
+K{\'e}vin Marche, Vladimir Markov, and Arghya Bhattacharyya.
+\newblock {CA3/CA1} bidirectional communication enables model-based replay
+  during offline consolidation.
+\newblock \emph{eLife}, 14, 2025.
+
+\bibitem[Markovic et~al.(2025)Markovic, Obradovic, Hajdu, and
+  Pavlovic]{markovic2025cognee}
+Vasilije Markovic, Lazar Obradovic, Laszlo Hajdu, and Jovan Pavlovic.
+\newblock Optimizing the interface between knowledge graphs and {LLMs} for
+  complex reasoning.
+\newblock \emph{arXiv preprint arXiv:2505.24478}, 2025.
+\newblock Cognee framework.
+
+\bibitem[{Mastra}(2025)]{mastra2025}
+{Mastra}.
+\newblock {Mastra}: Context compression for long-running {LLM} agents.
+\newblock Framework documentation, 2025.
+
+\bibitem[McGaugh(2004)]{mcgaugh2004}
+James~L. McGaugh.
+\newblock The amygdala modulates the consolidation of memories of emotionally
+  arousing experiences.
+\newblock \emph{Annual Review of Neuroscience}, 27:\penalty0 1--28, 2004.
+
+\bibitem[McQuown and Wood(2011)]{mcquown2011brakepad}
+Susan~C. McQuown and Marcelo~A. Wood.
+\newblock {HDAC3} and the molecular brake pad hypothesis.
+\newblock \emph{Neurobiology of Learning and Memory}, 96\penalty0 (1):\penalty0
+  27--34, 2011.
+
+\bibitem[McQuown et~al.(2011)McQuown, Barrett, Matheos, Post, Rogge, Alenghat,
+  Mullican, Jones, Rusche, Lazar, and Wood]{mcquown2011hdac3}
+Susan~C. McQuown, Ruth~M. Barrett, Dina~P. Matheos, Rebecca~J. Post, George~A.
+  Rogge, Theresa Alenghat, Shannon~E. Mullican, Stephanie Jones, Jeffrey~R.
+  Rusche, Mitchell~A. Lazar, and Marcelo~A. Wood.
+\newblock {HDAC3} is a critical negative regulator of long-term memory
+  formation.
+\newblock \emph{Journal of Neuroscience}, 31\penalty0 (2):\penalty0 764--774,
+  2011.
+
+\bibitem[{MemFly Contributors}(2026)]{memfly2026}
+{MemFly Contributors}.
+\newblock {MemFly}: Lightweight flying-weight memory consolidation for
+  long-horizon {LLM} tasks.
+\newblock arXiv preprint arXiv:2602.09871, 2026.
+
+\bibitem[{MemPalace Authors}(2025)]{mempalace2025}
+{MemPalace Authors}.
+\newblock {MemPalace}: Spatial memory organization for {LLM} agents.
+\newblock Preprint, 2025.
+
+\bibitem[Miller(1956)]{miller1956}
+George~A. Miller.
+\newblock The magical number seven, plus or minus two: Some limits on our
+  capacity for processing information.
+\newblock \emph{Psychological Review}, 63\penalty0 (2):\penalty0 81--97, 1956.
+
+\bibitem[Nader and Hardt(2009)]{nader2009}
+Karim Nader and Oliver Hardt.
+\newblock A single standard for memory: The case for reconsolidation.
+\newblock \emph{Nature Reviews Neuroscience}, 10\penalty0 (3):\penalty0
+  224--234, 2009.
+
+\bibitem[Nader et~al.(2000)Nader, Schafe, and LeDoux]{nader2000}
+Karim Nader, Glenn~E. Schafe, and Joseph~E. LeDoux.
+\newblock Fear memories require protein synthesis in the amygdala for
+  reconsolidation after retrieval.
+\newblock \emph{Nature}, 406\penalty0 (6797):\penalty0 722--726, 2000.
+
+\bibitem[{OMEGA Team}(2026)]{omega2026}
+{OMEGA Team}.
+\newblock {OMEGA}: A specialized memory system for coding agents.
+\newblock Technical report, 2026.
+
+\bibitem[O'Neill et~al.(2010)O'Neill, Pleydell-Bouverie, Dupret, and
+  Csicsvari]{oneill2010}
+Joseph O'Neill, Barrie Pleydell-Bouverie, David Dupret, and Jozsef Csicsvari.
+\newblock Play it again: reactivation of waking experience and memory.
+\newblock \emph{Trends in Neurosciences}, 33\penalty0 (5):\penalty0 220--229,
+  2010.
+
+\bibitem[Packer et~al.(2023)Packer, Wooders, Lin, Fang, Patil, Stoica, and
+  Gonzalez]{packer2023memgpt}
+Charles Packer, Sarah Wooders, Kevin Lin, Vivian Fang, Shishir~G. Patil, Ion
+  Stoica, and Joseph~E. Gonzalez.
+\newblock {MemGPT}: Towards {LLMs} as operating systems.
+\newblock \emph{arXiv preprint arXiv:2310.08560}, 2023.
+
+\bibitem[Pimsleur(1967)]{pimsleur1967}
+Paul Pimsleur.
+\newblock A memory schedule.
+\newblock \emph{The Modern Language Journal}, 51\penalty0 (2):\penalty0 73--75,
+  1967.
+
+\bibitem[Rasmussen et~al.(2025)Rasmussen, Paliychuk, Beauvais, Ryan, and
+  Chalef]{rasmussen2025zep}
+Preston Rasmussen, Pavlo Paliychuk, Travis Beauvais, Jack Ryan, and Daniel
+  Chalef.
+\newblock {Zep}: A temporal knowledge graph architecture for agent memory.
+\newblock \emph{arXiv preprint arXiv:2501.13956}, 2025.
+
+\bibitem[Schapiro et~al.(2024)Schapiro, Turk-Browne, Botvinick, and
+  Norman]{basel2024}
+Anna~C. Schapiro, Nicholas~B. Turk-Browne, Matthew~M. Botvinick, and Kenneth~A.
+  Norman.
+\newblock Complementary learning systems within the hippocampus: A neural
+  network modelling approach to reconciling episodic memory with statistical
+  learning.
+\newblock \emph{Philosophical Transactions of the Royal Society B},
+  372\penalty0 (1711):\penalty0 20160049, 2024.
+\newblock Updated replication, originally presented at Basel CLS workshop.
+
+\bibitem[Schultz et~al.(1997)Schultz, Dayan, and Montague]{schultz1997}
+Wolfram Schultz, Peter Dayan, and P.~Read Montague.
+\newblock A neural substrate of prediction and reward.
+\newblock \emph{Science}, 275\penalty0 (5306):\penalty0 1593--1599, 1997.
+
+\bibitem[Schwab(2010)]{schwab2010nogoa}
+Martin~E. Schwab.
+\newblock Functions of {Nogo} proteins and their receptors in the nervous
+  system.
+\newblock \emph{Nature Reviews Neuroscience}, 11\penalty0 (12):\penalty0
+  799--811, 2010.
+
+\bibitem[Shinn et~al.(2023)Shinn, Cassano, Gopinath, Narasimhan, and
+  Yao]{shinn2023reflexion}
+Noah Shinn, Federico Cassano, Ashwin Gopinath, Karthik Narasimhan, and Shunyu
+  Yao.
+\newblock Reflexion: Language agents with verbal reinforcement learning.
+\newblock In \emph{Advances in Neural Information Processing Systems
+  (NeurIPS)}, 2023.
+
+\bibitem[Squire(1992)]{squire1992}
+Larry~R. Squire.
+\newblock Memory and the hippocampus: A synthesis from findings with rats,
+  monkeys, and humans.
+\newblock \emph{Psychological Review}, 99\penalty0 (2):\penalty0 195--231,
+  1992.
+
+\bibitem[Stickgold and Walker(2013)]{stickgold2013}
+Robert Stickgold and Matthew~P. Walker.
+\newblock Sleep-dependent memory triage: Evolving generalization through
+  selective processing.
+\newblock \emph{Nature Neuroscience}, 16\penalty0 (2):\penalty0 139--145, 2013.
+
+\bibitem[Tiwari and Fofadiya(2026)]{tiwari2026multilayered}
+Sunil Tiwari and Payal Fofadiya.
+\newblock Multi-layered memory architectures for {LLM} agents: An experimental
+  evaluation of long-term context retention.
+\newblock \emph{arXiv preprint arXiv:2603.29194}, 2026.
+
+\bibitem[Tulving(1972)]{tulving1972}
+Endel Tulving.
+\newblock Episodic and semantic memory.
+\newblock \emph{Organization of Memory}, pages 381--403, 1972.
+
+\bibitem[Tulving and Thomson(1973)]{tulving1973}
+Endel Tulving and Donald~M. Thomson.
+\newblock Encoding specificity and retrieval processes in episodic memory.
+\newblock \emph{Psychological Review}, 80\penalty0 (5):\penalty0 352--373,
+  1973.
+
+\bibitem[{Vestige Contributors}(2026)]{vestige2026}
+{Vestige Contributors}.
+\newblock Vestige: {FSRS}-6 powered memory for {AI} agents.
+\newblock \url{https://github.com/vestige-ai/vestige}, 2026.
+\newblock Open-source, released January 2026.
+
+\bibitem[Wang et~al.(2026)]{wang2026fadem}
+Yixing Wang et~al.
+\newblock {FadeMem}: Biologically-inspired forgetting for efficient agent
+  memory.
+\newblock \emph{arXiv preprint arXiv:2601.18642}, 2026.
+
+\bibitem[Webb et~al.(2025)Webb, Mondal, and Momennejad]{webb2025brain}
+Taylor Webb, Shanka~Subhra Mondal, and Ida Momennejad.
+\newblock A brain-inspired agentic architecture to improve planning with
+  {LLMs}.
+\newblock \emph{Nature Communications}, 16\penalty0 (8633), 2025.
+\newblock \doi{10.1038/s41467-025-63804-5}.
+
+\bibitem[Wu et~al.(2024)Wu, Wang, Yu, Zhang, Chang, and Yu]{wu2024longmemeval}
+Di~Wu, Hongwei Wang, Wenhao Yu, Yunsheng Zhang, Kai-Wei Chang, and Dong Yu.
+\newblock {LongMemEval}: Benchmarking chat assistants on long-term interactive
+  memory.
+\newblock \emph{arXiv preprint arXiv:2410.10813}, 2024.
+
+\bibitem[Xie(2026)]{xie2026sleepgate}
+Ying Xie.
+\newblock Learning to forget: Sleep-inspired memory consolidation for resolving
+  proactive interference in large language models.
+\newblock \emph{arXiv preprint arXiv:2603.14517}, 2026.
+
+\bibitem[Xu et~al.(2025{\natexlab{a}})]{xu2025memoryos}
+Jiazheng Xu et~al.
+\newblock {MemoryOS}: Hierarchical memory management for {LLM} agents.
+\newblock In \emph{Proceedings of the 2025 Conference on Empirical Methods in
+  Natural Language Processing (EMNLP)}, 2025{\natexlab{a}}.
+\newblock Oral presentation.
+
+\bibitem[Xu et~al.(2025{\natexlab{b}})Xu, Liang, Mei, Gao, Tan, and
+  Zhang]{xu2025amem}
+Wujiang Xu, Zujie Liang, Kai Mei, Hang Gao, Juntao Tan, and Yongfeng Zhang.
+\newblock {A-MEM}: Agentic memory for {LLM} agents.
+\newblock In \emph{Advances in Neural Information Processing Systems
+  (NeurIPS)}, 2025{\natexlab{b}}.
+
+\bibitem[Yan et~al.(2025)Yan, Li, Qian, Lu, and Liu]{yan2025gam}
+B.Y. Yan, Chaofan Li, Hongjin Qian, Shuqi Lu, and Zheng Liu.
+\newblock General agentic memory via deep research.
+\newblock \emph{arXiv preprint arXiv:2511.18423}, 2025.
+
+\bibitem[Zenke et~al.(2017)Zenke, Poole, and Ganguli]{zenke2017}
+Friedemann Zenke, Ben Poole, and Surya Ganguli.
+\newblock Continual learning through synaptic intelligence.
+\newblock In \emph{Proceedings of the 34th International Conference on Machine
+  Learning (ICML)}, pages 3987--3995, 2017.
+
+\bibitem[Zenke et~al.(2025)Zenke, Neftci, and Petrovici]{zenke2025}
+Friedemann Zenke, Emre~O. Neftci, and Mihai~A. Petrovici.
+\newblock Two-factor synaptic consolidation reconciles robustness with
+  plasticity.
+\newblock \emph{Proceedings of the National Academy of Sciences}, 122\penalty0
+  (8), 2025.
+
+\bibitem[Zhang et~al.(2025)Zhang, Fu, Wang, Wan, Yu, and Yan]{zhang2025gmemory}
+Guibin Zhang, Muxin Fu, Kun Wang, Guancheng Wan, Miao Yu, and Shuicheng Yan.
+\newblock {G-Memory}: Tracing hierarchical memory for multi-agent systems.
+\newblock In \emph{Advances in Neural Information Processing Systems (NeurIPS),
+  Spotlight}, 2025.
+\newblock arXiv:2506.07398.
+
+\bibitem[Zou et~al.(2025)Zou, Tompary, and Thompson-Schill]{zou2025}
+Yiming Zou, Alexa Tompary, and Sharon~L. Thompson-Schill.
+\newblock Benefits of spaced learning are predicted by the re-encoding of past
+  experience in ventromedial prefrontal cortex.
+\newblock \emph{Cell Reports}, 44\penalty0 (3), 2025.
+
+\end{thebibliography}

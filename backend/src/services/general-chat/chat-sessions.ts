@@ -14,7 +14,7 @@ import { SYSTEM_USER_ID } from '../../utils/user-context';
 
 export interface ChatSession {
   id: string;
-  context: 'personal' | 'work' | 'learning' | 'creative' | 'demo';
+  context: 'operations' | 'finance' | 'people' | 'strategy' | 'demo';
   title: string | null;
   createdAt: Date;
   updatedAt: Date;
@@ -146,7 +146,7 @@ function isColumnMissingError(err: unknown, columnName: string): boolean {
  * Create a new chat session
  * Initializes both database session and HiMeS memory layers
  */
-export async function createSession(context: 'personal' | 'work' | 'learning' | 'creative' | 'demo' = 'personal', sessionType: 'general' | 'assistant' = 'general', userId?: string): Promise<ChatSession> {
+export async function createSession(context: 'operations' | 'finance' | 'people' | 'strategy' | 'demo' = 'operations', sessionType: 'general' | 'assistant' = 'general', userId?: string): Promise<ChatSession> {
   const id = uuidv4();
   const uid = userId || SYSTEM_USER_ID;
 
@@ -333,7 +333,7 @@ export async function getSession(sessionId: string, userId?: string): Promise<Ch
  * Get all sessions for a context
  */
 export async function getSessions(
-  context: 'personal' | 'work' | 'learning' | 'creative' | 'demo' = 'personal',
+  context: 'operations' | 'finance' | 'people' | 'strategy' | 'demo' = 'operations',
   limit: number = 20,
   sessionType?: 'general' | 'assistant',
   userId?: string
@@ -422,8 +422,8 @@ export async function deleteSession(sessionId: string, userId?: string): Promise
   }
 
   const rawContext = sessionResult.rows[0]?.context;
-  const validContexts = ['personal', 'work', 'learning', 'creative'] as const;
-  const context: 'personal' | 'work' | 'learning' | 'creative' | 'demo' | undefined =
+  const validContexts = ['operations', 'finance', 'people', 'strategy'] as const;
+  const context: 'operations' | 'finance' | 'people' | 'strategy' | 'demo' | undefined =
     validContexts.includes(rawContext) ? rawContext : undefined;
 
   let deleteResult;

@@ -9,12 +9,10 @@
  * - Storage usage display
  */
 
-import { memo, useEffect, useCallback, useState } from 'react';
+import { memo, useEffect, useCallback, useState, type CSSProperties } from 'react';
 import { useOnDeviceAI } from '../../hooks/useOnDeviceAI';
 import { estimateStorageUsage } from '../../services/on-device-storage';
 import { useConfirm } from '../ConfirmDialog';
-import './OnDeviceAISettings.css';
-
 interface OnDeviceAISettingsProps {
   context?: string;
 }
@@ -50,15 +48,15 @@ const MODELS = [
   },
   {
     id: 'text-completer',
-    name: 'Textvervollstaendigung',
+    name: 'Textvervollständigung',
     description: 'Markov-Chain basiert auf deinen Eingaben',
     type: 'built-in' as const,
-    size: 'Abhaengig vom Corpus',
+    size: 'Abhängig vom Corpus',
   },
   {
     id: 'embedding-onnx',
     name: 'Embedding (all-MiniLM-L6-v2)',
-    description: 'Semantische Vektoren fuer Aehnlichkeitssuche',
+    description: 'Semantische Vektoren für Ähnlichkeitssuche',
     type: 'planned' as const,
     size: '~23 MB (ONNX)',
   },
@@ -113,9 +111,9 @@ export const OnDeviceAISettings = memo(function OnDeviceAISettings(_props: OnDev
 
   const handleClearAll = useCallback(async () => {
     const confirmed = await confirm({
-      title: 'Lokale KI-Daten loeschen',
-      message: 'Alle lokalen KI-Daten loeschen? Dies entfernt Corpus, Cache und Vokabular.',
-      confirmText: 'Loeschen',
+      title: 'Lokale KI-Daten löschen',
+      message: 'Alle lokalen KI-Daten löschen? Dies entfernt Corpus, Cache und Vokabular.',
+      confirmText: 'Löschen',
       variant: 'danger',
     });
     if (confirmed) {
@@ -133,7 +131,7 @@ export const OnDeviceAISettings = memo(function OnDeviceAISettings(_props: OnDev
     <div className="on-device-settings">
       <h2>Lokale KI</h2>
       <p className="subtitle">
-        On-Device AI Inferenz fuer sofortige, private Verarbeitung direkt im Browser.
+        On-Device AI Inferenz für sofortige, private Verarbeitung direkt im Browser.
       </p>
 
       {/* Capabilities */}
@@ -143,7 +141,7 @@ export const OnDeviceAISettings = memo(function OnDeviceAISettings(_props: OnDev
           <div className="odai-cap-info">
             <div className="odai-cap-label">WebGPU</div>
             <div className={`odai-cap-status ${webGPUAvailable ? 'available' : 'unavailable'}`}>
-              {webGPUAvailable ? 'Verfuegbar' : 'Nicht verfuegbar'}
+              {webGPUAvailable ? 'Verfügbar' : 'Nicht verfügbar'}
             </div>
           </div>
         </div>
@@ -152,7 +150,7 @@ export const OnDeviceAISettings = memo(function OnDeviceAISettings(_props: OnDev
           <div className="odai-cap-info">
             <div className="odai-cap-label">IndexedDB</div>
             <div className={`odai-cap-status ${capabilities.indexedDBAvailable ? 'available' : 'unavailable'}`}>
-              {capabilities.indexedDBAvailable ? 'Verfuegbar' : 'Nicht verfuegbar'}
+              {capabilities.indexedDBAvailable ? 'Verfügbar' : 'Nicht verfügbar'}
             </div>
           </div>
         </div>
@@ -185,9 +183,9 @@ export const OnDeviceAISettings = memo(function OnDeviceAISettings(_props: OnDev
           </span>
         </div>
         <p className="odai-section-desc">
-          Im Datenschutz-Modus werden alle Anfragen lokal auf deinem Geraet verarbeitet.
+          Im Datenschutz-Modus werden alle Anfragen lokal auf deinem Gerät verarbeitet.
           Nichts wird an Server gesendet. Komplexe Anfragen werden mit lokalen Methoden
-          beantwortet, auch wenn die Qualitaet eingeschraenkt sein kann.
+          beantwortet, auch wenn die Qualität eingeschränkt sein kann.
         </p>
         <label className="odai-toggle">
           <input
@@ -199,7 +197,7 @@ export const OnDeviceAISettings = memo(function OnDeviceAISettings(_props: OnDev
             <span className="odai-toggle-thumb" />
           </span>
           <span className="odai-toggle-label">
-            Nichts verlaesst mein Geraet
+            Nichts verlässt mein Gerät
           </span>
         </label>
       </div>
@@ -212,7 +210,7 @@ export const OnDeviceAISettings = memo(function OnDeviceAISettings(_props: OnDev
           Niedrig = mehr Cloud, Hoch = mehr lokal.
         </p>
         <div className="odai-slider-row">
-          <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Cloud</span>
+          <span className="text-[0.8rem] text-[var(--text-secondary)]">Cloud</span>
           <input
             type="range"
             min={10}
@@ -222,7 +220,7 @@ export const OnDeviceAISettings = memo(function OnDeviceAISettings(_props: OnDev
             onChange={(e) => updateConfig({ complexityThreshold: Number(e.target.value) / 100 })}
             disabled={privacyMode}
           />
-          <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Lokal</span>
+          <span className="text-[0.8rem] text-[var(--text-secondary)]">Lokal</span>
           <span className="odai-slider-value">{Math.round(config.complexityThreshold * 100)}%</span>
         </div>
       </div>
@@ -231,8 +229,8 @@ export const OnDeviceAISettings = memo(function OnDeviceAISettings(_props: OnDev
       <div className="odai-section">
         <span className="odai-section-title">Modelle</span>
         <p className="odai-section-desc">
-          Uebersicht der verfuegbaren On-Device KI-Modelle.
-          Built-in Modelle sind sofort verfuegbar ohne Download.
+          Übersicht der verfügbaren On-Device KI-Modelle.
+          Built-in Modelle sind sofort verfügbar ohne Download.
         </p>
         <div className="odai-model-list">
           {MODELS.map(model => {
@@ -258,7 +256,7 @@ export const OnDeviceAISettings = memo(function OnDeviceAISettings(_props: OnDev
       {/* Statistics */}
       <div className="odai-section">
         <span className="odai-section-title">Statistiken</span>
-        <div className="odai-stats-grid" style={{ marginTop: 12 }}>
+        <div className="odai-stats-grid mt-3">
           <div className="odai-stat-card">
             <div className="odai-stat-value">{stats.queriesOnDevice}</div>
             <div className="odai-stat-label">Lokal verarbeitet</div>
@@ -273,15 +271,15 @@ export const OnDeviceAISettings = memo(function OnDeviceAISettings(_props: OnDev
           </div>
           <div className="odai-stat-card">
             <div className="odai-stat-value">{stats.corpusSize}</div>
-            <div className="odai-stat-label">Corpus-Eintraege</div>
+            <div className="odai-stat-label">Corpus-Einträge</div>
           </div>
           <div className="odai-stat-card">
             <div className="odai-stat-value">{stats.cacheSize}</div>
-            <div className="odai-stat-label">Cache-Eintraege</div>
+            <div className="odai-stat-label">Cache-Einträge</div>
           </div>
           <div className="odai-stat-card">
             <div className="odai-stat-value">{stats.vocabSize}</div>
-            <div className="odai-stat-label">Vokabular-Groesse</div>
+            <div className="odai-stat-label">Vokabular-Größe</div>
           </div>
         </div>
 
@@ -289,8 +287,8 @@ export const OnDeviceAISettings = memo(function OnDeviceAISettings(_props: OnDev
         <div className="odai-storage-meter">
           <div className="odai-storage-bar">
             <div
-              className="odai-storage-fill"
-              style={{ width: `${storagePercent}%` }}
+              className="odai-storage-fill w-[var(--bar)]"
+              style={{ '--bar': `${storagePercent}%` } as CSSProperties}
             />
           </div>
           <div className="odai-storage-label">
@@ -314,7 +312,7 @@ export const OnDeviceAISettings = memo(function OnDeviceAISettings(_props: OnDev
             Cache leeren
           </button>
           <button className="odai-btn destructive" onClick={handleClearAll}>
-            Alle Daten loeschen
+            Alle Daten löschen
           </button>
           {cacheError && <p className="odai-error" role="alert">{cacheError}</p>}
         </div>

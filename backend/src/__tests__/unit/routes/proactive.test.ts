@@ -27,7 +27,7 @@ jest.mock('../../../utils/logger', () => ({
 
 jest.mock('../../../utils/database-context', () => ({
   queryContext: jest.fn().mockResolvedValue({ rows: [{ enabled: true }], rowCount: 1 }),
-  isValidContext: jest.fn((ctx: string) => ['personal', 'work', 'learning', 'creative'].includes(ctx)),
+  isValidContext: jest.fn((ctx: string) => ['operations', 'finance', 'people', 'strategy'].includes(ctx)),
   AIContext: {},
 }));
 
@@ -118,7 +118,7 @@ describe('Proactive Routes', () => {
       const suggestions = [{ id: '1', type: 'task', text: 'Review emails' }];
       mockGetSuggestions.mockResolvedValue(suggestions);
 
-      const res = await request(app).get('/api/proactive/suggestions?context=personal');
+      const res = await request(app).get('/api/proactive/suggestions?context=operations');
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
@@ -126,13 +126,13 @@ describe('Proactive Routes', () => {
       expect(res.body.count).toBe(1);
     });
 
-    it('should default to personal context', async () => {
+    it('should default to operations context', async () => {
       mockGetSuggestions.mockResolvedValue([]);
 
       const res = await request(app).get('/api/proactive/suggestions');
 
       expect(res.status).toBe(200);
-      expect(mockGetSuggestions).toHaveBeenCalledWith('personal', expect.any(Object));
+      expect(mockGetSuggestions).toHaveBeenCalledWith('operations', expect.any(Object));
     });
 
     it('should reject invalid context', async () => {
@@ -148,7 +148,7 @@ describe('Proactive Routes', () => {
 
       const res = await request(app)
         .post('/api/proactive/suggestions/abc-123/accept')
-        .send({ context: 'personal' });
+        .send({ context: 'operations' });
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
@@ -162,7 +162,7 @@ describe('Proactive Routes', () => {
 
       const res = await request(app)
         .post('/api/proactive/suggestions/abc-123/dismiss')
-        .send({ context: 'work', reason: 'Not relevant' });
+        .send({ context: 'finance', reason: 'Not relevant' });
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
@@ -175,7 +175,7 @@ describe('Proactive Routes', () => {
       const routines = [{ id: 'r1', name: 'Morning review', confidence: 0.8 }];
       mockGetPatterns.mockResolvedValue(routines);
 
-      const res = await request(app).get('/api/proactive/routines?context=work');
+      const res = await request(app).get('/api/proactive/routines?context=finance');
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
@@ -191,7 +191,7 @@ describe('Proactive Routes', () => {
 
       const res = await request(app)
         .post('/api/proactive/routines/analyze')
-        .send({ context: 'personal' });
+        .send({ context: 'operations' });
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
@@ -203,7 +203,7 @@ describe('Proactive Routes', () => {
     it('should return currently active routines', async () => {
       mockCheckActiveRoutines.mockResolvedValue([]);
 
-      const res = await request(app).get('/api/proactive/routines/active?context=personal');
+      const res = await request(app).get('/api/proactive/routines/active?context=operations');
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);

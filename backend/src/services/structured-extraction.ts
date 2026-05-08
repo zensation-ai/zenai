@@ -56,7 +56,7 @@ export interface Mention {
 }
 
 export interface MoodInfo {
-  primary: 'exploratory' | 'decisive' | 'reflective' | 'urgent' | 'creative' | 'analytical';
+  primary: 'exploratory' | 'decisive' | 'reflective' | 'urgent' | 'strategy' | 'analytical';
   confidence: number;
 }
 
@@ -266,7 +266,7 @@ function validateMentions(mentions: unknown[]): Mention[] {
 }
 
 function validateMood(mood: unknown): MoodInfo {
-  const validMoods = ['exploratory', 'decisive', 'reflective', 'urgent', 'creative', 'analytical'];
+  const validMoods = ['exploratory', 'decisive', 'reflective', 'urgent', 'strategy', 'analytical'];
   if (typeof mood === 'object' && mood !== null) {
     const m = mood as MoodInfo;
     return {

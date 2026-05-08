@@ -17,6 +17,10 @@ import {
   setCurrentUserId,
   getCurrentUserId,
   getCurrentRequestId,
+  setCurrentWorkspaceId,
+  getCurrentWorkspaceId,
+  setCurrentContextSlug,
+  getCurrentContextSlug,
   runAsUser,
 } from '../../../utils/request-context';
 import { Request, Response, NextFunction } from 'express';
@@ -265,6 +269,71 @@ describe('Request Context (AsyncLocalStorage)', () => {
 
       expect(ids).toContain('trace-aaa');
       expect(ids).toContain('trace-bbb');
+    });
+  });
+
+  describe('workspace extensions (multi-tenancy)', () => {
+    it('stores and retrieves workspaceId', (done) => {
+      const req = mockReq() as Request;
+      const res = mockRes() as Response;
+      requestContextMiddleware(req, res, () => {
+        setCurrentWorkspaceId('ws-123');
+        expect(getCurrentWorkspaceId()).toBe('ws-123');
+        done();
+      });
+    });
+
+    it('stores and retrieves contextSlug', (done) => {
+      const req = mockReq() as Request;
+      const res = mockRes() as Response;
+      requestContextMiddleware(req, res, () => {
+        setCurrentContextSlug('strategisch');
+        expect(getCurrentContextSlug()).toBe('strategisch');
+        done();
+      });
+    });
+
+    it('returns undefined outside context', () => {
+      expect(getCurrentWorkspaceId()).toBeUndefined();
+      expect(getCurrentContextSlug()).toBeUndefined();
+    });
+
+    it('should be a no-op when called outside of context', () => {
+      expect(() => setCurrentWorkspaceId('orphan-ws')).not.toThrow();
+      expect(() => setCurrentContextSlug('orphan-slug')).not.toThrow();
+      expect(getCurrentWorkspaceId()).toBeUndefined();
+      expect(getCurrentContextSlug()).toBeUndefined();
+    });
+
+    it('should isolate workspaceId across concurrent requests', async () => {
+      const results: string[] = [];
+
+      const request1 = new Promise<void>((resolve) => {
+        const req = mockReq() as Request;
+        const res = mockRes() as Response;
+        requestContextMiddleware(req, res, async () => {
+          setCurrentWorkspaceId('ws-1');
+          await new Promise((r) => setTimeout(r, 10));
+          results.push(`req1:${getCurrentWorkspaceId()}`);
+          resolve();
+        });
+      });
+
+      const request2 = new Promise<void>((resolve) => {
+        const req = mockReq() as Request;
+        const res = mockRes() as Response;
+        requestContextMiddleware(req, res, async () => {
+          setCurrentWorkspaceId('ws-2');
+          await new Promise((r) => setTimeout(r, 5));
+          results.push(`req2:${getCurrentWorkspaceId()}`);
+          resolve();
+        });
+      });
+
+      await Promise.all([request1, request2]);
+
+      expect(results).toContain('req1:ws-1');
+      expect(results).toContain('req2:ws-2');
     });
   });
 });

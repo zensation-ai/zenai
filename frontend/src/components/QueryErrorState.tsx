@@ -6,7 +6,8 @@
  */
 
 import { AlertTriangle } from 'lucide-react';
-import { EmptyState, Button } from '../design-system';
+import { Button } from '@/components/ui/button';
+import { EmptyState } from '@/components/ui/empty-state';
 import { categorizeError, getErrorContent } from '../utils/errors';
 
 export interface QueryErrorStateProps {

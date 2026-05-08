@@ -200,7 +200,7 @@ function MemoryRenderer({ data, text }: { data: Record<string, unknown> | null; 
           <path d="M12 2a7 7 0 0 1 7 7c0 2.5-1.3 4.8-3.5 6-.3.2-.5.5-.5.9V17h-6v-1.1c0-.4-.2-.7-.5-.9C6.3 13.8 5 11.5 5 9a7 7 0 0 1 7-7z"/>
           <line x1="9" y1="21" x2="15" y2="21"/>
         </svg>
-        <span>Gedaechtnis</span>
+        <span>Gedächtnis</span>
       </div>
       <p className="tool-result-memory-text">{truncate(content, 200)}</p>
       {facts && facts.length > 0 && (

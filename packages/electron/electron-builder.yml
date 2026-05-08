@@ -38,6 +38,10 @@ nsis:
   oneClick: false
   allowToChangeInstallationDirectory: true
 
+protocols:
+  - name: ZenAI
+    schemes: [zenai]
+
 publish:
   provider: github
   owner: Alexander-Bering

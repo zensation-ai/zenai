@@ -32,7 +32,7 @@ router.post(
     const context = validateContextParam(req.params.context);
     getUserId(req); // auth check
     if (!isValidContext(context)) {
-      throw new ValidationError('Invalid context. Use: personal, work, learning, or creative.');
+      throw new ValidationError('Invalid context. Use: operations, finance, people, or strategy.');
     }
 
     const { queryId, queryText, sessionId, resultId, wasHelpful, relevanceRating, feedbackText, strategiesUsed, confidence, responseTimeMs } = req.body;
@@ -68,7 +68,7 @@ router.get(
     const context = validateContextParam(req.params.context);
     getUserId(req); // auth check
     if (!isValidContext(context)) {
-      throw new ValidationError('Invalid context. Use: personal, work, learning, or creative.');
+      throw new ValidationError('Invalid context. Use: operations, finance, people, or strategy.');
     }
 
     const days = parseInt(req.query.days as string, 10) || 30;
@@ -87,7 +87,7 @@ router.get(
     const context = validateContextParam(req.params.context);
     getUserId(req); // auth check
     if (!isValidContext(context)) {
-      throw new ValidationError('Invalid context. Use: personal, work, learning, or creative.');
+      throw new ValidationError('Invalid context. Use: operations, finance, people, or strategy.');
     }
 
     const days = parseInt(req.query.days as string, 10) || 30;
@@ -106,7 +106,7 @@ router.get(
     const context = validateContextParam(req.params.context);
     getUserId(req); // auth check
     if (!isValidContext(context)) {
-      throw new ValidationError('Invalid context. Use: personal, work, learning, or creative.');
+      throw new ValidationError('Invalid context. Use: operations, finance, people, or strategy.');
     }
 
     const limit = parseInt(req.query.limit as string, 10) || 50;
@@ -125,7 +125,7 @@ router.get(
     const context = validateContextParam(req.params.context);
     getUserId(req); // auth check
     if (!isValidContext(context)) {
-      throw new ValidationError('Invalid context. Use: personal, work, learning, or creative.');
+      throw new ValidationError('Invalid context. Use: operations, finance, people, or strategy.');
     }
 
     const days = parseInt(req.query.days as string, 10) || 30;

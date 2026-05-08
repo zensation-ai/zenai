@@ -33,7 +33,10 @@ import type { SuggestionType, SmartSuggestion } from '../../../services/smart-su
 const mockQueryContext = jest.fn();
 jest.mock('../../../utils/database-context', () => ({
   queryContext: (...args: unknown[]) => mockQueryContext(...args),
-  isValidContext: (c: string) => ['personal', 'work', 'learning', 'creative'].includes(c),
+  isValidContext: (c: string) => ['operations', 'finance', 'people', 'strategy'].includes(c),
+  withTransaction: async (_context: string, fn: (txQuery: (...args: unknown[]) => Promise<unknown>) => Promise<unknown>) => {
+    return fn((...args: unknown[]) => mockQueryContext(_context, ...args));
+  },
 }));
 
 jest.mock('../../../utils/logger', () => ({
@@ -111,7 +114,7 @@ describe('SmartSuggestionsService', () => {
           type,
           createdAt: now.toISOString(), // 0ms age = recency 1.0
         });
-        const score = computeRelevanceScore(suggestion, 'personal', TEST_USER_ID, now);
+        const score = computeRelevanceScore(suggestion, 'operations', TEST_USER_ID, now);
         expect(score).toBe(expectedWeight);
       });
     });
@@ -144,7 +147,7 @@ describe('SmartSuggestionsService', () => {
           type: 'task_reminder',
           createdAt: new Date(now.getTime() - 2 * 60 * 60 * 1000).toISOString(),
         });
-        const score = computeRelevanceScore(suggestion, 'personal', TEST_USER_ID, now);
+        const score = computeRelevanceScore(suggestion, 'operations', TEST_USER_ID, now);
         expect(score).toBe(Math.round(80 * 0.85)); // 68
       });
 
@@ -154,76 +157,76 @@ describe('SmartSuggestionsService', () => {
           type: 'knowledge_insight',
           createdAt: new Date(now.getTime() - 48 * 60 * 60 * 1000).toISOString(),
         });
-        const score = computeRelevanceScore(suggestion, 'personal', TEST_USER_ID, now);
+        const score = computeRelevanceScore(suggestion, 'operations', TEST_USER_ID, now);
         expect(score).toBe(Math.round(60 * 0.3)); // 18
       });
     });
 
     describe('interaction boost', () => {
       it('returns 1.0 when no prior interactions', () => {
-        const boost = computeInteractionBoost('personal', TEST_USER_ID, 'task_reminder');
+        const boost = computeInteractionBoost('operations', TEST_USER_ID, 'task_reminder');
         expect(boost).toBe(1.0);
       });
 
       it('returns 1.2 when user has accepted that type before', () => {
-        recordUserActivity('personal', TEST_USER_ID, 'accept', 'task_reminder');
-        const boost = computeInteractionBoost('personal', TEST_USER_ID, 'task_reminder');
+        recordUserActivity('operations', TEST_USER_ID, 'accept', 'task_reminder');
+        const boost = computeInteractionBoost('operations', TEST_USER_ID, 'task_reminder');
         expect(boost).toBe(1.2);
       });
 
       it('does not boost for dismiss-only interactions', () => {
-        recordUserActivity('personal', TEST_USER_ID, 'dismiss', 'task_reminder');
-        const boost = computeInteractionBoost('personal', TEST_USER_ID, 'task_reminder');
+        recordUserActivity('operations', TEST_USER_ID, 'dismiss', 'task_reminder');
+        const boost = computeInteractionBoost('operations', TEST_USER_ID, 'task_reminder');
         expect(boost).toBe(1.0);
       });
 
       it('boosts only the accepted type, not others', () => {
-        recordUserActivity('personal', TEST_USER_ID, 'accept', 'task_reminder');
-        const taskBoost = computeInteractionBoost('personal', TEST_USER_ID, 'task_reminder');
-        const emailBoost = computeInteractionBoost('personal', TEST_USER_ID, 'email_followup');
+        recordUserActivity('operations', TEST_USER_ID, 'accept', 'task_reminder');
+        const taskBoost = computeInteractionBoost('operations', TEST_USER_ID, 'task_reminder');
+        const emailBoost = computeInteractionBoost('operations', TEST_USER_ID, 'email_followup');
         expect(taskBoost).toBe(1.2);
         expect(emailBoost).toBe(1.0);
       });
 
       it('applies boost to full score calculation', () => {
-        recordUserActivity('personal', TEST_USER_ID, 'accept', 'task_reminder');
+        recordUserActivity('operations', TEST_USER_ID, 'accept', 'task_reminder');
         const suggestion = makeSuggestion({
           type: 'task_reminder',
           createdAt: now.toISOString(),
         });
-        const score = computeRelevanceScore(suggestion, 'personal', TEST_USER_ID, now);
+        const score = computeRelevanceScore(suggestion, 'operations', TEST_USER_ID, now);
         // 80 * 1.0 (recency) * 1.2 (boost) = 96
         expect(score).toBe(96);
       });
 
       it('clamps score to 100 max', () => {
-        recordUserActivity('personal', TEST_USER_ID, 'accept', 'contradiction_alert');
+        recordUserActivity('operations', TEST_USER_ID, 'accept', 'contradiction_alert');
         const suggestion = makeSuggestion({
           type: 'contradiction_alert',
           createdAt: now.toISOString(),
         });
-        const score = computeRelevanceScore(suggestion, 'personal', TEST_USER_ID, now);
+        const score = computeRelevanceScore(suggestion, 'operations', TEST_USER_ID, now);
         // 90 * 1.0 * 1.2 = 108 → clamped to 100
         expect(score).toBe(100);
       });
 
       it('isolates boost per context', () => {
-        recordUserActivity('personal', TEST_USER_ID, 'accept', 'task_reminder');
-        const personalBoost = computeInteractionBoost('personal', TEST_USER_ID, 'task_reminder');
-        const workBoost = computeInteractionBoost('work', TEST_USER_ID, 'task_reminder');
+        recordUserActivity('operations', TEST_USER_ID, 'accept', 'task_reminder');
+        const personalBoost = computeInteractionBoost('operations', TEST_USER_ID, 'task_reminder');
+        const workBoost = computeInteractionBoost('finance', TEST_USER_ID, 'task_reminder');
         expect(personalBoost).toBe(1.2);
         expect(workBoost).toBe(1.0);
       });
     });
 
     it('handles combined factors: type + decay + boost', () => {
-      recordUserActivity('personal', TEST_USER_ID, 'accept', 'email_followup');
+      recordUserActivity('operations', TEST_USER_ID, 'accept', 'email_followup');
       // email_followup = 75, 5h old = 0.6 decay, boost = 1.2
       const suggestion = makeSuggestion({
         type: 'email_followup',
         createdAt: new Date(now.getTime() - 5 * 60 * 60 * 1000).toISOString(),
       });
-      const score = computeRelevanceScore(suggestion, 'personal', TEST_USER_ID, now);
+      const score = computeRelevanceScore(suggestion, 'operations', TEST_USER_ID, now);
       expect(score).toBe(Math.round(75 * 0.6 * 1.2)); // 54
     });
   });
@@ -233,26 +236,26 @@ describe('SmartSuggestionsService', () => {
   describe('personalized timing patterns', () => {
     describe('recordUserActivity', () => {
       it('tracks accept actions per type', () => {
-        recordUserActivity('personal', TEST_USER_ID, 'accept', 'task_reminder');
-        recordUserActivity('personal', TEST_USER_ID, 'accept', 'task_reminder');
-        recordUserActivity('personal', TEST_USER_ID, 'accept', 'email_followup');
+        recordUserActivity('operations', TEST_USER_ID, 'accept', 'task_reminder');
+        recordUserActivity('operations', TEST_USER_ID, 'accept', 'task_reminder');
+        recordUserActivity('operations', TEST_USER_ID, 'accept', 'email_followup');
 
-        const pattern = getUserActivityPattern('personal', TEST_USER_ID);
+        const pattern = getUserActivityPattern('operations', TEST_USER_ID);
         expect(pattern.totalInteractions).toBe(3);
         expect(pattern.preferredTypes).toContain('task_reminder');
         expect(pattern.preferredTypes[0]).toBe('task_reminder'); // highest count first
       });
 
       it('tracks dismiss actions for timing but not preferred types', () => {
-        recordUserActivity('personal', TEST_USER_ID, 'dismiss', 'task_reminder');
-        const pattern = getUserActivityPattern('personal', TEST_USER_ID);
+        recordUserActivity('operations', TEST_USER_ID, 'dismiss', 'task_reminder');
+        const pattern = getUserActivityPattern('operations', TEST_USER_ID);
         expect(pattern.totalInteractions).toBe(1);
         expect(pattern.preferredTypes).toHaveLength(0);
       });
 
       it('records hour-of-day activity', () => {
-        recordUserActivity('personal', TEST_USER_ID, 'accept', 'task_reminder');
-        const pattern = getUserActivityPattern('personal', TEST_USER_ID);
+        recordUserActivity('operations', TEST_USER_ID, 'accept', 'task_reminder');
+        const pattern = getUserActivityPattern('operations', TEST_USER_ID);
         const currentHour = new Date().getHours();
         expect(pattern.peakHours).toContain(currentHour);
       });
@@ -260,7 +263,7 @@ describe('SmartSuggestionsService', () => {
 
     describe('getUserActivityPattern', () => {
       it('returns empty pattern for new users', () => {
-        const pattern = getUserActivityPattern('personal', TEST_USER_ID);
+        const pattern = getUserActivityPattern('operations', TEST_USER_ID);
         expect(pattern.peakHours).toEqual([]);
         expect(pattern.preferredTypes).toEqual([]);
         expect(pattern.totalInteractions).toBe(0);
@@ -269,31 +272,31 @@ describe('SmartSuggestionsService', () => {
       it('returns up to 3 peak hours', () => {
         // Simulate varied-hour activity by calling multiple times
         for (let i = 0; i < 5; i++) {
-          recordUserActivity('personal', TEST_USER_ID, 'accept', 'task_reminder');
+          recordUserActivity('operations', TEST_USER_ID, 'accept', 'task_reminder');
         }
-        const pattern = getUserActivityPattern('personal', TEST_USER_ID);
+        const pattern = getUserActivityPattern('operations', TEST_USER_ID);
         // All activity at the same hour, so only 1 peak hour
         expect(pattern.peakHours.length).toBeGreaterThanOrEqual(1);
         expect(pattern.peakHours.length).toBeLessThanOrEqual(3);
       });
 
       it('sorts preferred types by accept count descending', () => {
-        recordUserActivity('personal', TEST_USER_ID, 'accept', 'email_followup');
-        recordUserActivity('personal', TEST_USER_ID, 'accept', 'task_reminder');
-        recordUserActivity('personal', TEST_USER_ID, 'accept', 'task_reminder');
-        recordUserActivity('personal', TEST_USER_ID, 'accept', 'task_reminder');
+        recordUserActivity('operations', TEST_USER_ID, 'accept', 'email_followup');
+        recordUserActivity('operations', TEST_USER_ID, 'accept', 'task_reminder');
+        recordUserActivity('operations', TEST_USER_ID, 'accept', 'task_reminder');
+        recordUserActivity('operations', TEST_USER_ID, 'accept', 'task_reminder');
 
-        const pattern = getUserActivityPattern('personal', TEST_USER_ID);
+        const pattern = getUserActivityPattern('operations', TEST_USER_ID);
         expect(pattern.preferredTypes[0]).toBe('task_reminder');
         expect(pattern.preferredTypes[1]).toBe('email_followup');
       });
 
       it('isolates patterns per context', () => {
-        recordUserActivity('personal', TEST_USER_ID, 'accept', 'task_reminder');
-        recordUserActivity('work', TEST_USER_ID, 'accept', 'email_followup');
+        recordUserActivity('operations', TEST_USER_ID, 'accept', 'task_reminder');
+        recordUserActivity('finance', TEST_USER_ID, 'accept', 'email_followup');
 
-        const personalPattern = getUserActivityPattern('personal', TEST_USER_ID);
-        const workPattern = getUserActivityPattern('work', TEST_USER_ID);
+        const personalPattern = getUserActivityPattern('operations', TEST_USER_ID);
+        const workPattern = getUserActivityPattern('finance', TEST_USER_ID);
 
         expect(personalPattern.preferredTypes).toEqual(['task_reminder']);
         expect(workPattern.preferredTypes).toEqual(['email_followup']);
@@ -302,9 +305,9 @@ describe('SmartSuggestionsService', () => {
 
     describe('resetActivityData', () => {
       it('clears all activity data', () => {
-        recordUserActivity('personal', TEST_USER_ID, 'accept', 'task_reminder');
+        recordUserActivity('operations', TEST_USER_ID, 'accept', 'task_reminder');
         resetActivityData();
-        const pattern = getUserActivityPattern('personal', TEST_USER_ID);
+        const pattern = getUserActivityPattern('operations', TEST_USER_ID);
         expect(pattern.totalInteractions).toBe(0);
       });
     });
@@ -318,7 +321,7 @@ describe('SmartSuggestionsService', () => {
           ],
         });
 
-        const suggestions = await getPersonalizedSuggestions('personal', TEST_USER_ID, 3);
+        const suggestions = await getPersonalizedSuggestions('operations', TEST_USER_ID, 3);
         expect(suggestions.length).toBeLessThanOrEqual(3);
         // Should still be scored (task_reminder first due to higher type weight)
         if (suggestions.length >= 2) {
@@ -330,8 +333,8 @@ describe('SmartSuggestionsService', () => {
 
       it('boosts preferred types when activity data exists', async () => {
         // Build activity: user prefers knowledge_insight
-        recordUserActivity('personal', TEST_USER_ID, 'accept', 'knowledge_insight');
-        recordUserActivity('personal', TEST_USER_ID, 'accept', 'knowledge_insight');
+        recordUserActivity('operations', TEST_USER_ID, 'accept', 'knowledge_insight');
+        recordUserActivity('operations', TEST_USER_ID, 'accept', 'knowledge_insight');
 
         mockQueryContext.mockResolvedValueOnce({
           rows: [
@@ -340,13 +343,13 @@ describe('SmartSuggestionsService', () => {
           ],
         });
 
-        const suggestions = await getPersonalizedSuggestions('personal', TEST_USER_ID, 3);
+        const suggestions = await getPersonalizedSuggestions('operations', TEST_USER_ID, 3);
         expect(suggestions.length).toBeGreaterThan(0);
       });
 
       it('returns empty array on DB error', async () => {
         mockQueryContext.mockRejectedValueOnce(new Error('DB error'));
-        const suggestions = await getPersonalizedSuggestions('personal', TEST_USER_ID);
+        const suggestions = await getPersonalizedSuggestions('operations', TEST_USER_ID);
         expect(suggestions).toEqual([]);
       });
     });
@@ -435,7 +438,7 @@ describe('SmartSuggestionsService', () => {
       // Enforce max limit (count)
       mockQueryContext.mockResolvedValueOnce({ rows: [{ cnt: '3' }] });
 
-      const result = await createSuggestion('personal', {
+      const result = await createSuggestion('operations', {
         userId: TEST_USER_ID,
         type: 'task_reminder' as SuggestionType,
         title: 'New Task',
@@ -450,7 +453,7 @@ describe('SmartSuggestionsService', () => {
     it('returns null for exact title duplicate', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [{ id: 'existing' }] });
 
-      const result = await createSuggestion('personal', {
+      const result = await createSuggestion('operations', {
         userId: TEST_USER_ID,
         type: 'task_reminder' as SuggestionType,
         title: 'Already Exists',
@@ -471,7 +474,7 @@ describe('SmartSuggestionsService', () => {
       // Merge update
       mockQueryContext.mockResolvedValueOnce({ rows: [makeDbRow({ id: 'existing-id' })] });
 
-      const result = await createSuggestion('personal', {
+      const result = await createSuggestion('operations', {
         userId: TEST_USER_ID,
         type: 'task_reminder' as SuggestionType,
         title: 'Bericht schicken heute dringend',
@@ -486,7 +489,7 @@ describe('SmartSuggestionsService', () => {
 
     it('returns null on DB error', async () => {
       mockQueryContext.mockRejectedValueOnce(new Error('DB error'));
-      const result = await createSuggestion('personal', {
+      const result = await createSuggestion('operations', {
         userId: TEST_USER_ID,
         type: 'knowledge_insight' as SuggestionType,
         title: 'Test',
@@ -502,7 +505,7 @@ describe('SmartSuggestionsService', () => {
       });
       mockQueryContext.mockResolvedValueOnce({ rows: [{ cnt: '1' }] });
 
-      await createSuggestion('personal', {
+      await createSuggestion('operations', {
         userId: TEST_USER_ID,
         type: 'task_reminder' as SuggestionType,
         title: 'No Priority',
@@ -529,7 +532,7 @@ describe('SmartSuggestionsService', () => {
       // Dismiss older
       mockQueryContext.mockResolvedValueOnce({ rowCount: 1 });
 
-      const mergeCount = await mergeRelatedSuggestions('personal', TEST_USER_ID);
+      const mergeCount = await mergeRelatedSuggestions('operations', TEST_USER_ID);
       expect(mergeCount).toBe(1);
     });
 
@@ -541,7 +544,7 @@ describe('SmartSuggestionsService', () => {
         ],
       });
 
-      const mergeCount = await mergeRelatedSuggestions('personal', TEST_USER_ID);
+      const mergeCount = await mergeRelatedSuggestions('operations', TEST_USER_ID);
       expect(mergeCount).toBe(0);
     });
 
@@ -553,19 +556,19 @@ describe('SmartSuggestionsService', () => {
         ],
       });
 
-      const mergeCount = await mergeRelatedSuggestions('personal', TEST_USER_ID);
+      const mergeCount = await mergeRelatedSuggestions('operations', TEST_USER_ID);
       expect(mergeCount).toBe(0);
     });
 
     it('returns 0 on DB error', async () => {
       mockQueryContext.mockRejectedValueOnce(new Error('DB error'));
-      const mergeCount = await mergeRelatedSuggestions('personal', TEST_USER_ID);
+      const mergeCount = await mergeRelatedSuggestions('operations', TEST_USER_ID);
       expect(mergeCount).toBe(0);
     });
 
     it('handles empty suggestion list', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [] });
-      const mergeCount = await mergeRelatedSuggestions('personal', TEST_USER_ID);
+      const mergeCount = await mergeRelatedSuggestions('operations', TEST_USER_ID);
       expect(mergeCount).toBe(0);
     });
   });
@@ -576,7 +579,7 @@ describe('SmartSuggestionsService', () => {
     it('does nothing when under the limit', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [{ cnt: '5' }] });
 
-      const dismissed = await enforceMaxActiveSuggestions('personal', TEST_USER_ID);
+      const dismissed = await enforceMaxActiveSuggestions('operations', TEST_USER_ID);
       expect(dismissed).toBe(0);
       // Only the count query should have been called
       expect(mockQueryContext).toHaveBeenCalledTimes(1);
@@ -586,7 +589,7 @@ describe('SmartSuggestionsService', () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [{ cnt: '13' }] });
       mockQueryContext.mockResolvedValueOnce({ rowCount: 3, rows: [{ id: 'x' }, { id: 'y' }, { id: 'z' }] });
 
-      const dismissed = await enforceMaxActiveSuggestions('personal', TEST_USER_ID);
+      const dismissed = await enforceMaxActiveSuggestions('operations', TEST_USER_ID);
       expect(dismissed).toBe(3); // 13 - 10 = 3
     });
 
@@ -594,7 +597,7 @@ describe('SmartSuggestionsService', () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [{ cnt: '12' }] });
       mockQueryContext.mockResolvedValueOnce({ rowCount: 2, rows: [] });
 
-      await enforceMaxActiveSuggestions('personal', TEST_USER_ID);
+      await enforceMaxActiveSuggestions('operations', TEST_USER_ID);
 
       const dismissCall = mockQueryContext.mock.calls[1];
       expect(dismissCall[2]).toEqual([TEST_USER_ID, 2]); // 12 - 10 = 2
@@ -602,14 +605,14 @@ describe('SmartSuggestionsService', () => {
 
     it('returns 0 on DB error', async () => {
       mockQueryContext.mockRejectedValueOnce(new Error('DB error'));
-      const result = await enforceMaxActiveSuggestions('personal', TEST_USER_ID);
+      const result = await enforceMaxActiveSuggestions('operations', TEST_USER_ID);
       expect(result).toBe(0);
     });
 
     it('does nothing when exactly at the limit', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [{ cnt: String(MAX_ACTIVE_SUGGESTIONS) }] });
 
-      const dismissed = await enforceMaxActiveSuggestions('personal', TEST_USER_ID);
+      const dismissed = await enforceMaxActiveSuggestions('operations', TEST_USER_ID);
       expect(dismissed).toBe(0);
       expect(mockQueryContext).toHaveBeenCalledTimes(1);
     });
@@ -627,7 +630,7 @@ describe('SmartSuggestionsService', () => {
         ],
       });
 
-      const suggestions = await getActiveSuggestions('personal', TEST_USER_ID, 3);
+      const suggestions = await getActiveSuggestions('operations', TEST_USER_ID, 3);
       expect(suggestions.length).toBe(2);
       // contradiction_alert (90) should be first
       expect(suggestions[0].type).toBe('contradiction_alert');
@@ -639,14 +642,14 @@ describe('SmartSuggestionsService', () => {
         rows: [makeDbRow({ type: 'task_reminder' })],
       });
 
-      const suggestions = await getActiveSuggestions('personal', TEST_USER_ID);
+      const suggestions = await getActiveSuggestions('operations', TEST_USER_ID);
       expect(suggestions[0]).toHaveProperty('relevanceScore');
       expect(typeof suggestions[0].relevanceScore).toBe('number');
     });
 
     it('returns empty array on error', async () => {
       mockQueryContext.mockRejectedValueOnce(new Error('DB error'));
-      const suggestions = await getActiveSuggestions('personal', TEST_USER_ID);
+      const suggestions = await getActiveSuggestions('operations', TEST_USER_ID);
       expect(suggestions).toEqual([]);
     });
 
@@ -660,7 +663,7 @@ describe('SmartSuggestionsService', () => {
         ],
       });
 
-      const suggestions = await getActiveSuggestions('personal', TEST_USER_ID, 2);
+      const suggestions = await getActiveSuggestions('operations', TEST_USER_ID, 2);
       expect(suggestions).toHaveLength(2);
     });
   });
@@ -669,11 +672,11 @@ describe('SmartSuggestionsService', () => {
 
   describe('dismissSuggestion', () => {
     it('returns true when suggestion is dismissed', async () => {
-      mockQueryContext.mockResolvedValueOnce({ rowCount: 1, rows: [{ id: 'aaa' }] });
-      const result = await dismissSuggestion('personal', 'aaa', TEST_USER_ID);
+      mockQueryContext.mockResolvedValueOnce({ rowCount: 1, rows: [{ id: 'aaa', type: 'task_reminder', title: 'Test', metadata: {} }] });
+      const result = await dismissSuggestion('operations', 'aaa', TEST_USER_ID);
       expect(result).toBe(true);
       expect(mockQueryContext).toHaveBeenCalledWith(
-        'personal',
+        'operations',
         expect.stringContaining("status = 'dismissed'"),
         ['aaa', TEST_USER_ID]
       );
@@ -681,13 +684,13 @@ describe('SmartSuggestionsService', () => {
 
     it('returns false when suggestion not found', async () => {
       mockQueryContext.mockResolvedValueOnce({ rowCount: 0, rows: [] });
-      const result = await dismissSuggestion('personal', 'nonexistent', TEST_USER_ID);
+      const result = await dismissSuggestion('operations', 'nonexistent', TEST_USER_ID);
       expect(result).toBe(false);
     });
 
     it('returns false on error', async () => {
       mockQueryContext.mockRejectedValueOnce(new Error('DB error'));
-      const result = await dismissSuggestion('personal', 'aaa', TEST_USER_ID);
+      const result = await dismissSuggestion('operations', 'aaa', TEST_USER_ID);
       expect(result).toBe(false);
     });
   });
@@ -695,10 +698,10 @@ describe('SmartSuggestionsService', () => {
   describe('snoozeSuggestion', () => {
     it('snoozes for 1 hour', async () => {
       mockQueryContext.mockResolvedValueOnce({ rowCount: 1, rows: [{ id: 'aaa' }] });
-      const result = await snoozeSuggestion('personal', 'aaa', TEST_USER_ID, '1h');
+      const result = await snoozeSuggestion('operations', 'aaa', TEST_USER_ID, '1h');
       expect(result).toBe(true);
       expect(mockQueryContext).toHaveBeenCalledWith(
-        'personal',
+        'operations',
         expect.stringContaining("status = 'snoozed'"),
         ['aaa', TEST_USER_ID, '1 hour']
       );
@@ -706,9 +709,9 @@ describe('SmartSuggestionsService', () => {
 
     it('snoozes for 4 hours', async () => {
       mockQueryContext.mockResolvedValueOnce({ rowCount: 1, rows: [{ id: 'aaa' }] });
-      await snoozeSuggestion('personal', 'aaa', TEST_USER_ID, '4h');
+      await snoozeSuggestion('operations', 'aaa', TEST_USER_ID, '4h');
       expect(mockQueryContext).toHaveBeenCalledWith(
-        'personal',
+        'operations',
         expect.any(String),
         ['aaa', TEST_USER_ID, '4 hours']
       );
@@ -716,9 +719,9 @@ describe('SmartSuggestionsService', () => {
 
     it('snoozes until tomorrow (16 hours)', async () => {
       mockQueryContext.mockResolvedValueOnce({ rowCount: 1, rows: [{ id: 'aaa' }] });
-      await snoozeSuggestion('personal', 'aaa', TEST_USER_ID, 'tomorrow');
+      await snoozeSuggestion('operations', 'aaa', TEST_USER_ID, 'tomorrow');
       expect(mockQueryContext).toHaveBeenCalledWith(
-        'personal',
+        'operations',
         expect.any(String),
         ['aaa', TEST_USER_ID, '16 hours']
       );
@@ -726,18 +729,18 @@ describe('SmartSuggestionsService', () => {
 
     it('returns false when suggestion not found', async () => {
       mockQueryContext.mockResolvedValueOnce({ rowCount: 0, rows: [] });
-      const result = await snoozeSuggestion('personal', 'x', TEST_USER_ID, '1h');
+      const result = await snoozeSuggestion('operations', 'x', TEST_USER_ID, '1h');
       expect(result).toBe(false);
     });
   });
 
   describe('acceptSuggestion', () => {
     it('returns true when accepted', async () => {
-      mockQueryContext.mockResolvedValueOnce({ rowCount: 1, rows: [{ id: 'aaa' }] });
-      const result = await acceptSuggestion('personal', 'aaa', TEST_USER_ID);
+      mockQueryContext.mockResolvedValueOnce({ rowCount: 1, rows: [{ id: 'aaa', type: 'task_reminder', title: 'Test', metadata: {} }] });
+      const result = await acceptSuggestion('operations', 'aaa', TEST_USER_ID);
       expect(result).toBe(true);
       expect(mockQueryContext).toHaveBeenCalledWith(
-        'personal',
+        'operations',
         expect.stringContaining("status = 'accepted'"),
         ['aaa', TEST_USER_ID]
       );
@@ -745,7 +748,7 @@ describe('SmartSuggestionsService', () => {
 
     it('returns false when not found', async () => {
       mockQueryContext.mockResolvedValueOnce({ rowCount: 0, rows: [] });
-      const result = await acceptSuggestion('personal', 'nonexistent', TEST_USER_ID);
+      const result = await acceptSuggestion('operations', 'nonexistent', TEST_USER_ID);
       expect(result).toBe(false);
     });
   });
@@ -753,12 +756,15 @@ describe('SmartSuggestionsService', () => {
   // ─── Constants & Exports ─────────────────────────────
 
   describe('constants', () => {
-    it('exports TYPE_WEIGHTS with all 13 suggestion types', () => {
-      expect(Object.keys(TYPE_WEIGHTS)).toHaveLength(13);
+    it('exports TYPE_WEIGHTS with all 18 suggestion types', () => {
+      expect(Object.keys(TYPE_WEIGHTS)).toHaveLength(18);
       expect(TYPE_WEIGHTS.contradiction_alert).toBe(90);
       expect(TYPE_WEIGHTS.context_switch).toBe(30);
       expect(TYPE_WEIGHTS.knowledge_gap).toBe(65);
       expect(TYPE_WEIGHTS.hypothesis).toBe(55);
+      // PMA: MetacognitiveMonitor types (Task 17h)
+      expect(TYPE_WEIGHTS.metacognitive_bias_alert).toBe(80);
+      expect(TYPE_WEIGHTS.metacognitive_efficiency_badge).toBe(60);
     });
 
     it('exports MAX_ACTIVE_SUGGESTIONS as 10', () => {
@@ -776,14 +782,14 @@ describe('SmartSuggestionsService', () => {
     it('handles suggestion with missing createdAt gracefully', () => {
       const suggestion = makeSuggestion({ createdAt: '' });
       // Should not throw, computeRecencyDecay handles NaN by returning 0.3
-      const score = computeRelevanceScore(suggestion, 'personal', TEST_USER_ID);
+      const score = computeRelevanceScore(suggestion, 'operations', TEST_USER_ID);
       expect(score).toBeGreaterThanOrEqual(0);
       expect(score).toBeLessThanOrEqual(100);
     });
 
     it('handles unknown suggestion type gracefully in score', () => {
       const suggestion = makeSuggestion({ type: 'unknown_type' as SuggestionType });
-      const score = computeRelevanceScore(suggestion, 'personal', TEST_USER_ID);
+      const score = computeRelevanceScore(suggestion, 'operations', TEST_USER_ID);
       // Falls back to 50 base weight
       expect(score).toBeGreaterThanOrEqual(0);
     });
@@ -802,10 +808,62 @@ describe('SmartSuggestionsService', () => {
 
     it('multiple rapid activity recordings accumulate correctly', () => {
       for (let i = 0; i < 100; i++) {
-        recordUserActivity('personal', TEST_USER_ID, 'accept', 'task_reminder');
+        recordUserActivity('operations', TEST_USER_ID, 'accept', 'task_reminder');
       }
-      const pattern = getUserActivityPattern('personal', TEST_USER_ID);
+      const pattern = getUserActivityPattern('operations', TEST_USER_ID);
       expect(pattern.totalInteractions).toBe(100);
+    });
+  });
+
+  // ─── Feedback-Schleife (Stufe 9.2) ─────────────────
+
+  describe('feedback loop on accept/dismiss', () => {
+    it('acceptSuggestion emits positive feedback (fire-and-forget)', async () => {
+      mockQueryContext.mockResolvedValueOnce({
+        rowCount: 1,
+        rows: [{ id: 's1', type: 'task_reminder', title: 'Check emails', metadata: { source: 'proactive' } }],
+      });
+
+      const result = await acceptSuggestion('operations', 's1', TEST_USER_ID);
+      expect(result).toBe(true);
+
+      // The RETURNING clause now includes type, title, metadata
+      expect(mockQueryContext).toHaveBeenCalledWith(
+        'operations',
+        expect.stringContaining('RETURNING id, type, title, metadata'),
+        ['s1', TEST_USER_ID],
+      );
+    });
+
+    it('dismissSuggestion emits negative feedback (fire-and-forget)', async () => {
+      mockQueryContext.mockResolvedValueOnce({
+        rowCount: 1,
+        rows: [{ id: 's2', type: 'meeting_prep', title: 'Prepare slides', metadata: {} }],
+      });
+
+      const result = await dismissSuggestion('operations', 's2', TEST_USER_ID);
+      expect(result).toBe(true);
+
+      expect(mockQueryContext).toHaveBeenCalledWith(
+        'operations',
+        expect.stringContaining('RETURNING id, type, title, metadata'),
+        ['s2', TEST_USER_ID],
+      );
+    });
+
+    it('accept does not emit feedback when suggestion not found', async () => {
+      mockQueryContext.mockResolvedValueOnce({ rowCount: 0, rows: [] });
+      const result = await acceptSuggestion('operations', 'missing', TEST_USER_ID);
+      expect(result).toBe(false);
+      // Only one DB call — no feedback emission
+      expect(mockQueryContext).toHaveBeenCalledTimes(1);
+    });
+
+    it('dismiss does not emit feedback when suggestion not found', async () => {
+      mockQueryContext.mockResolvedValueOnce({ rowCount: 0, rows: [] });
+      const result = await dismissSuggestion('operations', 'missing', TEST_USER_ID);
+      expect(result).toBe(false);
+      expect(mockQueryContext).toHaveBeenCalledTimes(1);
     });
   });
 });

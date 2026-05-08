@@ -7,7 +7,7 @@
  * @module components/ArtifactPanel
  */
 
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useCallback, useEffect, useRef, type CSSProperties } from 'react';
 import { createPortal } from 'react-dom';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -17,8 +17,6 @@ import { useFocusTrap } from '../hooks/useFocusTrap';
 import { CloseIcon } from './icons/CloseIcon';
 import type { Artifact } from '../types/artifacts';
 import { getArtifactFilename } from '../types/artifacts';
-import './ArtifactPanel.css';
-
 interface ArtifactPanelProps {
   artifact: Artifact;
   onClose: () => void;
@@ -178,13 +176,8 @@ export function ArtifactPanel({
               srcDoc={artifact.content}
               sandbox=""
               title={artifact.title}
-              style={{
-                width: '100%',
-                height: isFullscreen ? 'calc(100vh - 120px)' : '60vh',
-                border: 'none',
-                borderRadius: '0 0 8px 8px',
-                backgroundColor: '#fff',
-              }}
+              className="w-full border-none rounded-b-[8px] bg-white h-[var(--ih)]"
+              style={{ '--ih': isFullscreen ? 'calc(100vh - 120px)' : '60vh' } as CSSProperties}
             />
           </div>
         );

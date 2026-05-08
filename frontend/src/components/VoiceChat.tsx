@@ -7,13 +7,11 @@
  * Phase 33 Sprint 4 - Feature 9
  */
 
-import { useState, useCallback, useRef, useEffect } from 'react';
+import { useState, useCallback, useRef, useEffect, type CSSProperties } from 'react';
 import { useVAD } from '../hooks/useVAD';
 import { useVoicePipeline } from '../hooks/useVoicePipeline';
 import { StreamingAudioPlayer } from '../utils/audioPlayer';
 import { AI_PERSONALITY } from '../utils/aiPersonality';
-import './VoiceChat.css';
-
 type VoiceState = 'idle' | 'connecting' | 'listening' | 'processing' | 'speaking';
 
 interface VoiceChatProps {
@@ -201,8 +199,8 @@ export function VoiceChat({ context: _context, apiUrl, apiKey, onClose }: VoiceC
       {vad.isListening && (
         <div className="voice-chat-level">
           <div
-            className="voice-chat-level-bar"
-            style={{ width: `${Math.min(vad.audioLevel * 500, 100)}%` }}
+            className="voice-chat-level-bar w-[var(--bar)]"
+            style={{ '--bar': `${Math.min(vad.audioLevel * 500, 100)}%` } as CSSProperties}
           />
         </div>
       )}

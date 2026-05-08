@@ -27,6 +27,7 @@ import { trackActivity } from '../services/activity-tracker';
 import crypto from 'crypto';
 import Anthropic from '@anthropic-ai/sdk';
 import { setupSSEHeaders, thinkingStream, streamToSSE } from '../services/claude/streaming';
+import { streamWithFallback } from '../services/llm/stream-provider';
 import { toolRegistry, ToolExecutionContext } from '../services/claude/tool-use';
 import { detectChatModeAsync } from '../services/chat-modes';
 import { isValidThinkingMode, getAvailableModes, applyThinkingMode, ThinkingMode } from '../services/thinking-partner';
@@ -41,6 +42,8 @@ import {
   calculateDynamicBudget,
 } from '../services/claude/thinking-budget';
 import { classifyIntent } from '../services/query-intent-classifier';
+import { routeToModel, recordUsage } from '../services/model-orchestrator';
+import { generateCacheKey, getCachedResponse, setCachedResponse, shouldCache } from '../services/llm-cache';
 import { query } from '../utils/database';
 import {
   VisionImage,
@@ -48,12 +51,43 @@ import {
   ImageMediaType,
 } from '../services/claude-vision';
 import { CHAT } from '../config/constants';
+import { recordEvent } from '../services/knowledge-graph/event-subgraph';
 import { memoryCoordinator, episodicMemory, workingMemory } from '../services/memory';
 import { getUnifiedContext } from '../services/business-context';
 import { getPersonalFactsPromptSection } from '../services/personal-facts-bridge';
 import { getUserId } from '../utils/user-context';
 import { generateSessionTitle } from '../services/general-chat/auto-title';
 import { assembleContextWithBudget } from '../utils/token-budget';
+import { AgUIEventAdapter } from '../services/agui/event-adapter';
+import { emitPipelineStatus } from '../services/agui/cognitive-emitter';
+import { applyWaitForcingToSystemPrompt } from '../services/reasoning/wait-forcing';
+import { applyQuoteSourcePrompt } from '../services/reasoning/quote-source-prompting';
+
+/**
+ * Phase H7.1 binding — read the H7_WAIT_FORCING env flag once at module
+ * load. When truthy, every chat path that funnels through this module
+ * appends the s1 wait-forcing instruction to its system prompt for
+ * detected Cat 1 (Multi-Hop) + Cat 2 (Temporal) queries. Default OFF
+ * in production until eval validates the lift.
+ */
+const H7_WAIT_FORCING_DEFAULT = (() => {
+  const raw = process.env.H7_WAIT_FORCING;
+  if (typeof raw !== 'string') return false;
+  return raw === 'true' || raw === '1' || raw.toLowerCase() === 'yes';
+})();
+
+/**
+ * Phase H3.5 binding — read the H3_QUOTE_SOURCE env flag once at module
+ * load. When truthy AND retrieved evidence is present, the system prompt
+ * is augmented with the quote-the-source directive that forces the
+ * answer model to copy the supporting fact verbatim before synthesis.
+ * Default OFF.
+ */
+const H3_QUOTE_SOURCE_DEFAULT = (() => {
+  const raw = process.env.H3_QUOTE_SOURCE;
+  if (typeof raw !== 'string') return false;
+  return raw === 'true' || raw === '1' || raw.toLowerCase() === 'yes';
+})();
 
 // ===========================================
 // Shared Utilities
@@ -123,14 +157,14 @@ export async function handleSendMessage(req: Request, res: Response): Promise<vo
   const result = await sendMessage(
     id,
     message,
-    session.context as 'personal' | 'work' | 'learning' | 'creative' | 'demo',
+    session.context as 'operations' | 'finance' | 'people' | 'strategy' | 'demo',
     includeMetadata,
     thinkingMode,
     userId
   );
 
   // Track activity for evolution timeline + suggestions (non-blocking)
-  trackActivity(session.context as 'personal' | 'work' | 'learning' | 'creative' | 'demo', {
+  trackActivity(session.context as 'operations' | 'finance' | 'people' | 'strategy' | 'demo', {
     eventType: 'behavior_adapted',
     title: `Chat: ${message.substring(0, 50)}${message.length > 50 ? '...' : ''}`,
     description: `Chat-Nachricht in Session ${id}`,
@@ -164,12 +198,12 @@ export async function handleSendMessage(req: Request, res: Response): Promise<vo
 
 export async function handleQuickChat(req: Request, res: Response): Promise<void> {
   const userId = getUserId(req);
-  const { message, context = 'personal', include_metadata = false } = req.body;
+  const { message, context = 'operations', include_metadata = false } = req.body;
   const includeMetadata = include_metadata === true;
 
   // Validate context
   if (!isValidContext(context)) {
-    throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
+    throw new ValidationError('Invalid context. Use "operations", "finance", "people", or "strategy".');
   }
 
   // Validate message
@@ -265,7 +299,7 @@ export async function handleVisionMessage(req: Request, res: Response): Promise<
     message || '',
     visionImages,
     visionTask,
-    session.context as 'personal' | 'work' | 'learning' | 'creative' | 'demo',
+    session.context as 'operations' | 'finance' | 'people' | 'strategy' | 'demo',
     includeMetadata,
     userId
   );
@@ -404,6 +438,9 @@ export async function handleEditMessage(req: Request, res: Response): Promise<vo
   `, [newId, sessionId, original.role, content.trim(), newVersion, parentId, userId]);
 
   const row = insertResult.rows[0];
+  if (!row) {
+    throw new Error('Failed to insert edited message');
+  }
 
   logger.info('Message edited (branching)', {
     sessionId,
@@ -476,6 +513,9 @@ export async function handleRegenerateMessage(req: Request, res: Response): Prom
   `, [newId, sessionId, newVersion, parentId, userId]);
 
   const row = insertResult.rows[0];
+  if (!row) {
+    throw new Error('Failed to insert regeneration placeholder');
+  }
 
   logger.info('Message regeneration requested', {
     sessionId,
@@ -542,7 +582,7 @@ export async function handleStreamMessage(req: Request, res: Response): Promise<
   await updateSessionTitle(id, message);
 
   // Get context type from session for memory integration
-  const contextType = (session.context as 'personal' | 'work' | 'learning' | 'creative' | 'demo') || 'personal';
+  const contextType = (session.context as 'operations' | 'finance' | 'people' | 'strategy' | 'demo') || 'operations';
 
   // Add user interaction to short-term memory (non-blocking)
   try {
@@ -680,6 +720,43 @@ export async function handleStreamMessage(req: Request, res: Response): Promise<
     systemPrompt += `\n\n${memoryEnhancementSection}`;
   }
 
+  // ── Phase H7.1 binding: s1 wait-forcing ────────────────────────────
+  // For detected Cat 1 (Multi-Hop) + Cat 2 (Temporal) queries, append a
+  // verbatim instruction that asks the model to do the same thing s1's
+  // appended Wait-token does at the token level: produce a first
+  // analytical pass, pause, reconsider, then commit. Default OFF — eval
+  // harness flips per-call (when this binding gets a per-call surface)
+  // or via env H7_WAIT_FORCING.
+  const waitForcing = applyWaitForcingToSystemPrompt(
+    systemPrompt,
+    message,
+    { enable: H7_WAIT_FORCING_DEFAULT },
+  );
+  systemPrompt = waitForcing.prompt;
+  if (waitForcing.applied) {
+    logger.info('s1 wait-forcing applied to chat stream', {
+      sessionId: id,
+      category: waitForcing.category,
+      confidence: waitForcing.confidence,
+    });
+  }
+
+  // ── Phase H3.5 binding: quote-the-source prompting ─────────────────
+  // When evidence has been retrieved (memoryEnhancementSection present),
+  // force the model to quote the supporting fact verbatim. Default OFF
+  // via env H3_QUOTE_SOURCE.
+  const quoteSource = applyQuoteSourcePrompt(systemPrompt, {
+    enable: H3_QUOTE_SOURCE_DEFAULT,
+    hasEvidence: memoryEnhancementSection.length > 0,
+  });
+  systemPrompt = quoteSource.prompt;
+  if (quoteSource.applied) {
+    logger.info('H3.5 quote-source directive applied to chat stream', {
+      sessionId: id,
+      reason: quoteSource.reason,
+    });
+  }
+
   if (budgetResult.summarizationNeeded) {
     logger.warn('Token budget: conversation history exceeds 80K tokens, summarization recommended', {
       sessionId: id,
@@ -755,8 +832,65 @@ export async function handleStreamMessage(req: Request, res: Response): Promise<
     });
   }
 
+  // === Multi-LLM Model Routing (V4) ===
+  const routingDecision = routeToModel(message, {
+    requiresTools: true, // tools always available (Letta pattern)
+    requiresSynthesis: modeResult.mode === 'agent',
+    hasConversationHistory: messages.length > 2,
+  });
+
+  logger.info('Model routing decision', {
+    sessionId: id,
+    modelId: routingDecision.model.modelId,
+    complexity: routingDecision.complexity,
+    reason: routingDecision.reason,
+    estimatedCost: routingDecision.estimatedCost.toFixed(6),
+  });
+
+  // Use Anthropic model ID when routed to Anthropic, fallback providers use their own defaults
+  const modelOverride = routingDecision.model.provider === 'anthropic'
+    ? routingDecision.model.modelId
+    : undefined;
+
+  // V4: detect non-Anthropic provider for direct fallback execution
+  const isNonAnthropicProvider = routingDecision.model.provider !== 'anthropic';
+
+  // === LLM Cache check for simple, cacheable queries (V4) ===
+  if (!enableThinking && shouldCache(modeResult.mode, CHAT.DEFAULT_TEMPERATURE)) {
+    const cacheKey = generateCacheKey(
+      routingDecision.model.modelId,
+      systemPrompt,
+      message
+    );
+    const cached = await getCachedResponse(cacheKey);
+    if (cached) {
+      logger.info('LLM cache hit, returning cached response', { sessionId: id });
+      setupSSEHeaders(res);
+      res.write(`event: content_start\ndata: {}\n\n`);
+      res.write(`event: content_delta\ndata: ${JSON.stringify({ content: cached.response })}\n\n`);
+      res.write(`event: done\ndata: ${JSON.stringify({ content: cached.response, metadata: { cached: true } })}\n\n`);
+      res.end();
+
+      // Store in DB
+      await addMessage(id, 'assistant', cached.response, userId);
+      return;
+    }
+  }
+
   // Setup SSE and stream response
   setupSSEHeaders(res);
+
+  // AG-UI: emit RUN_STARTED so AG-UI clients can track this streaming run
+  const aguiAdapter = new AgUIEventAdapter(id);
+  res.write(aguiAdapter.runStarted(id));
+
+  // V4: Emit model_info SSE event so frontend can show provider badge
+  // Must be here (not in streaming.ts) because non-Anthropic providers
+  // bypass streamToSSE() entirely via streamWithFallback()
+  res.write(`event: model_info\ndata: ${JSON.stringify({
+    model: routingDecision.model.modelId,
+    provider: routingDecision.model.provider,
+  })}\n\n`);
 
   // Track client disconnect to avoid wasted work after browser closes
   // AbortController propagates disconnect signal into the streaming function
@@ -827,13 +961,23 @@ export async function handleStreamMessage(req: Request, res: Response): Promise<
       }
     } catch { /* never let interception errors break the stream */ }
 
-    // Forward to original write with proper overload handling
-    if (typeof encodingOrCallback === 'function') {
-      return originalWrite(chunk as string, encodingOrCallback);
-    } else if (encodingOrCallback !== undefined) {
-      return originalWrite(chunk as string, encodingOrCallback, callback);
+    // Guard against writing to a closed/ended stream (prevents ERR_STREAM_WRITE_AFTER_END crash)
+    if (res.writableEnded || res.destroyed || clientDisconnected) {
+      return false;
     }
-    return originalWrite(chunk as string);
+
+    // Forward to original write with proper overload handling
+    try {
+      if (typeof encodingOrCallback === 'function') {
+        return originalWrite(chunk as string, encodingOrCallback);
+      } else if (encodingOrCallback !== undefined) {
+        return originalWrite(chunk as string, encodingOrCallback, callback);
+      }
+      return originalWrite(chunk as string);
+    } catch {
+      // Stream may have been closed between the guard check and the write
+      return false;
+    }
   };
 
   res.write = interceptWrite;
@@ -847,16 +991,43 @@ export async function handleStreamMessage(req: Request, res: Response): Promise<
   const toolExecContext: ToolExecutionContext = {
     aiContext: contextType,
     sessionId: id,
+    userId: userId || undefined,
   };
 
   // Tool executor that uses the registry with request-scoped context
   const toolExecutor = async (name: string, input: Record<string, unknown>) => {
-    return toolRegistry.execute(name, input, toolExecContext);
+    try {
+      return await toolRegistry.execute(name, input, toolExecContext);
+    } catch (err) {
+      logger.error('Tool execution failed', err instanceof Error ? err : undefined, { tool: name, sessionId: id });
+      return `Error executing tool ${name}: ${err instanceof Error ? err.message : 'Unknown error'}`;
+    }
   };
 
+  // AG-UI: emit pipeline status before streaming begins
+  emitPipelineStatus(res, aguiAdapter, {
+    step: enableThinking ? 'deep_thinking' : 'streaming',
+    progress: 0,
+    totalSteps: enableThinking ? 3 : 2,
+    strategy: routingDecision.complexity,
+  });
+
   try {
-    // Stream the response with adaptive thinking + compaction + tools
-    if (enableThinking) {
+    // V4: Non-Anthropic providers use direct generation with SSE wrapping
+    if (isNonAnthropicProvider) {
+      logger.info('Using non-Anthropic provider with SSE wrapping', {
+        sessionId: id,
+        provider: routingDecision.model.provider,
+      });
+      const fallbackResult = await streamWithFallback(res, systemPrompt, message, {
+        maxTokens: CHAT.DEFAULT_MAX_TOKENS,
+        temperature: CHAT.DEFAULT_TEMPERATURE,
+      });
+      if (fallbackResult) {
+        fullResponse = fallbackResult.response;
+      }
+    } else if (enableThinking) {
+      // Stream the response with adaptive thinking + compaction + tools
       await thinkingStream(
         res,
         messages,
@@ -867,7 +1038,10 @@ export async function handleStreamMessage(req: Request, res: Response): Promise<
         toolDefinitions,
         toolExecutor,
         requestId,
-        abortController.signal
+        abortController.signal,
+        modelOverride,
+        userId,
+        session.context as 'operations' | 'finance' | 'people' | 'strategy' | 'demo'
       );
     } else {
       // Simple queries: skip thinking entirely for faster response
@@ -882,6 +1056,9 @@ export async function handleStreamMessage(req: Request, res: Response): Promise<
         toolExecutor,
         requestId,
         abortSignal: abortController.signal,
+        modelOverride,
+        userId,
+        context: session.context as 'operations' | 'finance' | 'people' | 'strategy' | 'demo',
       });
     }
 
@@ -903,6 +1080,36 @@ export async function handleStreamMessage(req: Request, res: Response): Promise<
           } catch { /* skip */ }
         }
       } catch { /* ignore flush errors */ }
+    }
+
+    // Record model usage for cost tracking (V4, non-blocking)
+    if (fullResponse && routingDecision.model.provider === 'anthropic') {
+      const conversationHistory = messages.map(m => typeof m.content === 'string' ? m.content : '').join('\n');
+      const estimatedInput = Math.ceil((systemPrompt.length + conversationHistory.length) / 4);
+      const estimatedOutput = Math.ceil(fullResponse.length / 4);
+      recordUsage(
+        routingDecision.model.modelId,
+        routingDecision.model.provider,
+        estimatedInput,
+        estimatedOutput,
+        contextType
+      );
+
+      // Cache the response for future identical queries (V4)
+      if (!enableThinking && shouldCache(modeResult.mode, CHAT.DEFAULT_TEMPERATURE)) {
+        const cacheKey = generateCacheKey(routingDecision.model.modelId, systemPrompt, message);
+        setCachedResponse(cacheKey, {
+          response: fullResponse,
+          modelId: routingDecision.model.modelId,
+          tokensUsed: estimatedInput + estimatedOutput,
+          cachedAt: Date.now(),
+        }).catch(() => {}); // non-blocking
+      }
+    }
+
+    // AG-UI: emit RUN_FINISHED after streaming completes
+    if (!clientDisconnected && !res.writableEnded && !res.destroyed) {
+      try { res.write(aguiAdapter.runFinished()); } catch { /* client disconnected */ }
     }
 
     // Store assistant response after stream completes (skip if client disconnected)
@@ -959,6 +1166,16 @@ export async function handleStreamMessage(req: Request, res: Response): Promise<
         sessionId: id,
       })).catch(() => {});
 
+      // Record chat references for GraphRAG event subgraph (fire-and-forget)
+      // Simple heuristic: extract capitalized multi-word phrases as potential entity references
+      const entityPattern = /\b[A-Z][a-z]+(?:\s+[A-Z][a-z]+)+\b/g;
+      const potentialEntities = [...new Set(fullResponse.match(entityPattern) || [])].slice(0, 5);
+      for (const entity of potentialEntities) {
+        recordEvent(contextType as any, 'chat_reference', 'assistant', {
+          payload: { entity, sessionId: id },
+        }).catch(() => {});
+      }
+
       logger.info('Streaming chat complete', {
         sessionId: id,
         responseLength: fullResponse.length,
@@ -974,6 +1191,35 @@ export async function handleStreamMessage(req: Request, res: Response): Promise<
     }
   } catch (error) {
     logger.error('Streaming chat failed', error instanceof Error ? error : undefined);
+
+    // V4: If Anthropic failed and client is still connected, try fallback providers
+    if (!clientDisconnected && !isNonAnthropicProvider && !res.writableEnded) {
+      logger.info('Attempting fallback providers after Anthropic failure', { sessionId: id });
+      try {
+        const fallbackResult = await streamWithFallback(res, systemPrompt, message, {
+          maxTokens: CHAT.DEFAULT_MAX_TOKENS,
+          temperature: CHAT.DEFAULT_TEMPERATURE,
+        });
+        if (fallbackResult) {
+          fullResponse = fallbackResult.response;
+          logger.info('Fallback provider rescued streaming', {
+            sessionId: id,
+            provider: fallbackResult.provider,
+            responseLength: fallbackResult.response.length,
+          });
+          // Store the fallback response and return (skip error handling below)
+          await addMessage(id, 'assistant', fullResponse, userId);
+          try { res.write(aguiAdapter.runFinished()); } catch { /* client disconnected */ }
+          if (!res.writableEnded) res.end();
+          return;
+        }
+      } catch (fallbackError) {
+        logger.warn('Fallback rescue also failed', {
+          sessionId: id,
+          error: fallbackError instanceof Error ? fallbackError.message : 'Unknown',
+        });
+      }
+    }
 
     // Save partial assistant response if we collected any content before failure
     if (fullResponse.length > 0) {
@@ -1012,5 +1258,10 @@ export async function handleStreamMessage(req: Request, res: Response): Promise<
   } finally {
     // Restore original write to prevent leaks
     res.write = originalWrite;
+    // Guarantee stream closure. streamToSSE ends internally, but streamWithFallback
+    // (non-Anthropic success path) does not. Without this, clients hang forever.
+    if (!res.writableEnded && !res.destroyed) {
+      try { res.end(); } catch { /* already closed */ }
+    }
   }
 }

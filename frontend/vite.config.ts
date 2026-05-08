@@ -2,6 +2,8 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 import { visualizer } from 'rollup-plugin-visualizer';
+import { sentryVitePlugin } from '@sentry/vite-plugin';
+import viteCompression from 'vite-plugin-compression';
 import path from 'path';
 import fs from 'fs';
 
@@ -32,6 +34,7 @@ export default defineConfig({
   // resolvePackage() follows symlinks for pnpm CI compatibility
   resolve: {
     alias: {
+      '@': path.resolve(__dirname, 'src'),
       'react/jsx-runtime': path.join(resolvePackage('react'), 'jsx-runtime'),
       'react/jsx-dev-runtime': path.join(resolvePackage('react'), 'jsx-dev-runtime'),
       react: resolvePackage('react'),
@@ -49,23 +52,65 @@ export default defineConfig({
       brotliSize: true,
       open: false, // Don't auto-open in CI
     }),
+    // Pre-compress static assets with Brotli (.br) and gzip (.gz)
+    // Vercel also serves Brotli automatically, but pre-compressed files reduce CPU on the edge
+    viteCompression({ algorithm: 'brotliCompress', ext: '.br', threshold: 512 }),
+    viteCompression({ algorithm: 'gzip', ext: '.gz', threshold: 512 }),
+    // Sentry source map upload — only when auth token is available (CI)
+    ...(process.env.SENTRY_AUTH_TOKEN ? [sentryVitePlugin({
+      org: process.env.SENTRY_ORG,
+      project: process.env.SENTRY_PROJECT_FRONTEND || 'zenai-frontend',
+      authToken: process.env.SENTRY_AUTH_TOKEN,
+      release: {
+        name: process.env.SENTRY_RELEASE || `zenai-frontend@${process.env.npm_package_version || '0.0.0'}`,
+      },
+      sourcemaps: {
+        filesToDeleteAfterUpload: ['./dist/**/*.map'],
+      },
+      telemetry: false,
+    })] : []),
   ],
   server: {
     port: 5173,
     proxy: {
+      // SSE streaming endpoints need special timeout handling
+      // Extended Thinking + Tool Use can take up to 300s
+      '/api/chat/sessions': {
+        target: 'http://localhost:3000',
+        changeOrigin: true,
+        timeout: 0,        // No timeout for SSE streams
+        proxyTimeout: 0,   // No proxy timeout for SSE streams
+      },
+      '/api/agents/execute/stream': {
+        target: 'http://localhost:3000',
+        changeOrigin: true,
+        timeout: 0,
+        proxyTimeout: 0,
+      },
       '/api': {
         target: 'http://localhost:3000',
         changeOrigin: true,
+        timeout: 300000,    // 5 min for regular API calls
       },
+    },
+  },
+  // esbuild >=0.25 requires es2022+ for destructuring transform support
+  esbuild: {
+    target: 'es2022',
+  },
+  optimizeDeps: {
+    esbuildOptions: {
+      target: 'es2022',
     },
   },
   build: {
     // Target modern browsers for smaller output (drops legacy polyfills)
-    target: 'es2020',
+    // es2022 required for esbuild >=0.25 compatibility (destructuring transform)
+    target: 'es2022',
     // vendor-syntax uses light build with common languages (~60KB vs ~619KB full)
     chunkSizeWarningLimit: 250,
-    // Disable sourcemaps in production for smaller bundles
-    sourcemap: false,
+    // Hidden source maps: uploaded to Sentry, not served to browsers
+    sourcemap: 'hidden',
     // Enable CSS code splitting - only load CSS for active chunks
     cssCodeSplit: true,
     // Minification settings for optimal compression

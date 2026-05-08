@@ -5,7 +5,7 @@
 
 import { Router } from 'express';
 import crypto from 'crypto';
-import axios from 'axios';
+import { checkedAxiosGet, checkedAxiosPost } from '../utils/checked-http';
 import { asyncHandler } from '../middleware/errorHandler';
 import { jwtAuth } from '../middleware/jwt-auth';
 import { pool } from '../utils/database';
@@ -53,7 +53,7 @@ googleOAuthRouter.post('/connect', jwtAuth, asyncHandler(async (req, res) => {
       flow: 'connect',
       scopes: GMAIL_SCOPES,
       user_id: userId,
-      context: context || 'personal',
+      context: context || 'operations',
     })]
   );
 
@@ -104,7 +104,11 @@ googleOAuthRouter.get('/callback', asyncHandler(async (req, res) => {
   const redirectUri = process.env.GOOGLE_REDIRECT_URI || `${apiUrl}/api/auth/callback/google`;
 
   try {
-    const tokenResponse = await axios.post('https://oauth2.googleapis.com/token', {
+    const tokenResponse = await checkedAxiosPost<{
+      access_token: string;
+      refresh_token: string;
+      expires_in: number;
+    }>('https://oauth2.googleapis.com/token', {
       code,
       client_id: process.env.GOOGLE_CLIENT_ID,
       client_secret: process.env.GOOGLE_CLIENT_SECRET,
@@ -118,9 +122,10 @@ googleOAuthRouter.get('/callback', asyncHandler(async (req, res) => {
       return res.redirect(`${frontendUrl}/settings/integrations?gmail=error&reason=no_tokens`);
     }
 
-    const userInfoResponse = await axios.get('https://www.googleapis.com/oauth2/v2/userinfo', {
-      headers: { Authorization: `Bearer ${access_token}` },
-    });
+    const userInfoResponse = await checkedAxiosGet<{ email: string }>(
+      'https://www.googleapis.com/oauth2/v2/userinfo',
+      { headers: { Authorization: `Bearer ${access_token}` } },
+    );
     const googleEmail = userInfoResponse.data.email;
 
     const token = await createGoogleToken({
@@ -132,7 +137,7 @@ googleOAuthRouter.get('/callback', asyncHandler(async (req, res) => {
       expiresAt: new Date(Date.now() + (expires_in || 3600) * 1000),
     });
 
-    const context = (metadata.context || 'personal') as AIContext;
+    const context = (metadata.context || 'operations') as AIContext;
     if (isValidContext(context)) {
       await queryContext(context,
         `INSERT INTO email_accounts (id, email_address, display_name, provider, google_token_id, is_default, user_id)
@@ -174,7 +179,7 @@ googleOAuthRouter.delete('/disconnect/:tokenId', jwtAuth, asyncHandler(async (re
   try {
     const token = await getGoogleToken(tokenId);
     if (token) {
-      await axios.post(`https://oauth2.googleapis.com/revoke?token=${token.access_token}`).catch((revokeErr: unknown) => {
+      await checkedAxiosPost(`https://oauth2.googleapis.com/revoke?token=${token.access_token}`).catch((revokeErr: unknown) => {
         logger.debug('Google token revocation failed (non-critical)', { tokenId, error: (revokeErr as Error).message });
       });
     }
@@ -183,7 +188,7 @@ googleOAuthRouter.delete('/disconnect/:tokenId', jwtAuth, asyncHandler(async (re
   }
 
   // Delete associated email accounts + archive emails
-  for (const ctx of ['personal', 'work', 'learning', 'creative'] as const) {
+  for (const ctx of ['operations', 'finance', 'people', 'strategy'] as const) {
     await queryContext(ctx,
       "UPDATE emails SET status = 'archived' WHERE account_id IN (SELECT id FROM email_accounts WHERE google_token_id = $1)",
       [tokenId]

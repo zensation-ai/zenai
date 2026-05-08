@@ -5,10 +5,10 @@
  * interruptibility level as a colored dot with tooltip.
  */
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, type CSSProperties } from 'react';
 import axios from 'axios';
+import { cn } from '@/lib/utils';
 import type { AIContext } from '../ContextSwitcher';
-import './CognitiveLoadIndicator.css';
 
 interface InterruptibilityData {
   score: number;
@@ -27,10 +27,17 @@ const LEVEL_COLORS: Record<string, string> = {
   dnd: 'var(--color-error, #ef4444)',
 };
 
+const LEVEL_GLOWS: Record<string, string> = {
+  available: '0 0 4px rgba(34, 197, 94, 0.5)',
+  normal: '0 0 4px rgba(234, 179, 8, 0.5)',
+  low: '0 0 4px rgba(249, 115, 22, 0.5)',
+  dnd: '0 0 4px rgba(239, 68, 68, 0.5)',
+};
+
 const LEVEL_LABELS: Record<string, string> = {
-  available: 'Verfuegbar',
+  available: 'Verfügbar',
   normal: 'Normal',
-  low: 'Beschaeftigt',
+  low: 'Beschäftigt',
   dnd: 'Nicht stoeren',
 };
 
@@ -65,29 +72,33 @@ export function CognitiveLoadIndicator({ context }: CognitiveLoadIndicatorProps)
   if (!data) return null;
 
   const color = LEVEL_COLORS[data.level] ?? LEVEL_COLORS.normal;
+  const glow = LEVEL_GLOWS[data.level] ?? LEVEL_GLOWS.normal;
   const label = LEVEL_LABELS[data.level] ?? 'Unbekannt';
 
   return (
-    <div className="cognitive-load-indicator" title={`${label}: ${data.reason}`}>
+    <div className="relative inline-flex items-center justify-center cursor-default p-1 group" title={`${label}: ${data.reason}`}>
       {focusActive ? (
-        <span className="cognitive-load-focus-icon" aria-label="Focus Mode aktiv">
+        <span className="text-sm leading-none animate-cognitive-pulse-focus" aria-label="Focus Mode aktiv">
           {'\u{1F3AF}'}
         </span>
       ) : (
         <span
-          className={`cognitive-load-dot cognitive-load-dot--${data.level}`}
-          style={{ backgroundColor: color }}
+          className={cn(
+            'inline-block size-2 rounded-full transition-[background-color,box-shadow] duration-600 bg-[var(--bg)] [box-shadow:var(--glow)]',
+            data.level === 'dnd' && 'animate-cognitive-pulse-dnd',
+          )}
+          style={{ '--bg': color, '--glow': glow } as CSSProperties}
           aria-label={`Kognitive Last: ${label}`}
         />
       )}
-      <span className="cognitive-load-tooltip">
+      <span className="hidden group-hover:block absolute top-[calc(100%+8px)] right-0 z-[200] min-w-45 px-3 py-2 rounded-lg text-xs leading-relaxed text-text bg-surface border border-border shadow-md pointer-events-none whitespace-normal">
         <strong>{label}</strong>
         <br />
-        <span className="cognitive-load-tooltip-detail">{data.reason}</span>
+        <span className="text-text-secondary text-[11px]">{data.reason}</span>
         {focusActive && (
           <>
             <br />
-            <span className="cognitive-load-tooltip-focus">Focus Mode aktiv</span>
+            <span className="text-primary font-semibold text-[11px]">Focus Mode aktiv</span>
           </>
         )}
       </span>

@@ -7,9 +7,10 @@
  * Uses global axios instance (with auth interceptor from main.tsx).
  */
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, type CSSProperties } from 'react';
 import axios from 'axios';
 import { logger } from '../../utils/logger';
+import { SUGGESTION_ACTION_COLORS } from '../../constants/chart-colors';
 
 interface CurationSuggestion {
   id: string;
@@ -26,10 +27,10 @@ interface CurationPanelProps {
 }
 
 const SUGGESTION_CONFIG: Record<string, { label: string; icon: string; color: string }> = {
-  archive: { label: 'Archivieren', icon: 'archive', color: '#8b5cf6' },
-  promote: { label: 'Befoerdern', icon: 'upgrade', color: '#22c55e' },
-  merge: { label: 'Zusammenfuehren', icon: 'merge_type', color: '#3b82f6' },
-  delete: { label: 'Loeschen', icon: 'delete_outline', color: '#ef4444' },
+  archive: { label: 'Archivieren', icon: 'archive', color: SUGGESTION_ACTION_COLORS.archive },
+  promote: { label: 'Befördern', icon: 'upgrade', color: SUGGESTION_ACTION_COLORS.promote },
+  merge: { label: 'Zusammenführen', icon: 'merge_type', color: SUGGESTION_ACTION_COLORS.merge },
+  delete: { label: 'Löschen', icon: 'delete_outline', color: SUGGESTION_ACTION_COLORS.delete },
 };
 
 const LAYER_LABELS: Record<string, string> = {
@@ -75,33 +76,33 @@ export function CurationPanel({ context }: CurationPanelProps) {
     } catch {
       // Endpoint may not exist yet — dismiss the suggestion as acknowledged
       handleDismiss(suggestion.id);
-      logger.warn(`Curation action "${config?.label}" fuer Memory ${suggestion.memoryId} vorgemerkt (Backend-Endpunkt ausstehend).`);
+      logger.warn(`Curation action "${config?.label}" für Memory ${suggestion.memoryId} vorgemerkt (Backend-Endpunkt ausstehend).`);
     }
   };
 
   const visibleSuggestions = suggestions.filter((s) => !dismissed.has(s.id));
 
-  if (loading) return <div className="memory-insights-loading">Kurations-Vorschlaege werden generiert...</div>;
+  if (loading) return <div className="memory-insights-loading">Kurations-Vorschläge werden generiert...</div>;
 
   if (visibleSuggestions.length === 0) {
-    return <div className="memory-insights-empty">Keine Kurations-Vorschlaege. Ihr Memory-System ist gut organisiert!</div>;
+    return <div className="memory-insights-empty">Keine Kurations-Vorschläge. Ihr Memory-System ist gut organisiert!</div>;
   }
 
   return (
     <div className="curation-panel">
-      <p className="curation-summary">{visibleSuggestions.length} Vorschlaege zur Optimierung</p>
+      <p className="curation-summary">{visibleSuggestions.length} Vorschläge zur Optimierung</p>
       {visibleSuggestions.map((suggestion) => {
         const config = SUGGESTION_CONFIG[suggestion.suggestion] || {
           label: suggestion.suggestion,
           icon: 'help',
-          color: '#666',
+          color: '#6b7280',
         };
         return (
           <div className="curation-card" key={suggestion.id}>
             <div className="curation-card-header">
               <span
-                className="curation-type-badge"
-                style={{ backgroundColor: config.color }}
+                className="curation-type-badge bg-[var(--bg)]"
+                style={{ '--bg': config.color } as CSSProperties}
               >
                 <span className="material-icons curation-icon">{config.icon}</span>
                 {config.label}
@@ -112,8 +113,8 @@ export function CurationPanel({ context }: CurationPanelProps) {
             <div className="curation-reason">{suggestion.reason}</div>
             <div className="curation-actions">
               <button
-                className="curation-action-btn primary"
-                style={{ backgroundColor: config.color }}
+                className="curation-action-btn primary bg-[var(--bg)]"
+                style={{ '--bg': config.color } as CSSProperties}
                 onClick={() => handleApplyAction(suggestion)}
               >
                 <span className="material-icons">{config.icon}</span>

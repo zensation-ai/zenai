@@ -2,7 +2,7 @@
  * SearchResultCard — Individual result card for Universal Search (Phase 95)
  */
 
-import { memo, useMemo, type ReactNode } from 'react';
+import { memo, useMemo, type ReactNode, type CSSProperties } from 'react';
 
 // ===========================================
 // Types
@@ -45,11 +45,11 @@ const TYPE_CONFIG: Record<SearchEntityType, { icon: string; label: string; color
   ideas: { icon: '\u{1F4A1}', label: 'Gedanke', color: '#f59e0b' },
   emails: { icon: '\u{2709}\u{FE0F}', label: 'E-Mail', color: '#3b82f6' },
   tasks: { icon: '\u{2705}', label: 'Aufgabe', color: '#10b981' },
-  contacts: { icon: '\u{1F464}', label: 'Kontakt', color: '#8b5cf6' },
-  documents: { icon: '\u{1F4C4}', label: 'Dokument', color: '#6366f1' },
+  contacts: { icon: '\u{1F464}', label: 'Kontakt', color: '#1a6b7a' },
+  documents: { icon: '\u{1F4C4}', label: 'Dokument', color: '#144A56' },
   chat_messages: { icon: '\u{1F4AC}', label: 'Chat', color: '#ec4899' },
   calendar_events: { icon: '\u{1F4C5}', label: 'Termin', color: '#14b8a6' },
-  transactions: { icon: '\u{1F4B0}', label: 'Transaktion', color: '#f97316' },
+  transactions: { icon: '\u{1F4B0}', label: 'Transaktion', color: 'var(--accent-orange)' },
   knowledge_entities: { icon: '\u{1F310}', label: 'Wissen', color: '#06b6d4' },
 };
 
@@ -115,7 +115,7 @@ export const SearchResultCard = memo(function SearchResultCard({
       aria-selected={isSelected}
       tabIndex={-1}
     >
-      <div className="us-result-icon" style={{ color: config.color }}>
+      <div className="us-result-icon text-[color:var(--c)]" style={{ '--c': config.color } as CSSProperties}>
         {config.icon}
       </div>
       <div className="us-result-content">
@@ -128,8 +128,8 @@ export const SearchResultCard = memo(function SearchResultCard({
         )}
         <div className="us-result-meta">
           <span
-            className="us-result-badge"
-            style={{ backgroundColor: `${config.color}20`, color: config.color }}
+            className="us-result-badge bg-[var(--bg)] text-[color:var(--c)]"
+            style={{ '--bg': `${config.color}20`, '--c': config.color } as CSSProperties}
           >
             {config.label}
           </span>

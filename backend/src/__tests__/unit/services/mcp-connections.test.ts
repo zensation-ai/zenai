@@ -54,7 +54,7 @@ describe('MCP Connection Manager', () => {
           resource_count: 0,
           last_health_check: null,
           error_message: null,
-          context: 'personal',
+          context: 'operations',
           enabled: true,
           headers: null,
           created_at: '2026-03-09T00:00:00Z',
@@ -76,7 +76,7 @@ describe('MCP Connection Manager', () => {
           resource_count: 0,
           last_health_check: '2026-03-09T00:00:00Z',
           error_message: null,
-          context: 'personal',
+          context: 'operations',
           enabled: true,
           headers: null,
           created_at: '2026-03-09T00:00:00Z',
@@ -84,13 +84,13 @@ describe('MCP Connection Manager', () => {
         }],
       });
 
-      await mcpConnectionManager.initialize('personal');
+      await mcpConnectionManager.initialize('operations');
       // Should not throw
     });
 
     it('should handle missing table gracefully', async () => {
       queryContext.mockRejectedValueOnce(new Error('relation "mcp_connections" does not exist'));
-      await mcpConnectionManager.initialize('personal');
+      await mcpConnectionManager.initialize('operations');
       // Should not throw
     });
   });
@@ -107,7 +107,7 @@ describe('MCP Connection Manager', () => {
         resource_count: 0,
         last_health_check: null,
         error_message: null,
-        context: 'work',
+        context: 'finance',
         enabled: true,
         headers: null,
         created_at: '2026-03-09T00:00:00Z',
@@ -119,7 +119,7 @@ describe('MCP Connection Manager', () => {
       queryContext.mockResolvedValueOnce({ rows: [] });
       queryContext.mockResolvedValueOnce({ rows: [{ ...mockRow, status: 'connected', tool_count: 1 }] });
 
-      const conn = await mcpConnectionManager.createConnection('work', {
+      const conn = await mcpConnectionManager.createConnection('finance', {
         name: 'New Server',
         url: 'https://new.server.com',
         apiKey: 'key123',
@@ -127,7 +127,7 @@ describe('MCP Connection Manager', () => {
 
       expect(conn.name).toBe('New Server');
       expect(conn.url).toBe('https://new.server.com');
-      expect(queryContext).toHaveBeenCalledWith('work', expect.stringContaining('INSERT'), expect.any(Array));
+      expect(queryContext).toHaveBeenCalledWith('finance', expect.stringContaining('INSERT'), expect.any(Array));
     });
   });
 
@@ -139,20 +139,20 @@ describe('MCP Connection Manager', () => {
             id: 'c1', name: 'Server 1', url: 'https://s1.com', api_key: null,
             status: 'connected', tool_count: 5, resource_count: 2,
             last_health_check: '2026-03-09T00:00:00Z', error_message: null,
-            context: 'personal', enabled: true, headers: null,
+            context: 'operations', enabled: true, headers: null,
             created_at: '2026-03-09T00:00:00Z', updated_at: '2026-03-09T00:00:00Z',
           },
           {
             id: 'c2', name: 'Server 2', url: 'https://s2.com', api_key: null,
             status: 'error', tool_count: 0, resource_count: 0,
             last_health_check: '2026-03-09T00:00:00Z', error_message: 'Connection refused',
-            context: 'personal', enabled: true, headers: null,
+            context: 'operations', enabled: true, headers: null,
             created_at: '2026-03-09T00:00:00Z', updated_at: '2026-03-09T00:00:00Z',
           },
         ],
       });
 
-      const connections = await mcpConnectionManager.listConnections('personal');
+      const connections = await mcpConnectionManager.listConnections('operations');
       expect(connections).toHaveLength(2);
       expect(connections[0].name).toBe('Server 1');
       expect(connections[0].status).toBe('connected');
@@ -164,14 +164,14 @@ describe('MCP Connection Manager', () => {
     it('should delete a connection', async () => {
       queryContext.mockResolvedValueOnce({ rows: [{ id: 'c1' }] });
 
-      const deleted = await mcpConnectionManager.deleteConnection('personal', 'c1');
+      const deleted = await mcpConnectionManager.deleteConnection('operations', 'c1');
       expect(deleted).toBe(true);
     });
 
     it('should return false if not found', async () => {
       queryContext.mockResolvedValueOnce({ rows: [] });
 
-      const deleted = await mcpConnectionManager.deleteConnection('personal', 'nonexistent');
+      const deleted = await mcpConnectionManager.deleteConnection('operations', 'nonexistent');
       expect(deleted).toBe(false);
     });
   });

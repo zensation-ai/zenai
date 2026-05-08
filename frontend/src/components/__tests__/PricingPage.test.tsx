@@ -2,9 +2,13 @@
  * Tests for PricingPage component
  */
 
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { PricingPage } from '../PricingPage/PricingPage';
+
+vi.mock('../../contexts/AuthContext', () => ({
+  useAuth: () => ({ session: null, loading: false, getAccessToken: () => null }),
+}));
 
 describe('PricingPage', () => {
   it('renders all 3 tier names', () => {

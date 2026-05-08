@@ -55,7 +55,7 @@ vi.mock('../useInboxFilters', () => ({
 vi.mock('../../../hooks/queries/useEmail', () => ({
   useEmailsQuery: () => ({
     data: [
-      { id: '1', subject: 'Test', from_address: 'a@b.com', status: 'received', direction: 'inbound', from_name: null, to_addresses: [], cc_addresses: [], bcc_addresses: [], body_html: null, body_text: null, has_attachments: false, attachments: [], is_starred: false, labels: [], ai_summary: null, ai_category: null, ai_priority: null, ai_sentiment: null, ai_action_items: [], ai_reply_suggestions: [], ai_processed_at: null, resend_email_id: null, account_id: null, reply_to_id: null, thread_id: null, context: 'personal', received_at: '2026-01-01', sent_at: null, created_at: '2026-01-01', updated_at: '2026-01-01' },
+      { id: '1', subject: 'Test', from_address: 'a@b.com', status: 'received', direction: 'inbound', from_name: null, to_addresses: [], cc_addresses: [], bcc_addresses: [], body_html: null, body_text: null, has_attachments: false, attachments: [], is_starred: false, labels: [], ai_summary: null, ai_category: null, ai_priority: null, ai_sentiment: null, ai_action_items: [], ai_reply_suggestions: [], ai_processed_at: null, resend_email_id: null, account_id: null, reply_to_id: null, thread_id: null, context: 'operations', received_at: '2026-01-01', sent_at: null, created_at: '2026-01-01', updated_at: '2026-01-01' },
     ],
     isLoading: false,
     error: null,
@@ -80,33 +80,33 @@ function renderWithProviders(ui: React.ReactElement) {
 
 describe('InboxSmartPage', () => {
   it('renders FilterChipBar', () => {
-    renderWithProviders(<InboxSmartPage context="personal" />);
+    renderWithProviders(<InboxSmartPage context="operations" />);
     expect(screen.getByTestId('filter-chip-bar')).toBeInTheDocument();
   });
 
   it('renders InboxToolbar', () => {
-    renderWithProviders(<InboxSmartPage context="personal" />);
+    renderWithProviders(<InboxSmartPage context="operations" />);
     expect(screen.getByTestId('inbox-toolbar')).toBeInTheDocument();
   });
 
   it('renders EmailListView by default (list mode)', () => {
-    renderWithProviders(<InboxSmartPage context="personal" />);
+    renderWithProviders(<InboxSmartPage context="operations" />);
     expect(screen.getByTestId('email-list-view')).toBeInTheDocument();
   });
 
   it('renders InboxPanel (initially closed)', () => {
-    renderWithProviders(<InboxSmartPage context="personal" />);
+    renderWithProviders(<InboxSmartPage context="operations" />);
     expect(screen.getByTestId('inbox-panel')).toBeInTheDocument();
     expect(screen.getByTestId('inbox-panel').getAttribute('data-open')).toBe('false');
   });
 
   it('passes email data to the view', () => {
-    renderWithProviders(<InboxSmartPage context="personal" />);
+    renderWithProviders(<InboxSmartPage context="operations" />);
     expect(screen.getByTestId('email-list-view').getAttribute('data-count')).toBe('1');
   });
 
   it('has main container class', () => {
-    const { container } = renderWithProviders(<InboxSmartPage context="personal" />);
+    const { container } = renderWithProviders(<InboxSmartPage context="operations" />);
     expect(container.querySelector('.inbox-smart-page')).toBeTruthy();
   });
 });

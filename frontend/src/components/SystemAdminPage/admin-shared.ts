@@ -65,6 +65,32 @@ export interface RateLimitStats {
   [key: string]: unknown;
 }
 
+export interface SIEMForwardRecord {
+  eventId: string | null;
+  eventType: string;
+  severity: string;
+  ok: boolean;
+  error?: string;
+  ts: number;
+}
+
+export interface SIEMStatus {
+  provider: 'noop' | 'datadog' | 'syslog';
+  successCount: number;
+  failureCount: number;
+  failureRate: number;
+  lastForward: SIEMForwardRecord | null;
+  lastFailure: SIEMForwardRecord | null;
+  recent: SIEMForwardRecord[];
+}
+
+// Sprint 1.9: Per-org SIEM config. apiKey is '***' on reads and real only
+// when writing a new config.
+export type SIEMConfigInput =
+  | { provider: 'noop' }
+  | { provider: 'datadog'; endpoint: string; apiKey: string; source?: string; service?: string }
+  | { provider: 'syslog'; host: string; port?: number; facility?: number; appName?: string };
+
 export interface SleepLog {
   id: string;
   stage: string;
@@ -133,7 +159,7 @@ export function formatUptime(seconds: number | undefined): string {
 export const SEVERITY_COLORS: Record<string, string> = {
   low: '#4ade80',
   medium: '#fbbf24',
-  high: '#f97316',
+  high: 'var(--accent-orange)',
   critical: '#ef4444',
   info: '#60a5fa',
   warning: '#fbbf24',
@@ -173,7 +199,7 @@ export const styles = {
   statValue: {
     fontSize: '24px',
     fontWeight: 700,
-    color: 'var(--accent-primary, #818cf8)',
+    color: 'var(--accent-primary, #2d8a9e)',
   } as React.CSSProperties,
   statLabel: {
     fontSize: '12px',
@@ -223,7 +249,7 @@ export const styles = {
     padding: '6px 14px',
     borderRadius: '8px',
     border: 'none',
-    background: 'var(--accent-primary, #818cf8)',
+    background: 'var(--accent-primary, #2d8a9e)',
     color: '#fff',
     cursor: 'pointer',
     fontSize: '13px',

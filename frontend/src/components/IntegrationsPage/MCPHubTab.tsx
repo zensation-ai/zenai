@@ -50,22 +50,22 @@ const MCP_TOOLS: MCPToolInfo[] = [
   { name: 'search_ideas', description: 'Semantische Suche durch Ideen', category: 'Ideen', icon: '🔍' },
   { name: 'get_related_ideas', description: 'Verwandte Ideen via Knowledge Graph', category: 'Ideen', icon: '🔗' },
   { name: 'deep_search', description: 'HyDE + Re-Ranking Tiefensuche', category: 'Ideen', icon: '🔬' },
-  { name: 'find_contradictions', description: 'Duplikate & Widersprueche finden', category: 'Ideen', icon: '⚡' },
+  { name: 'find_contradictions', description: 'Duplikate & Widersprüche finden', category: 'Ideen', icon: '⚡' },
   { name: 'synthesize_knowledge', description: 'Multi-Quellen Wissens-Synthese', category: 'Ideen', icon: '🧬' },
 
   // AI & Analysis
   { name: 'chat', description: 'Personalisierter KI-Chat', category: 'KI', icon: '💬' },
   { name: 'deep_analysis', description: 'Extended Thinking Tiefenanalyse', category: 'KI', icon: '🧠' },
-  { name: 'generate_draft', description: 'Strukturierte Entwuerfe generieren', category: 'KI', icon: '📝' },
-  { name: 'query_memory', description: '4-Schicht-Gedaechtnis abfragen', category: 'KI', icon: '💾' },
+  { name: 'generate_draft', description: 'Strukturierte Entwürfe generieren', category: 'KI', icon: '📝' },
+  { name: 'query_memory', description: '4-Schicht-Gedächtnis abfragen', category: 'KI', icon: '💾' },
   { name: 'explore_connections', description: 'Graph-Exploration & Cluster', category: 'KI', icon: '🌐' },
 
   // Productivity & Compliance
-  { name: 'get_suggestions', description: 'Proaktive KI-Vorschlaege', category: 'Produktivitaet', icon: '✨' },
-  { name: 'get_stats', description: 'Brain-Statistiken abrufen', category: 'Produktivitaet', icon: '📊' },
-  { name: 'productivity_report', description: 'AI-ROI & Zeitersparnis', category: 'Produktivitaet', icon: '📈' },
-  { name: 'active_recall_quiz', description: 'Spaced-Repetition Lernquiz', category: 'Produktivitaet', icon: '🎯' },
-  { name: 'compliance_check', description: 'EU AI Act Compliance-Status', category: 'Produktivitaet', icon: '🛡️' },
+  { name: 'get_suggestions', description: 'Proaktive KI-Vorschläge', category: 'Produktivität', icon: '✨' },
+  { name: 'get_stats', description: 'Brain-Statistiken abrufen', category: 'Produktivität', icon: '📊' },
+  { name: 'productivity_report', description: 'AI-ROI & Zeitersparnis', category: 'Produktivität', icon: '📈' },
+  { name: 'active_recall_quiz', description: 'Spaced-Repetition Lernquiz', category: 'Produktivität', icon: '🎯' },
+  { name: 'compliance_check', description: 'EU AI Act Compliance-Status', category: 'Produktivität', icon: '🛡️' },
 
   // Contacts
   { name: 'search_contacts', description: 'Kontakte nach Name/Email suchen', category: 'Kontakte', icon: '👤' },
@@ -86,7 +86,7 @@ const MCP_TOOLS: MCPToolInfo[] = [
   // Proactive Intelligence
   { name: 'morning_briefing', description: 'KI-Morgen-Briefing generieren', category: 'Proaktiv', icon: '☀️' },
   { name: 'smart_schedule', description: 'Optimierter Tagesplan', category: 'Proaktiv', icon: '📋' },
-  { name: 'proactive_follow_ups', description: 'Proaktive Follow-up-Vorschlaege', category: 'Proaktiv', icon: '🔔' },
+  { name: 'proactive_follow_ups', description: 'Proaktive Follow-up-Vorschläge', category: 'Proaktiv', icon: '🔔' },
   { name: 'workflow_patterns', description: 'Erkannte Arbeitsablauf-Muster', category: 'Proaktiv', icon: '🔄' },
 ];
 
@@ -94,7 +94,7 @@ const CATEGORIES = [
   { id: 'all', label: 'Alle', icon: '🔧' },
   { id: 'Ideen', label: 'Ideen', icon: '💡' },
   { id: 'KI', label: 'KI', icon: '🧠' },
-  { id: 'Produktivitaet', label: 'Produktivitaet', icon: '📈' },
+  { id: 'Produktivität', label: 'Produktivität', icon: '📈' },
   { id: 'Kontakte', label: 'Kontakte', icon: '👥' },
   { id: 'Finanzen', label: 'Finanzen', icon: '💰' },
   { id: 'Screen Memory', label: 'Screen Memory', icon: '🖥️' },
@@ -120,7 +120,7 @@ function StatusBadge({ status }: { status: MCPConnection['status'] }) {
 // MCPHubTab Component
 // ===========================================
 
-export function MCPHubTab({ context = 'personal' }: MCPHubTabProps) {
+export function MCPHubTab({ context = 'operations' }: MCPHubTabProps) {
   const [section, setSection] = useState<'tools' | 'connections'>('tools');
   const [selectedCategory, setSelectedCategory] = useState('all');
 
@@ -158,7 +158,7 @@ export function MCPHubTab({ context = 'personal' }: MCPHubTabProps) {
         url: newUrl.trim(),
         apiKey: newApiKey.trim() || undefined,
       });
-      showToast('MCP-Server hinzugefuegt', 'success');
+      showToast('MCP-Server hinzugefügt', 'success');
       setNewName('');
       setNewUrl('');
       setNewApiKey('');
@@ -166,7 +166,7 @@ export function MCPHubTab({ context = 'personal' }: MCPHubTabProps) {
       loadConnections();
     } catch (err) {
       logError('MCPHubTab.addConnection', err);
-      showToast('Fehler beim Hinzufuegen', 'error');
+      showToast('Fehler beim Hinzufügen', 'error');
     }
   };
 
@@ -184,7 +184,7 @@ export function MCPHubTab({ context = 'personal' }: MCPHubTabProps) {
   const checkConnection = async (id: string) => {
     try {
       await axios.post(`/api/${context}/mcp/connections/${id}/check`);
-      showToast('Verbindungstest durchgefuehrt', 'success');
+      showToast('Verbindungstest durchgeführt', 'success');
       loadConnections();
     } catch (err) {
       logError('MCPHubTab.checkConnection', err);
@@ -291,7 +291,7 @@ export function MCPHubTab({ context = 'personal' }: MCPHubTabProps) {
           <div className="mcp-hub-info">
             <h4>MCP Verbindung</h4>
             <p>
-              Diese Tools sind ueber das Model Context Protocol (MCP) verfuegbar
+              Diese Tools sind über das Model Context Protocol (MCP) verfügbar
               und koennen von Claude Desktop, AI-Assistenten und anderen MCP-Clients genutzt werden.
             </p>
             <div className="mcp-config-snippet">
@@ -315,14 +315,14 @@ export function MCPHubTab({ context = 'personal' }: MCPHubTabProps) {
         <div className="mcp-connections">
           <div className="mcp-connections-header">
             <p className="mcp-connections-desc">
-              Verbinde externe MCP-Server, um deren Tools im Chat und fuer Agenten verfuegbar zu machen.
+              Verbinde externe MCP-Server, um deren Tools im Chat und für Agenten verfügbar zu machen.
             </p>
             <button
               type="button"
               className="neuro-btn neuro-btn-primary"
               onClick={() => setShowAddForm(!showAddForm)}
             >
-              {showAddForm ? 'Abbrechen' : '+ Server hinzufuegen'}
+              {showAddForm ? 'Abbrechen' : '+ Server hinzufügen'}
             </button>
           </div>
 
@@ -432,7 +432,7 @@ export function MCPHubTab({ context = 'personal' }: MCPHubTabProps) {
           )}
 
           {/* HTTP API Info */}
-          <div className="mcp-hub-info" style={{ marginTop: '1.5rem' }}>
+          <div className="mcp-hub-info mt-6">
             <h4>MCP HTTP API</h4>
             <p>
               Interne MCP-Tools sind auch ueber die HTTP API erreichbar:
@@ -440,7 +440,7 @@ export function MCPHubTab({ context = 'personal' }: MCPHubTabProps) {
             <div className="mcp-config-snippet">
               <code>
                 {`GET  /api/mcp/tools          - Alle Tools auflisten
-POST /api/mcp/tools/call     - Tool ausfuehren
+POST /api/mcp/tools/call     - Tool ausführen
 GET  /api/mcp/resources      - Resources auflisten
 POST /api/mcp/resources/read - Resource lesen
 GET  /api/mcp/status         - Server-Status`}

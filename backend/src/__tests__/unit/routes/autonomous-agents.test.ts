@@ -121,7 +121,7 @@ describe('Autonomous Agents Routes', () => {
   // ===========================================
   describe('GET /api/:context/agents', () => {
     it('should list agents for a context', async () => {
-      const res = await request(app).get('/api/personal/agents');
+      const res = await request(app).get('/api/operations/agents');
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
       expect(res.body.data).toHaveLength(1);
@@ -141,7 +141,7 @@ describe('Autonomous Agents Routes', () => {
   // ===========================================
   describe('GET /api/:context/agents/running', () => {
     it('should list running agents', async () => {
-      const res = await request(app).get('/api/personal/agents/running');
+      const res = await request(app).get('/api/operations/agents/running');
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
     });
@@ -152,7 +152,7 @@ describe('Autonomous Agents Routes', () => {
   // ===========================================
   describe('GET /api/:context/agents/templates', () => {
     it('should return available templates', async () => {
-      const res = await request(app).get('/api/personal/agents/templates');
+      const res = await request(app).get('/api/operations/agents/templates');
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
       expect(res.body.data).toHaveLength(1);
@@ -166,7 +166,7 @@ describe('Autonomous Agents Routes', () => {
   describe('POST /api/:context/agents/from-template', () => {
     it('should create agent from valid template', async () => {
       const res = await request(app)
-        .post('/api/personal/agents/from-template')
+        .post('/api/operations/agents/from-template')
         .send({ templateId: 'email-sorter' });
       expect(res.status).toBe(201);
       expect(res.body.success).toBe(true);
@@ -175,7 +175,7 @@ describe('Autonomous Agents Routes', () => {
 
     it('should return 400 for unknown template', async () => {
       const res = await request(app)
-        .post('/api/personal/agents/from-template')
+        .post('/api/operations/agents/from-template')
         .send({ templateId: 'non-existent' });
       expect(res.status).toBe(400);
     });
@@ -186,7 +186,7 @@ describe('Autonomous Agents Routes', () => {
   // ===========================================
   describe('GET /api/:context/agents/:id', () => {
     it('should return agent details', async () => {
-      const res = await request(app).get('/api/personal/agents/a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11');
+      const res = await request(app).get('/api/operations/agents/a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11');
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
       expect(res.body.data.name).toBe('Test Agent');
@@ -194,7 +194,7 @@ describe('Autonomous Agents Routes', () => {
 
     it('should return 404 for non-existent agent', async () => {
       mockGetAgent.mockResolvedValueOnce(null);
-      const res = await request(app).get('/api/personal/agents/00000000-0000-4000-8000-000000000000');
+      const res = await request(app).get('/api/operations/agents/00000000-0000-4000-8000-000000000000');
       expect(res.status).toBe(404);
     });
   });
@@ -205,7 +205,7 @@ describe('Autonomous Agents Routes', () => {
   describe('POST /api/:context/agents', () => {
     it('should create a new agent', async () => {
       const res = await request(app)
-        .post('/api/personal/agents')
+        .post('/api/operations/agents')
         .send({ name: 'My Agent', instructions: 'Monitor things' });
       expect(res.status).toBe(201);
       expect(res.body.success).toBe(true);
@@ -213,21 +213,21 @@ describe('Autonomous Agents Routes', () => {
 
     it('should return 400 when name is missing', async () => {
       const res = await request(app)
-        .post('/api/personal/agents')
+        .post('/api/operations/agents')
         .send({ instructions: 'Monitor things' });
       expect(res.status).toBe(400);
     });
 
     it('should return 400 when instructions are missing', async () => {
       const res = await request(app)
-        .post('/api/personal/agents')
+        .post('/api/operations/agents')
         .send({ name: 'My Agent' });
       expect(res.status).toBe(400);
     });
 
     it('should validate trigger types', async () => {
       const res = await request(app)
-        .post('/api/personal/agents')
+        .post('/api/operations/agents')
         .send({
           name: 'Agent',
           instructions: 'Do stuff',
@@ -238,7 +238,7 @@ describe('Autonomous Agents Routes', () => {
 
     it('should accept valid trigger types', async () => {
       const res = await request(app)
-        .post('/api/personal/agents')
+        .post('/api/operations/agents')
         .send({
           name: 'Agent',
           instructions: 'Do stuff',
@@ -254,7 +254,7 @@ describe('Autonomous Agents Routes', () => {
   describe('PUT /api/:context/agents/:id', () => {
     it('should update an agent', async () => {
       const res = await request(app)
-        .put('/api/personal/agents/a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11')
+        .put('/api/operations/agents/a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11')
         .send({ name: 'Updated Agent' });
       expect(res.status).toBe(200);
       expect(res.body.data.name).toBe('Updated Agent');
@@ -263,7 +263,7 @@ describe('Autonomous Agents Routes', () => {
     it('should return 404 for non-existent agent', async () => {
       mockUpdateAgent.mockResolvedValueOnce(null);
       const res = await request(app)
-        .put('/api/personal/agents/00000000-0000-4000-8000-000000000000')
+        .put('/api/operations/agents/00000000-0000-4000-8000-000000000000')
         .send({ name: 'X' });
       expect(res.status).toBe(404);
     });
@@ -274,14 +274,14 @@ describe('Autonomous Agents Routes', () => {
   // ===========================================
   describe('DELETE /api/:context/agents/:id', () => {
     it('should delete an agent', async () => {
-      const res = await request(app).delete('/api/personal/agents/a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11');
+      const res = await request(app).delete('/api/operations/agents/a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11');
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
     });
 
     it('should return 404 for non-existent agent', async () => {
       mockDeleteAgent.mockResolvedValueOnce(false);
-      const res = await request(app).delete('/api/personal/agents/00000000-0000-4000-8000-000000000000');
+      const res = await request(app).delete('/api/operations/agents/00000000-0000-4000-8000-000000000000');
       expect(res.status).toBe(404);
     });
   });
@@ -291,21 +291,21 @@ describe('Autonomous Agents Routes', () => {
   // ===========================================
   describe('POST /api/:context/agents/:id/start', () => {
     it('should start an agent', async () => {
-      const res = await request(app).post('/api/personal/agents/a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11/start');
+      const res = await request(app).post('/api/operations/agents/a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11/start');
       expect(res.status).toBe(200);
       expect(res.body.message).toBe('Agent started');
     });
 
     it('should return 404 for non-existent agent', async () => {
       mockStartAgent.mockResolvedValueOnce(false);
-      const res = await request(app).post('/api/personal/agents/00000000-0000-4000-8000-000000000000/start');
+      const res = await request(app).post('/api/operations/agents/00000000-0000-4000-8000-000000000000/start');
       expect(res.status).toBe(404);
     });
   });
 
   describe('POST /api/:context/agents/:id/stop', () => {
     it('should stop an agent', async () => {
-      const res = await request(app).post('/api/personal/agents/a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11/stop');
+      const res = await request(app).post('/api/operations/agents/a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11/stop');
       expect(res.status).toBe(200);
       expect(res.body.message).toBe('Agent stopped');
     });
@@ -316,7 +316,7 @@ describe('Autonomous Agents Routes', () => {
   // ===========================================
   describe('GET /api/:context/agents/:id/logs', () => {
     it('should return execution logs', async () => {
-      const res = await request(app).get('/api/personal/agents/a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11/logs');
+      const res = await request(app).get('/api/operations/agents/a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11/logs');
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
     });
@@ -324,7 +324,7 @@ describe('Autonomous Agents Routes', () => {
 
   describe('GET /api/:context/agents/:id/stats', () => {
     it('should return agent statistics', async () => {
-      const res = await request(app).get('/api/personal/agents/a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11/stats');
+      const res = await request(app).get('/api/operations/agents/a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11/stats');
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
     });
@@ -336,7 +336,7 @@ describe('Autonomous Agents Routes', () => {
   describe('POST /api/:context/agents/:id/approve/:execId', () => {
     it('should approve a pending execution', async () => {
       const res = await request(app)
-        .post('/api/personal/agents/a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11/approve/b1ffcd00-0d1c-5fa9-cc7e-7ccace491b22');
+        .post('/api/operations/agents/a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11/approve/b1ffcd00-0d1c-5fa9-cc7e-7ccace491b22');
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
     });
@@ -344,7 +344,7 @@ describe('Autonomous Agents Routes', () => {
     it('should return 404 for non-existent execution', async () => {
       mockApproveExecution.mockResolvedValueOnce(null);
       const res = await request(app)
-        .post('/api/personal/agents/a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11/approve/00000000-0000-4000-8000-000000000000');
+        .post('/api/operations/agents/a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11/approve/00000000-0000-4000-8000-000000000000');
       expect(res.status).toBe(404);
     });
   });
@@ -352,7 +352,7 @@ describe('Autonomous Agents Routes', () => {
   describe('POST /api/:context/agents/:id/reject/:execId', () => {
     it('should reject a pending execution', async () => {
       const res = await request(app)
-        .post('/api/personal/agents/a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11/reject/b1ffcd00-0d1c-5fa9-cc7e-7ccace491b22');
+        .post('/api/operations/agents/a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11/reject/b1ffcd00-0d1c-5fa9-cc7e-7ccace491b22');
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
     });
@@ -360,7 +360,7 @@ describe('Autonomous Agents Routes', () => {
     it('should return 404 for non-existent execution', async () => {
       mockRejectExecution.mockResolvedValueOnce(false);
       const res = await request(app)
-        .post('/api/personal/agents/a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11/reject/00000000-0000-4000-8000-000000000000');
+        .post('/api/operations/agents/a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11/reject/00000000-0000-4000-8000-000000000000');
       expect(res.status).toBe(404);
     });
   });

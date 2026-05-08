@@ -69,7 +69,7 @@ describe('Embedding Drift Detection', () => {
         rows: [{ query_text: 'test', top_score: 0.8, avg_score: 0.7 }],
       });
 
-      const result = await runDriftCheck('personal');
+      const result = await runDriftCheck('operations');
       expect(result.driftDetected).toBe(false);
       expect(result.sampledQueries).toBe(1);
     });
@@ -83,7 +83,7 @@ describe('Embedding Drift Detection', () => {
 
       mockQueryContext.mockResolvedValueOnce({ rows });
 
-      const result = await runDriftCheck('personal');
+      const result = await runDriftCheck('operations');
       expect(result.driftDetected).toBe(true);
       expect(result.sampledQueries).toBe(10);
       expect(result.driftPercentage).toBeGreaterThan(10);
@@ -92,7 +92,7 @@ describe('Embedding Drift Detection', () => {
     it('handles DB error gracefully', async () => {
       mockQueryContext.mockRejectedValueOnce(new Error('Table not found'));
 
-      const result = await runDriftCheck('personal');
+      const result = await runDriftCheck('operations');
       expect(result.driftDetected).toBe(false);
       expect(result.sampledQueries).toBe(0);
     });
@@ -106,9 +106,9 @@ describe('Embedding Drift Detection', () => {
 
       mockQueryContext.mockResolvedValueOnce({ rows });
 
-      const result = await runDriftCheck('work');
+      const result = await runDriftCheck('finance');
       expect(result.driftDetected).toBe(false);
-      expect(result.context).toBe('work');
+      expect(result.context).toBe('finance');
     });
   });
 });

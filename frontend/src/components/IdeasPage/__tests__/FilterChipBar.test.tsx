@@ -54,8 +54,8 @@ describe('FilterChipBar', () => {
   });
 
   it('groups chips visually with separators between groups', () => {
-    const { container } = render(<FilterChipBar chips={mockChips} filters={activeFilters} onToggle={vi.fn()} onClear={vi.fn()} />);
-    const separators = container.querySelectorAll('.filter-chip-bar__separator');
+    render(<FilterChipBar chips={mockChips} filters={activeFilters} onToggle={vi.fn()} onClear={vi.fn()} />);
+    const separators = screen.getAllByRole('separator');
     expect(separators.length).toBeGreaterThanOrEqual(1);
   });
 });

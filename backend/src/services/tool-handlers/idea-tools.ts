@@ -79,10 +79,11 @@ export async function handleCreateIdea(
     const embedding = await generateEmbedding(`${title} ${summary}`);
 
     // Insert into database
+    const userId = execContext.userId || null;
     await queryContext(
       context,
-      `INSERT INTO ideas (id, context, title, type, category, priority, summary, next_steps, embedding, raw_transcript)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
+      `INSERT INTO ideas (id, context, title, type, category, priority, summary, next_steps, embedding, raw_transcript, user_id)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
       [
         id,
         context,
@@ -94,12 +95,13 @@ export async function handleCreateIdea(
         nextSteps ? JSON.stringify(nextSteps) : null,
         embedding.length > 0 ? `[${embedding.join(',')}]` : null,
         summary, // Use summary as raw_transcript
+        userId,
       ]
     );
 
     logger.info('Idea created via tool', { id, title });
 
-    const contextLabels: Record<string, string> = { personal: 'Persönlich', work: 'Arbeit', learning: 'Lernen', creative: 'Kreativ' };
+    const contextLabels: Record<string, string> = { operations: 'Operativ', finance: 'Finanzen', people: 'Team', strategy: 'Strategie' };
     const contextLabel = contextLabels[context] || context;
 
     return `Idee erfolgreich erstellt:
@@ -343,12 +345,18 @@ export async function handleUpdateIdea(
   }
 
   updates.push(`updated_at = NOW()`);
+  const userId = execContext.userId || null;
   values.push(ideaId, context);
+  let whereClause = `id = $${paramIdx++} AND context = $${paramIdx++}`;
+  if (userId) {
+    whereClause += ` AND user_id = $${paramIdx}::uuid`;
+    values.push(userId);
+  }
 
   try {
     const result = await queryContext(
       context,
-      `UPDATE ideas SET ${updates.join(', ')} WHERE id = $${paramIdx++} AND context = $${paramIdx} RETURNING id, title`,
+      `UPDATE ideas SET ${updates.join(', ')} WHERE ${whereClause} RETURNING id, title`,
       values
     );
 
@@ -373,11 +381,19 @@ export async function handleArchiveIdea(
 
   const context = execContext.aiContext;
 
+  const userId = execContext.userId || null;
+  const archiveParams: (string | null)[] = [ideaId, context];
+  let archiveWhere = `id = $1 AND context = $2`;
+  if (userId) {
+    archiveWhere += ` AND user_id = $3::uuid`;
+    archiveParams.push(userId);
+  }
+
   try {
     const result = await queryContext(
       context,
-      `UPDATE ideas SET is_archived = true, updated_at = NOW() WHERE id = $1 AND context = $2 RETURNING id, title`,
-      [ideaId, context]
+      `UPDATE ideas SET is_archived = true, updated_at = NOW() WHERE ${archiveWhere} RETURNING id, title`,
+      archiveParams
     );
 
     if (result.rows.length === 0) {
@@ -401,11 +417,19 @@ export async function handleDeleteIdea(
 
   const context = execContext.aiContext;
 
+  const userId = execContext.userId || null;
+  const deleteParams: (string | null)[] = [ideaId, context];
+  let deleteWhere = `id = $1 AND context = $2`;
+  if (userId) {
+    deleteWhere += ` AND user_id = $3::uuid`;
+    deleteParams.push(userId);
+  }
+
   try {
     const result = await queryContext(
       context,
-      `DELETE FROM ideas WHERE id = $1 AND context = $2 RETURNING id, title`,
-      [ideaId, context]
+      `DELETE FROM ideas WHERE ${deleteWhere} RETURNING id, title`,
+      deleteParams
     );
 
     if (result.rows.length === 0) {

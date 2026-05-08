@@ -34,7 +34,7 @@ jest.mock('../../services/meetings', () => ({
 
 jest.mock('../../utils/database-context', () => ({
   queryContext: jest.fn(),
-  isValidContext: jest.fn((ctx: string) => ['personal', 'work', 'learning', 'creative'].includes(ctx)),
+  isValidContext: jest.fn((ctx: string) => ['operations', 'finance', 'people', 'strategy'].includes(ctx)),
   AIContext: {},
 }));
 
@@ -80,7 +80,7 @@ const sampleEvent = {
   location: 'Conference Room',
   participants: ['Alice', 'Bob'],
   status: 'confirmed',
-  context: 'work',
+  context: 'finance',
   meeting_id: null as string | null,
   created_at: new Date().toISOString(),
   updated_at: new Date().toISOString(),
@@ -135,7 +135,7 @@ describe('Calendar Meeting-Link Integration Tests', () => {
       mockLinkMeetingToEvent.mockResolvedValueOnce(undefined as any);
 
       const res = await request(app)
-        .post(`/api/work/calendar/events/${UUID_EVENT}/start-meeting`);
+        .post(`/api/finance/calendar/events/${UUID_EVENT}/start-meeting`);
 
       expect(res.status).toBe(201);
       expect(res.body.success).toBe(true);
@@ -144,7 +144,7 @@ describe('Calendar Meeting-Link Integration Tests', () => {
         title: 'Sprint Review',
         duration_minutes: 60,
       }));
-      expect(mockLinkMeetingToEvent).toHaveBeenCalledWith('work', UUID_EVENT, UUID_MEETING, '00000000-0000-0000-0000-000000000001');
+      expect(mockLinkMeetingToEvent).toHaveBeenCalledWith('finance', UUID_EVENT, UUID_MEETING, '00000000-0000-0000-0000-000000000001');
     });
 
     it('should return existing meeting if already linked', async () => {
@@ -153,7 +153,7 @@ describe('Calendar Meeting-Link Integration Tests', () => {
       mockGetMeeting.mockResolvedValueOnce(sampleMeeting as any);
 
       const res = await request(app)
-        .post(`/api/work/calendar/events/${UUID_EVENT}/start-meeting`);
+        .post(`/api/finance/calendar/events/${UUID_EVENT}/start-meeting`);
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
@@ -165,14 +165,14 @@ describe('Calendar Meeting-Link Integration Tests', () => {
       mockGetCalendarEvent.mockResolvedValueOnce(null as any);
 
       const res = await request(app)
-        .post(`/api/work/calendar/events/${UUID_EVENT}/start-meeting`);
+        .post(`/api/finance/calendar/events/${UUID_EVENT}/start-meeting`);
 
       expect(res.status).toBe(404);
     });
 
     it('should reject invalid event UUID', async () => {
       const res = await request(app)
-        .post('/api/work/calendar/events/bad-id/start-meeting');
+        .post('/api/finance/calendar/events/bad-id/start-meeting');
 
       expect(res.status).toBe(400);
     });
@@ -196,7 +196,7 @@ describe('Calendar Meeting-Link Integration Tests', () => {
       mockGetMeetingNotes.mockResolvedValueOnce([sampleNotes] as any);
 
       const res = await request(app)
-        .get(`/api/work/calendar/events/${UUID_EVENT}/meeting`);
+        .get(`/api/finance/calendar/events/${UUID_EVENT}/meeting`);
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
@@ -208,7 +208,7 @@ describe('Calendar Meeting-Link Integration Tests', () => {
       mockGetEventMeetingId.mockResolvedValueOnce(null as any);
 
       const res = await request(app)
-        .get(`/api/work/calendar/events/${UUID_EVENT}/meeting`);
+        .get(`/api/finance/calendar/events/${UUID_EVENT}/meeting`);
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
@@ -218,7 +218,7 @@ describe('Calendar Meeting-Link Integration Tests', () => {
 
     it('should reject invalid event UUID', async () => {
       const res = await request(app)
-        .get('/api/work/calendar/events/bad/meeting');
+        .get('/api/finance/calendar/events/bad/meeting');
 
       expect(res.status).toBe(400);
     });
@@ -234,7 +234,7 @@ describe('Calendar Meeting-Link Integration Tests', () => {
       mockProcessMeetingNotes.mockResolvedValueOnce(sampleNotes as any);
 
       const res = await request(app)
-        .post(`/api/work/calendar/events/${UUID_EVENT}/meeting/notes`)
+        .post(`/api/finance/calendar/events/${UUID_EVENT}/meeting/notes`)
         .send({ transcript: 'We discussed the sprint goals and decided to prioritize bug fixes.' });
 
       expect(res.status).toBe(201);
@@ -250,7 +250,7 @@ describe('Calendar Meeting-Link Integration Tests', () => {
       mockGetEventMeetingId.mockResolvedValueOnce(null as any);
 
       const res = await request(app)
-        .post(`/api/work/calendar/events/${UUID_EVENT}/meeting/notes`)
+        .post(`/api/finance/calendar/events/${UUID_EVENT}/meeting/notes`)
         .send({ transcript: 'Some notes' });
 
       expect(res.status).toBe(404);
@@ -260,7 +260,7 @@ describe('Calendar Meeting-Link Integration Tests', () => {
       mockGetEventMeetingId.mockResolvedValueOnce(UUID_MEETING as any);
 
       const res = await request(app)
-        .post(`/api/work/calendar/events/${UUID_EVENT}/meeting/notes`)
+        .post(`/api/finance/calendar/events/${UUID_EVENT}/meeting/notes`)
         .send({});
 
       expect(res.status).toBe(400);
@@ -270,7 +270,7 @@ describe('Calendar Meeting-Link Integration Tests', () => {
       mockGetEventMeetingId.mockResolvedValueOnce(UUID_MEETING as any);
 
       const res = await request(app)
-        .post(`/api/work/calendar/events/${UUID_EVENT}/meeting/notes`)
+        .post(`/api/finance/calendar/events/${UUID_EVENT}/meeting/notes`)
         .send({ transcript: '   ' });
 
       expect(res.status).toBe(400);
@@ -281,7 +281,7 @@ describe('Calendar Meeting-Link Integration Tests', () => {
       mockProcessMeetingNotes.mockResolvedValueOnce(sampleNotes as any);
 
       await request(app)
-        .post(`/api/work/calendar/events/${UUID_EVENT}/meeting/notes`)
+        .post(`/api/finance/calendar/events/${UUID_EVENT}/meeting/notes`)
         .send({ transcript: '  Some notes here  ' });
 
       expect(mockProcessMeetingNotes).toHaveBeenCalledWith(UUID_MEETING, 'Some notes here');
@@ -289,7 +289,7 @@ describe('Calendar Meeting-Link Integration Tests', () => {
 
     it('should reject invalid event UUID', async () => {
       const res = await request(app)
-        .post('/api/work/calendar/events/bad/meeting/notes')
+        .post('/api/finance/calendar/events/bad/meeting/notes')
         .send({ transcript: 'Notes' });
 
       expect(res.status).toBe(400);
@@ -301,7 +301,7 @@ describe('Calendar Meeting-Link Integration Tests', () => {
   // ===========================================
 
   describe('Context validation for meeting endpoints', () => {
-    it.each(['personal', 'work', 'learning', 'creative'])('should accept context "%s"', async (ctx) => {
+    it.each(['operations', 'finance', 'people', 'strategy'])('should accept context "%s"', async (ctx) => {
       mockGetEventMeetingId.mockResolvedValueOnce(null as any);
 
       const res = await request(app).get(`/api/${ctx}/calendar/events/${UUID_EVENT}/meeting`);

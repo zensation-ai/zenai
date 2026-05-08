@@ -174,7 +174,7 @@ export function responseCacheMiddleware(req: Request, res: Response, next: NextF
  * Call this after mutations (POST, PUT, DELETE) to clear relevant caches
  *
  * Usage:
- *   await invalidateCacheForContext('personal', 'ideas');
+ *   await invalidateCacheForContext('operations', 'ideas');
  */
 export async function invalidateCacheForContext(context: AIContext, resource?: string): Promise<number> {
   if (!cache.isAvailable()) {

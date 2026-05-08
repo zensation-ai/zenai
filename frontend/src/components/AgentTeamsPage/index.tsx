@@ -2,31 +2,29 @@
  * AgentTeamsPage Component
  *
  * Frontend for the Multi-Agent Task Orchestration system.
- * Features: SSE Streaming, Agent Templates, Coder Agent, Analytics.
- * Tabs: Teams (Phase 45), Agenten (Phase 64), Workflows (Phase 64), A2A (Phase 60).
+ * 6 Tabs: My Agents, Create, Marketplace, Analytics, Workflows, A2A.
  *
- * Phase 45 + 60 + 64 + 121 (decomposed)
+ * Phase 45 + 60 + 64 + 121 + 143 (Agent Ecosystem Expansion)
  */
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, type CSSProperties } from 'react';
 import axios from 'axios';
 import { getTimeBasedGreeting } from '../../utils/aiPersonality';
 import { logError } from '../../utils/errors';
-import { AgentIdentityPanel } from '../AgentIdentityPanel';
 import { A2AAgentsPanel } from '../A2AAgentsPanel';
-import { WorkflowPanel } from '../WorkflowPanel';
-import '../../neurodesign.css';
-import '../AgentTeamsPage.css';
-
+import { WorkflowBuilder } from '../WorkflowBuilder/WorkflowBuilder';
 import type { AgentTeamsPageProps, AgentTab } from './types';
 import { AGENT_TABS } from './types';
-import { TeamsTab } from './TeamsTab';
+import { MyAgentsTab } from './MyAgentsTab';
+import { CreateAgentTab } from './CreateAgentTab';
+import { MarketplaceTab } from './MarketplaceTab';
+import { AnalyticsTab } from './AnalyticsTab';
 
 export function AgentTeamsPage({ context, onBack, embedded }: AgentTeamsPageProps) {
   const greeting = getTimeBasedGreeting();
-  const [activeTab, setActiveTab] = useState<AgentTab>('teams');
+  const [activeTab, setActiveTab] = useState<AgentTab>('my-agents');
 
-  // Analytics state (loaded on demand, shared with TeamsTab)
+  // Analytics state (loaded on demand, shared with MyAgentsTab → TeamsTab)
   const [showAnalytics, setShowAnalytics] = useState(false);
   const [analytics, setAnalytics] = useState<{
     totals: { executions: number; successful: number; failed: number; tokens: number; successRate: number };
@@ -52,12 +50,12 @@ export function AgentTeamsPage({ context, onBack, embedded }: AgentTeamsPageProp
       {!embedded && (
         <div className="agent-teams-header liquid-glass-nav">
           <button className="back-button neuro-hover-lift" onClick={onBack} type="button">
-            &larr; Zurueck
+            &larr; Zurück
           </button>
           <div className="header-greeting">
-            <h1>{greeting.emoji} Agent Teams</h1>
+            <h1>{greeting.emoji} Agent Ecosystem</h1>
             <span className="greeting-subtext neuro-subtext-emotional">
-              Multi-Agent Aufgaben orchestrieren
+              Autonome Agents erstellen, verwalten und optimieren
             </span>
           </div>
           <button
@@ -77,13 +75,13 @@ export function AgentTeamsPage({ context, onBack, embedded }: AgentTeamsPageProp
       )}
 
       {/* Tab Navigation */}
-      <div className="strategy-grid" style={{ marginBottom: '1.5rem' }}>
+      <div className="strategy-grid mb-6">
         {AGENT_TABS.map((tab, index) => (
           <button
             key={tab.id}
             type="button"
-            className={`strategy-card neuro-hover-lift ${activeTab === tab.id ? 'active' : ''}`}
-            style={{ animationDelay: `${index * 50}ms` }}
+            className={`strategy-card neuro-hover-lift [animation-delay:var(--delay)] ${activeTab === tab.id ? 'active' : ''}`}
+            style={{ '--delay': `${index * 50}ms` } as CSSProperties}
             onClick={() => setActiveTab(tab.id)}
           >
             <span className="strategy-icon">{tab.icon}</span>
@@ -93,17 +91,21 @@ export function AgentTeamsPage({ context, onBack, embedded }: AgentTeamsPageProp
       </div>
 
       {/* Tab Content */}
-      {activeTab === 'teams' && (
-        <TeamsTab context={context} showAnalytics={showAnalytics} analytics={analytics} />
+      {activeTab === 'my-agents' && (
+        <MyAgentsTab context={context} showAnalytics={showAnalytics} analytics={analytics} />
       )}
-      {activeTab === 'identities' && (
-        <div className="agent-teams-section liquid-glass neuro-stagger-item">
-          <AgentIdentityPanel />
-        </div>
+      {activeTab === 'create' && (
+        <CreateAgentTab context={context} />
+      )}
+      {activeTab === 'marketplace' && (
+        <MarketplaceTab />
+      )}
+      {activeTab === 'analytics' && (
+        <AnalyticsTab />
       )}
       {activeTab === 'workflows' && (
-        <div className="agent-teams-section liquid-glass neuro-stagger-item">
-          <WorkflowPanel context={context} />
+        <div className="agent-teams-section liquid-glass neuro-stagger-item h-[600px]">
+          <WorkflowBuilder />
         </div>
       )}
       {activeTab === 'a2a' && (

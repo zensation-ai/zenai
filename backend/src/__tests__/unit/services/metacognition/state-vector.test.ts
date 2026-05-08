@@ -360,11 +360,11 @@ describe('recordEvaluation', () => {
       confusionLevel: 'low',
     };
 
-    await recordEvaluation('personal', state, 'test query', 'general');
+    await recordEvaluation('operations', state, 'test query', 'general');
 
     expect(mockQueryContext).toHaveBeenCalledTimes(1);
     expect(mockQueryContext).toHaveBeenCalledWith(
-      'personal',
+      'operations',
       expect.stringContaining('INSERT INTO metacognitive_evaluations'),
       expect.arrayContaining([0.8, 0.7, 1, 0.6, 'low', 'test query', 'general']),
     );
@@ -382,7 +382,7 @@ describe('recordEvaluation', () => {
     };
 
     // Should not throw
-    await expect(recordEvaluation('personal', state, 'q', 'general')).resolves.toBeUndefined();
+    await expect(recordEvaluation('operations', state, 'q', 'general')).resolves.toBeUndefined();
     expect(logger.error).toHaveBeenCalled();
   });
 });
@@ -400,7 +400,7 @@ describe('getRecentStates', () => {
       ],
     } as any);
 
-    const states = await getRecentStates('personal');
+    const states = await getRecentStates('operations');
     expect(states).toHaveLength(2);
     expect(states[0].confidence).toBe(0.8);
     expect(states[0].confusionLevel).toBe('low');
@@ -410,14 +410,14 @@ describe('getRecentStates', () => {
   it('returns empty array when no rows', async () => {
     mockQueryContext.mockResolvedValueOnce({ rows: [] } as any);
 
-    const states = await getRecentStates('personal');
+    const states = await getRecentStates('operations');
     expect(states).toEqual([]);
   });
 
   it('returns empty array on DB error', async () => {
     mockQueryContext.mockRejectedValueOnce(new Error('DB read failed'));
 
-    const states = await getRecentStates('personal');
+    const states = await getRecentStates('operations');
     expect(states).toEqual([]);
     expect(logger.error).toHaveBeenCalled();
   });
@@ -425,9 +425,9 @@ describe('getRecentStates', () => {
   it('passes limit to query', async () => {
     mockQueryContext.mockResolvedValueOnce({ rows: [] } as any);
 
-    await getRecentStates('personal', 5);
+    await getRecentStates('operations', 5);
     expect(mockQueryContext).toHaveBeenCalledWith(
-      'personal',
+      'operations',
       expect.stringContaining('LIMIT'),
       [5],
     );
@@ -436,9 +436,9 @@ describe('getRecentStates', () => {
   it('uses default limit of 20 when not specified', async () => {
     mockQueryContext.mockResolvedValueOnce({ rows: [] } as any);
 
-    await getRecentStates('personal');
+    await getRecentStates('operations');
     expect(mockQueryContext).toHaveBeenCalledWith(
-      'personal',
+      'operations',
       expect.stringContaining('LIMIT'),
       [20],
     );

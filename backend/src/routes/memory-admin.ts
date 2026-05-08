@@ -82,7 +82,7 @@ router.post('/consolidate', apiKeyAuth, requireScope('admin'), asyncHandler(asyn
 
   // Validate context if provided
   if (context && !isValidContext(context)) {
-    throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
+    throw new ValidationError('Invalid context. Use "operations", "finance", "people", or "strategy".');
   }
 
   logger.info('Manual consolidation triggered', {
@@ -129,7 +129,7 @@ router.post('/decay', apiKeyAuth, requireScope('admin'), asyncHandler(async (req
 
   // Validate context if provided
   if (context && !isValidContext(context)) {
-    throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
+    throw new ValidationError('Invalid context. Use "operations", "finance", "people", or "strategy".');
   }
 
   logger.info('Manual decay triggered', {
@@ -172,7 +172,7 @@ router.get('/stats/:context', apiKeyAuth, asyncHandler(async (req: Request, res:
   const { context } = req.params;
 
   if (!isValidContext(context)) {
-    throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
+    throw new ValidationError('Invalid context. Use "operations", "finance", "people", or "strategy".');
   }
 
   const [ltStats, epStats] = await Promise.all([
@@ -215,7 +215,7 @@ router.get('/facts/:context', apiKeyAuth, asyncHandler(async (req: Request, res:
   const { context } = req.params;
 
   if (!isValidContext(context)) {
-    throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
+    throw new ValidationError('Invalid context. Use "operations", "finance", "people", or "strategy".');
   }
 
   const facts = await longTermMemory.getFacts(context as AIContext);
@@ -254,7 +254,7 @@ router.get('/patterns/:context', apiKeyAuth, asyncHandler(async (req: Request, r
   const { context } = req.params;
 
   if (!isValidContext(context)) {
-    throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
+    throw new ValidationError('Invalid context. Use "operations", "finance", "people", or "strategy".');
   }
 
   const patterns = await longTermMemory.getPatterns(context as AIContext);
@@ -278,7 +278,7 @@ router.get('/transparency/:context', apiKeyAuth, asyncHandler(async (req: Reques
   const { context } = req.params;
 
   if (!isValidContext(context)) {
-    throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
+    throw new ValidationError('Invalid context. Use "operations", "finance", "people", or "strategy".');
   }
 
   const ctx = context as AIContext;
@@ -356,7 +356,7 @@ router.get('/privacy/:context', apiKeyAuth, requireScope('read'), asyncHandler(a
   const { context } = req.params;
 
   if (!isValidContext(context)) {
-    throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
+    throw new ValidationError('Invalid context. Use "operations", "finance", "people", or "strategy".');
   }
 
   const settings = await memoryGovernance.getPrivacySettings(context as AIContext);
@@ -376,7 +376,7 @@ router.put('/privacy/:context', apiKeyAuth, requireScope('write'), asyncHandler(
   const { context } = req.params;
 
   if (!isValidContext(context)) {
-    throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
+    throw new ValidationError('Invalid context. Use "operations", "finance", "people", or "strategy".');
   }
 
   const settings = await memoryGovernance.updatePrivacySettings(context as AIContext, req.body);
@@ -397,7 +397,7 @@ router.delete('/erase/:context', apiKeyAuth, requireScope('admin'), asyncHandler
   const { context } = req.params;
 
   if (!isValidContext(context)) {
-    throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
+    throw new ValidationError('Invalid context. Use "operations", "finance", "people", or "strategy".');
   }
 
   logger.info('Memory erasure requested', { context, operation: 'memoryErasure' });
@@ -420,7 +420,7 @@ router.delete('/erase/:context/:layer', apiKeyAuth, requireScope('admin'), async
   const { context, layer } = req.params;
 
   if (!isValidContext(context)) {
-    throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
+    throw new ValidationError('Invalid context. Use "operations", "finance", "people", or "strategy".');
   }
 
   const validLayers = ['working', 'episodic', 'short_term', 'long_term', 'procedural', 'reflection'];
@@ -446,7 +446,7 @@ router.delete('/facts/:context/:factId', apiKeyAuth, requireScope('write'), requ
   const { context, factId } = req.params;
 
   if (!isValidContext(context)) {
-    throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
+    throw new ValidationError('Invalid context. Use "operations", "finance", "people", or "strategy".');
   }
 
   const deleted = await memoryGovernance.deleteFact(context as AIContext, factId);
@@ -467,7 +467,7 @@ router.get('/export/:context', apiKeyAuth, requireScope('admin'), asyncHandler(a
   const { context } = req.params;
 
   if (!isValidContext(context)) {
-    throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
+    throw new ValidationError('Invalid context. Use "operations", "finance", "people", or "strategy".');
   }
 
   const memoryExport = await memoryGovernance.exportMemory(context as AIContext);
@@ -487,7 +487,7 @@ router.get('/audit/:context', apiKeyAuth, requireScope('read'), asyncHandler(asy
   const { context } = req.params;
 
   if (!isValidContext(context)) {
-    throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
+    throw new ValidationError('Invalid context. Use "operations", "finance", "people", or "strategy".');
   }
 
   const limit = parseInt(req.query.limit as string, 10) || 50;
@@ -516,7 +516,7 @@ router.get('/overview/:context', apiKeyAuth, requireScope('read'), asyncHandler(
   const { context } = req.params;
 
   if (!isValidContext(context)) {
-    throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
+    throw new ValidationError('Invalid context. Use "operations", "finance", "people", or "strategy".');
   }
 
   const overview = await memoryGovernance.getMemoryOverview(context as AIContext);

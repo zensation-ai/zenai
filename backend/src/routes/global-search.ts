@@ -42,7 +42,7 @@ router.post('/global', apiKeyAuth, requireScope('read'), asyncHandler(async (req
   if (contexts && Array.isArray(contexts)) {
     for (const ctx of contexts) {
       if (!isValidContext(ctx)) {
-        throw new ValidationError(`Invalid context: "${ctx}". Use "personal", "work", "learning", or "creative".`);
+        throw new ValidationError(`Invalid context: "${ctx}". Use "operations", "finance", "people", or "strategy".`);
       }
       validContexts.push(ctx as AIContext);
     }

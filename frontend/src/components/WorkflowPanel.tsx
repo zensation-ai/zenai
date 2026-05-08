@@ -9,13 +9,11 @@
  * - Recent runs list with status
  */
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, type CSSProperties } from 'react';
 import axios from 'axios';
 import { logError } from '../utils/errors';
 import { showToast } from './Toast';
 import { useConfirm } from './ConfirmDialog';
-import './WorkflowPanel.css';
-
 // ─── Types ──────────────────────────────────────────────────────────────────
 
 interface WorkflowNode {
@@ -70,15 +68,15 @@ const NODE_TYPE_CONFIG: Record<string, { label: string; icon: string; colorVar: 
   agent:        { label: 'Agent',           icon: 'A', colorVar: '#3b82f6', className: 'wfg-node--agent' },
   tool:         { label: 'Tool',            icon: 'T', colorVar: '#22c55e', className: 'wfg-node--tool' },
   condition:    { label: 'Bedingung',       icon: '?', colorVar: '#eab308', className: 'wfg-node--condition' },
-  human_review: { label: 'Manuelle Pruefung', icon: 'H', colorVar: '#f97316', className: 'wfg-node--human-review' },
+  human_review: { label: 'Manuelle Prüfung', icon: 'H', colorVar: 'var(--accent-orange)', className: 'wfg-node--human-review' },
 };
 
 const RUN_STATUS_CONFIG: Record<string, { label: string; className: string }> = {
-  running:            { label: 'Laeuft',            className: 'wfp-run--running' },
+  running:            { label: 'Läuft',              className: 'wfp-run--running' },
   completed:          { label: 'Abgeschlossen',     className: 'wfp-run--completed' },
   failed:             { label: 'Fehlgeschlagen',     className: 'wfp-run--failed' },
   paused:             { label: 'Pausiert',           className: 'wfp-run--paused' },
-  awaiting_approval:  { label: 'Genehmigung noetig', className: 'wfp-run--paused' },
+  awaiting_approval:  { label: 'Genehmigung nötig', className: 'wfp-run--paused' },
   cancelled:          { label: 'Abgebrochen',        className: 'wfp-run--cancelled' },
 };
 
@@ -222,7 +220,10 @@ function WorkflowGraphView({
 
   return (
     <div className="wfg-container">
-      <div className="wfg-canvas" style={{ width: totalW, height: totalH, minWidth: totalW, minHeight: totalH }}>
+      <div
+        className="wfg-canvas w-[var(--w)] h-[var(--h)] min-w-[var(--w)] min-h-[var(--h)]"
+        style={{ '--w': `${totalW}px`, '--h': `${totalH}px` } as CSSProperties}
+      >
         {/* SVG edges */}
         <svg className="wfg-edges-svg" width={totalW} height={totalH}>
           <defs>
@@ -285,13 +286,8 @@ function WorkflowGraphView({
           return (
             <div
               key={node.id}
-              className={`wfg-node ${cfg.className} ${isCondition ? 'wfg-node--diamond' : ''}`}
-              style={{
-                left: pos.x,
-                top: pos.y,
-                width: NODE_W,
-                height: NODE_H,
-              }}
+              className={`wfg-node ${cfg.className} ${isCondition ? 'wfg-node--diamond' : ''} left-[var(--x)] top-[var(--y)] w-[var(--nw)] h-[var(--nh)]`}
+              style={{ '--x': `${pos.x}px`, '--y': `${pos.y}px`, '--nw': `${NODE_W}px`, '--nh': `${NODE_H}px` } as CSSProperties}
               title={`${cfg.label}: ${displayName}`}
             >
               <span className="wfg-node-icon">{cfg.icon}</span>
@@ -391,20 +387,20 @@ export function WorkflowPanel({ context: _context }: WorkflowPanelProps) {
 
   const handleDelete = async (id: string) => {
     const confirmed = await confirm({
-      title: 'Workflow loeschen',
-      message: 'Workflow wirklich loeschen?',
-      confirmText: 'Loeschen',
+      title: 'Workflow löschen',
+      message: 'Workflow wirklich löschen?',
+      confirmText: 'Löschen',
       variant: 'danger',
     });
     if (!confirmed) return;
     try {
       await axios.delete(`/api/agent-workflows/${id}`);
-      showToast('Workflow geloescht', 'success');
+      showToast('Workflow gelöscht', 'success');
       if (selectedWorkflow?.id === id) setSelectedWorkflow(null);
       await loadData();
     } catch (err) {
       logError('WorkflowPanel:delete', err);
-      showToast('Fehler beim Loeschen', 'error');
+      showToast('Fehler beim Löschen', 'error');
     }
   };
 
@@ -532,14 +528,14 @@ export function WorkflowPanel({ context: _context }: WorkflowPanelProps) {
                             onClick={() => handleExecute(wf.id)}
                             disabled={executingId === wf.id}
                           >
-                            {executingId === wf.id ? 'Wird gestartet...' : 'Ausfuehren'}
+                            {executingId === wf.id ? 'Wird gestartet...' : 'Ausführen'}
                           </button>
                           <button
                             type="button"
                             className="wfp-btn wfp-btn--danger"
                             onClick={() => handleDelete(wf.id)}
                           >
-                            Loeschen
+                            Löschen
                           </button>
                         </div>
 
@@ -565,7 +561,7 @@ export function WorkflowPanel({ context: _context }: WorkflowPanelProps) {
         <div className="wfp-templates-area">
           {workflowTemplates.length === 0 ? (
             <div className="wfp-empty">
-              <p>Keine Workflow-Templates verfuegbar.</p>
+              <p>Keine Workflow-Templates verfügbar.</p>
             </div>
           ) : (
             <div className="wfp-templates-grid">
@@ -607,7 +603,7 @@ export function WorkflowPanel({ context: _context }: WorkflowPanelProps) {
       {/* ─── Recent Runs ──────────────────────────────────────────────── */}
       {!loading && workflowRuns.length > 0 && (
         <div className="wfp-runs-section">
-          <h3 className="wfp-runs-title">Letzte Ausfuehrungen</h3>
+          <h3 className="wfp-runs-title">Letzte Ausführungen</h3>
           <div className="wfp-runs-list">
             {workflowRuns.slice(0, 10).map(run => {
               const statusCfg = RUN_STATUS_CONFIG[run.status] || { label: run.status, className: '' };

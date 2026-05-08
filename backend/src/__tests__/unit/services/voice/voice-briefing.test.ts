@@ -114,7 +114,7 @@ describe('VoicePipeline.generateMorningBriefing', () => {
         ],
       });
 
-    const result = await pipeline.generateMorningBriefing('personal', userId);
+    const result = await pipeline.generateMorningBriefing('operations', userId);
 
     expect(result.text).toContain('Guten Morgen');
     expect(result.text).toContain('3 offene Aufgaben');
@@ -129,7 +129,7 @@ describe('VoicePipeline.generateMorningBriefing', () => {
       .mockResolvedValueOnce({ rows: [{ count: '0' }] })   // emails
       .mockResolvedValueOnce({ rows: [] });                  // events
 
-    const result = await pipeline.generateMorningBriefing('work', userId);
+    const result = await pipeline.generateMorningBriefing('finance', userId);
 
     expect(result.text).toContain('Guten Morgen');
     expect(result.text).toContain('Dein Tag sieht ruhig aus');
@@ -144,7 +144,7 @@ describe('VoicePipeline.generateMorningBriefing', () => {
         rows: [{ title: 'Meeting', start_time: '2026-03-20T14:00:00Z' }],
       });
 
-    const result = await pipeline.generateMorningBriefing('personal', userId);
+    const result = await pipeline.generateMorningBriefing('operations', userId);
 
     expect(result.text).toContain('1 offene Aufgabe');
     expect(result.text).not.toContain('Aufgaben');
@@ -159,7 +159,7 @@ describe('VoicePipeline.generateMorningBriefing', () => {
       .mockRejectedValueOnce(new Error('emails table missing'))
       .mockRejectedValueOnce(new Error('events table missing'));
 
-    const result = await pipeline.generateMorningBriefing('creative', userId);
+    const result = await pipeline.generateMorningBriefing('strategy', userId);
 
     // Should still produce a valid briefing with empty state
     expect(result.text).toContain('Guten Morgen');
@@ -175,7 +175,7 @@ describe('VoicePipeline.generateMorningBriefing', () => {
     const mockAudio = Buffer.from('fake-audio');
     mockSynthesize.mockResolvedValueOnce(mockAudio);
 
-    const result = await pipeline.generateMorningBriefing('personal', userId, true);
+    const result = await pipeline.generateMorningBriefing('operations', userId, true);
 
     expect(result.text).toContain('Guten Morgen');
     expect(result.audioBuffer).toBe(mockAudio);
@@ -193,7 +193,7 @@ describe('VoicePipeline.generateMorningBriefing', () => {
 
     mockSynthesize.mockRejectedValueOnce(new Error('TTS unavailable'));
 
-    const result = await pipeline.generateMorningBriefing('personal', userId, true);
+    const result = await pipeline.generateMorningBriefing('operations', userId, true);
 
     expect(result.text).toContain('Guten Morgen');
     expect(result.audioBuffer).toBeUndefined();
@@ -213,7 +213,7 @@ describe('VoicePipeline.generateMorningBriefing', () => {
         ],
       });
 
-    const result = await pipeline.generateMorningBriefing('work', userId);
+    const result = await pipeline.generateMorningBriefing('finance', userId);
 
     expect(result.text).toContain('5 Termine');
     expect(result.text).toContain('Standup');
@@ -230,7 +230,7 @@ describe('VoicePipeline.generateMorningBriefing', () => {
       .mockResolvedValueOnce({ rows: [{ count: '0' }] })
       .mockResolvedValueOnce({ rows: [] });
 
-    const result = await pipeline.generateMorningBriefing('personal', userId);
+    const result = await pipeline.generateMorningBriefing('operations', userId);
 
     expect(result.text).toContain('5 offene Aufgaben');
     expect(result.text).not.toContain('E-Mail');

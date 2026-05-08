@@ -19,7 +19,7 @@ const mockQueryContext = jest.fn();
 jest.mock('../../../utils/database-context', () => ({
   queryContext: (...args: unknown[]) => mockQueryContext(...args),
   isValidContext: (ctx: string) =>
-    ['personal', 'work', 'learning', 'creative'].includes(ctx),
+    ['operations', 'finance', 'people', 'strategy'].includes(ctx),
 }));
 
 jest.mock('../../../utils/logger', () => ({
@@ -181,7 +181,7 @@ describe('propagateBatch', () => {
   it('returns { updated: 0, iterations: 0 } for an empty graph', async () => {
     // No edges found
     mockQueryContext.mockResolvedValue({ rows: [], rowCount: 0 });
-    const result = await propagateBatch('personal');
+    const result = await propagateBatch('operations');
     expect(result).toEqual({ updated: 0, iterations: 0 });
   });
 
@@ -204,7 +204,7 @@ describe('propagateBatch', () => {
       .mockResolvedValueOnce({ rows: [], rowCount: 1 })            // UPDATE
       .mockResolvedValueOnce({ rows: [], rowCount: 0 });           // iteration 2 edges (converged)
 
-    const result = await propagateBatch('personal');
+    const result = await propagateBatch('operations');
     expect(result.updated).toBeGreaterThan(0);
     expect(result.iterations).toBeGreaterThanOrEqual(1);
   });
@@ -228,12 +228,12 @@ describe('propagateBatch', () => {
       .mockResolvedValueOnce({ rows: [], rowCount: 1 })
       .mockResolvedValueOnce({ rows: [], rowCount: 0 });
 
-    const result = await propagateBatch('personal');
+    const result = await propagateBatch('operations');
     expect(result.updated).toBe(1);
 
     // Verify the UPDATE was called with a damped value
     const updateCall = mockQueryContext.mock.calls[1];
-    expect(updateCall[0]).toBe('personal');
+    expect(updateCall[0]).toBe('operations');
     expect(updateCall[1]).toMatch(/UPDATE/i);
     // The damped value should be ~0.81
     const dampedValue = updateCall[2][0];
@@ -258,7 +258,7 @@ describe('propagateBatch', () => {
       .mockResolvedValueOnce({ rows: edges, rowCount: 1 })
       .mockResolvedValueOnce({ rows: [], rowCount: 0 }); // no update; iteration 2 empty
 
-    const result = await propagateBatch('personal');
+    const result = await propagateBatch('operations');
     expect(result.updated).toBe(0);
   });
 
@@ -283,7 +283,7 @@ describe('propagateBatch', () => {
       return Promise.resolve({ rows: edges, rowCount: 1 });
     });
 
-    const result = await propagateBatch('personal');
+    const result = await propagateBatch('operations');
     expect(result.iterations).toBeLessThanOrEqual(3); // MAX_ITERATIONS
   });
 
@@ -313,7 +313,7 @@ describe('propagateBatch', () => {
       .mockResolvedValueOnce({ rows: [], rowCount: 1 })
       .mockResolvedValueOnce({ rows: [], rowCount: 0 });
 
-    const result = await propagateBatch('personal');
+    const result = await propagateBatch('operations');
     expect(result.updated).toBe(1); // one target fact updated
 
     // The value passed to UPDATE should be higher than a single-source propagation
@@ -340,7 +340,7 @@ describe('propagateBatch', () => {
       .mockResolvedValueOnce({ rows: [], rowCount: 1 })
       .mockResolvedValueOnce({ rows: [], rowCount: 0 });
 
-    await propagateBatch('personal');
+    await propagateBatch('operations');
 
     const updateCall = mockQueryContext.mock.calls[1];
     // confidence_sources should be JSON containing source fact id
@@ -369,7 +369,7 @@ describe('propagateBatch', () => {
       .mockResolvedValueOnce({ rows: [], rowCount: 1 })
       .mockResolvedValueOnce({ rows: [], rowCount: 0 });
 
-    await propagateBatch('personal');
+    await propagateBatch('operations');
 
     const updateCall = mockQueryContext.mock.calls[1];
     const updatedValue = updateCall[2][0];
@@ -381,10 +381,10 @@ describe('propagateBatch', () => {
   it('uses correct context for all database queries', async () => {
     mockQueryContext.mockResolvedValue({ rows: [], rowCount: 0 });
 
-    await propagateBatch('work');
+    await propagateBatch('finance');
 
     for (const call of mockQueryContext.mock.calls) {
-      expect(call[0]).toBe('work');
+      expect(call[0]).toBe('finance');
     }
   });
 });

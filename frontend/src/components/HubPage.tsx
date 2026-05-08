@@ -1,24 +1,15 @@
 /**
  * HubPage - Unified page layout for all tabbed pages
  *
- * Replaces 7+ different tab implementations with a single,
- * consistent component. Provides:
- * - PageHeader with back button
- * - Tab navigation bar (hub-tabs pattern)
- * - Content area
- * - RisingBubbles background
- * - Responsive mobile tabs (icons-only on small screens)
- * - ARIA-compliant tab roles
- * - Optional badge support per tab
+ * Provides: PageHeader + Tab navigation + Content area
+ * Responsive, ARIA-compliant, badge support per tab.
  */
 
 import { memo, useCallback, useEffect, useRef, useState, type ReactNode, type KeyboardEvent } from 'react';
 import type { AIContext } from './ContextSwitcher';
-import { PageHeader } from './PageHeader';
-import { RisingBubbles } from './RisingBubbles';
-import type { BreadcrumbItem } from './Breadcrumbs';
 import type { Page } from '../types';
-import './shared-tabs.css';
+import { PageHeader } from './PageHeader';
+import { cn } from '@/lib/utils';
 
 export interface TabDef<T extends string = string> {
   id: T;
@@ -29,36 +20,20 @@ export interface TabDef<T extends string = string> {
 }
 
 interface HubPageProps<T extends string> {
-  /** Page title shown in header */
   title: string;
-  /** Emoji icon for the header */
   icon: string;
-  /** Optional subtitle */
   subtitle?: string;
-  /** Tab definitions */
   tabs: readonly TabDef<T>[];
-  /** Currently active tab */
   activeTab: T;
-  /** Called when a tab is clicked */
   onTabChange: (tab: T) => void;
-  /** Back button handler */
   onBack: () => void;
-  /** Optional back button label */
   backLabel?: string;
-  /** Current AI context for data-context attribute */
   context?: AIContext;
-  /** Tab content (rendered inside hub-content) */
   children: ReactNode;
-  /** Optional content for the right side of the header */
   headerActions?: ReactNode;
-  /** Optional breadcrumbs */
-  breadcrumbs?: BreadcrumbItem[];
-  /** Navigation handler for breadcrumbs */
-  onNavigate?: (page: Page) => void;
-  /** Hide the rising bubbles background */
   noBubbles?: boolean;
-  /** ARIA label for tab navigation */
   ariaLabel?: string;
+  onNavigate?: (page: Page) => void;
 }
 
 function HubPageComponent<T extends string>({
@@ -69,13 +44,9 @@ function HubPageComponent<T extends string>({
   activeTab,
   onTabChange,
   onBack,
-  backLabel,
   context,
   children,
   headerActions,
-  breadcrumbs,
-  onNavigate,
-  noBubbles,
   ariaLabel,
 }: HubPageProps<T>) {
   const tabListRef = useRef<HTMLElement>(null);
@@ -130,10 +101,8 @@ function HubPageComponent<T extends string>({
 
     if (nextIndex >= 0) {
       onTabChange(tabs[nextIndex].id);
-      // Focus the new tab button
       const buttons = tabListRef.current?.querySelectorAll<HTMLButtonElement>('[role="tab"]');
       buttons?.[nextIndex]?.focus();
-      // Scroll into view
       buttons?.[nextIndex]?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' });
     }
   }, [tabs, activeTab, onTabChange]);
@@ -142,53 +111,74 @@ function HubPageComponent<T extends string>({
   const activeTabId = `tab-${activeTab}`;
 
   return (
-    <div className="hub-page" data-context={context}>
-      {!noBubbles && <RisingBubbles variant="subtle" />}
+    <div className="flex flex-col h-full relative" data-context={context}>
       <PageHeader
         title={title}
         icon={icon}
         subtitle={subtitle}
         onBack={onBack}
-        backLabel={backLabel}
-        breadcrumbs={breadcrumbs}
-        onNavigate={onNavigate}
       >
         {headerActions}
       </PageHeader>
 
+      {/* Tab bar */}
       <div
         ref={wrapperRef}
-        className={`hub-tabs-wrapper${scrollState.left ? ' can-scroll-left' : ''}${scrollState.right ? ' can-scroll-right' : ''}`}
+        className={cn(
+          'relative',
+          scrollState.left && 'before:absolute before:left-0 before:top-0 before:bottom-0 before:w-8 before:bg-gradient-to-r before:from-bg before:to-transparent before:z-10 before:pointer-events-none',
+          scrollState.right && 'after:absolute after:right-0 after:top-0 after:bottom-0 after:w-8 after:bg-gradient-to-l after:from-bg after:to-transparent after:z-10 after:pointer-events-none',
+        )}
       >
-        <nav className="hub-tabs" role="tablist" aria-label={ariaLabel || `${title} Navigation`} ref={tabListRef}>
-          {tabs.map((tab) => (
-            <button
-              key={tab.id}
-              id={`tab-${tab.id}`}
-              role="tab"
-              aria-selected={activeTab === tab.id}
-              aria-controls={tabPanelId}
-              tabIndex={activeTab === tab.id ? 0 : -1}
-              className={`hub-tab ${activeTab === tab.id ? 'active' : ''}`}
-              onClick={() => onTabChange(tab.id)}
-              onKeyDown={handleTabKeyDown}
-              title={tab.description}
-            >
-              <span className="hub-tab-icon" aria-hidden="true">{tab.icon}</span>
-              <span className="hub-tab-label">{tab.label}</span>
-              {tab.badge != null && (
-                <span className="hub-tab-badge" aria-label={`${tab.badge}`}>
-                  {tab.badge}
-                </span>
-              )}
-            </button>
-          ))}
+        <nav
+          className="flex items-center gap-0.5 overflow-x-auto scrollbar-thin border-b border-border/60"
+          role="tablist"
+          aria-label={ariaLabel || `${title} Navigation`}
+          ref={tabListRef}
+        >
+          {tabs.map((tab) => {
+            const isActive = activeTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                id={`tab-${tab.id}`}
+                role="tab"
+                aria-selected={isActive}
+                aria-controls={tabPanelId}
+                aria-label={tab.label}
+                tabIndex={isActive ? 0 : -1}
+                className={cn(
+                  'relative flex items-center gap-2 px-4 py-2.5 border-none cursor-pointer transition-all duration-150 whitespace-nowrap text-[13px] font-medium shrink-0',
+                  'bg-transparent -mb-px',
+                  isActive
+                    ? 'text-text'
+                    : 'text-text-muted hover:text-text-secondary',
+                )}
+                onClick={() => onTabChange(tab.id)}
+                onKeyDown={handleTabKeyDown}
+                title={tab.description}
+              >
+                <span className="text-sm" aria-hidden="true">{tab.icon}</span>
+                <span className="max-xs:hidden">{tab.label}</span>
+                {tab.badge != null && (
+                  <span className="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1.5 rounded-full text-2xs font-semibold bg-primary/15 text-primary">
+                    {tab.badge}
+                  </span>
+                )}
+                {/* Active indicator line */}
+                {isActive && (
+                  <span className="absolute bottom-0 left-2 right-2 h-0.5 rounded-full bg-primary" />
+                )}
+              </button>
+            );
+          })}
         </nav>
       </div>
 
-      <main className="hub-content" role="tabpanel" id={tabPanelId} aria-labelledby={activeTabId}>
+      {/* Tab content */}
+      <div className="flex-1 min-h-0 overflow-y-auto" role="tabpanel" id={tabPanelId} aria-labelledby={activeTabId}>
         {children}
-      </main>
+      </div>
     </div>
   );
 }

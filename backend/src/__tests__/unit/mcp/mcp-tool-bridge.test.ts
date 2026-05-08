@@ -149,10 +149,10 @@ describe('MCP Tool Bridge', () => {
 
       const { mcpServerRegistry } = require('../../../services/mcp/mcp-registry');
       const tools = bridge.getAllBridgedTools();
-      await bridge.executeTool(tools[0].qualifiedName, {}, 'personal' as any);
+      await bridge.executeTool(tools[0].qualifiedName, {}, 'operations' as any);
 
       expect(mcpServerRegistry.recordToolUsage).toHaveBeenCalledWith(
-        'personal',
+        'operations',
         'server-1',
         'search',
         expect.any(Number)

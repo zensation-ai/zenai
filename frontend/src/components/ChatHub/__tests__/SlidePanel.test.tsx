@@ -32,7 +32,7 @@ describe('SlidePanel', () => {
 
   it('calls onClose when close button is clicked', () => {
     render(<SlidePanel {...defaultProps} />);
-    const closeBtn = screen.getByLabelText('Panel schliessen');
+    const closeBtn = screen.getByLabelText('Panel schließen');
     fireEvent.click(closeBtn);
     expect(defaultProps.onClose).toHaveBeenCalled();
   });

@@ -12,21 +12,9 @@ import { handleCalendarIntent } from './calendar-handler';
 import { handleEmailIntent } from './email-handler';
 import { handleTravelIntent } from './travel-handler';
 
-// ============================================================
-// Types
-// ============================================================
-
-export interface IntentHandlerResult {
-  success: boolean;
-  intent_type: IntentType;
-  created_resource?: {
-    type: string;
-    id: string;
-    summary: string;
-    data?: Record<string, unknown>;
-  };
-  error?: string;
-}
+// Types extracted to intent-types.ts to break circular dependency with handler files
+export type { IntentHandlerResult } from './intent-types';
+import type { IntentHandlerResult } from './intent-types';
 
 // ============================================================
 // Dispatcher

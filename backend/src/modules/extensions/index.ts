@@ -19,7 +19,7 @@ export class ExtensionsModule implements Module {
     // Load active plugins from database
     try {
       const { loadActivePlugins } = await import('../../services/plugins/plugin-registry');
-      const contexts = ['personal', 'work', 'learning', 'creative'] as const;
+      const contexts = ['operations', 'finance', 'people', 'strategy'] as const;
       for (const ctx of contexts) {
         await loadActivePlugins(ctx);
       }

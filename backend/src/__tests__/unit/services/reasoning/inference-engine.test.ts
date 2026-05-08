@@ -30,7 +30,7 @@ const mockQueryContext = jest.fn();
 jest.mock('../../../../utils/database-context', () => ({
   queryContext: (...args: unknown[]) => mockQueryContext(...args),
   isValidContext: (ctx: string) =>
-    ['personal', 'work', 'learning', 'creative'].includes(ctx),
+    ['operations', 'finance', 'people', 'strategy'].includes(ctx),
 }));
 
 jest.mock('../../../../utils/logger', () => ({
@@ -50,7 +50,7 @@ function rows<T>(data: T[]): { rows: T[]; rowCount: number } {
   return { rows: data, rowCount: data.length };
 }
 
-const CTX = 'personal';
+const CTX = 'operations';
 const ENTITY_A = 'entity-a-uuid';
 const ENTITY_B = 'entity-b-uuid';
 const ENTITY_C = 'entity-c-uuid';

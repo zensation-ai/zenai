@@ -17,7 +17,7 @@ const mockProjects: Project[] = [
     color: '#4A90D9',
     icon: '🖥️',
     status: 'active',
-    context: 'work',
+    context: 'finance',
     sort_order: 0,
     metadata: {},
     created_at: '2026-01-01T00:00:00Z',
@@ -29,7 +29,7 @@ const mockProjects: Project[] = [
     color: '#8B8B8B',
     icon: '📦',
     status: 'archived',
-    context: 'work',
+    context: 'finance',
     sort_order: 1,
     metadata: {},
     created_at: '2026-01-01T00:00:00Z',
@@ -50,7 +50,7 @@ function makeTask(overrides: Partial<Task> = {}): Task {
     assignee: 'Alex',
     estimated_hours: 4,
     sort_order: 0,
-    context: 'work',
+    context: 'finance',
     labels: [],
     metadata: {},
     created_at: '2026-01-01T00:00:00Z',
@@ -174,7 +174,7 @@ describe('TaskForm', () => {
         <TaskForm task={null} projects={mockProjects} onSubmit={onSubmit} onClose={onClose} />
       );
 
-      const overlay = container.querySelector('.task-form-overlay')!;
+      const overlay = screen.getByTestId('task-form-overlay');
       fireEvent.click(overlay);
 
       expect(onClose).toHaveBeenCalledOnce();

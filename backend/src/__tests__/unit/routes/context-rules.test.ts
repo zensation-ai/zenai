@@ -58,20 +58,20 @@ describe('Context Rules Routes', () => {
     it('should return list of context rules', async () => {
       const rules = [{ id: '1', name: 'Finance Rule', domain: 'finance' }];
       mockListContextRules.mockResolvedValue(rules);
-      const res = await request(app).get('/api/personal/context-rules');
+      const res = await request(app).get('/api/operations/context-rules');
       expect(res.status).toBe(200);
       expect(res.body.data).toEqual(rules);
     });
 
     it('should filter by domain', async () => {
       mockListContextRules.mockResolvedValue([]);
-      const res = await request(app).get('/api/personal/context-rules?domain=finance');
+      const res = await request(app).get('/api/operations/context-rules?domain=finance');
       expect(res.status).toBe(200);
-      expect(mockListContextRules).toHaveBeenCalledWith('personal', 'finance');
+      expect(mockListContextRules).toHaveBeenCalledWith('operations', 'finance');
     });
 
     it('should reject invalid domain filter', async () => {
-      const res = await request(app).get('/api/personal/context-rules?domain=invalid');
+      const res = await request(app).get('/api/operations/context-rules?domain=invalid');
       expect(res.status).toBe(400);
     });
   });
@@ -80,7 +80,7 @@ describe('Context Rules Routes', () => {
     it('should return rule performance metrics', async () => {
       const perf = [{ ruleId: '1', avgLatency: 50, totalCalls: 100 }];
       mockGetRulePerformance.mockResolvedValue(perf);
-      const res = await request(app).get('/api/personal/context-rules/performance');
+      const res = await request(app).get('/api/operations/context-rules/performance');
       expect(res.status).toBe(200);
       expect(res.body.data).toEqual(perf);
     });
@@ -90,13 +90,13 @@ describe('Context Rules Routes', () => {
     it('should test a query against rules', async () => {
       mockClassifyDomain.mockReturnValue('finance');
       mockBuildContext.mockResolvedValue({ tokens: 1500, sources: 3 });
-      const res = await request(app).post('/api/personal/context-rules/test').send({ query: 'revenue report' });
+      const res = await request(app).post('/api/operations/context-rules/test').send({ query: 'revenue report' });
       expect(res.status).toBe(200);
       expect(res.body.data.classifiedDomain).toBe('finance');
     });
 
     it('should reject missing query', async () => {
-      const res = await request(app).post('/api/personal/context-rules/test').send({});
+      const res = await request(app).post('/api/operations/context-rules/test').send({});
       expect(res.status).toBe(400);
     });
   });
@@ -110,23 +110,23 @@ describe('Context Rules Routes', () => {
 
     it('should create a context rule', async () => {
       mockCreateContextRule.mockResolvedValue({ id: 'new', ...validRule });
-      const res = await request(app).post('/api/personal/context-rules').send(validRule);
+      const res = await request(app).post('/api/operations/context-rules').send(validRule);
       expect(res.status).toBe(201);
       expect(res.body.data.name).toBe('Email Context');
     });
 
     it('should reject missing name', async () => {
-      const res = await request(app).post('/api/personal/context-rules').send({ domain: 'email', dataSources: [{}] });
+      const res = await request(app).post('/api/operations/context-rules').send({ domain: 'email', dataSources: [{}] });
       expect(res.status).toBe(400);
     });
 
     it('should reject invalid domain', async () => {
-      const res = await request(app).post('/api/personal/context-rules').send({ name: 'X', domain: 'invalid', dataSources: [{}] });
+      const res = await request(app).post('/api/operations/context-rules').send({ name: 'X', domain: 'invalid', dataSources: [{}] });
       expect(res.status).toBe(400);
     });
 
     it('should reject empty dataSources', async () => {
-      const res = await request(app).post('/api/personal/context-rules').send({ name: 'X', domain: 'email', dataSources: [] });
+      const res = await request(app).post('/api/operations/context-rules').send({ name: 'X', domain: 'email', dataSources: [] });
       expect(res.status).toBe(400);
     });
   });
@@ -134,14 +134,14 @@ describe('Context Rules Routes', () => {
   describe('PUT /:context/context-rules/:id', () => {
     it('should update a context rule', async () => {
       mockUpdateContextRule.mockResolvedValue({ id: 'abc', name: 'Updated' });
-      const res = await request(app).put('/api/personal/context-rules/abc').send({ name: 'Updated' });
+      const res = await request(app).put('/api/operations/context-rules/abc').send({ name: 'Updated' });
       expect(res.status).toBe(200);
       expect(res.body.data.name).toBe('Updated');
     });
 
     it('should return 404 for non-existent rule', async () => {
       mockUpdateContextRule.mockResolvedValue(null);
-      const res = await request(app).put('/api/personal/context-rules/abc').send({ name: 'X' });
+      const res = await request(app).put('/api/operations/context-rules/abc').send({ name: 'X' });
       expect(res.status).toBe(404);
     });
   });
@@ -149,14 +149,14 @@ describe('Context Rules Routes', () => {
   describe('DELETE /:context/context-rules/:id', () => {
     it('should delete a context rule', async () => {
       mockDeleteContextRule.mockResolvedValue(true);
-      const res = await request(app).delete('/api/personal/context-rules/abc');
+      const res = await request(app).delete('/api/operations/context-rules/abc');
       expect(res.status).toBe(200);
       expect(res.body.message).toBe('Context rule deleted');
     });
 
     it('should return 404 for non-existent rule', async () => {
       mockDeleteContextRule.mockResolvedValue(false);
-      const res = await request(app).delete('/api/personal/context-rules/abc');
+      const res = await request(app).delete('/api/operations/context-rules/abc');
       expect(res.status).toBe(404);
     });
   });

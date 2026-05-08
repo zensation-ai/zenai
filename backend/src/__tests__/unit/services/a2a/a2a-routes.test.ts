@@ -4,7 +4,7 @@
 
 jest.mock('../../../../utils/database-context', () => ({
   queryContext: jest.fn(),
-  isValidContext: jest.fn((ctx: string) => ['personal', 'work', 'learning', 'creative'].includes(ctx)),
+  isValidContext: jest.fn((ctx: string) => ['operations', 'finance', 'people', 'strategy'].includes(ctx)),
 }));
 
 jest.mock('../../../../utils/logger', () => ({
@@ -207,10 +207,10 @@ describe('A2A Routes', () => {
       expect(res.body.success).toBe(false);
     });
 
-    it('should find task in non-personal context', async () => {
-      // personal: not found
+    it('should find task in non-operations context', async () => {
+      // operations: not found
       mockQueryContext.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any);
-      // work: found
+      // finance: found
       mockQueryContext.mockResolvedValueOnce({ rows: [{ ...mockTaskRow, skill_id: 'code-review' }], rowCount: 1 } as any);
 
       const res = await request(app).get(`/api/a2a/tasks/${mockTaskRow.id}`);
@@ -294,7 +294,7 @@ describe('A2A Routes', () => {
     it('should list tasks for valid context', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [mockTaskRow], rowCount: 1 } as any);
 
-      const res = await request(app).get('/api/personal/a2a/tasks');
+      const res = await request(app).get('/api/operations/a2a/tasks');
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
@@ -311,10 +311,10 @@ describe('A2A Routes', () => {
     it('should pass query filters', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any);
 
-      await request(app).get('/api/work/a2a/tasks?status=completed&skill_id=research&limit=10');
+      await request(app).get('/api/finance/a2a/tasks?status=completed&skill_id=research&limit=10');
 
       expect(mockQueryContext).toHaveBeenCalledWith(
-        'work',
+        'finance',
         expect.stringContaining('status = $1'),
         expect.any(Array)
       );
@@ -325,7 +325,7 @@ describe('A2A Routes', () => {
     it('should list external agents', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [mockAgentRow], rowCount: 1 } as any);
 
-      const res = await request(app).get('/api/personal/a2a/external-agents');
+      const res = await request(app).get('/api/operations/a2a/external-agents');
 
       expect(res.status).toBe(200);
       expect(res.body.data).toHaveLength(1);
@@ -347,7 +347,7 @@ describe('A2A Routes', () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [mockAgentRow], rowCount: 1 } as any);
 
       const res = await request(app)
-        .post('/api/personal/a2a/external-agents')
+        .post('/api/operations/a2a/external-agents')
         .send({
           name: 'New Agent',
           url: 'https://new-agent.example.com',
@@ -359,7 +359,7 @@ describe('A2A Routes', () => {
 
     it('should return 400 for missing name', async () => {
       const res = await request(app)
-        .post('/api/personal/a2a/external-agents')
+        .post('/api/operations/a2a/external-agents')
         .send({ url: 'https://agent.example.com' });
 
       expect(res.status).toBe(400);
@@ -368,7 +368,7 @@ describe('A2A Routes', () => {
 
     it('should return 400 for missing url', async () => {
       const res = await request(app)
-        .post('/api/personal/a2a/external-agents')
+        .post('/api/operations/a2a/external-agents')
         .send({ name: 'Agent' });
 
       expect(res.status).toBe(400);
@@ -379,7 +379,7 @@ describe('A2A Routes', () => {
     it('should remove an external agent', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [{ id: 'agent-123' }], rowCount: 1 } as any);
 
-      const res = await request(app).delete('/api/personal/a2a/external-agents/agent-123');
+      const res = await request(app).delete('/api/operations/a2a/external-agents/agent-123');
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
@@ -401,7 +401,7 @@ describe('A2A Routes', () => {
       // Update health status
       mockQueryContext.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any);
 
-      const res = await request(app).post('/api/personal/a2a/external-agents/agent-123/health');
+      const res = await request(app).post('/api/operations/a2a/external-agents/agent-123/health');
 
       expect(res.status).toBe(200);
       expect(res.body.data).toHaveProperty('status');
@@ -420,7 +420,7 @@ describe('A2A Routes', () => {
       });
 
       const res = await request(app)
-        .post('/api/personal/a2a/external-agents/agent-123/send')
+        .post('/api/operations/a2a/external-agents/agent-123/send')
         .send({
           skill_id: 'test',
           message: { role: 'user', parts: [{ type: 'text', text: 'Hello' }] },
@@ -432,7 +432,7 @@ describe('A2A Routes', () => {
 
     it('should return 400 for missing skill_id', async () => {
       const res = await request(app)
-        .post('/api/personal/a2a/external-agents/agent-123/send')
+        .post('/api/operations/a2a/external-agents/agent-123/send')
         .send({ message: {} });
 
       expect(res.status).toBe(400);
@@ -442,7 +442,7 @@ describe('A2A Routes', () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any);
 
       const res = await request(app)
-        .post('/api/personal/a2a/external-agents/nonexistent/send')
+        .post('/api/operations/a2a/external-agents/nonexistent/send')
         .send({ skill_id: 'test', message: {} });
 
       expect(res.status).toBe(404);

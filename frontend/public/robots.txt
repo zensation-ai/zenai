@@ -12,4 +12,4 @@ Disallow: /wissen
 Disallow: /inbox
 Disallow: /system
 
-Sitemap: https://frontend-mu-six-93.vercel.app/sitemap.xml
+Sitemap: https://app.zensation.ai/sitemap.xml

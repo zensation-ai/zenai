@@ -15,7 +15,7 @@ import request from 'supertest';
 
 jest.mock('../../utils/database-context', () => ({
   queryContext: jest.fn(),
-  isValidContext: jest.fn((ctx: string) => ['personal', 'work', 'learning', 'creative'].includes(ctx)),
+  isValidContext: jest.fn((ctx: string) => ['operations', 'finance', 'people', 'strategy'].includes(ctx)),
   isValidUUID: jest.fn((id: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id)),
   AIContext: {},
 }));
@@ -240,7 +240,7 @@ describe('API Key backward compatibility', () => {
       ]);
 
       const res = await request(app)
-        .get('/api/personal/tasks')
+        .get('/api/operations/tasks')
         .set('x-api-key', 'test');
 
       expect(res.status).toBe(200);
@@ -262,7 +262,7 @@ describe('API Key backward compatibility', () => {
       mockCreateTask.mockResolvedValue(createdTask as any);
 
       const res = await request(app)
-        .post('/api/personal/tasks')
+        .post('/api/operations/tasks')
         .set('x-api-key', 'test')
         .send({ title: 'New Task via API Key' });
 
@@ -309,7 +309,7 @@ describe('API Key backward compatibility', () => {
       mockGetTasks.mockResolvedValue([]);
 
       await request(app)
-        .get('/api/personal/tasks')
+        .get('/api/operations/tasks')
         .set('x-api-key', 'test');
 
       expect(mockGetTasks).toHaveBeenCalledTimes(1);

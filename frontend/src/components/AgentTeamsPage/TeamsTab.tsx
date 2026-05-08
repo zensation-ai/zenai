@@ -4,7 +4,7 @@
  * Extracted from AgentTeamsPage.tsx (Phase 121).
  */
 
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect, useCallback, type CSSProperties } from 'react';
 import { Bot } from 'lucide-react';
 import axios from 'axios';
 import type { AIContext } from '../ContextSwitcher';
@@ -94,7 +94,7 @@ export function TeamsTab({ context, showAnalytics, analytics }: TeamsTabProps) {
       eventSourceRef.current?.abort();
       setLoading(false);
       setCurrentAgent(null);
-      showToast('Ausfuehrung abgebrochen', 'info');
+      showToast('Ausführung abgebrochen', 'info');
     }
   }, [loading]);
 
@@ -107,7 +107,7 @@ export function TeamsTab({ context, showAnalytics, analytics }: TeamsTabProps) {
   const handlePauseExecution = async (executionId: string) => {
     try {
       await axios.post(`/api/agents/executions/${executionId}/pause`, { context });
-      showToast('Ausfuehrung pausiert', 'success');
+      showToast('Ausführung pausiert', 'success');
       await loadHistory();
     } catch (err) {
       logError('TeamsTab:pause', err);
@@ -118,7 +118,7 @@ export function TeamsTab({ context, showAnalytics, analytics }: TeamsTabProps) {
   const handleCancelExecution = async (executionId: string) => {
     try {
       await axios.post(`/api/agents/executions/${executionId}/cancel`, { context });
-      showToast('Ausfuehrung abgebrochen', 'success');
+      showToast('Ausführung abgebrochen', 'success');
       await loadHistory();
     } catch (err) {
       logError('TeamsTab:cancel', err);
@@ -269,11 +269,11 @@ export function TeamsTab({ context, showAnalytics, analytics }: TeamsTabProps) {
         setResult(res.data);
         loadHistory();
       } else {
-        setError(res.data.error || 'Ausfuehrung fehlgeschlagen');
+        setError(res.data.error || 'Ausführung fehlgeschlagen');
       }
     } catch (err) {
       logError('TeamsTab:executeFallback', err);
-      setError('Aufgabe konnte nicht ausgefuehrt werden. Bitte versuche es erneut.');
+      setError('Aufgabe konnte nicht ausgeführt werden. Bitte versuche es erneut.');
     } finally {
       setLoading(false);
     }
@@ -312,7 +312,7 @@ export function TeamsTab({ context, showAnalytics, analytics }: TeamsTabProps) {
           <div className="analytics-totals">
             <div className="analytics-stat">
               <span className="analytics-stat-value">{analytics.totals.executions}</span>
-              <span className="analytics-stat-label">Ausfuehrungen</span>
+              <span className="analytics-stat-label">Ausführungen</span>
             </div>
             <div className="analytics-stat">
               <span className="analytics-stat-value analytics-success">{analytics.totals.successRate}%</span>
@@ -350,7 +350,7 @@ export function TeamsTab({ context, showAnalytics, analytics }: TeamsTabProps) {
             className="templates-toggle neuro-hover-lift"
             onClick={() => setShowTemplates(!showTemplates)}
           >
-            {showTemplates ? '\u2715 Schliessen' : '\uD83D\uDCCB Templates'}
+            {showTemplates ? '\u2715 Schließen' : '\uD83D\uDCCB Templates'}
           </button>
         </div>
 
@@ -372,13 +372,13 @@ export function TeamsTab({ context, showAnalytics, analytics }: TeamsTabProps) {
         )}
 
         <textarea
-          className="agent-task-input liquid-glass-input"
+          className="agent-task-input bg-[var(--color-glass-bg)] backdrop-blur-md border border-[var(--color-glass-border)] rounded-lg px-4 py-2.5 text-sm text-[var(--color-text)] placeholder:text-[var(--color-text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/50 transition-shadow"
           value={task}
           onChange={(e) => setTask(e.target.value)}
           placeholder="Beschreibe die Aufgabe, die das Agent-Team bearbeiten soll..."
           rows={4}
           disabled={loading}
-          aria-label="Aufgabenbeschreibung fuer Agent-Team"
+          aria-label="Aufgabenbeschreibung für Agent-Team"
         />
         <div className="task-actions">
           <button
@@ -411,14 +411,14 @@ export function TeamsTab({ context, showAnalytics, analytics }: TeamsTabProps) {
 
       {/* Strategy Selection */}
       <div className="agent-teams-section liquid-glass neuro-stagger-item">
-        <h3>Strategie waehlen</h3>
+        <h3>Strategie wählen</h3>
         <div className="strategy-grid">
           {STRATEGIES.map((s, index) => (
             <button
               key={s.id}
               type="button"
-              className={`strategy-card neuro-hover-lift neuro-stagger-item ${strategy === s.id ? 'active' : ''}`}
-              style={{ animationDelay: `${index * 50}ms` }}
+              className={`strategy-card neuro-hover-lift neuro-stagger-item [animation-delay:var(--delay)] ${strategy === s.id ? 'active' : ''}`}
+              style={{ '--delay': `${index * 50}ms` } as CSSProperties}
               onClick={() => setStrategy(s.id)}
               disabled={loading}
             >
@@ -476,8 +476,8 @@ export function TeamsTab({ context, showAnalytics, analytics }: TeamsTabProps) {
               </div>
               <div className="progress-bar-container">
                 <div
-                  className="progress-bar-fill"
-                  style={{ width: `${((currentAgent.index + 0.5) / currentAgent.total) * 100}%` }}
+                  className="progress-bar-fill w-[var(--bar-w)]"
+                  style={{ '--bar-w': `${((currentAgent.index + 0.5) / currentAgent.total) * 100}%` } as CSSProperties}
                 />
               </div>
               {currentAgent.subTask && (
@@ -512,7 +512,7 @@ export function TeamsTab({ context, showAnalytics, analytics }: TeamsTabProps) {
               );
             })}
 
-          <p className="loading-hint">Druecke Escape zum Abbrechen</p>
+          <p className="loading-hint">Drücke Escape zum Abbrechen</p>
         </div>
       )}
 
@@ -545,7 +545,7 @@ export function TeamsTab({ context, showAnalytics, analytics }: TeamsTabProps) {
             </div>
             <div className="stat-item">
               <span className="stat-label">Shared Memory</span>
-              <span className="stat-value">{result.stats.sharedMemoryEntries} Eintraege</span>
+              <span className="stat-value">{result.stats.sharedMemoryEntries} Einträge</span>
             </div>
           </div>
 
@@ -556,8 +556,8 @@ export function TeamsTab({ context, showAnalytics, analytics }: TeamsTabProps) {
               return (
                 <div
                   key={`${agent.role}-${index}`}
-                  className={`agent-card liquid-glass neuro-hover-lift neuro-stagger-item ${agent.success ? 'success' : 'failed'}`}
-                  style={{ animationDelay: `${index * 80}ms` }}
+                  className={`agent-card liquid-glass neuro-hover-lift neuro-stagger-item [animation-delay:var(--delay)] ${agent.success ? 'success' : 'failed'}`}
+                  style={{ '--delay': `${index * 80}ms` } as CSSProperties}
                 >
                   <div className="agent-card-header">
                     <span className="agent-role-icon">{config.icon}</span>
@@ -610,10 +610,10 @@ export function TeamsTab({ context, showAnalytics, analytics }: TeamsTabProps) {
 
       {/* Empty state when no history and no result */}
       {history.length === 0 && !result && !loading && (
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '48px 24px', textAlign: 'center', color: 'var(--text-secondary)' }}>
-          <Bot size={40} strokeWidth={1.5} style={{ marginBottom: '16px', opacity: 0.6 }} />
-          <h3 style={{ margin: '0 0 8px', fontSize: '18px', color: 'var(--text-primary)' }}>Keine Ausfuehrungen</h3>
-          <p style={{ margin: '0 0 16px', fontSize: '14px', maxWidth: '360px' }}>Starte dein erstes KI-Team um komplexe Aufgaben zu loesen.</p>
+        <div className="flex flex-col items-center justify-center py-12 px-6 text-center text-text-secondary">
+          <Bot size={40} strokeWidth={1.5} className="mb-4 opacity-60" />
+          <h3 className="m-0 mb-2 text-lg text-text">Keine Ausführungen</h3>
+          <p className="m-0 mb-4 text-sm max-w-[360px]">Starte dein erstes KI-Team um komplexe Aufgaben zu lösen.</p>
           <button className="ds-button ds-button--primary ds-button--sm" type="button" onClick={() => { setTask(''); window.scrollTo({ top: 0, behavior: 'smooth' }); }}>
             Team starten
           </button>
@@ -637,8 +637,11 @@ export function TeamsTab({ context, showAnalytics, analytics }: TeamsTabProps) {
                 >
                   {entry.status && entry.status !== 'completed' && entry.status !== 'failed' ? (
                     <span
-                      className="history-status-badge"
-                      style={{ background: `${EXECUTION_STATUS_LABELS[entry.status]?.color || '#888'}22`, color: EXECUTION_STATUS_LABELS[entry.status]?.color || '#888' }}
+                      className="history-status-badge bg-[var(--sc-bg)] text-[var(--sc)]"
+                      style={{
+                        '--sc': EXECUTION_STATUS_LABELS[entry.status]?.color || '#888',
+                        '--sc-bg': `${EXECUTION_STATUS_LABELS[entry.status]?.color || '#888'}22`,
+                      } as CSSProperties}
                     >
                       {EXECUTION_STATUS_LABELS[entry.status]?.label || entry.status}
                     </span>

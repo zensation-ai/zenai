@@ -7,6 +7,7 @@
  * @module routes/ideas-crud-handlers
  */
 
+import crypto from 'crypto';
 import { Request, Response } from 'express';
 import { queryContext, AIContext, isValidUUID } from '../utils/database-context';
 import { trackInteraction } from '../services/user-profile';
@@ -24,6 +25,7 @@ import { ValidationError, NotFoundError } from '../middleware/errorHandler';
 import { parseIdeaRow, parseIdeaRows, IdeaDatabaseRow, serializeArrayField } from '../utils/idea-parser';
 import { trackActivity } from '../services/activity-tracker';
 import { getUserId } from '../utils/user-context';
+import { buildCursorWhere, buildCursorResponse } from '../utils/cursor-pagination';
 
 // ===========================================
 // Type-safe row interfaces for aggregate queries
@@ -94,28 +96,66 @@ export async function handleListIdeas(ctx: AIContext, req: Request, res: Respons
     whereClause += ` AND is_favorite = true`;
   }
 
-  const result = await queryContext(
-    ctx,
-    `SELECT ${IDEA_LIST_COLUMNS}, COUNT(*) OVER() AS total_count
-     FROM ideas
-     WHERE is_archived = false AND user_id = $1 ${whereClause}
-     ORDER BY created_at DESC
-     LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`,
-    [...params, limit, offset]
-  );
+  // Cursor pagination support (additive, backward-compatible with offset)
+  const cursorParam = req.query.cursor as string | undefined;
+  const cursorResult = buildCursorWhere(cursorParam, 'created_at', 'id', paramIndex);
+  if (cursorResult.where) {
+    whereClause += ` AND ${cursorResult.where}`;
+    cursorResult.params.forEach(p => params.push(p));
+    paramIndex += cursorResult.params.length;
+  }
 
-  const total = result.rows.length > 0 ? parseInt(result.rows[0].total_count, 10) : 0;
+  if (cursorParam) {
+    // Cursor mode: fetch limit+1 rows, no total_count needed
+    const result = await queryContext(
+      ctx,
+      `SELECT ${IDEA_LIST_COLUMNS}
+       FROM ideas
+       WHERE is_archived = false AND user_id = $1 ${whereClause}
+       ORDER BY created_at DESC, id DESC
+       LIMIT $${paramIndex}`,
+      [...params, limit + 1]
+    );
 
-  res.json({
-    success: true,
-    ideas: parseIdeaRows(result.rows as IdeaDatabaseRow[]),
-    pagination: {
-      total,
+    const cursorPage = buildCursorResponse(
+      result.rows as Record<string, unknown>[],
       limit,
-      offset,
-      hasMore: offset + limit < total,
-    },
-  });
+      'created_at',
+      'id',
+    );
+
+    res.json({
+      success: true,
+      ideas: parseIdeaRows(cursorPage.data as IdeaDatabaseRow[]),
+      data: parseIdeaRows(cursorPage.data as IdeaDatabaseRow[]),
+      nextCursor: cursorPage.nextCursor,
+      hasMore: cursorPage.hasMore,
+    });
+  } else {
+    // Offset mode (legacy): include total_count for backward compatibility
+    const result = await queryContext(
+      ctx,
+      `SELECT ${IDEA_LIST_COLUMNS}, COUNT(*) OVER() AS total_count
+       FROM ideas
+       WHERE is_archived = false AND user_id = $1 ${whereClause}
+       ORDER BY created_at DESC
+       LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`,
+      [...params, limit, offset]
+    );
+
+    const total = result.rows.length > 0 ? parseInt(result.rows[0].total_count, 10) : 0;
+
+    res.json({
+      success: true,
+      ideas: parseIdeaRows(result.rows as IdeaDatabaseRow[]),
+      pagination: {
+        total,
+        limit,
+        offset,
+        hasMore: offset + limit < total,
+      },
+    });
+  }
 }
 
 // ===========================================
@@ -148,6 +188,63 @@ export async function handleGetIdea(ctx: AIContext, req: Request, res: Response)
     .catch((err) => logger.debug('Background view count update skipped', { error: err.message }));
 
   res.json({ success: true, idea: parseIdeaRow(row as IdeaDatabaseRow) });
+}
+
+// ===========================================
+// Create idea handler
+// ===========================================
+
+export async function handleCreateIdea(ctx: AIContext, req: Request, res: Response) {
+  const userId = getUserId(req);
+  const { content, title, priority, type, category } = req.body;
+
+  if (!content && !title) {
+    throw new ValidationError('Either content or title is required');
+  }
+
+  const id = crypto.randomUUID();
+  const ideaTitle = title || (content ? content.substring(0, 100) : 'Untitled');
+  const ideaSummary = content || '';
+
+  const result = await queryContext(
+    ctx,
+    `INSERT INTO ideas (id, title, summary, raw_transcript, type, category, priority, context, user_id)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+     RETURNING ${IDEA_DETAIL_COLUMNS}, is_favorite`,
+    [
+      id,
+      ideaTitle,
+      ideaSummary,
+      content || '',
+      type || 'thought',
+      category || 'general',
+      priority || 'medium',
+      ctx,
+      userId,
+    ]
+  );
+
+  const row = result.rows[0];
+  if (!row) {
+    throw new Error('Failed to create idea');
+  }
+
+  triggerWebhook('idea.created', { id, ...row }).catch((err) =>
+    logger.debug('Background webhook skipped', { error: err.message })
+  );
+
+  trackActivity(ctx, {
+    eventType: 'pattern_learned',
+    title: `Neuer Gedanke: ${ideaTitle.substring(0, 50)}`,
+    description: 'Gedanke erstellt',
+    impact_score: 0.5,
+    related_entity_type: 'idea',
+    related_entity_id: id,
+    actionType: 'idea_created',
+    actionData: { ideaId: id },
+  }).catch((err) => logger.debug('Failed to record idea create activity', { error: err instanceof Error ? err.message : String(err) }));
+
+  res.status(201).json({ success: true, idea: parseIdeaRow(row as IdeaDatabaseRow) });
 }
 
 // ===========================================
@@ -238,6 +335,10 @@ export async function handleUpdateIdea(ctx: AIContext, req: Request, res: Respon
     }).catch((err) => logger.debug('Background edit tracking skipped', { error: err.message }));
   }
 
+  if (result.rows.length === 0) {
+    throw new NotFoundError('Idea');
+  }
+
   triggerWebhook('idea.updated', {
     id: req.params.id,
     ...result.rows[0]
@@ -299,20 +400,29 @@ export async function handleDeleteIdea(ctx: AIContext, req: Request, res: Respon
  */
 export async function handleStatsSummary(ctx: AIContext, req: Request, res: Response) {
   const userId = getUserId(req);
-  const [totalResult, typeResult, categoryResult, priorityResult] = await Promise.all([
-    queryContext(ctx, 'SELECT COUNT(*) as total FROM ideas WHERE is_archived = false AND user_id = $1', [userId]),
-    queryContext(ctx, 'SELECT type, COUNT(*) as count FROM ideas WHERE is_archived = false AND user_id = $1 GROUP BY type', [userId]),
-    queryContext(ctx, 'SELECT category, COUNT(*) as count FROM ideas WHERE is_archived = false AND user_id = $1 GROUP BY category', [userId]),
-    queryContext(ctx, 'SELECT priority, COUNT(*) as count FROM ideas WHERE is_archived = false AND user_id = $1 GROUP BY priority', [userId]),
-  ]);
 
-  res.json({
-    success: true,
-    total: parseInt(totalResult.rows[0]?.total ?? '0', 10),
-    byType: (typeResult.rows as TypeCountRow[]).reduce((acc, row) => ({ ...acc, [row.type]: parseInt(row.count, 10) }), {} as Record<string, number>),
-    byCategory: (categoryResult.rows as CategoryCountRow[]).reduce((acc, row) => ({ ...acc, [row.category]: parseInt(row.count, 10) }), {} as Record<string, number>),
-    byPriority: (priorityResult.rows as PriorityCountRow[]).reduce((acc, row) => ({ ...acc, [row.priority]: parseInt(row.count, 10) }), {} as Record<string, number>),
-  });
+  try {
+    const [totalResult, typeResult, categoryResult, priorityResult] = await Promise.all([
+      queryContext(ctx, 'SELECT COUNT(*) as total FROM ideas WHERE is_archived = false AND user_id = $1', [userId]),
+      queryContext(ctx, 'SELECT type, COUNT(*) as count FROM ideas WHERE is_archived = false AND user_id = $1 GROUP BY type', [userId]),
+      queryContext(ctx, 'SELECT category, COUNT(*) as count FROM ideas WHERE is_archived = false AND user_id = $1 GROUP BY category', [userId]),
+      queryContext(ctx, 'SELECT priority, COUNT(*) as count FROM ideas WHERE is_archived = false AND user_id = $1 GROUP BY priority', [userId]),
+    ]);
+
+    res.json({
+      success: true,
+      total: parseInt(totalResult.rows[0]?.total ?? '0', 10),
+      byType: (typeResult.rows as TypeCountRow[]).reduce((acc, row) => ({ ...acc, [row.type]: parseInt(row.count, 10) }), {} as Record<string, number>),
+      byCategory: (categoryResult.rows as CategoryCountRow[]).reduce((acc, row) => ({ ...acc, [row.category]: parseInt(row.count, 10) }), {} as Record<string, number>),
+      byPriority: (priorityResult.rows as PriorityCountRow[]).reduce((acc, row) => ({ ...acc, [row.priority]: parseInt(row.count, 10) }), {} as Record<string, number>),
+    });
+  } catch (error) {
+    logger.warn('ideas stats/summary query failed', {
+      context: ctx,
+      error: error instanceof Error ? error.message : String(error),
+    });
+    res.json({ success: true, total: 0, byType: {}, byCategory: {}, byPriority: {} });
+  }
 }
 
 /**

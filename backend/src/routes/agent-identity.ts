@@ -167,7 +167,7 @@ router.post('/agent-workflows/:id/execute', asyncHandler(async (req: Request, re
     return res.status(400).json({ success: false, error: 'input is required' });
   }
 
-  const aiContext = (context || 'personal') as AIContext;
+  const aiContext = (context || 'operations') as AIContext;
 
   // Reconstruct graph from definition
   const graph = new AgentGraph(workflow.name);

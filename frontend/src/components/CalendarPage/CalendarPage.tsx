@@ -16,8 +16,6 @@ import { CalendarAccountsPanel } from './CalendarAccountsPanel';
 import { SkeletonLoader } from '../SkeletonLoader';
 import { RisingBubbles } from '../RisingBubbles';
 import type { AIContext } from '../ContextSwitcher';
-import './CalendarPage.css';
-
 const CalendarMonthView = lazy(() => import('./CalendarMonthView').then(m => ({ default: m.CalendarMonthView })));
 const CalendarWeekView = lazy(() => import('./CalendarWeekView').then(m => ({ default: m.CalendarWeekView })));
 const CalendarDayView = lazy(() => import('./CalendarDayView').then(m => ({ default: m.CalendarDayView })));
@@ -27,7 +25,7 @@ interface CalendarPageProps {
   embedded?: boolean;
 }
 
-export function CalendarPage({ context = 'personal', embedded = false }: CalendarPageProps) {
+export function CalendarPage({ context = 'operations', embedded = false }: CalendarPageProps) {
   const [view, setView] = useState<CalendarView>('month');
   const [currentDate, setCurrentDate] = useState(new Date());
   const [showEventForm, setShowEventForm] = useState(false);

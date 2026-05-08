@@ -9,7 +9,7 @@
 const mockQueryContext = jest.fn();
 jest.mock('../../../utils/database-context', () => ({
   queryContext: (...args: unknown[]) => mockQueryContext(...args),
-  isValidContext: (c: string) => ['personal', 'work', 'learning', 'creative'].includes(c),
+  isValidContext: (c: string) => ['operations', 'finance', 'people', 'strategy'].includes(c),
 }));
 
 jest.mock('../../../utils/logger', () => ({
@@ -205,9 +205,9 @@ describe('MemoryScheduler', () => {
 
   describe('triggerConsolidation', () => {
     it('should consolidate only specified context', async () => {
-      await memoryScheduler.triggerConsolidation('personal');
+      await memoryScheduler.triggerConsolidation('operations');
       expect(mockLtConsolidate).toHaveBeenCalledTimes(1);
-      expect(mockLtConsolidate).toHaveBeenCalledWith('personal');
+      expect(mockLtConsolidate).toHaveBeenCalledWith('operations');
     });
 
     it('should consolidate all contexts when none specified', async () => {
@@ -264,9 +264,9 @@ describe('MemoryScheduler', () => {
 
   describe('triggerDecay', () => {
     it('should decay only specified context', async () => {
-      await memoryScheduler.triggerDecay('work');
+      await memoryScheduler.triggerDecay('finance');
       expect(mockEpApplyDecay).toHaveBeenCalledTimes(1);
-      expect(mockEpApplyDecay).toHaveBeenCalledWith('work');
+      expect(mockEpApplyDecay).toHaveBeenCalledWith('finance');
     });
   });
 
@@ -332,9 +332,9 @@ describe('MemoryScheduler', () => {
     it('should research only specified context', async () => {
       mockGetAllDomainFocus.mockResolvedValue([]);
 
-      await memoryScheduler.triggerFocusResearch('learning');
+      await memoryScheduler.triggerFocusResearch('people');
       expect(mockGetAllDomainFocus).toHaveBeenCalledTimes(1);
-      expect(mockGetAllDomainFocus).toHaveBeenCalledWith('learning', true);
+      expect(mockGetAllDomainFocus).toHaveBeenCalledWith('people', true);
     });
   });
 

@@ -9,6 +9,7 @@
 
 // pool.query() is used intentionally — business tables are global (not per-context schema)
 import { pool } from '../../utils/database';
+import { AIContext, queryContext } from '../../utils/database-context';
 import { logger } from '../../utils/logger';
 import Anthropic from '@anthropic-ai/sdk';
 
@@ -227,9 +228,180 @@ Antworte im JSON-Format: [{"title": "...", "description": "...", "priority": "hi
       ]);
 
       logger.info(`[InsightGenerator] Insight stored: ${insight.title}`);
+
+      // Bridge to Episodic Memory — business insights become learnable experiences
+      await this.storeAsEpisodicMemory(insight);
+
+      // Bridge anomalies/alerts to Smart Suggestions for proactive user notification
+      if (insight.type === 'anomaly' || insight.type === 'alert') {
+        await this.createSmartSuggestion(insight);
+
+        // Counterfactual Thinking (Byrne 2005, Stufe 9.3):
+        // Generate 3 scenarios (best/base/worst) and store as hypotheses in Curiosity Engine
+        this.generateCounterfactualHypotheses(insight).catch(err => {
+          logger.warn('[InsightGenerator] Counterfactual hypothesis generation failed (non-critical)', {
+            error: err instanceof Error ? err.message : String(err),
+          });
+        });
+      }
+
+      // Emit event for cross-system integration (proactive engine, smart suggestions)
+      this.emitFactLearned(insight);
     } catch (error) {
       logger.error(`[InsightGenerator] Failed to store insight:`, error instanceof Error ? error : undefined);
     }
+  }
+  /**
+   * Create a Smart Suggestion for anomalies/alerts so the user
+   * gets proactive notification about business issues.
+   */
+  private async createSmartSuggestion(insight: {
+    type: string;
+    severity: string;
+    title: string;
+    description: string;
+    recommendation: string;
+    dataSource: string;
+    metrics: Record<string, unknown>;
+  }): Promise<void> {
+    try {
+      const { createSuggestion } = await import('../smart-suggestions');
+
+      await createSuggestion('finance', {
+        userId: 'system',
+        type: 'business_anomaly',
+        title: insight.title,
+        description: `${insight.description} — ${insight.recommendation}`,
+        priority: insight.severity === 'critical' ? 95 : 75,
+        metadata: {
+          insightType: insight.type,
+          dataSource: insight.dataSource,
+          metrics: insight.metrics,
+          severity: insight.severity,
+        },
+      });
+
+      logger.info(`[InsightGenerator] Smart suggestion created for: ${insight.title}`);
+    } catch (error) {
+      logger.warn('[InsightGenerator] Failed to create smart suggestion', {
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
+  }
+
+  /**
+   * Store business insight as episodic memory so it can be recalled,
+   * consolidated during sleep, and connected to other knowledge.
+   */
+  private async storeAsEpisodicMemory(insight: {
+    type: string;
+    severity: string;
+    title: string;
+    description: string;
+    recommendation: string;
+    dataSource: string;
+    metrics: Record<string, unknown>;
+  }): Promise<void> {
+    try {
+      const { episodicMemory } = await import('../memory/episodic-memory');
+      const context: AIContext = 'finance'; // Business insights default to work context
+
+      await episodicMemory.store(
+        `Business ${insight.type}: ${insight.title}`,
+        `${insight.description} Recommendation: ${insight.recommendation}`,
+        `business-insight-${insight.dataSource}`,
+        context,
+      );
+
+      logger.info(`[InsightGenerator] Insight bridged to episodic memory: ${insight.title}`);
+    } catch (error) {
+      // Non-critical — insight is already in business_insights table
+      logger.warn('[InsightGenerator] Failed to bridge insight to episodic memory', {
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
+  }
+
+  /**
+   * Counterfactual Thinking (Byrne 2005, Stufe 9.3):
+   * When a business anomaly is detected, generate 3 scenarios:
+   *   - Best Case: "Wenn der Trend anhält..."
+   *   - Base Case: "Wahrscheinlichstes Ergebnis..."
+   *   - Worst Case: "Wenn nichts getan wird..."
+   * Each scenario becomes a hypothesis in the Curiosity Engine for weekly validation.
+   */
+  async generateCounterfactualHypotheses(insight: {
+    type: string;
+    title: string;
+    description: string;
+    dataSource: string;
+    metrics: Record<string, unknown>;
+  }): Promise<number> {
+    const scenarios = [
+      { label: 'Best Case', prefix: 'Wenn der positive Trend anhält: ', confidence: 0.3 },
+      { label: 'Base Case', prefix: 'Wahrscheinlichstes Ergebnis: ', confidence: 0.5 },
+      { label: 'Worst Case', prefix: 'Wenn nichts getan wird: ', confidence: 0.4 },
+    ];
+
+    let stored = 0;
+
+    try {
+      const context: AIContext = 'finance';
+      for (const scenario of scenarios) {
+        const hypothesis = `${scenario.prefix}${insight.description} (${scenario.label} — ${insight.title})`;
+
+        await queryContext(context,
+          `INSERT INTO hypotheses (hypothesis, source_type, source_entities, confidence, status, created_at, updated_at)
+           VALUES ($1, 'analogy', $2, $3, 'pending', NOW(), NOW())
+           ON CONFLICT DO NOTHING`,
+          [
+            hypothesis,
+            JSON.stringify([insight.dataSource, insight.title]),
+            scenario.confidence,
+          ],
+        );
+        stored++;
+      }
+
+      logger.info(`[InsightGenerator] ${stored} counterfactual hypotheses generated for: ${insight.title}`);
+    } catch (error) {
+      logger.warn('[InsightGenerator] Failed to store counterfactual hypotheses', {
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
+
+    return stored;
+  }
+
+  /**
+   * Emit memory.fact_learned event so proactive engine and smart suggestions
+   * can react to business insights in real-time.
+   */
+  private emitFactLearned(insight: {
+    type: string;
+    severity: string;
+    title: string;
+    dataSource: string;
+    metrics: Record<string, unknown>;
+  }): void {
+    import('../event-system').then(({ emitSystemEvent }) =>
+      emitSystemEvent({
+        context: 'finance' as AIContext,
+        eventType: 'memory.fact_learned',
+        eventSource: 'business_insight_generator',
+        payload: {
+          factType: `business_${insight.type}`,
+          content: insight.title,
+          severity: insight.severity,
+          dataSource: insight.dataSource,
+          metrics: insight.metrics,
+        },
+      })
+    ).catch(err => {
+      logger.warn('Failed to emit memory.fact_learned for business insight', {
+        error: err instanceof Error ? err.message : String(err),
+      });
+    });
   }
 }
 

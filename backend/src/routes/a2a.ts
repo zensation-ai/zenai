@@ -40,7 +40,7 @@ a2aWellKnownRouter.get('/.well-known/agent.json', (_req: Request, res: Response)
 
 export const a2aRouter = Router();
 
-// ----- Task CRUD (non-context-specific, uses 'personal' as default) -----
+// ----- Task CRUD (non-context-specific, uses 'operations' as default) -----
 
 /**
  * POST /api/a2a/tasks
@@ -65,8 +65,8 @@ a2aRouter.post('/a2a/tasks', apiKeyAuth, requireScope('write'), asyncHandler(asy
     return;
   }
 
-  // Default to 'personal' context for non-context-specific A2A requests
-  const context: AIContext = 'personal';
+  // Default to 'operations' context for non-context-specific A2A requests
+  const context: AIContext = 'operations';
 
   const task = await a2aTaskManager.createTask(context, {
     skill_id,
@@ -85,11 +85,11 @@ a2aRouter.post('/a2a/tasks', apiKeyAuth, requireScope('write'), asyncHandler(asy
  * Get task status
  */
 a2aRouter.get('/a2a/tasks/:id', apiKeyAuth, requireScope('read'), asyncHandler(async (req: Request, res: Response) => {
-  const task = await a2aTaskManager.getTask('personal', req.params.id);
+  const task = await a2aTaskManager.getTask('operations', req.params.id);
 
   if (!task) {
     // Try other contexts
-    for (const ctx of ['work', 'learning', 'creative'] as AIContext[]) {
+    for (const ctx of ['finance', 'people', 'strategy'] as AIContext[]) {
       const found = await a2aTaskManager.getTask(ctx, req.params.id);
       if (found) {
         res.json({ success: true, data: found });
@@ -117,7 +117,7 @@ a2aRouter.post('/a2a/tasks/:id/messages', apiKeyAuth, requireScope('write'), asy
   }
 
   // Try all contexts to find the task
-  for (const ctx of ['personal', 'work', 'learning', 'creative'] as AIContext[]) {
+  for (const ctx of ['operations', 'finance', 'people', 'strategy'] as AIContext[]) {
     try {
       const task = await a2aTaskManager.sendMessage(ctx, req.params.id, message);
       res.json({ success: true, data: task });
@@ -136,7 +136,7 @@ a2aRouter.post('/a2a/tasks/:id/messages', apiKeyAuth, requireScope('write'), asy
  */
 a2aRouter.delete('/a2a/tasks/:id', apiKeyAuth, requireScope('write'), asyncHandler(async (req: Request, res: Response) => {
   // Try all contexts to find the task
-  for (const ctx of ['personal', 'work', 'learning', 'creative'] as AIContext[]) {
+  for (const ctx of ['operations', 'finance', 'people', 'strategy'] as AIContext[]) {
     try {
       await a2aTaskManager.cancelTask(ctx, req.params.id);
       res.json({ success: true, message: 'Task canceled' });
@@ -186,7 +186,7 @@ a2aRouter.get('/a2a/tasks/:id/stream', apiKeyAuth, requireScope('read'), asyncHa
     try {
       // Try all contexts
       let task = null;
-      for (const ctx of ['personal', 'work', 'learning', 'creative'] as AIContext[]) {
+      for (const ctx of ['operations', 'finance', 'people', 'strategy'] as AIContext[]) {
         task = await a2aTaskManager.getTask(ctx, taskId);
         if (task) {break;}
       }

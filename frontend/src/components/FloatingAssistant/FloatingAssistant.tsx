@@ -20,9 +20,6 @@ import { useFocusTrap } from '../../hooks/useFocusTrap';
 import { safeLocalStorage } from '../../utils/storage';
 import { AI_PERSONALITY } from '../../utils/aiPersonality';
 import { QuickActions } from './QuickActions';
-import '../GeneralChat/ChatContextBar.css';
-import './FloatingAssistant.css';
-
 interface FloatingAssistantProps {
   context: AIContext;
   currentPage: Page;
@@ -208,7 +205,7 @@ export function FloatingAssistant({ context, currentPage, onNavigate, onContextC
 
           {/* Chat */}
           <div className="assistant-chat-container">
-            <ErrorBoundary fallback={<div style={{ padding: 16 }}>Chat nicht verfügbar.</div>}>
+            <ErrorBoundary fallback={<div className="p-4">Chat nicht verfügbar.</div>}>
               <GeneralChat
                 context={context}
                 isCompact={true}

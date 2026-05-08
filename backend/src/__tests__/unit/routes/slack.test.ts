@@ -71,7 +71,7 @@ describe('Slack Routes', () => {
           id: 'ch-1',
           channel_id: 'C123',
           channel_name: 'engineering',
-          target_context: 'work',
+          target_context: 'finance',
           muted: false,
         }],
       });
@@ -97,7 +97,7 @@ describe('Slack Routes', () => {
 
       const res = await request(app)
         .patch('/api/slack/channels/ch-1/config')
-        .send({ target_context: 'learning' });
+        .send({ target_context: 'people' });
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);

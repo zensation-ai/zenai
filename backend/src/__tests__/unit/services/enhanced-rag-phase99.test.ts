@@ -93,9 +93,9 @@ describe('Phase 99/100: Enhanced RAG Improvements', () => {
           content: 'Revenue grew 3%',
           title: 'Q3 Earnings Analysis',
           topic: 'Finance',
-          context: 'work',
+          context: 'finance',
         });
-        expect(enriched).toContain('[From: "Q3 Earnings Analysis" | Topic: Finance | Context: work]');
+        expect(enriched).toContain('[From: "Q3 Earnings Analysis" | Topic: Finance | Context: finance]');
         expect(enriched).toContain('Revenue grew 3%');
       });
 
@@ -118,8 +118,8 @@ describe('Phase 99/100: Enhanced RAG Improvements', () => {
 
     describe('enrichQueryWithContext', () => {
       it('prepends context and topic to query', () => {
-        const enriched = enrichQueryWithContext('revenue growth', 'work', 'Finance');
-        expect(enriched).toContain('[Topic: Finance | Context: work]');
+        const enriched = enrichQueryWithContext('revenue growth', 'finance', 'Finance');
+        expect(enriched).toContain('[Topic: Finance | Context: finance]');
         expect(enriched).toContain('revenue growth');
       });
 
@@ -129,8 +129,8 @@ describe('Phase 99/100: Enhanced RAG Improvements', () => {
       });
 
       it('handles only context without topic', () => {
-        const enriched = enrichQueryWithContext('test', 'personal');
-        expect(enriched).toContain('[Context: personal]');
+        const enriched = enrichQueryWithContext('test', 'operations');
+        expect(enriched).toContain('[Context: operations]');
       });
     });
   });

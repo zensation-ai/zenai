@@ -429,7 +429,7 @@ describe('ContextEnrichment', () => {
       const current: EncodingContext = {
         timeOfDay: 'night',
         dayOfWeek: 0, // Sunday
-        taskType: 'creative',
+        taskType: 'strategy',
       };
 
       const result = calculateContextSimilarity(encoding, current);

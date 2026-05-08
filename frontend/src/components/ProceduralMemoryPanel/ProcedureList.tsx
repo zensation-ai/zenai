@@ -4,8 +4,10 @@
  * Extracted from ProceduralMemoryPanel.tsx (Phase 121).
  */
 
+import type { CSSProperties } from 'react';
 import type { Procedure } from './types';
 import { OUTCOME_STYLES } from './types';
+import { cn } from '@/lib/utils';
 
 interface ProcedureListProps {
   procedures: Procedure[];
@@ -17,7 +19,7 @@ interface ProcedureListProps {
 export function ProcedureList({ procedures, selectedId, onSelect, onDelete }: ProcedureListProps) {
   if (procedures.length === 0) {
     return (
-      <div style={{ textAlign: 'center', padding: '2rem', opacity: 0.5 }}>
+      <div className="text-center p-8 opacity-50">
         Keine Prozeduren gefunden
       </div>
     );
@@ -31,62 +33,38 @@ export function ProcedureList({ procedures, selectedId, onSelect, onDelete }: Pr
           <div
             key={proc.id}
             onClick={() => onSelect(proc.id)}
-            style={{
-              padding: '0.75rem',
-              marginBottom: '0.5rem',
-              borderRadius: '8px',
-              border: selectedId === proc.id
-                ? '1px solid #3b82f6'
-                : '1px solid rgba(255,255,255,0.08)',
-              background: selectedId === proc.id
-                ? 'rgba(59,130,246,0.08)'
-                : 'rgba(255,255,255,0.03)',
-              cursor: 'pointer',
-              transition: 'background 0.15s',
-            }}
+            className={cn(
+              'p-3 mb-2 rounded-lg cursor-pointer transition-[background] duration-150',
+              selectedId === proc.id
+                ? 'border border-blue-500 bg-blue-500/8'
+                : 'border border-white/8 bg-white/3',
+            )}
           >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
-              <span style={{ fontWeight: 500, fontSize: '0.9rem' }}>{proc.name}</span>
-              <span style={{
-                fontSize: '0.7rem',
-                padding: '0.1rem 0.4rem',
-                borderRadius: '4px',
-                background: outcomeStyle.color + '22',
-                color: outcomeStyle.color,
-                fontWeight: 600,
-              }}>
+            <div className="flex justify-between items-center mb-1">
+              <span className="font-medium text-[0.9rem]">{proc.name}</span>
+              <span
+                className="text-[0.7rem] py-[0.1rem] px-[0.4rem] rounded font-semibold bg-[var(--bg)] text-[var(--c)]"
+                style={{ '--bg': outcomeStyle.color + '22', '--c': outcomeStyle.color } as CSSProperties}
+              >
                 {outcomeStyle.label}
               </span>
             </div>
-            <div style={{ fontSize: '0.8rem', opacity: 0.6 }}>
+            <div className="text-[0.8rem] opacity-60">
               Trigger: {proc.trigger?.slice(0, 80)}
               {(proc.trigger?.length || 0) > 80 ? '...' : ''}
             </div>
-            <div style={{ display: 'flex', gap: '1rem', marginTop: '0.375rem', fontSize: '0.75rem', opacity: 0.5, alignItems: 'center' }}>
+            <div className="flex gap-4 mt-1.5 text-xs opacity-50 items-center">
               <span>Erfolgsrate: {(proc.success_rate * 100).toFixed(0)}%</span>
-              <span>{proc.execution_count}x ausgefuehrt</span>
+              <span>{proc.execution_count}x ausgeführt</span>
               {proc.tools_used?.length > 0 && (
                 <span>{proc.tools_used.length} Tool{proc.tools_used.length !== 1 ? 's' : ''}</span>
               )}
               <button
                 onClick={(e) => { e.stopPropagation(); onDelete(proc.id); }}
-                title="Prozedur loeschen"
-                style={{
-                  marginLeft: 'auto',
-                  padding: '0.15rem 0.4rem',
-                  borderRadius: '4px',
-                  border: '1px solid rgba(239,68,68,0.2)',
-                  background: 'transparent',
-                  color: '#f87171',
-                  cursor: 'pointer',
-                  fontSize: '0.7rem',
-                  opacity: 0.6,
-                  transition: 'opacity 0.15s',
-                }}
-                onMouseEnter={e => (e.currentTarget.style.opacity = '1')}
-                onMouseLeave={e => (e.currentTarget.style.opacity = '0.6')}
+                title="Prozedur löschen"
+                className="ml-auto py-[0.15rem] px-[0.4rem] rounded border border-red-500/20 bg-transparent text-red-400 cursor-pointer text-[0.7rem] opacity-60 transition-opacity duration-150 hover:opacity-100"
               >
-                Loeschen
+                Löschen
               </button>
             </div>
           </div>

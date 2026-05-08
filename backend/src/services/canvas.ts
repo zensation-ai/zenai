@@ -25,6 +25,7 @@ export interface CanvasDocument {
   content: string;
   type: CanvasDocumentType;
   language?: string;
+  boardData?: Record<string, unknown>;
   chatSessionId?: string;
   createdAt: string;
   updatedAt: string;
@@ -65,7 +66,7 @@ export async function createCanvasDocument(
   const result = await query(
     `INSERT INTO canvas_documents (id, context, title, content, type, language, user_id)
      VALUES ($1, $2, $3, $4, $5, $6, $7)
-     RETURNING id, context, title, content, type, language, chat_session_id, created_at, updated_at`,
+     RETURNING id, context, title, content, type, language, board_data, chat_session_id, created_at, updated_at`,
     [id, context, title, content, type, language || null, uid]
   );
 
@@ -87,7 +88,7 @@ export async function createCanvasDocument(
 export async function getCanvasDocument(id: string, userId?: string): Promise<CanvasDocument | null> {
   const uid = userId || SYSTEM_USER_ID;
   const result = await query(
-    `SELECT id, context, title, content, type, language, chat_session_id, created_at, updated_at
+    `SELECT id, context, title, content, type, language, board_data, chat_session_id, created_at, updated_at
      FROM canvas_documents
      WHERE id = $1 AND user_id = $2`,
     [id, uid]
@@ -109,7 +110,7 @@ export async function listCanvasDocuments(
   const uid = userId || SYSTEM_USER_ID;
   const [docsResult, countResult] = await Promise.all([
     query(
-      `SELECT id, context, title, content, type, language, chat_session_id, created_at, updated_at
+      `SELECT id, context, title, content, type, language, board_data, chat_session_id, created_at, updated_at
        FROM canvas_documents
        WHERE context = $1 AND user_id = $4
        ORDER BY updated_at DESC
@@ -138,13 +139,14 @@ export async function updateCanvasDocument(
     content?: string;
     type?: CanvasDocumentType;
     language?: string;
+    board_data?: Record<string, unknown>;
   },
   userId?: string
 ): Promise<CanvasDocument | null> {
   const uid = userId || SYSTEM_USER_ID;
   // Build dynamic UPDATE query
   const setClauses: string[] = [];
-  const values: (string | number | boolean | Date | null | undefined)[] = [];
+  const values: (string | number | boolean | Date | null | undefined | Record<string, unknown>)[] = [];
   let paramIndex = 1;
 
   if (updates.title !== undefined) {
@@ -163,6 +165,10 @@ export async function updateCanvasDocument(
     setClauses.push(`language = $${paramIndex++}`);
     values.push(updates.language);
   }
+  if (updates.board_data !== undefined) {
+    setClauses.push(`board_data = $${paramIndex++}`);
+    values.push(JSON.stringify(updates.board_data));
+  }
 
   if (setClauses.length === 0) {return getCanvasDocument(id, uid);}
 
@@ -174,7 +180,7 @@ export async function updateCanvasDocument(
     `UPDATE canvas_documents
      SET ${setClauses.join(', ')}
      WHERE id = $${paramIndex - 1} AND user_id = $${paramIndex}
-     RETURNING id, context, title, content, type, language, chat_session_id, created_at, updated_at`,
+     RETURNING id, context, title, content, type, language, board_data, chat_session_id, created_at, updated_at`,
     values
   );
 
@@ -353,6 +359,7 @@ function mapRow(row: Record<string, unknown>): CanvasDocument {
     content: row.content as string,
     type: row.type as CanvasDocumentType,
     language: (row.language as string) || undefined,
+    boardData: (row.board_data as Record<string, unknown>) || undefined,
     chatSessionId: (row.chat_session_id as string) || undefined,
     createdAt: String(row.created_at),
     updatedAt: String(row.updated_at),

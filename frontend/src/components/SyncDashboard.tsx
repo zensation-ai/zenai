@@ -1,9 +1,7 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, type CSSProperties } from 'react';
 import axios from 'axios';
 import { showToast } from './Toast';
 import { getTimeBasedGreeting } from '../utils/aiPersonality';
-import '../neurodesign.css';
-import './SyncDashboard.css';
 import { logError } from '../utils/errors';
 import type { AIContext } from './ContextSwitcher';
 
@@ -208,7 +206,7 @@ export function SyncDashboard({ onBack, context, embedded }: SyncDashboardProps)
             <span className="greeting-subtext neuro-subtext-emotional">{greeting.subtext}</span>
           </div>
           <span className={`context-indicator ${context}`}>
-            {{ personal: 'Persönlich', work: 'Arbeit', learning: 'Lernen', creative: 'Kreativ' }[context] ?? context}
+            {{ operations: 'Operativ', finance: 'Finanzen', people: 'Team', strategy: 'Strategie' }[context] ?? context}
           </span>
         </div>
       )}
@@ -314,7 +312,7 @@ export function SyncDashboard({ onBack, context, embedded }: SyncDashboardProps)
           ) : (
             <div className="devices-list neuro-flow-list">
               {syncStatus.devices.slice(0, 7).map((device, index) => (
-                <div key={device.id} className={`device-card liquid-glass neuro-stagger-item neuro-hover-lift ${device.is_current ? 'current' : ''}`} style={{ animationDelay: `${index * 50}ms` }}>
+                <div key={device.id} className={`device-card liquid-glass neuro-stagger-item neuro-hover-lift [animation-delay:var(--delay)] ${device.is_current ? 'current' : ''}`} style={{ '--delay': `${index * 50}ms` } as CSSProperties}>
                   <span className="device-icon">{getDeviceIcon(device.type)}</span>
                   <div className="device-info">
                     <span className="device-name">
@@ -353,7 +351,7 @@ export function SyncDashboard({ onBack, context, embedded }: SyncDashboardProps)
           ) : (
             <div className="changes-list neuro-flow-list">
               {pendingChanges.slice(0, 7).map((change, index) => (
-                <div key={change.id} className={`change-item liquid-glass neuro-stagger-item neuro-hover-lift ${change.synced ? 'synced' : 'pending'}`} style={{ animationDelay: `${index * 50}ms` }}>
+                <div key={change.id} className={`change-item liquid-glass neuro-stagger-item neuro-hover-lift [animation-delay:var(--delay)] ${change.synced ? 'synced' : 'pending'}`} style={{ '--delay': `${index * 50}ms` } as CSSProperties}>
                   <div className="change-status">
                     {change.synced ? '✓' : '⏳'}
                   </div>

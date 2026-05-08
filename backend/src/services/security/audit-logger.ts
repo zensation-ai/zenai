@@ -13,6 +13,7 @@
 
 import { queryContext, AIContext, QueryParam } from '../../utils/database-context';
 import { logger } from '../../utils/logger';
+import { truncateIpAddress, UNKNOWN_IP_TOKEN } from '../../utils/privacy/ip-truncate';
 
 // ===========================================
 // Types
@@ -52,6 +53,12 @@ export interface LogSecurityEventInput {
   details?: Record<string, unknown>;
   severity?: SecuritySeverity;
   context?: AIContext;
+  /**
+   * Sprint 1.9: Organization that owns this event. Passed through to the
+   * SIEM fan-out so per-org forwarder configs can be selected. When omitted,
+   * the env-based singleton is used (same as pre-1.9 behavior).
+   */
+  organizationId?: string;
 }
 
 export interface AuditLogFilters {
@@ -97,7 +104,7 @@ class SecurityAuditLogger {
    * Log a security event to the database.
    */
   async logSecurityEvent(event: LogSecurityEventInput): Promise<SecurityEvent | null> {
-    const context = event.context || 'personal';
+    const context = event.context || 'operations';
     const severity = event.severity || DEFAULT_SEVERITY[event.eventType] || 'info';
 
     try {
@@ -109,7 +116,7 @@ class SecurityAuditLogger {
         [
           event.eventType,
           event.userId,
-          event.ipAddress || 'unknown',
+          truncateIpAddress(event.ipAddress) || UNKNOWN_IP_TOKEN,
           event.userAgent || 'unknown',
           JSON.stringify(event.details || {}),
           severity,
@@ -133,6 +140,27 @@ class SecurityAuditLogger {
           logger.debug('Non-critical: security event emission failed', { error: err, eventType: event.eventType });
         });
       }
+
+      // Fan-out to the configured SIEM sink (fire-and-forget).
+      // We dynamically import so the forwarder is never pulled into code
+      // paths that don't log security events, and so tests can mock it.
+      // Sprint 1.9: if an organizationId is present, the per-org config
+      // (if configured) takes precedence over the env-based singleton.
+      const orgId = event.organizationId;
+      import('./siem-forwarder')
+        .then(async ({ getSIEMForwarder }) => {
+          const forwarder = orgId
+            ? await getSIEMForwarder(orgId)
+            : getSIEMForwarder();
+          return forwarder.forward(logged);
+        })
+        .catch((err) => {
+          logger.debug('SIEM forward suppressed', {
+            operation: 'security-audit',
+            eventId: logged.id,
+            error: err instanceof Error ? err.message : String(err),
+          });
+        });
 
       return logged;
     } catch (error) {

@@ -2,9 +2,13 @@
  * Finance Overview Tab - Phase 4
  */
 
+import type { CSSProperties } from 'react';
 import { Wallet } from 'lucide-react';
 import type { FinancialOverview } from './types';
 import { ACCOUNT_TYPE_LABELS } from './types';
+import { DashboardSkeleton } from '../skeletons/PageSkeletons';
+import { EmptyState } from '@/components/ui/empty-state';
+import { Button } from '@/components/ui/button';
 
 interface OverviewTabProps {
   overview: FinancialOverview | null;
@@ -17,8 +21,19 @@ function formatCurrency(amount: number, currency = 'EUR'): string {
 }
 
 export function OverviewTab({ overview, loading, onCreateAccount }: OverviewTabProps) {
-  if (loading || !overview) {
-    return <div className="finance-loading">Lade Finanzen...</div>;
+  if (loading) {
+    return <DashboardSkeleton />;
+  }
+
+  if (!overview) {
+    return (
+      <EmptyState
+        icon={<Wallet size={40} />}
+        title="Keine Finanzdaten"
+        description="Erstelle dein erstes Konto um loszulegen."
+        action={onCreateAccount ? <Button variant="default" onClick={onCreateAccount}>Konto anlegen</Button> : undefined}
+      />
+    );
   }
 
   return (
@@ -77,7 +92,7 @@ export function OverviewTab({ overview, loading, onCreateAccount }: OverviewTabP
                 <div key={cat.category} className="category-bar-row">
                   <span className="category-label">{cat.category}</span>
                   <div className="category-bar-track">
-                    <div className="category-bar-fill" style={{ width: `${widthPercent}%` }} />
+                    <div className="category-bar-fill w-[var(--bar)]" style={{ '--bar': `${widthPercent}%` } as CSSProperties} />
                   </div>
                   <span className="category-amount">{formatCurrency(cat.total)}</span>
                 </div>
@@ -129,10 +144,10 @@ export function OverviewTab({ overview, loading, onCreateAccount }: OverviewTabP
 
       {/* Empty state */}
       {overview.accounts.length === 0 && overview.top_categories.length === 0 && (
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '48px 24px', textAlign: 'center', color: 'var(--text-secondary)' }}>
-          <Wallet size={40} strokeWidth={1.5} style={{ marginBottom: '16px', opacity: 0.6 }} />
-          <h3 style={{ margin: '0 0 8px', fontSize: '18px', color: 'var(--text-primary)' }}>Keine Finanzdaten</h3>
-          <p style={{ margin: '0 0 16px', fontSize: '14px', maxWidth: '360px' }}>Erstelle dein erstes Konto um Finanzen zu tracken.</p>
+        <div className="flex flex-col items-center justify-center px-6 py-12 text-center text-[var(--text-secondary)]">
+          <Wallet size={40} strokeWidth={1.5} className="mb-4 opacity-60" />
+          <h3 className="m-0 mb-2 text-lg text-[var(--text-primary)]">Keine Finanzdaten</h3>
+          <p className="m-0 mb-4 text-sm max-w-[360px]">Erstelle dein erstes Konto um Finanzen zu tracken.</p>
           {onCreateAccount && (
             <button className="ds-button ds-button--primary ds-button--sm" type="button" onClick={onCreateAccount}>
               Konto erstellen

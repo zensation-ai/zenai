@@ -19,7 +19,7 @@ export const TOUR_STEPS: TourStep[] = [
     id: 'chat',
     targetSelector: '[data-tour="chat-hub"]',
     title: 'Chatte mit deiner KI',
-    description: 'Sie kennt deinen Kontext, nutzt 55 Tools und merkt sich alles.',
+    description: 'Sie kennt deinen Kontext, nutzt 60+ Tools und merkt sich alles.',
     page: '/',
     position: 'right',
   },

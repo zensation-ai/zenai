@@ -4,8 +4,6 @@
  */
 import React from 'react';
 import type { InboxViewMode } from './types';
-import './ViewToggle.css';
-
 interface ViewToggleProps {
   value: InboxViewMode;
   onChange: (mode: InboxViewMode) => void;

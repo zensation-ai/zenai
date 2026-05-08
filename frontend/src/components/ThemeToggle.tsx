@@ -8,8 +8,6 @@
  */
 
 import { useTheme } from '../contexts/ThemeContext';
-import './ThemeToggle.css';
-
 interface ThemeToggleProps {
   showLabel?: boolean;
   className?: string;

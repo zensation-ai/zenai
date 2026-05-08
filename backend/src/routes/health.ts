@@ -10,7 +10,7 @@
  */
 
 import { Router } from 'express';
-import { testConnections, getPoolStats, getHealthCheckStatus, getDbBreakerStats } from '../utils/database-context';
+import { testConnections, getPoolStats, getHealthCheckStatus, getDbBreakerStats, queryContext, pool as sharedPool } from '../utils/database-context';
 import { checkOllamaHealth } from '../utils/ollama';
 import { getCacheStats } from '../utils/cache';
 import { getAvailableServices } from '../services/ai';
@@ -19,11 +19,11 @@ import { getCircuitBreakerStatus } from '../utils/retry';
 import { isClaudeAvailable, generateClaudeResponse } from '../services/claude';
 import { getClaudeBreakerStats } from '../services/claude/streaming';
 import { getBraveBreakerStats } from '../services/web-search';
-import { queryContext } from '../utils/database-context';
 import { logger } from '../utils/logger';
 import { getPrometheusMetrics } from '../utils/metrics';
 import { getExecutorFactory } from '../services/code-execution/executor-factory';
 import { optionalAuth } from '../middleware/auth';
+import { getMigrationStatus, type MigrationStatus } from '../db/migration-status';
 
 // Version from package.json - read at startup
 const packageJson = require('../../package.json');
@@ -44,24 +44,36 @@ healthRouter.get('/metrics', (_req, res) => {
 const serverStartTime = Date.now();
 
 /**
- * Active Claude API health check
- * Sends minimal request to verify API connectivity
- * Only runs if Claude is configured
+ * Active Claude API health check with TTL cache.
+ * The actual API call runs at most once per CLAUDE_HEALTH_TTL_MS.
+ * Intermediate calls return the cached result instantly.
  */
-async function checkClaudeHealth(): Promise<{
+const CLAUDE_HEALTH_TTL_MS = 60_000; // 60 seconds
+
+type ClaudeHealthResult = {
   available: boolean;
   configured: boolean;
   latencyMs?: number;
   error?: string;
-}> {
+  cached?: boolean;
+};
+
+let claudeHealthCache: ClaudeHealthResult | null = null;
+let claudeHealthCacheTime = 0;
+
+async function checkClaudeHealth(): Promise<ClaudeHealthResult> {
   const configured = isClaudeAvailable();
   if (!configured) {
     return { available: false, configured: false };
   }
 
+  // Return cached result if still fresh
+  if (claudeHealthCache && (Date.now() - claudeHealthCacheTime) < CLAUDE_HEALTH_TTL_MS) {
+    return { ...claudeHealthCache, cached: true };
+  }
+
   try {
     const start = Date.now();
-    // Minimal API call - just check connectivity with very short response
     await generateClaudeResponse(
       'Respond with exactly: OK',
       'Health check',
@@ -69,15 +81,21 @@ async function checkClaudeHealth(): Promise<{
     );
     const latencyMs = Date.now() - start;
     logger.debug('Claude health check passed', { latencyMs });
-    return { available: true, configured: true, latencyMs };
+    const result: ClaudeHealthResult = { available: true, configured: true, latencyMs };
+    claudeHealthCache = result;
+    claudeHealthCacheTime = Date.now();
+    return result;
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     logger.warn('Claude health check failed', { error: errorMessage });
-    return {
+    const result: ClaudeHealthResult = {
       available: false,
       configured: true,
-      error: errorMessage.substring(0, 100), // Truncate long errors
+      error: errorMessage.substring(0, 100),
     };
+    claudeHealthCache = result;
+    claudeHealthCacheTime = Date.now();
+    return result;
   }
 }
 
@@ -85,7 +103,7 @@ async function checkClaudeHealth(): Promise<{
  * Phase 7.3: Measure database query latency per context.
  * Runs a simple SELECT 1 and reports the round-trip time.
  */
-async function measureDbLatency(context: 'personal' | 'work' | 'learning' | 'creative' | 'demo'): Promise<{
+async function measureDbLatency(context: 'operations' | 'finance' | 'people' | 'strategy' | 'demo'): Promise<{
   connected: boolean;
   latencyMs?: number;
   error?: string;
@@ -135,6 +153,34 @@ function checkCodeExecutionStatus(): {
 }
 
 /**
+ * Migration status check with TTL cache.
+ * Runs at most once per MIGRATION_STATUS_TTL_MS to avoid excessive DB queries.
+ */
+const MIGRATION_STATUS_TTL_MS = 300_000; // 5 minutes
+
+let migrationStatusCache: MigrationStatus | null = null;
+let migrationStatusCacheTime = 0;
+
+async function checkMigrationStatus(): Promise<MigrationStatus | null> {
+  // Return cached result if still fresh
+  if (migrationStatusCache && (Date.now() - migrationStatusCacheTime) < MIGRATION_STATUS_TTL_MS) {
+    return migrationStatusCache;
+  }
+
+  try {
+    const status = await getMigrationStatus(sharedPool as any);
+    migrationStatusCache = status;
+    migrationStatusCacheTime = Date.now();
+    return status;
+  } catch (err: unknown) {
+    logger.warn('Migration status check failed', {
+      error: err instanceof Error ? err.message : String(err),
+    });
+    return null;
+  }
+}
+
+/**
  * @route GET /api/health
  * @description FAST health check endpoint (< 100ms target)
  * Returns basic status without external service calls
@@ -168,10 +214,10 @@ healthRouter.get('/', (req, res) => {
         const hcStatus = getHealthCheckStatus();
         const dbStatus = hcStatus.isHealthy ? 'connected' : 'degraded';
         return {
-          personal: { status: dbStatus },
-          work: { status: dbStatus },
-          learning: { status: dbStatus },
-          creative: { status: dbStatus },
+          operations: { status: dbStatus },
+          finance: { status: dbStatus },
+          people: { status: dbStatus },
+          strategy: { status: dbStatus },
         };
       })(),
       ai: {
@@ -198,15 +244,16 @@ healthRouter.get('/detailed', optionalAuth, asyncHandler(async (req, res) => {
   const hasApiKey = !!req.apiKey;
 
   // Gather all health checks in parallel (Phase 7.3: expanded with latency + dependencies)
-  const [dbHealth, ollamaHealth, cacheStats, claudeHealth, personalLatency, workLatency, learningLatency, creativeLatency] = await Promise.all([
-    testConnections().catch(() => ({ personal: false, work: false, learning: false, creative: false })),
+  const [dbHealth, ollamaHealth, cacheStats, claudeHealth, operationsLatency, financeLatency, peopleLatency, strategyLatency, migrationStatus] = await Promise.all([
+    testConnections().catch(() => ({ operations: false, finance: false, people: false, strategy: false, demo: false })),
     checkOllamaHealth(),
     getCacheStats(),
-    checkClaudeHealth().catch(() => ({ available: false, configured: false, error: 'Health check failed', latencyMs: undefined })),
-    measureDbLatency('personal'),
-    measureDbLatency('work'),
-    measureDbLatency('learning'),
-    measureDbLatency('creative'),
+    checkClaudeHealth().catch((): ClaudeHealthResult => ({ available: false, configured: false, error: 'Health check failed' })),
+    measureDbLatency('operations'),
+    measureDbLatency('finance'),
+    measureDbLatency('people'),
+    measureDbLatency('strategy'),
+    checkMigrationStatus(),
   ]);
   const braveSearchStatus = checkBraveSearchStatus();
   const codeExecutionStatus = checkCodeExecutionStatus();
@@ -218,8 +265,8 @@ healthRouter.get('/detailed', optionalAuth, asyncHandler(async (req, res) => {
   const braveBreakerStats = getBraveBreakerStats();
   const dbBreakerStats = getDbBreakerStats();
 
-  const allDbHealthy = dbHealth.personal && dbHealth.work && dbHealth.learning && dbHealth.creative;
-  const anyDbHealthy = dbHealth.personal || dbHealth.work || dbHealth.learning || dbHealth.creative;
+  const allDbHealthy = dbHealth.operations && dbHealth.finance && dbHealth.people && dbHealth.strategy;
+  const anyDbHealthy = dbHealth.operations || dbHealth.finance || dbHealth.people || dbHealth.strategy;
   // Use actual Claude availability from active check, not just config
   const anyAiAvailable = claudeHealth.available || ollamaHealth.available;
   // Check if any circuit breaker is open (degraded state)
@@ -259,25 +306,25 @@ healthRouter.get('/detailed', optionalAuth, asyncHandler(async (req, res) => {
     },
     services: {
       databases: {
-        personal: {
-          status: dbHealth.personal ? 'connected' : 'disconnected',
-          latencyMs: personalLatency.latencyMs,
-          pool: poolStats.contexts.personal,
+        operations: {
+          status: dbHealth.operations ? 'connected' : 'disconnected',
+          latencyMs: operationsLatency.latencyMs,
+          pool: poolStats.contexts.operations,
         },
-        work: {
-          status: dbHealth.work ? 'connected' : 'disconnected',
-          latencyMs: workLatency.latencyMs,
-          pool: poolStats.contexts.work,
+        finance: {
+          status: dbHealth.finance ? 'connected' : 'disconnected',
+          latencyMs: financeLatency.latencyMs,
+          pool: poolStats.contexts.finance,
         },
-        learning: {
-          status: dbHealth.learning ? 'connected' : 'disconnected',
-          latencyMs: learningLatency.latencyMs,
-          pool: poolStats.contexts.learning,
+        people: {
+          status: dbHealth.people ? 'connected' : 'disconnected',
+          latencyMs: peopleLatency.latencyMs,
+          pool: poolStats.contexts.people,
         },
-        creative: {
-          status: dbHealth.creative ? 'connected' : 'disconnected',
-          latencyMs: creativeLatency.latencyMs,
-          pool: poolStats.contexts.creative,
+        strategy: {
+          status: dbHealth.strategy ? 'connected' : 'disconnected',
+          latencyMs: strategyLatency.latencyMs,
+          pool: poolStats.contexts.strategy,
         },
         sharedPool: poolStats.pool,
         poolEvents: poolStats.events,
@@ -292,6 +339,7 @@ healthRouter.get('/detailed', optionalAuth, asyncHandler(async (req, res) => {
           configured: claudeHealth.configured,
           available: claudeHealth.available,
           latencyMs: claudeHealth.latencyMs,
+          cached: claudeHealth.cached || false,
           error: claudeHealth.error,
           circuitBreaker: {
             standard: circuitBreakerStatus['claude'],
@@ -323,6 +371,19 @@ healthRouter.get('/detailed', optionalAuth, asyncHandler(async (req, res) => {
         github: {
           configured: !!process.env.GITHUB_PERSONAL_ACCESS_TOKEN,
         },
+      },
+      migrations: migrationStatus ? {
+        total: migrationStatus.total,
+        applied: migrationStatus.applied,
+        pending: migrationStatus.pending,
+        ...(migrationStatus.pending > 0 ? { pendingNames: migrationStatus.pendingNames } : {}),
+        ...(migrationStatus.checksumMismatches.length > 0 ? {
+          warning: 'Checksum mismatches detected',
+          checksumMismatches: migrationStatus.checksumMismatches,
+        } : {}),
+      } : {
+        status: 'unavailable',
+        error: 'Could not check migration status',
       },
     },
     // SECURITY: Only include system info in development
@@ -357,21 +418,37 @@ healthRouter.get('/live', asyncHandler(async (req, res) => {
  * @description Kubernetes readiness probe - checks critical services
  */
 healthRouter.get('/ready', asyncHandler(async (req, res) => {
-  const dbHealth = await testConnections().catch(() => ({ personal: false, work: false, learning: false, creative: false }));
+  const [dbHealth, migrationStatus] = await Promise.all([
+    testConnections().catch(() => ({ operations: false, finance: false, people: false, strategy: false, demo: false })),
+    checkMigrationStatus(),
+  ]);
 
-  const isReady = dbHealth.personal || dbHealth.work;
+  const isReady = dbHealth.operations || dbHealth.finance;
 
   if (isReady) {
-    res.json({
+    const response: Record<string, unknown> = {
       status: 'ready',
       timestamp: new Date().toISOString(),
       databases: {
-        personal: dbHealth.personal,
-        work: dbHealth.work,
-        learning: dbHealth.learning,
-        creative: dbHealth.creative,
+        operations: dbHealth.operations,
+        finance: dbHealth.finance,
+        people: dbHealth.people,
+        strategy: dbHealth.strategy,
       },
-    });
+    };
+
+    // Include migration warning if there are pending migrations
+    if (migrationStatus && migrationStatus.pending > 0) {
+      response.warnings = [`${migrationStatus.pending} pending migration(s)`];
+      response.migrations = {
+        total: migrationStatus.total,
+        applied: migrationStatus.applied,
+        pending: migrationStatus.pending,
+        pendingNames: migrationStatus.pendingNames,
+      };
+    }
+
+    res.json(response);
   } else {
     res.status(503).json({
       status: 'not_ready',

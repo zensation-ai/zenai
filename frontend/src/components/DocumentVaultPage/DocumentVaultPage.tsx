@@ -32,7 +32,7 @@ function DocumentVaultPageComponent({ onBack, context, initialTab = 'documents' 
     initialTab,
     validTabs: VALID_TABS,
     defaultTab: 'documents',
-    basePath: '/documents',
+    basePath: '/wissen',
     rootTab: 'documents',
   });
 

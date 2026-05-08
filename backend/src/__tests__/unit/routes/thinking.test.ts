@@ -85,12 +85,12 @@ describe('Thinking Routes', () => {
   describe('POST /api/:context/thinking/feedback', () => {
     it('should record thinking feedback', async () => {
       const res = await request(app)
-        .post('/api/personal/thinking/feedback')
+        .post('/api/operations/thinking/feedback')
         .send({ chainId: 'chain-1', wasHelpful: true, qualityRating: 4, feedbackText: 'Good' });
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
-      expect(mockRecordFeedback).toHaveBeenCalledWith('chain-1', 'personal', expect.objectContaining({
+      expect(mockRecordFeedback).toHaveBeenCalledWith('chain-1', 'operations', expect.objectContaining({
         wasHelpful: true,
         qualityRating: 4,
       }));
@@ -98,21 +98,21 @@ describe('Thinking Routes', () => {
 
     it('should return 400 without chainId', async () => {
       const res = await request(app)
-        .post('/api/personal/thinking/feedback')
+        .post('/api/operations/thinking/feedback')
         .send({ qualityRating: 3 });
       expect(res.status).toBe(400);
     });
 
     it('should return 400 with invalid qualityRating', async () => {
       const res = await request(app)
-        .post('/api/personal/thinking/feedback')
+        .post('/api/operations/thinking/feedback')
         .send({ chainId: 'chain-1', qualityRating: 0 });
       expect(res.status).toBe(400);
     });
 
     it('should return 400 with qualityRating > 5', async () => {
       const res = await request(app)
-        .post('/api/personal/thinking/feedback')
+        .post('/api/operations/thinking/feedback')
         .send({ chainId: 'chain-1', qualityRating: 6 });
       expect(res.status).toBe(400);
     });
@@ -133,7 +133,7 @@ describe('Thinking Routes', () => {
   // ===========================================
   describe('GET /api/:context/thinking/stats', () => {
     it('should return thinking statistics', async () => {
-      const res = await request(app).get('/api/personal/thinking/stats');
+      const res = await request(app).get('/api/operations/thinking/stats');
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
       expect(res.body.data.totalChains).toBe(10);
@@ -145,7 +145,7 @@ describe('Thinking Routes', () => {
   // ===========================================
   describe('GET /api/:context/thinking/strategies', () => {
     it('should return strategy performance', async () => {
-      const res = await request(app).get('/api/personal/thinking/strategies');
+      const res = await request(app).get('/api/operations/thinking/strategies');
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
       expect(res.body.data).toHaveLength(1);
@@ -154,10 +154,10 @@ describe('Thinking Routes', () => {
 
   describe('POST /api/:context/thinking/strategies/persist', () => {
     it('should persist strategies', async () => {
-      const res = await request(app).post('/api/personal/thinking/strategies/persist');
+      const res = await request(app).post('/api/operations/thinking/strategies/persist');
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
-      expect(mockPersistStrategies).toHaveBeenCalledWith('personal');
+      expect(mockPersistStrategies).toHaveBeenCalledWith('operations');
     });
   });
 
@@ -166,7 +166,7 @@ describe('Thinking Routes', () => {
   // ===========================================
   describe('GET /api/:context/thinking/chains/:id', () => {
     it('should return a thinking chain', async () => {
-      const res = await request(app).get('/api/personal/thinking/chains/a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11');
+      const res = await request(app).get('/api/operations/thinking/chains/a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11');
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
       expect(res.body.data.taskType).toBe('analysis');
@@ -174,17 +174,17 @@ describe('Thinking Routes', () => {
 
     it('should return 404 for non-existent chain', async () => {
       mockGetChainById.mockResolvedValueOnce(null);
-      const res = await request(app).get('/api/personal/thinking/chains/00000000-0000-4000-8000-000000000000');
+      const res = await request(app).get('/api/operations/thinking/chains/00000000-0000-4000-8000-000000000000');
       expect(res.status).toBe(404);
     });
   });
 
   describe('DELETE /api/:context/thinking/chains/:id', () => {
     it('should delete a thinking chain', async () => {
-      const res = await request(app).delete('/api/personal/thinking/chains/a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11');
+      const res = await request(app).delete('/api/operations/thinking/chains/a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11');
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
-      expect(mockDeleteChain).toHaveBeenCalledWith('a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11', 'personal');
+      expect(mockDeleteChain).toHaveBeenCalledWith('a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11', 'operations');
     });
   });
 });

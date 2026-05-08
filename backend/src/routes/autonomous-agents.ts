@@ -22,7 +22,7 @@ const VALID_TRIGGER_TYPES: TriggerType[] = [
 
 function validateContext(context: string): AIContext {
   if (!isValidContext(context)) {
-    throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
+    throw new ValidationError('Invalid context. Use "operations", "finance", "people", or "strategy".');
   }
   return context as AIContext;
 }

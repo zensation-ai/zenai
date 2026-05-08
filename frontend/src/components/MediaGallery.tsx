@@ -4,8 +4,6 @@ import { showToast } from './Toast';
 import { useConfirm } from './ConfirmDialog';
 import { getContextLabel } from './ContextSwitcher';
 import { getApiBaseUrl } from '../utils/apiConfig';
-import './MediaGallery.css';
-import '../neurodesign.css';
 import { logError } from '../utils/errors';
 
 interface MediaItem {

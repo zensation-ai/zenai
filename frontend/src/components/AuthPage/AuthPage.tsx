@@ -6,19 +6,18 @@
 import { useState, useCallback } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { OAuthButtons } from './OAuthButtons';
-import { AI_PERSONALITY, AI_AVATAR } from '../../utils/aiPersonality';
-import './AuthPage.css';
-
+import { AI_PERSONALITY } from '../../utils/aiPersonality';
+import { SparkLogo } from '../layout/SparkLogo';
 type AuthMode = 'login' | 'register' | 'reset';
 
 const ERROR_TRANSLATIONS: Record<string, string> = {
   'Invalid email or password': 'E-Mail oder Passwort ist falsch.',
   'Email already registered': 'Diese E-Mail ist bereits registriert.',
   'Password must be at least 8 characters': 'Passwort muss mindestens 8 Zeichen lang sein.',
-  'Invalid email address': 'Ungueltige E-Mail-Adresse.',
-  'Network error. Please check your connection.': 'Verbindungsfehler. Pruefe deine Internetverbindung.',
+  'Invalid email address': 'Ungültige E-Mail-Adresse.',
+  'Network error. Please check your connection.': 'Verbindungsfehler. Prüfe deine Internetverbindung.',
   'Login failed': 'Anmeldung fehlgeschlagen. Bitte versuche es erneut.',
-  'Ein unerwarteter Fehler ist aufgetreten.': 'Server voruebergehend nicht erreichbar. Bitte versuche es in einigen Sekunden erneut.',
+  'Ein unerwarteter Fehler ist aufgetreten.': 'Server vorübergehend nicht erreichbar. Bitte versuche es in einigen Sekunden erneut.',
 };
 
 function translateError(message: string): string {
@@ -62,7 +61,7 @@ export function AuthPage() {
           if (result.error) {
             setError(translateError(result.error.message));
           } else {
-            setSuccess('Passwort wurde erfolgreich zurueckgesetzt. Du kannst dich jetzt anmelden.');
+            setSuccess('Passwort wurde erfolgreich zurückgesetzt. Du kannst dich jetzt anmelden.');
             window.history.replaceState(null, '', '/');
             setTimeout(() => { setMode('login'); setSuccess(null); }, 3000);
           }
@@ -110,11 +109,11 @@ export function AuthPage() {
       <div className="login-container">
         <div className="login-header">
           <div className="login-avatar">
-            {AI_AVATAR.emoji}
+            <SparkLogo size={64} animated variant="light" />
             <div className="login-avatar-glow" />
           </div>
           <h1 className="login-title">
-            {mode === 'login' ? 'Willkommen bei' : mode === 'register' ? 'Registrieren bei' : 'Passwort zuruecksetzen'}
+            {mode === 'login' ? 'Willkommen bei' : mode === 'register' ? 'Registrieren bei' : 'Passwort zurücksetzen'}
           </h1>
           <p className="login-subtitle">{AI_PERSONALITY.name}</p>
         </div>
@@ -259,7 +258,7 @@ export function AuthPage() {
           )}
           {(mode === 'reset' || mfaRequired) && (
             <button type="button" className="login-link" onClick={() => switchMode('login')}>
-              Zurueck zur Anmeldung
+              Zurück zur Anmeldung
             </button>
           )}
         </div>

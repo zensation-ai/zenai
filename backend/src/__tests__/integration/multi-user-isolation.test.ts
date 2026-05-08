@@ -14,7 +14,7 @@ import request from 'supertest';
 
 jest.mock('../../utils/database-context', () => ({
   queryContext: jest.fn(),
-  isValidContext: jest.fn((ctx: string) => ['personal', 'work', 'learning', 'creative'].includes(ctx)),
+  isValidContext: jest.fn((ctx: string) => ['operations', 'finance', 'people', 'strategy'].includes(ctx)),
   isValidUUID: jest.fn((id: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id)),
   AIContext: {},
 }));
@@ -329,7 +329,7 @@ describe('Tasks API — user_id isolation', () => {
     mockGetTasks.mockResolvedValue([]);
 
     const res = await request(app)
-      .get('/api/personal/tasks')
+      .get('/api/operations/tasks')
       .set('x-api-key', 'test');
 
     expect(res.status).toBe(200);
@@ -337,7 +337,7 @@ describe('Tasks API — user_id isolation', () => {
 
     // Third argument should be userId
     const callArgs = mockGetTasks.mock.calls[0];
-    expect(callArgs[0]).toBe('personal'); // context
+    expect(callArgs[0]).toBe('operations'); // context
     expect(callArgs[2]).toBe(SYSTEM_USER_ID); // userId
   });
 
@@ -351,7 +351,7 @@ describe('Tasks API — user_id isolation', () => {
     mockCreateTask.mockResolvedValue(newTask as any);
 
     const res = await request(app)
-      .post('/api/personal/tasks')
+      .post('/api/operations/tasks')
       .set('x-api-key', 'test')
       .send({ title: 'Test Task' });
 
@@ -359,7 +359,7 @@ describe('Tasks API — user_id isolation', () => {
     expect(mockCreateTask).toHaveBeenCalledTimes(1);
 
     const callArgs = mockCreateTask.mock.calls[0];
-    expect(callArgs[0]).toBe('personal'); // context
+    expect(callArgs[0]).toBe('operations'); // context
     expect(callArgs[2]).toBe(SYSTEM_USER_ID); // userId
   });
 
@@ -369,14 +369,14 @@ describe('Tasks API — user_id isolation', () => {
     mockGetGantt.mockResolvedValue([]);
 
     const res = await request(app)
-      .get('/api/work/tasks/gantt')
+      .get('/api/finance/tasks/gantt')
       .set('x-api-key', 'test');
 
     expect(res.status).toBe(200);
     expect(mockGetGantt).toHaveBeenCalledTimes(1);
 
     const callArgs = mockGetGantt.mock.calls[0];
-    expect(callArgs[0]).toBe('work'); // context
+    expect(callArgs[0]).toBe('finance'); // context
     expect(callArgs[2]).toBe(SYSTEM_USER_ID); // userId
   });
 
@@ -392,7 +392,7 @@ describe('Tasks API — user_id isolation', () => {
     mockGetTasks.mockResolvedValue([]);
 
     await request(app)
-      .get('/api/personal/tasks')
+      .get('/api/operations/tasks')
       .set('x-api-key', 'test');
 
     expect(mockGetTasks).toHaveBeenCalledTimes(1);
@@ -424,14 +424,14 @@ describe('Email API — user_id isolation', () => {
     mockGetEmails.mockResolvedValue({ emails: [], total: 0 });
 
     const res = await request(app)
-      .get('/api/personal/emails')
+      .get('/api/operations/emails')
       .set('x-api-key', 'test');
 
     expect(res.status).toBe(200);
     expect(mockGetEmails).toHaveBeenCalledTimes(1);
 
     const callArgs = mockGetEmails.mock.calls[0];
-    expect(callArgs[0]).toBe('personal'); // context
+    expect(callArgs[0]).toBe('operations'); // context
     expect(callArgs[2]).toBe(SYSTEM_USER_ID); // userId (third arg after filters)
   });
 
@@ -441,14 +441,14 @@ describe('Email API — user_id isolation', () => {
     mockGetStats.mockResolvedValue({ unread: 0, total: 0, byCategory: {} });
 
     const res = await request(app)
-      .get('/api/personal/emails/stats')
+      .get('/api/operations/emails/stats')
       .set('x-api-key', 'test');
 
     expect(res.status).toBe(200);
     expect(mockGetStats).toHaveBeenCalledTimes(1);
 
     const callArgs = mockGetStats.mock.calls[0];
-    expect(callArgs[0]).toBe('personal'); // context
+    expect(callArgs[0]).toBe('operations'); // context
     expect(callArgs[1]).toBe(SYSTEM_USER_ID); // userId
   });
 
@@ -463,7 +463,7 @@ describe('Email API — user_id isolation', () => {
     mockGetEmails.mockResolvedValue({ emails: [], total: 0 });
 
     await request(app)
-      .get('/api/work/emails')
+      .get('/api/finance/emails')
       .set('x-api-key', 'test');
 
     expect(mockGetEmails).toHaveBeenCalledTimes(1);

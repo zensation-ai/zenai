@@ -27,7 +27,7 @@ jest.mock('../../../utils/logger', () => ({
 }));
 
 jest.mock('../../../utils/database-context', () => ({
-  isValidContext: (ctx: string) => ['personal', 'work', 'learning', 'creative'].includes(ctx),
+  isValidContext: (ctx: string) => ['operations', 'finance', 'people', 'strategy'].includes(ctx),
 }));
 
 const mockGenerateDailyDigest = jest.fn();
@@ -67,7 +67,7 @@ describe('Business Narrative Routes', () => {
   it('GET /:context/business-narrative/daily — returns daily digest', async () => {
     mockGenerateDailyDigest.mockResolvedValue({ summary: 'All good', highlights: [] });
 
-    const res = await request(app).get('/api/work/business-narrative/daily');
+    const res = await request(app).get('/api/finance/business-narrative/daily');
 
     expect(res.status).toBe(200);
     expect(res.body.data.summary).toBe('All good');
@@ -82,7 +82,7 @@ describe('Business Narrative Routes', () => {
   it('GET /:context/business-narrative/weekly — returns weekly report', async () => {
     mockGenerateWeeklyReport.mockResolvedValue({ sections: [] });
 
-    const res = await request(app).get('/api/work/business-narrative/weekly');
+    const res = await request(app).get('/api/finance/business-narrative/weekly');
 
     expect(res.status).toBe(200);
     expect(res.body.success).toBe(true);
@@ -91,7 +91,7 @@ describe('Business Narrative Routes', () => {
   it('GET /:context/business-narrative/anomalies — returns anomalies', async () => {
     mockDetectAllAnomalies.mockResolvedValue([{ type: 'spike', metric: 'revenue' }]);
 
-    const res = await request(app).get('/api/work/business-narrative/anomalies');
+    const res = await request(app).get('/api/finance/business-narrative/anomalies');
 
     expect(res.status).toBe(200);
     expect(res.body.data).toHaveLength(1);
@@ -100,7 +100,7 @@ describe('Business Narrative Routes', () => {
   it('GET /:context/business-narrative/kpis — lists KPIs', async () => {
     mockListKPIs.mockResolvedValue([{ id: 'kpi-1', name: 'Revenue' }]);
 
-    const res = await request(app).get('/api/work/business-narrative/kpis');
+    const res = await request(app).get('/api/finance/business-narrative/kpis');
 
     expect(res.status).toBe(200);
     expect(res.body.data).toHaveLength(1);
@@ -110,7 +110,7 @@ describe('Business Narrative Routes', () => {
     mockCreateKPI.mockResolvedValue({ id: 'kpi-new', name: 'Growth' });
 
     const res = await request(app)
-      .post('/api/work/business-narrative/kpis')
+      .post('/api/finance/business-narrative/kpis')
       .send({
         name: 'Growth',
         formula: { sources: ['revenue'], aggregation: 'sum' },
@@ -122,7 +122,7 @@ describe('Business Narrative Routes', () => {
 
   it('POST /:context/business-narrative/kpis — rejects missing name', async () => {
     const res = await request(app)
-      .post('/api/work/business-narrative/kpis')
+      .post('/api/finance/business-narrative/kpis')
       .send({ formula: { sources: ['x'], aggregation: 'sum' } });
 
     expect(res.status).toBe(400);
@@ -130,7 +130,7 @@ describe('Business Narrative Routes', () => {
 
   it('POST /:context/business-narrative/kpis — rejects invalid formula', async () => {
     const res = await request(app)
-      .post('/api/work/business-narrative/kpis')
+      .post('/api/finance/business-narrative/kpis')
       .send({ name: 'Test', formula: {} });
 
     expect(res.status).toBe(400);
@@ -139,7 +139,7 @@ describe('Business Narrative Routes', () => {
   it('DELETE /:context/business-narrative/kpis/:id — deletes KPI', async () => {
     mockDeleteKPI.mockResolvedValue(true);
 
-    const res = await request(app).delete('/api/work/business-narrative/kpis/kpi-1');
+    const res = await request(app).delete('/api/finance/business-narrative/kpis/kpi-1');
 
     expect(res.status).toBe(200);
     expect(res.body.success).toBe(true);
@@ -148,16 +148,16 @@ describe('Business Narrative Routes', () => {
   it('GET /:context/business-narrative/trends — returns trends', async () => {
     mockGetTrends.mockResolvedValue({ daily: [] });
 
-    const res = await request(app).get('/api/work/business-narrative/trends?days=14');
+    const res = await request(app).get('/api/finance/business-narrative/trends?days=14');
 
     expect(res.status).toBe(200);
-    expect(mockGetTrends).toHaveBeenCalledWith('work', 'user-123', 14);
+    expect(mockGetTrends).toHaveBeenCalledWith('finance', 'user-123', 14);
   });
 
   it('GET /:context/business-narrative/daily — handles service error gracefully', async () => {
     mockGenerateDailyDigest.mockRejectedValue(new Error('Service down'));
 
-    const res = await request(app).get('/api/work/business-narrative/daily');
+    const res = await request(app).get('/api/finance/business-narrative/daily');
 
     expect(res.status).toBe(500);
     expect(res.body.success).toBe(false);

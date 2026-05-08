@@ -5,7 +5,7 @@
  * Spring entry animation, staggered. Styles in IntentBar.css.
  */
 
-import { useCallback, useRef } from 'react';
+import { useCallback, useRef, type CSSProperties } from 'react';
 import type { SuggestionChip } from './types';
 
 interface SuggestionChipsProps {
@@ -45,13 +45,13 @@ export function SuggestionChips({ chips, visible, onSelect }: SuggestionChipsPro
   }
 
   return (
-    <ul className="suggestion-chips" role="list" aria-label="Vorschlaege">
+    <ul className="suggestion-chips" role="list" aria-label="Vorschläge">
       {chips.map((chip, i) => (
         <li key={chip.id} className="suggestion-chips__item" role="listitem">
           <button
             ref={(el) => { chipRefs.current[i] = el; }}
-            className="suggestion-chips__chip"
-            style={{ animationDelay: `${i * 60}ms` }}
+            className="suggestion-chips__chip [animation-delay:var(--delay)]"
+            style={{ '--delay': `${i * 60}ms` } as CSSProperties}
             onClick={() => onSelect(chip.prompt)}
             onKeyDown={(e) => handleKeyDown(e, i)}
             tabIndex={i === 0 ? 0 : -1}

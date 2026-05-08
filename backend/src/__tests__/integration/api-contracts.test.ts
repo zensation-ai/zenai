@@ -21,7 +21,7 @@ import { healthRouter } from '../../routes/health';
 // Mock dependencies
 jest.mock('../../utils/database-context', () => ({
   queryContext: jest.fn(),
-  isValidContext: jest.fn((ctx: string) => ['personal', 'work', 'learning', 'creative'].includes(ctx)),
+  isValidContext: jest.fn((ctx: string) => ['operations', 'finance', 'people', 'strategy'].includes(ctx)),
   isValidUUID: jest.fn((id: string) =>
     /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id),
   ),
@@ -153,7 +153,7 @@ describe('Phase 8.2: API Contract Tests', () => {
 
         const res = await request(ideasApp)
           .get('/api/ideas')
-          .set('x-ai-context', 'personal');
+          .set('x-ai-context', 'operations');
 
         expect(res.status).toBe(200);
 
@@ -184,7 +184,7 @@ describe('Phase 8.2: API Contract Tests', () => {
 
         const res = await request(ideasApp)
           .get('/api/ideas')
-          .set('x-ai-context', 'personal');
+          .set('x-ai-context', 'operations');
 
         expect(res.status).toBe(200);
         expect(res.body.ideas).toEqual([]);
@@ -207,7 +207,7 @@ describe('Phase 8.2: API Contract Tests', () => {
               context_needed: '["Context"]',
               keywords: '["test"]',
               raw_transcript: 'Original text',
-              context: 'personal',
+              context: 'operations',
               created_at: NOW,
               updated_at: NOW,
             }],
@@ -217,7 +217,7 @@ describe('Phase 8.2: API Contract Tests', () => {
 
         const res = await request(ideasApp)
           .get(`/api/ideas/${UUID}`)
-          .set('x-ai-context', 'personal');
+          .set('x-ai-context', 'operations');
 
         expect(res.status).toBe(200);
 
@@ -238,7 +238,7 @@ describe('Phase 8.2: API Contract Tests', () => {
 
         const res = await request(ideasApp)
           .get(`/api/ideas/${UUID}`)
-          .set('x-ai-context', 'personal');
+          .set('x-ai-context', 'operations');
 
         expect(res.status).toBe(404);
         // Contract: error response shape
@@ -255,7 +255,7 @@ describe('Phase 8.2: API Contract Tests', () => {
 
         const res = await request(ideasApp)
           .delete(`/api/ideas/${UUID}`)
-          .set('x-ai-context', 'personal');
+          .set('x-ai-context', 'operations');
 
         expect(res.status).toBe(200);
         // Contract: { success: true, deletedId: string }
@@ -274,7 +274,7 @@ describe('Phase 8.2: API Contract Tests', () => {
 
         const res = await request(ideasApp)
           .put(`/api/ideas/${UUID}/archive`)
-          .set('x-ai-context', 'personal');
+          .set('x-ai-context', 'operations');
 
         expect(res.status).toBe(200);
         // Contract: { success: true, archivedId: string }
@@ -293,7 +293,7 @@ describe('Phase 8.2: API Contract Tests', () => {
 
         const res = await request(ideasApp)
           .put(`/api/ideas/${UUID}/restore`)
-          .set('x-ai-context', 'personal');
+          .set('x-ai-context', 'operations');
 
         expect(res.status).toBe(200);
         // Contract: { success: true, restoredId: string }
@@ -315,7 +315,7 @@ describe('Phase 8.2: API Contract Tests', () => {
 
         const res = await request(ideasApp)
           .put(`/api/ideas/${UUID}/priority`)
-          .set('x-ai-context', 'personal')
+          .set('x-ai-context', 'operations')
           .send({ priority: 'high' });
 
         expect(res.status).toBe(200);
@@ -344,7 +344,7 @@ describe('Phase 8.2: API Contract Tests', () => {
 
         const res = await request(ideasApp)
           .post('/api/ideas/search')
-          .set('x-ai-context', 'personal')
+          .set('x-ai-context', 'operations')
           .send({ query: 'found', limit: 10 });
 
         expect(res.status).toBe(200);
@@ -369,7 +369,7 @@ describe('Phase 8.2: API Contract Tests', () => {
               next_steps: '[]',
               context_needed: '[]',
               keywords: '[]',
-              context: 'personal',
+              context: 'operations',
               created_at: NOW,
               updated_at: NOW,
             }],
@@ -379,7 +379,7 @@ describe('Phase 8.2: API Contract Tests', () => {
 
         const res = await request(ideasApp)
           .get('/api/ideas/triage')
-          .set('x-ai-context', 'personal');
+          .set('x-ai-context', 'operations');
 
         expect(res.status).toBe(200);
         // Contract: { success: true, ideas: Array, total: number, hasMore: boolean }
@@ -398,7 +398,7 @@ describe('Phase 8.2: API Contract Tests', () => {
     it('should return standard error shape for 400 Bad Request', async () => {
       const res = await request(ideasApp)
         .get('/api/ideas/not-a-uuid')
-        .set('x-ai-context', 'personal');
+        .set('x-ai-context', 'operations');
 
       expect(res.status).toBe(400);
       // Contract: { error: { code: string, message: string } } or { error: string }
@@ -410,7 +410,7 @@ describe('Phase 8.2: API Contract Tests', () => {
 
       const res = await request(ideasApp)
         .get(`/api/ideas/${UUID}`)
-        .set('x-ai-context', 'personal');
+        .set('x-ai-context', 'operations');
 
       expect(res.status).toBe(404);
       expect(res.body).toHaveProperty('error');
@@ -422,7 +422,7 @@ describe('Phase 8.2: API Contract Tests', () => {
 
       const res = await request(ideasApp)
         .get('/api/ideas')
-        .set('x-ai-context', 'personal');
+        .set('x-ai-context', 'operations');
 
       expect(res.status).toBe(500);
       expect(res.body).toHaveProperty('error');

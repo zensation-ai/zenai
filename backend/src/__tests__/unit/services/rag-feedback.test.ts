@@ -33,7 +33,7 @@ describe('RAG Feedback Service', () => {
         rows: [{ id: 'fb-1' }],
       } as never);
 
-      const id = await recordRAGFeedback('personal', {
+      const id = await recordRAGFeedback('operations', {
         queryText: 'How does memory work?',
         wasHelpful: true,
         relevanceRating: 4,
@@ -43,7 +43,7 @@ describe('RAG Feedback Service', () => {
 
       expect(id).toBe('fb-1');
       expect(mockQueryContext).toHaveBeenCalledWith(
-        'personal',
+        'operations',
         expect.stringContaining('INSERT INTO rag_feedback'),
         expect.arrayContaining(['How does memory work?', true, 4])
       );
@@ -52,7 +52,7 @@ describe('RAG Feedback Service', () => {
     it('should throw on database error', async () => {
       mockQueryContext.mockRejectedValueOnce(new Error('DB error'));
 
-      await expect(recordRAGFeedback('personal', {
+      await expect(recordRAGFeedback('operations', {
         queryText: 'test',
         wasHelpful: false,
       })).rejects.toThrow('DB error');
@@ -63,7 +63,7 @@ describe('RAG Feedback Service', () => {
     it('should record analytics without throwing', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [] } as never);
 
-      await recordRAGQueryAnalytics('personal', {
+      await recordRAGQueryAnalytics('operations', {
         queryText: 'search query',
         strategiesUsed: ['semantic'],
         resultCount: 5,
@@ -72,7 +72,7 @@ describe('RAG Feedback Service', () => {
       });
 
       expect(mockQueryContext).toHaveBeenCalledWith(
-        'personal',
+        'operations',
         expect.stringContaining('INSERT INTO rag_query_analytics'),
         expect.any(Array)
       );
@@ -82,7 +82,7 @@ describe('RAG Feedback Service', () => {
       mockQueryContext.mockRejectedValueOnce(new Error('DB error'));
 
       // Should not throw
-      await recordRAGQueryAnalytics('personal', {
+      await recordRAGQueryAnalytics('operations', {
         queryText: 'test',
         strategiesUsed: [],
         resultCount: 0,
@@ -114,7 +114,7 @@ describe('RAG Feedback Service', () => {
         ],
       } as never);
 
-      const result = await getRAGAnalytics('personal', 30);
+      const result = await getRAGAnalytics('operations', 30);
 
       expect(result.totalQueries).toBe(100);
       expect(result.avgConfidence).toBe(0.75);
@@ -140,7 +140,7 @@ describe('RAG Feedback Service', () => {
         }],
       } as never);
 
-      const result = await getRAGStrategyPerformance('personal');
+      const result = await getRAGStrategyPerformance('operations');
 
       expect(result).toHaveLength(1);
       expect(result[0].strategy).toBe('semantic');
@@ -164,7 +164,7 @@ describe('RAG Feedback Service', () => {
         }],
       } as never);
 
-      const result = await getRAGQueryHistory('personal', 10);
+      const result = await getRAGQueryHistory('operations', 10);
 
       expect(result).toHaveLength(1);
       expect(result[0].queryType).toBe('causal');

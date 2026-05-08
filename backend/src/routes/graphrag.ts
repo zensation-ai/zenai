@@ -7,6 +7,7 @@
 
 import { Router, Request, Response } from 'express';
 import { apiKeyAuth, requireScope } from '../middleware/auth';
+import { requirePlan } from '../middleware/plan-gate';
 import { validateContextParam } from '../utils/validation';
 import { asyncHandler, ValidationError } from '../middleware/errorHandler';
 import { isValidContext } from '../utils/database-context';
@@ -17,6 +18,8 @@ import { graphBuilder } from '../services/knowledge-graph/graph-builder';
 import { hybridRetriever } from '../services/knowledge-graph/hybrid-retriever';
 import { communitySummarizer } from '../services/knowledge-graph/community-summarizer';
 import { graphIndexer } from '../services/knowledge-graph/graph-indexer';
+import { queryEventsByTimeRange, getActivityHeatmap, getEntityActivityScore, pruneOldEvents } from '../services/knowledge-graph/event-subgraph';
+import { getTemporalEntityRanking, getEntityTimeline } from '../services/knowledge-graph/temporal-index';
 
 const router = Router();
 
@@ -32,7 +35,7 @@ router.post(
   asyncHandler(async (req: Request, res: Response) => {
     const context = validateContextParam(req.params.context);
     if (!isValidContext(context)) {
-      throw new ValidationError('Invalid context. Use: personal, work, learning, or creative.');
+      throw new ValidationError('Invalid context. Use: operations, finance, people, or strategy.');
     }
 
     getUserId(req); // auth check
@@ -61,7 +64,7 @@ router.get(
   asyncHandler(async (req: Request, res: Response) => {
     const context = validateContextParam(req.params.context);
     if (!isValidContext(context)) {
-      throw new ValidationError('Invalid context. Use: personal, work, learning, or creative.');
+      throw new ValidationError('Invalid context. Use: operations, finance, people, or strategy.');
     }
 
     const userId = getUserId(req);
@@ -106,7 +109,7 @@ router.get(
   asyncHandler(async (req: Request, res: Response) => {
     const context = validateContextParam(req.params.context);
     if (!isValidContext(context)) {
-      throw new ValidationError('Invalid context. Use: personal, work, learning, or creative.');
+      throw new ValidationError('Invalid context. Use: operations, finance, people, or strategy.');
     }
 
     const userId = getUserId(req);
@@ -158,7 +161,7 @@ router.delete(
   asyncHandler(async (req: Request, res: Response) => {
     const context = validateContextParam(req.params.context);
     if (!isValidContext(context)) {
-      throw new ValidationError('Invalid context. Use: personal, work, learning, or creative.');
+      throw new ValidationError('Invalid context. Use: operations, finance, people, or strategy.');
     }
 
     const userId = getUserId(req);
@@ -185,10 +188,11 @@ router.delete(
 router.post(
   '/:context/graphrag/retrieve',
   requireScope('read'),
+  requirePlan('pro'),
   asyncHandler(async (req: Request, res: Response) => {
     const context = validateContextParam(req.params.context);
     if (!isValidContext(context)) {
-      throw new ValidationError('Invalid context. Use: personal, work, learning, or creative.');
+      throw new ValidationError('Invalid context. Use: operations, finance, people, or strategy.');
     }
 
     getUserId(req); // auth check
@@ -213,7 +217,7 @@ router.get(
   asyncHandler(async (req: Request, res: Response) => {
     const context = validateContextParam(req.params.context);
     if (!isValidContext(context)) {
-      throw new ValidationError('Invalid context. Use: personal, work, learning, or creative.');
+      throw new ValidationError('Invalid context. Use: operations, finance, people, or strategy.');
     }
 
     getUserId(req); // auth check
@@ -233,7 +237,7 @@ router.post(
   asyncHandler(async (req: Request, res: Response) => {
     const context = validateContextParam(req.params.context);
     if (!isValidContext(context)) {
-      throw new ValidationError('Invalid context. Use: personal, work, learning, or creative.');
+      throw new ValidationError('Invalid context. Use: operations, finance, people, or strategy.');
     }
 
     getUserId(req); // auth check
@@ -254,7 +258,7 @@ router.post(
   asyncHandler(async (req: Request, res: Response) => {
     const context = validateContextParam(req.params.context);
     if (!isValidContext(context)) {
-      throw new ValidationError('Invalid context. Use: personal, work, learning, or creative.');
+      throw new ValidationError('Invalid context. Use: operations, finance, people, or strategy.');
     }
 
     getUserId(req); // auth check
@@ -277,7 +281,7 @@ router.get(
   asyncHandler(async (req: Request, res: Response) => {
     const context = validateContextParam(req.params.context);
     if (!isValidContext(context)) {
-      throw new ValidationError('Invalid context. Use: personal, work, learning, or creative.');
+      throw new ValidationError('Invalid context. Use: operations, finance, people, or strategy.');
     }
 
     getUserId(req); // auth check
@@ -290,6 +294,140 @@ router.get(
         isIndexing: graphIndexer.isIndexing(),
       },
     });
+  })
+);
+
+// ===========================================
+// Event Subgraph Routes (Layer 1)
+// ===========================================
+
+/**
+ * GET /api/:context/graphrag/events
+ * Query events by time range
+ */
+router.get(
+  '/:context/graphrag/events',
+  requireScope('read'),
+  asyncHandler(async (req: Request, res: Response) => {
+    const context = validateContextParam(req.params.context);
+    if (!isValidContext(context)) {
+      throw new ValidationError('Invalid context. Use: operations, finance, people, or strategy.');
+    }
+
+    getUserId(req); // auth check
+    const startDate = new Date(req.query.start as string || Date.now() - 7 * 86400000);
+    const endDate = new Date(req.query.end as string || Date.now());
+    const eventType = req.query.type as string | undefined;
+    const limit = Math.min(parseInt(req.query.limit as string, 10) || 50, 200);
+
+    const events = await queryEventsByTimeRange(context, startDate, endDate, {
+      eventType: eventType as Parameters<typeof queryEventsByTimeRange>[3] extends { eventType?: infer T } ? T : never,
+      limit,
+    });
+
+    return res.json({ success: true, data: events });
+  })
+);
+
+/**
+ * GET /api/:context/graphrag/events/heatmap
+ * Activity heatmap
+ */
+router.get(
+  '/:context/graphrag/events/heatmap',
+  requireScope('read'),
+  asyncHandler(async (req: Request, res: Response) => {
+    const context = validateContextParam(req.params.context);
+    if (!isValidContext(context)) {
+      throw new ValidationError('Invalid context. Use: operations, finance, people, or strategy.');
+    }
+
+    getUserId(req); // auth check
+    const days = Math.min(parseInt(req.query.days as string, 10) || 30, 365);
+    const heatmap = await getActivityHeatmap(context, days);
+    return res.json({ success: true, data: heatmap });
+  })
+);
+
+/**
+ * GET /api/:context/graphrag/entities/:id/activity
+ * Entity activity score
+ */
+router.get(
+  '/:context/graphrag/entities/:id/activity',
+  requireScope('read'),
+  asyncHandler(async (req: Request, res: Response) => {
+    const context = validateContextParam(req.params.context);
+    if (!isValidContext(context)) {
+      throw new ValidationError('Invalid context. Use: operations, finance, people, or strategy.');
+    }
+
+    getUserId(req); // auth check
+    const entityId = req.params.id;
+    const days = Math.min(parseInt(req.query.days as string, 10) || 7, 365);
+    const activity = await getEntityActivityScore(context, entityId, days);
+    return res.json({ success: true, data: activity });
+  })
+);
+
+/**
+ * GET /api/:context/graphrag/entities/:id/timeline
+ * Entity event timeline
+ */
+router.get(
+  '/:context/graphrag/entities/:id/timeline',
+  requireScope('read'),
+  asyncHandler(async (req: Request, res: Response) => {
+    const context = validateContextParam(req.params.context);
+    if (!isValidContext(context)) {
+      throw new ValidationError('Invalid context. Use: operations, finance, people, or strategy.');
+    }
+
+    getUserId(req); // auth check
+    const entityId = req.params.id;
+    const limit = Math.min(parseInt(req.query.limit as string, 10) || 50, 200);
+    const timeline = await getEntityTimeline(context, entityId, limit);
+    return res.json({ success: true, data: timeline });
+  })
+);
+
+/**
+ * GET /api/:context/graphrag/temporal-ranking
+ * Temporal entity ranking
+ */
+router.get(
+  '/:context/graphrag/temporal-ranking',
+  requireScope('read'),
+  asyncHandler(async (req: Request, res: Response) => {
+    const context = validateContextParam(req.params.context);
+    if (!isValidContext(context)) {
+      throw new ValidationError('Invalid context. Use: operations, finance, people, or strategy.');
+    }
+
+    getUserId(req); // auth check
+    const limit = Math.min(parseInt(req.query.limit as string, 10) || 20, 100);
+    const ranking = await getTemporalEntityRanking(context, limit);
+    return res.json({ success: true, data: ranking });
+  })
+);
+
+/**
+ * POST /api/:context/graphrag/events/prune
+ * Prune old events
+ */
+router.post(
+  '/:context/graphrag/events/prune',
+  requireScope('write'),
+  asyncHandler(async (req: Request, res: Response) => {
+    const context = validateContextParam(req.params.context);
+    if (!isValidContext(context)) {
+      throw new ValidationError('Invalid context. Use: operations, finance, people, or strategy.');
+    }
+
+    getUserId(req); // auth check
+    const days = req.body.retentionDays || 90;
+    const deleted = await pruneOldEvents(context, days);
+    return res.json({ success: true, data: { deletedEvents: deleted } });
   })
 );
 

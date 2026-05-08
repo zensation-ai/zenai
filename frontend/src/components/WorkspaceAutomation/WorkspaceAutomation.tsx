@@ -9,8 +9,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import type { AIContext } from '../ContextSwitcher';
 import { AutomationCard, type AutomationData } from './AutomationCard';
-import './WorkspaceAutomation.css';
-
 const API_URL = import.meta.env.VITE_API_URL || '';
 const API_KEY = import.meta.env.VITE_API_KEY || '';
 

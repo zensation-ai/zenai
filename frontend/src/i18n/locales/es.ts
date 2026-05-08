@@ -44,10 +44,10 @@ export const es = {
     import: 'Importar',
   },
   context: {
-    personal: 'Personal',
-    work: 'Trabajo',
-    learning: 'Aprendizaje',
-    creative: 'Creativo',
+    operations: 'Operaciones',
+    finance: 'Finanzas',
+    people: 'Equipo',
+    strategy: 'Estrategia',
   },
   chat: {
     placeholder: 'Escribe un mensaje...',

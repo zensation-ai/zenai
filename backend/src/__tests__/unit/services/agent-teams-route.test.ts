@@ -16,6 +16,11 @@ jest.mock('../../../middleware/auth', () => ({
   requireScope: () => (_req: unknown, _res: unknown, next: () => void) => next(),
 }));
 
+// Mock plan-gate middleware
+jest.mock('../../../middleware/plan-gate', () => ({
+  requirePlan: () => (_req: unknown, _res: unknown, next: () => void) => next(),
+}));
+
 // Mock validate-params middleware (UUID validation tested separately)
 jest.mock('../../../middleware/validate-params', () => ({
   requireUUID: () => (_req: unknown, _res: unknown, next: () => void) => next(),
@@ -121,7 +126,7 @@ describe('Agent Teams Route', () => {
         .post('/api/agents/execute')
         .send({
           task: 'Analysiere meine Marketing-Ideen und erstelle eine Strategie',
-          aiContext: 'personal',
+          aiContext: 'operations',
         });
 
       expect(res.status).toBe(200);
@@ -157,7 +162,7 @@ describe('Agent Teams Route', () => {
         .send({
           task: 'Test task',
           context: 'Additional context',
-          aiContext: 'work',
+          aiContext: 'finance',
           strategy: 'research_only',
           skipReview: true,
         });
@@ -237,7 +242,7 @@ describe('Agent Teams Route', () => {
 
       const res = await request(app)
         .get('/api/agents/analytics')
-        .query({ context: 'personal' });
+        .query({ context: 'operations' });
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
@@ -273,7 +278,7 @@ describe('Agent Teams Route', () => {
 
       const res = await request(app)
         .get('/api/agents/analytics')
-        .query({ context: 'personal', days: 30 });
+        .query({ context: 'operations', days: 30 });
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
@@ -305,7 +310,7 @@ describe('Agent Teams Route', () => {
 
       const res = await request(app)
         .get('/api/agents/history')
-        .query({ context: 'personal' });
+        .query({ context: 'operations' });
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
@@ -321,7 +326,7 @@ describe('Agent Teams Route', () => {
 
       const res = await request(app)
         .get('/api/agents/history/00000000-0000-4000-8000-000000000000')
-        .query({ context: 'personal' });
+        .query({ context: 'operations' });
 
       expect(res.status).toBe(404);
       expect(res.body.success).toBe(false);
@@ -344,7 +349,7 @@ describe('Agent Teams Route', () => {
 
       const res = await request(app)
         .post('/api/agents/history/a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11/save-as-idea')
-        .send({ context: 'personal' });
+        .send({ context: 'operations' });
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
@@ -356,7 +361,7 @@ describe('Agent Teams Route', () => {
 
       const res = await request(app)
         .post('/api/agents/history/00000000-0000-4000-8000-000000000000/save-as-idea')
-        .send({ context: 'personal' });
+        .send({ context: 'operations' });
 
       expect(res.status).toBe(404);
     });

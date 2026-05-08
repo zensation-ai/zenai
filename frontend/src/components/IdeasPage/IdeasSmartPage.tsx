@@ -1,4 +1,5 @@
 import { useState, useMemo, useCallback } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { FilterChipBar } from './FilterChipBar';
 import { IdeasToolbar } from './IdeasToolbar';
 import { IdeaGridView } from './IdeaGridView';
@@ -7,12 +8,14 @@ import { IdeaGraphView } from './IdeaGraphView';
 import { IdeaPanel } from './IdeaPanel';
 import { useIdeaFilters } from './useIdeaFilters';
 import { QueryErrorState } from '../QueryErrorState';
-import { EmptyState } from '../../design-system';
-import { useIdeasQuery, useArchiveIdeaMutation, useDeleteIdeaMutation } from '../../hooks/queries/useIdeas';
+import { EmptyState } from '@/components/ui/empty-state';
+import { EmptyStateWithDemoSeed } from '../shared/EmptyStateWithDemoSeed';
+import { AmbientGlow } from '../AmbientGlow';
+import { useIdeasQuery, useCreateIdeaMutation, useArchiveIdeaMutation, useDeleteIdeaMutation } from '../../hooks/queries/useIdeas';
+import { staggerContainer, staggerItem } from '../../utils/animations';
 import type { StructuredIdea } from '../../types';
 import type { AIContext } from '../ContextSwitcher';
 import type { ViewMode, IdeasSmartPageProps } from './types';
-import './IdeasSmartPage.css';
 
 export function IdeasSmartPage({ context, initialTab, onNavigate: _onNavigate }: IdeasSmartPageProps) {
   const {
@@ -34,6 +37,7 @@ export function IdeasSmartPage({ context, initialTab, onNavigate: _onNavigate }:
 
   const { data: ideas = [], isLoading, error, refetch } = useIdeasQuery(context as AIContext);
 
+  const createMutation = useCreateIdeaMutation(context as AIContext);
   const archiveMutation = useArchiveIdeaMutation(context as AIContext);
   const deleteMutation = useDeleteIdeaMutation(context as AIContext);
 
@@ -127,20 +131,12 @@ export function IdeasSmartPage({ context, initialTab, onNavigate: _onNavigate }:
     }));
   }, [selectedIds, deleteMutation]);
 
-  if (error) {
-    return (
-      <QueryErrorState
-        error={error as Error}
-        refetch={refetch}
-        className="ideas-smart-page__error"
-      />
-    );
-  }
-
-  const showEmpty = !isLoading && filteredIdeas.length === 0;
+  const showError = !!error && !isLoading;
+  const showEmpty = !isLoading && !error && filteredIdeas.length === 0;
 
   return (
-    <div className="ideas-smart-page" role="main" aria-label="Ideen">
+    <div className="flex flex-col h-full gap-3 pt-3 relative" role="main" aria-label="Ideen">
+      <AmbientGlow state={isLoading ? 'thinking' : 'idle'} />
       <FilterChipBar
         chips={chipDefs}
         filters={filters}
@@ -161,40 +157,74 @@ export function IdeasSmartPage({ context, initialTab, onNavigate: _onNavigate }:
         selectedCount={selectedIds.size}
         onBatchArchive={handleBatchArchive}
         onBatchDelete={handleBatchDelete}
+        onCreateIdea={(content) => createMutation.mutate({ content })}
+        isCreating={createMutation.isPending}
       />
 
-      <div className="ideas-smart-page__content">
-        {showEmpty ? (
-          <EmptyState
-            title="Keine Ideen gefunden"
-            description="Erstelle deine erste Idee oder passe die Filter an."
-            className="ideas-smart-page__empty"
-          />
-        ) : (
-          <>
-            {viewMode === 'grid' && (
-              <IdeaGridView
-                ideas={filteredIdeas}
-                onIdeaClick={handleIdeaClick}
-                selectionMode={selectionMode}
-                selectedIds={selectedIds}
-                onSelect={handleSelect}
+      <div className="flex-1 min-h-0 flex flex-col">
+        <AnimatePresence mode="wait">
+          {isLoading ? (
+            <motion.div key="skeleton" exit={{ opacity: 0 }} transition={{ duration: 0.1 }} className="flex-1" />
+          ) : showError ? (
+            <motion.div key="error" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex-1">
+              <QueryErrorState
+                error={error as Error}
+                refetch={refetch}
+                className="flex-1"
               />
-            )}
-            {viewMode === 'list' && (
-              <IdeaListView
-                ideas={filteredIdeas}
-                onIdeaClick={handleIdeaClick}
-                selectionMode={selectionMode}
-                selectedIds={selectedIds}
-                onSelect={handleSelect}
-              />
-            )}
-            {viewMode === 'graph' && (
-              <IdeaGraphView ideas={filteredIdeas} onIdeaClick={handleIdeaClick} />
-            )}
-          </>
-        )}
+            </motion.div>
+          ) : showEmpty ? (
+            <motion.div key="empty" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex-1 flex items-center justify-center">
+              {activeFilterCount === 0 && ideas.length === 0 ? (
+                <EmptyStateWithDemoSeed
+                  icon="💡"
+                  title="Noch keine Ideen"
+                  description="Starte mit einer ersten Idee oder lade die Demo-Daten, um alle Funktionen auszuprobieren."
+                  createLabel="Idee erstellen"
+                  onCreate={() => { void createMutation.mutateAsync({ content: 'Neue Idee' }); }}
+                />
+              ) : (
+                <EmptyState
+                  icon="💡"
+                  title="Keine Ideen gefunden"
+                  description="Erstelle deine erste Idee oder passe die Filter an."
+                />
+              )}
+            </motion.div>
+          ) : (
+            <motion.div
+              key={`content-${viewMode}`}
+              variants={staggerContainer}
+              initial="initial"
+              animate="animate"
+              className="flex-1 min-h-0 flex flex-col"
+            >
+              <motion.div variants={staggerItem} className="flex-1 min-h-0">
+                {viewMode === 'grid' && (
+                  <IdeaGridView
+                    ideas={filteredIdeas}
+                    onIdeaClick={handleIdeaClick}
+                    selectionMode={selectionMode}
+                    selectedIds={selectedIds}
+                    onSelect={handleSelect}
+                  />
+                )}
+                {viewMode === 'list' && (
+                  <IdeaListView
+                    ideas={filteredIdeas}
+                    onIdeaClick={handleIdeaClick}
+                    selectionMode={selectionMode}
+                    selectedIds={selectedIds}
+                    onSelect={handleSelect}
+                  />
+                )}
+                {viewMode === 'graph' && (
+                  <IdeaGraphView ideas={filteredIdeas} onIdeaClick={handleIdeaClick} />
+                )}
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
       <IdeaPanel

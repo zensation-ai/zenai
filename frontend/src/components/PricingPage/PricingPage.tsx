@@ -5,10 +5,9 @@
  */
 
 import { useState } from 'react';
-import { Button } from '../../design-system/components/Button';
-import { Badge } from '../../design-system/components/Badge';
-import './PricingPage.css';
-
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { useAuth } from '../../contexts/AuthContext';
 interface PricingTier {
   id: string;
   name: string;
@@ -19,7 +18,7 @@ interface PricingTier {
   badge?: string;
   features: string[];
   cta: string;
-  ctaVariant: 'primary' | 'secondary' | 'ghost';
+  ctaVariant: 'default' | 'secondary' | 'ghost';
   ctaHref: string;
   ctaExternal?: boolean;
 }
@@ -52,7 +51,7 @@ const TIERS: PricingTier[] = [
     badge: 'Empfohlen',
     features: [
       '2.000 AI-Credits/Monat',
-      '4 Kontexte (Privat, Arbeit, Lernen, Kreativ)',
+      '4 Kontexte (Operativ, Finanzen, Team, Strategie)',
       'Advanced RAG + Knowledge Graph',
       'Multi-Agent Teams (5 Credits/Aufruf)',
       'Voice Chat (2 Credits/Minute)',
@@ -61,7 +60,7 @@ const TIERS: PricingTier[] = [
       'Zusätzliche Credits: 500 für €9',
     ],
     cta: 'Pro testen',
-    ctaVariant: 'primary',
+    ctaVariant: 'default',
     ctaHref: '/demo',
   },
   {
@@ -124,20 +123,65 @@ function FeatureValue({ value }: { value: string | boolean }) {
 
 export function PricingPage() {
   const [yearly, setYearly] = useState(false);
+  const [checkoutLoading, setCheckoutLoading] = useState(false);
+  const { session, getAccessToken } = useAuth();
 
-  const handleCtaClick = (tier: PricingTier) => {
+  const proPriceId = import.meta.env.VITE_STRIPE_PRO_PRICE_ID as string | undefined;
+  const apiUrl = import.meta.env.VITE_API_URL || '';
+
+  const handleCtaClick = async (tier: PricingTier) => {
     if (tier.ctaExternal) {
       window.location.href = tier.ctaHref;
-    } else {
-      window.location.href = tier.ctaHref;
+      return;
     }
+
+    // Pro plan: wire to Stripe checkout for logged-in users
+    if (tier.id === 'pro' && proPriceId) {
+      if (session) {
+        const token = getAccessToken();
+        if (!token) {
+          window.location.href = '/auth?redirect=/system/benutzer/billing';
+          return;
+        }
+        setCheckoutLoading(true);
+        try {
+          const res = await fetch(`${apiUrl}/api/billing/checkout`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({
+              priceId: proPriceId,
+              successUrl: `${window.location.origin}/system/benutzer/billing?success=1`,
+              cancelUrl: `${window.location.origin}/pricing?canceled=1`,
+            }),
+          });
+          const data = (await res.json()) as { success: boolean; url?: string };
+          if (data.success && data.url) {
+            window.location.href = data.url;
+            return;
+          }
+        } catch {
+          // fall through to billing page
+        } finally {
+          setCheckoutLoading(false);
+        }
+        window.location.href = '/system/benutzer/billing';
+      } else {
+        window.location.href = '/auth?redirect=/system/benutzer/billing';
+      }
+      return;
+    }
+
+    window.location.href = tier.ctaHref;
   };
 
   return (
     <div className="pricing-page" role="main" aria-label="Preise">
       {/* Hero */}
       <div className="pricing-hero">
-        <Badge color="info" size="sm" className="pricing-hero-badge">Transparent & Fair</Badge>
+        <Badge variant="secondary" className="pricing-hero-badge">Transparent & Fair</Badge>
         <h1 className="pricing-title">Einfache Preise,<br />keine Überraschungen</h1>
         <p className="pricing-subtitle">
           Starte kostenlos und wechsle zu Pro, wenn du mehr brauchst.
@@ -173,7 +217,7 @@ export function PricingPage() {
           >
             {tier.badge && (
               <div className="pricing-card-badge">
-                <Badge color="info" size="sm">{tier.badge}</Badge>
+                <Badge variant="secondary">{tier.badge}</Badge>
               </div>
             )}
 
@@ -209,12 +253,13 @@ export function PricingPage() {
 
             <div className="pricing-card-cta">
               <Button
-                variant={tier.ctaVariant}
+                variant={tier.ctaVariant as "default" | "secondary" | "ghost"}
                 size="lg"
-                style={{ width: '100%' }}
+                className="w-full"
                 onClick={() => handleCtaClick(tier)}
+                disabled={tier.id === 'pro' && checkoutLoading}
               >
-                {tier.cta}
+                {tier.id === 'pro' && checkoutLoading ? 'Weiterleitung…' : tier.cta}
               </Button>
             </div>
           </div>

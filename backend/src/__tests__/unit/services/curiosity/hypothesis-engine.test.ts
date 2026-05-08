@@ -201,14 +201,18 @@ describe('generateFromTemporalGaps', () => {
   });
 
   it('fact exactly at 30-day boundary is not flagged', () => {
-    const boundaryDate = new Date();
-    boundaryDate.setDate(boundaryDate.getDate() - 30);
+    const now = new Date('2026-06-15T12:00:00Z');
+    jest.useFakeTimers({ now });
+
+    const boundaryDate = new Date('2026-05-16T12:00:00Z'); // exactly 30 days before `now`
 
     const facts: FactWithTimestamp[] = [
       { id: '1', content: 'Boundary fact', entities: ['test'], createdAt: boundaryDate },
     ];
     const hypotheses = generateFromTemporalGaps(facts);
     expect(hypotheses).toEqual([]);
+
+    jest.useRealTimers();
   });
 });
 
@@ -325,7 +329,7 @@ describe('generateHypotheses', () => {
         ],
       } as any);
 
-    const hypotheses = await generateHypotheses('personal');
+    const hypotheses = await generateHypotheses('operations');
     expect(Array.isArray(hypotheses)).toBe(true);
     expect(hypotheses.length).toBeGreaterThanOrEqual(1);
   });
@@ -344,14 +348,14 @@ describe('generateHypotheses', () => {
       .mockResolvedValueOnce({ rows: [] } as any)
       .mockResolvedValueOnce({ rows: [] } as any);
 
-    const hypotheses = await generateHypotheses('personal');
+    const hypotheses = await generateHypotheses('operations');
     expect(hypotheses.length).toBeLessThanOrEqual(10);
   });
 
   it('returns empty array on DB error', async () => {
     mockQueryContext.mockRejectedValueOnce(new Error('DB connection failed'));
 
-    const hypotheses = await generateHypotheses('personal');
+    const hypotheses = await generateHypotheses('operations');
     expect(hypotheses).toEqual([]);
   });
 
@@ -361,7 +365,7 @@ describe('generateHypotheses', () => {
       .mockResolvedValueOnce({ rows: [] } as any)
       .mockResolvedValueOnce({ rows: [] } as any);
 
-    const hypotheses = await generateHypotheses('personal');
+    const hypotheses = await generateHypotheses('operations');
     expect(hypotheses).toEqual([]);
   });
 
@@ -371,7 +375,7 @@ describe('generateHypotheses', () => {
       .mockResolvedValueOnce({ rows: [] } as any)
       .mockResolvedValueOnce({ rows: [] } as any);
 
-    await generateHypotheses('personal', 'user-456');
+    await generateHypotheses('operations', 'user-456');
     expect(mockQueryContext).toHaveBeenCalled();
   });
 
@@ -384,7 +388,7 @@ describe('generateHypotheses', () => {
       } as any)
       .mockResolvedValueOnce({ rows: [] } as any);
 
-    const hypotheses = await generateHypotheses('personal');
+    const hypotheses = await generateHypotheses('operations');
     if (hypotheses.length > 0) {
       const h: Hypothesis = hypotheses[0];
       expect(h).toHaveProperty('hypothesis');
@@ -420,7 +424,7 @@ describe('generateHypotheses', () => {
         ],
       } as any);
 
-    const hypotheses = await generateHypotheses('personal');
+    const hypotheses = await generateHypotheses('operations');
     for (let i = 1; i < hypotheses.length; i++) {
       expect(hypotheses[i - 1].confidence).toBeGreaterThanOrEqual(hypotheses[i].confidence);
     }

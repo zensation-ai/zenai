@@ -24,9 +24,9 @@ interface DomainMapping {
 }
 
 const DOMAIN_MAPPINGS: DomainMapping[] = [
-  { domain: 'zensation.ai', defaultContext: 'work' },
-  { domain: 'zensation.app', defaultContext: 'personal' },
-  { domain: 'joint-sales.com', defaultContext: 'work' },
+  { domain: 'zensation.ai', defaultContext: 'finance' },
+  { domain: 'zensation.app', defaultContext: 'operations' },
+  { domain: 'joint-sales.com', defaultContext: 'finance' },
 ];
 
 function getContextForRecipient(toAddresses: string[]): AIContext {
@@ -37,7 +37,7 @@ function getContextForRecipient(toAddresses: string[]): AIContext {
       if (mapping) {return mapping.defaultContext;}
     }
   }
-  return 'work'; // default fallback
+  return 'finance'; // default fallback
 }
 
 function extractNameAndAddress(from: string): { name: string | null; address: string } {

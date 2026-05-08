@@ -23,7 +23,7 @@ jest.mock('../../../utils/logger', () => ({
 }));
 
 jest.mock('../../../utils/database-context', () => ({
-  isValidContext: (ctx: string) => ['personal', 'work', 'learning', 'creative'].includes(ctx),
+  isValidContext: (ctx: string) => ['operations', 'finance', 'people', 'strategy'].includes(ctx),
 }));
 
 const mockGetProfile = jest.fn();
@@ -66,7 +66,7 @@ describe('Digital Twin Routes', () => {
   it('GET /:context/digital-twin/profile — returns profile', async () => {
     mockGetProfile.mockResolvedValue({ sections: { personality: {} } });
 
-    const res = await request(app).get('/api/personal/digital-twin/profile');
+    const res = await request(app).get('/api/operations/digital-twin/profile');
 
     expect(res.status).toBe(200);
     expect(res.body.data).toHaveProperty('sections');
@@ -82,7 +82,7 @@ describe('Digital Twin Routes', () => {
     mockUpsertProfileSection.mockResolvedValue({ section: 'personality', data: { trait: 'curious' } });
 
     const res = await request(app)
-      .put('/api/personal/digital-twin/profile')
+      .put('/api/operations/digital-twin/profile')
       .send({ section: 'personality', data: { trait: 'curious' } });
 
     expect(res.status).toBe(200);
@@ -91,7 +91,7 @@ describe('Digital Twin Routes', () => {
 
   it('PUT /:context/digital-twin/profile — rejects invalid section', async () => {
     const res = await request(app)
-      .put('/api/personal/digital-twin/profile')
+      .put('/api/operations/digital-twin/profile')
       .send({ section: 'invalid_section', data: { x: 1 } });
 
     expect(res.status).toBe(400);
@@ -99,7 +99,7 @@ describe('Digital Twin Routes', () => {
 
   it('PUT /:context/digital-twin/profile — rejects non-object data', async () => {
     const res = await request(app)
-      .put('/api/personal/digital-twin/profile')
+      .put('/api/operations/digital-twin/profile')
       .send({ section: 'personality', data: 'not-an-object' });
 
     expect(res.status).toBe(400);
@@ -108,7 +108,7 @@ describe('Digital Twin Routes', () => {
   it('GET /:context/digital-twin/radar — returns radar scores', async () => {
     mockGetRadarScores.mockResolvedValue({ creativity: 8, focus: 7 });
 
-    const res = await request(app).get('/api/personal/digital-twin/radar');
+    const res = await request(app).get('/api/operations/digital-twin/radar');
 
     expect(res.status).toBe(200);
     expect(res.body.data).toHaveProperty('creativity');
@@ -117,17 +117,17 @@ describe('Digital Twin Routes', () => {
   it('GET /:context/digital-twin/evolution — returns evolution snapshots', async () => {
     mockGetEvolution.mockResolvedValue([{ week: 1, score: 75 }]);
 
-    const res = await request(app).get('/api/personal/digital-twin/evolution?limit=5');
+    const res = await request(app).get('/api/operations/digital-twin/evolution?limit=5');
 
     expect(res.status).toBe(200);
-    expect(mockGetEvolution).toHaveBeenCalledWith('personal', 'user-123', 5);
+    expect(mockGetEvolution).toHaveBeenCalledWith('operations', 'user-123', 5);
   });
 
   it('POST /:context/digital-twin/correction — submits correction', async () => {
     mockSubmitCorrection.mockResolvedValue({ id: 'corr-1' });
 
     const res = await request(app)
-      .post('/api/personal/digital-twin/correction')
+      .post('/api/operations/digital-twin/correction')
       .send({ section: 'expertise', corrected_value: { skill: 'TypeScript' }, reason: 'outdated' });
 
     expect(res.status).toBe(200);
@@ -136,7 +136,7 @@ describe('Digital Twin Routes', () => {
 
   it('POST /:context/digital-twin/correction — rejects missing section', async () => {
     const res = await request(app)
-      .post('/api/personal/digital-twin/correction')
+      .post('/api/operations/digital-twin/correction')
       .send({ corrected_value: { x: 1 } });
 
     expect(res.status).toBe(400);
@@ -145,7 +145,7 @@ describe('Digital Twin Routes', () => {
   it('GET /:context/digital-twin/export — exports profile', async () => {
     mockExportProfile.mockResolvedValue({ format: 'json', data: {} });
 
-    const res = await request(app).get('/api/personal/digital-twin/export');
+    const res = await request(app).get('/api/operations/digital-twin/export');
 
     expect(res.status).toBe(200);
     expect(res.body.data).toHaveProperty('format');
@@ -155,7 +155,7 @@ describe('Digital Twin Routes', () => {
     mockAggregateProfile.mockResolvedValue(['personality', 'expertise']);
     mockCreateSnapshot.mockResolvedValue({ id: 'snap-1' });
 
-    const res = await request(app).post('/api/personal/digital-twin/refresh');
+    const res = await request(app).post('/api/operations/digital-twin/refresh');
 
     expect(res.status).toBe(200);
     expect(res.body.data.sections_updated).toBe(2);

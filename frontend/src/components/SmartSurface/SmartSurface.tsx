@@ -6,13 +6,11 @@
  * Injects a Morning Briefing card when time is 6-11 AM.
  */
 
-import { useMemo } from 'react';
+import { useMemo, type CSSProperties } from 'react';
 import type { AIContext } from '../ContextSwitcher';
 import { useSmartSuggestions, isMorningBriefingTime } from '../../hooks/useSmartSuggestions';
 import type { SmartSuggestion } from '../../hooks/useSmartSuggestions';
 import { SuggestionCard } from './SuggestionCard';
-import './SmartSurface.css';
-
 interface SmartSurfaceProps {
   context: AIContext;
 }
@@ -40,7 +38,7 @@ function buildMorningBriefing(suggestions: SmartSuggestion[]): SmartSuggestion {
     userId: '',
     type: 'morning_briefing',
     title: 'Guten Morgen',
-    description: `${dayOfWeek}, ${dateStr} \u2014 Hier ist dein Tagesuberblick.`,
+    description: `${dayOfWeek}, ${dateStr} \u2014 Hier ist dein Tagesüberblick.`,
     metadata: {
       greeting: 'Guten Morgen',
       tasksDueToday,
@@ -94,13 +92,13 @@ export function SmartSurface({ context }: SmartSurfaceProps) {
   };
 
   return (
-    <div className="ds-smart-surface" role="complementary" aria-label="Vorschlaege">
-      <div className="ds-smart-surface-inner" aria-live="polite" aria-label="KI-Vorschlaege">
+    <div className="ds-smart-surface" role="complementary" aria-label="Vorschläge">
+      <div className="ds-smart-surface-inner" aria-live="polite" aria-label="KI-Vorschläge">
         {displaySuggestions.map((s, i) => (
           <div
             key={s.id}
-            className="ds-smart-surface-item"
-            style={{ animationDelay: `${i * 80}ms` }}
+            className="ds-smart-surface-item [animation-delay:var(--delay)]"
+            style={{ '--delay': `${i * 80}ms` } as CSSProperties}
           >
             <SuggestionCard
               suggestion={s}

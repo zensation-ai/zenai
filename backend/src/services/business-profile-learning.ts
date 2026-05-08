@@ -63,7 +63,7 @@ export interface LearningResult {
  * Holt oder erstellt ein Business-Profil
  */
 export async function getOrCreateProfile(
-  context: AIContext = 'personal',
+  context: AIContext = 'operations',
   userId: string = 'default'
 ): Promise<BusinessProfile> {
   // Versuche existierendes Profil zu laden
@@ -192,7 +192,7 @@ export async function learnFromIdea(
   type: string,
   category: string,
   keywords: string[],
-  context: AIContext = 'personal'
+  context: AIContext = 'operations'
 ): Promise<LearningResult> {
   const result: LearningResult = {
     profile_updated: false,
@@ -404,7 +404,7 @@ Regeln:
  * Analysiert alle Ideen und aktualisiert das Profil umfassend
  */
 export async function runComprehensiveProfileAnalysis(
-  context: AIContext = 'personal',
+  context: AIContext = 'operations',
   daysBack: number = 30
 ): Promise<{
   ideas_analyzed: number;
@@ -549,7 +549,7 @@ Basiere alles auf den tatsächlichen Daten. Bei Unsicherheit null setzen.`;
  * Generiert personalisierten Kontext für LLM-Prompts
  */
 export async function getPersonalizedContext(
-  context: AIContext = 'personal'
+  context: AIContext = 'operations'
 ): Promise<string> {
   try {
     const profile = await getOrCreateProfile(context);
@@ -604,7 +604,7 @@ export async function getPersonalizedContext(
  * Holt Profil-Statistiken für das Dashboard
  */
 export async function getProfileStats(
-  context: AIContext = 'personal'
+  context: AIContext = 'operations'
 ): Promise<{
   profile_completeness: number;
   topics_tracked: number;

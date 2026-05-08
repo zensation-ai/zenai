@@ -85,7 +85,7 @@ jest.mock('../../../utils/validation', () => ({
 }));
 
 jest.mock('../../../utils/database-context', () => ({
-  isValidContext: (ctx: string) => ['personal', 'work', 'learning', 'creative'].includes(ctx),
+  isValidContext: (ctx: string) => ['operations', 'finance', 'people', 'strategy'].includes(ctx),
 }));
 
 jest.mock('../../../utils/logger', () => ({
@@ -111,7 +111,7 @@ describe('MCP Connections Routes', () => {
   describe('GET /:context/mcp/servers', () => {
     it('should return list of MCP servers', async () => {
       mockList.mockResolvedValue([{ id: '1', name: 'GitHub MCP' }]);
-      const res = await request(app).get('/api/personal/mcp/servers');
+      const res = await request(app).get('/api/operations/mcp/servers');
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
       expect(res.body.data).toHaveLength(1);
@@ -126,13 +126,13 @@ describe('MCP Connections Routes', () => {
   describe('PUT /:context/mcp/servers/:id', () => {
     it('should update a server', async () => {
       mockUpdate.mockResolvedValue({ id: '1', name: 'Updated' });
-      const res = await request(app).put('/api/personal/mcp/servers/1').send({ name: 'Updated' });
+      const res = await request(app).put('/api/operations/mcp/servers/1').send({ name: 'Updated' });
       expect(res.status).toBe(200);
     });
 
     it('should return 404 for non-existent server', async () => {
       mockUpdate.mockResolvedValue(null);
-      const res = await request(app).put('/api/personal/mcp/servers/nonexistent').send({ name: 'X' });
+      const res = await request(app).put('/api/operations/mcp/servers/nonexistent').send({ name: 'X' });
       expect(res.status).toBe(404);
     });
   });
@@ -140,13 +140,13 @@ describe('MCP Connections Routes', () => {
   describe('DELETE /:context/mcp/servers/:id', () => {
     it('should delete a server connection', async () => {
       mockMcpDelete.mockResolvedValue(true);
-      const res = await request(app).delete('/api/personal/mcp/servers/1');
+      const res = await request(app).delete('/api/operations/mcp/servers/1');
       expect(res.status).toBe(200);
     });
 
     it('should return 404 for non-existent server', async () => {
       mockMcpDelete.mockResolvedValue(false);
-      const res = await request(app).delete('/api/personal/mcp/servers/nonexistent');
+      const res = await request(app).delete('/api/operations/mcp/servers/nonexistent');
       expect(res.status).toBe(404);
     });
   });
@@ -154,7 +154,7 @@ describe('MCP Connections Routes', () => {
   describe('GET /:context/mcp/servers/:id/tools', () => {
     it('should return cached tools when no live client', async () => {
       mockGetTools.mockResolvedValue([{ name: 'search', description: 'Search repos' }]);
-      const res = await request(app).get('/api/personal/mcp/servers/1/tools');
+      const res = await request(app).get('/api/operations/mcp/servers/1/tools');
       expect(res.status).toBe(200);
       expect(res.body.data.source).toBe('cached');
     });

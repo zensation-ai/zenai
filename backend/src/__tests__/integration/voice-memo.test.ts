@@ -306,7 +306,7 @@ describe('Voice Memo API Integration Tests', () => {
         .expect(200);
 
       expect(mockQueryContext).toHaveBeenCalledWith(
-        'personal',
+        'operations',
         expect.stringContaining('INSERT INTO ideas'),
         expect.any(Array)
       );
@@ -444,7 +444,7 @@ describe('Voice Memo API Integration Tests', () => {
         .expect(200);
 
       expect(mockQueryContext).toHaveBeenCalledWith(
-        'personal',
+        'operations',
         expect.stringContaining('embedding'),
         expect.any(Array)
       );

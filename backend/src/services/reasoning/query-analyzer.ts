@@ -8,7 +8,7 @@
 
 export interface QueryAnalysis {
   intent: 'question' | 'task' | 'discussion' | 'creative' | 'recall';
-  domain: string; // 'finance' | 'code' | 'email' | 'personal' | 'learning' | 'general'
+  domain: string; // 'finance' | 'code' | 'email' | 'operations' | 'learning' | 'general'
   complexity: number; // 0–1
   temporalReference: 'past' | 'present' | 'future' | null;
   entityMentions: string[]; // Simple NER
@@ -38,7 +38,7 @@ const DOMAIN_KEYWORDS: Record<string, RegExp> = {
     /\b(email|e-mail|mail|nachricht|inbox|antwort|reply|send|sende|forward|weiterleiten|betreff|subject)\b/i,
   learning:
     /\b(lernen|kurs|tutorial|verstehen|erkläre|erklären|explain|learn|study|understand|concept|konzept)\b/i,
-  personal:
+  operations:
     /\b(privat|personal|family|hobby|urlaub|geburtstag|birthday|vacation|freunde|friends)\b/i,
 };
 
@@ -239,12 +239,12 @@ function detectDomain(
 
   // Check finance first (high specificity)
   for (const [domain, pattern] of Object.entries(DOMAIN_KEYWORDS)) {
-    if (domain !== 'personal' && pattern.test(query)) {return domain;}
+    if (domain !== 'operations' && pattern.test(query)) {return domain;}
   }
 
   // Personal: either keyword set or first-person possessive
-  if (DOMAIN_KEYWORDS.personal.test(query) || PERSONAL_FIRST_PERSON.test(query)) {
-    return 'personal';
+  if (DOMAIN_KEYWORDS.operations.test(query) || PERSONAL_FIRST_PERSON.test(query)) {
+    return 'operations';
   }
 
   // Fallback to lastDomain when: query starts with follow-up marker OR contains anaphoric reference

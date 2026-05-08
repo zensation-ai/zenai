@@ -169,6 +169,66 @@ export async function detectContradictions(
 }
 
 // ===========================================
+// Cross-Source Contradiction Detection (Stufe 8.3)
+// ===========================================
+
+export interface CrossSourceContradiction {
+  factA: { content: string; source: string; date?: string };
+  factB: { content: string; source: string; date?: string };
+  similarity: number;
+}
+
+/**
+ * Detect contradictions across different knowledge sources.
+ * Compares learned_facts from different sources (email, document, episodic)
+ * that are textually similar but from different origins — potential contradictions.
+ *
+ * Uses pg_trgm similarity for lightweight text comparison.
+ */
+export async function detectCrossSourceContradictions(
+  context: AIContext,
+  options: { minSimilarity?: number; maxResults?: number } = {}
+): Promise<CrossSourceContradiction[]> {
+  const { minSimilarity = 0.5, maxResults = 10 } = options;
+
+  try {
+    const result = await queryContext(context, `
+      SELECT
+        f1.content as content_a, f1.source as source_a, f1.last_confirmed as date_a,
+        f2.content as content_b, f2.source as source_b, f2.last_confirmed as date_b,
+        similarity(f1.content, f2.content) as sim
+      FROM learned_facts f1
+      JOIN learned_facts f2 ON f1.id < f2.id
+      WHERE f1.source != f2.source
+        AND f1.confidence > 0.3
+        AND f2.confidence > 0.3
+        AND similarity(f1.content, f2.content) >= $1
+      ORDER BY sim DESC
+      LIMIT $2
+    `, [minSimilarity, maxResults]);
+
+    return result.rows.map((r: Record<string, unknown>) => ({
+      factA: {
+        content: String(r.content_a || ''),
+        source: String(r.source_a || ''),
+        date: r.date_a ? String(r.date_a) : undefined,
+      },
+      factB: {
+        content: String(r.content_b || ''),
+        source: String(r.source_b || ''),
+        date: r.date_b ? String(r.date_b) : undefined,
+      },
+      similarity: Number(r.sim || 0),
+    }));
+  } catch (error) {
+    logger.debug('Cross-source contradiction detection failed (pg_trgm may not be available)', {
+      error: error instanceof Error ? error.message : String(error),
+    });
+    return [];
+  }
+}
+
+// ===========================================
 // Community Detection (Label Propagation)
 // ===========================================
 

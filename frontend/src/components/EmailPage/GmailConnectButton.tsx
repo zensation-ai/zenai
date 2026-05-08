@@ -5,6 +5,7 @@
 
 import { useState, useEffect } from 'react';
 import { getApiBaseUrl, getApiFetchHeaders } from '../../utils/apiConfig';
+import { cn } from '@/lib/utils';
 
 interface GmailConnectButtonProps {
   context: string;
@@ -65,21 +66,10 @@ export function GmailConnectButton({ context, onConnected }: GmailConnectButtonP
       <button
         onClick={handleConnect}
         disabled={loading}
-        className="gmail-connect-btn"
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '8px',
-          padding: '10px 20px',
-          border: '1px solid var(--border-primary, #dadce0)',
-          borderRadius: '8px',
-          background: 'var(--surface-primary, #fff)',
-          color: 'var(--text-primary, #3c4043)',
-          fontSize: '14px',
-          fontWeight: 500,
-          cursor: loading ? 'wait' : 'pointer',
-          opacity: loading ? 0.7 : 1,
-        }}
+        className={cn(
+          'gmail-connect-btn flex items-center gap-2 px-5 py-2.5 border border-[var(--border-primary,#dadce0)] rounded-lg bg-[var(--surface-primary,#fff)] text-[var(--text-primary,#3c4043)] text-sm font-medium',
+          loading ? 'cursor-wait opacity-70' : 'cursor-pointer',
+        )}
       >
         <svg width="18" height="18" viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg">
           <path d="M16.51 8H8.98v3h4.3c-.18 1-.74 1.48-1.6 2.04v2.01h2.6a7.8 7.8 0 0 0 2.38-5.88c0-.57-.05-.66-.15-1.18z" fill="#4285F4"/>
@@ -90,7 +80,7 @@ export function GmailConnectButton({ context, onConnected }: GmailConnectButtonP
         {loading ? 'Verbinde...' : 'Gmail verbinden'}
       </button>
       {error && (
-        <p style={{ color: 'var(--color-error, #d93025)', fontSize: '13px', marginTop: '8px' }}>
+        <p className="text-[var(--color-error,#d93025)] text-[13px] mt-2">
           {error}
         </p>
       )}

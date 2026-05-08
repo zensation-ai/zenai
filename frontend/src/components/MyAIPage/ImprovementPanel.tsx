@@ -5,6 +5,7 @@
  * adaptive preferences, and feedback summary
  */
 
+import type { CSSProperties } from 'react';
 import type { AIContext } from '../ContextSwitcher';
 import {
   useSelfImprovementOpportunities,
@@ -26,7 +27,7 @@ const RISK_LABELS: Record<string, string> = {
 };
 
 const TYPE_LABELS: Record<string, string> = {
-  knowledge_gap_research: 'Wissensluecken-Recherche',
+  knowledge_gap_research: 'Wissenslücken-Recherche',
   procedural_optimization: 'Prozedurale Optimierung',
   team_learning: 'Team-Lernen',
   calibration_fix: 'Kalibrierungskorrektur',
@@ -35,7 +36,7 @@ const TYPE_LABELS: Record<string, string> = {
 const RESPONSE_LENGTH_LABELS: Record<string, string> = {
   brief: 'Kurz',
   moderate: 'Mittel',
-  detailed: 'Ausfuehrlich',
+  detailed: 'Ausführlich',
 };
 
 const DETAIL_LEVEL_LABELS: Record<string, string> = {
@@ -60,7 +61,7 @@ const FEEDBACK_TYPE_LABELS: Record<string, string> = {
   fact_correction: 'Faktenkorrektur',
   suggestion_action: 'Vorschlags-Aktion',
   tool_success: 'Tool-Erfolg',
-  document_quality: 'Dokumentqualitaet',
+  document_quality: 'Dokumentqualität',
   agent_performance: 'Agenten-Leistung',
 };
 
@@ -85,7 +86,7 @@ function BudgetMeter({ context }: { context: AIContext }) {
         </span>
       </div>
       <div className="budget-bar" role="progressbar" aria-valuenow={data.usedToday} aria-valuemin={0} aria-valuemax={data.maxActionsPerDay} aria-label="Verbesserungsbudget">
-        <div className="budget-fill" style={{ width: `${usedPercent}%` }} />
+        <div className="budget-fill w-[var(--bar)]" style={{ '--bar': `${usedPercent}%` } as CSSProperties} />
       </div>
     </div>
   );
@@ -98,7 +99,7 @@ function OpportunitiesSection({ context }: { context: AIContext }) {
   if (opportunities.isLoading) {
     return (
       <div className="cognitive-loading" role="status" aria-live="polite">
-        Lade Verbesserungsmoeglichkeiten...
+        Lade Verbesserungsmöglichkeiten...
       </div>
     );
   }
@@ -107,8 +108,8 @@ function OpportunitiesSection({ context }: { context: AIContext }) {
   const budgetExhausted = (budget.data?.remainingToday ?? 0) <= 0;
 
   return (
-    <div className="cognitive-list-card" role="region" aria-label="Verbesserungsmoeglichkeiten">
-      <div className="cognitive-section-title">Verbesserungsmoeglichkeiten</div>
+    <div className="cognitive-list-card" role="region" aria-label="Verbesserungsmöglichkeiten">
+      <div className="cognitive-section-title">Verbesserungsmöglichkeiten</div>
       {items.length === 0 ? (
         <div className="cognitive-empty">
           <div className="cognitive-empty-icon">{'\u{2705}'}</div>
@@ -117,8 +118,8 @@ function OpportunitiesSection({ context }: { context: AIContext }) {
       ) : (
         <div className="cognitive-list-items">
           {items.map(opp => (
-            <div key={opp.id} className="cognitive-gap-item" style={{ flexDirection: 'column', alignItems: 'stretch' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div key={opp.id} className="cognitive-gap-item flex-col items-stretch">
+              <div className="flex justify-between items-center">
                 <span className="cognitive-gap-area">
                   {TYPE_LABELS[opp.type] ?? opp.type}
                 </span>
@@ -126,23 +127,23 @@ function OpportunitiesSection({ context }: { context: AIContext }) {
                   {RISK_LABELS[opp.riskLevel] ?? opp.riskLevel}
                 </span>
               </div>
-              <span className="cognitive-gap-description" style={{ marginTop: 4 }}>
+              <span className="cognitive-gap-description mt-1">
                 {opp.description}
               </span>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 8 }}>
-                <div className="cognitive-progress-bar" style={{ flex: 1, marginRight: 12 }} role="progressbar" aria-valuenow={Math.round(opp.estimatedImpact * 100)} aria-valuemin={0} aria-valuemax={100} aria-label="Geschaetzter Impact">
+              <div className="flex justify-between items-center mt-2">
+                <div className="cognitive-progress-bar flex-1 mr-3" role="progressbar" aria-valuenow={Math.round(opp.estimatedImpact * 100)} aria-valuemin={0} aria-valuemax={100} aria-label="Geschätzter Impact">
                   <div
-                    className="cognitive-progress-fill high"
-                    style={{ width: `${Math.round(opp.estimatedImpact * 100)}%` }}
+                    className="cognitive-progress-fill high w-[var(--bar)]"
+                    style={{ '--bar': `${Math.round(opp.estimatedImpact * 100)}%` } as CSSProperties}
                   />
                 </div>
                 <button
                   className="cognitive-retry-btn"
                   disabled={budgetExhausted || opp.requiresApproval}
                   type="button"
-                  title={opp.requiresApproval ? 'Erfordert Genehmigung' : budgetExhausted ? 'Budget aufgebraucht' : 'Ausfuehren'}
+                  title={opp.requiresApproval ? 'Erfordert Genehmigung' : budgetExhausted ? 'Budget aufgebraucht' : 'Ausführen'}
                 >
-                  {opp.requiresApproval ? 'Genehmigung noetig' : 'Ausfuehren'}
+                  {opp.requiresApproval ? 'Genehmigung nötig' : 'Ausführen'}
                 </button>
               </div>
             </div>
@@ -157,15 +158,15 @@ function PreferencesSection({ prefs }: { prefs: AdaptivePreferences | null | und
   if (!prefs) return null;
 
   const items = [
-    { label: 'Antwortlaenge', value: RESPONSE_LENGTH_LABELS[prefs.responseLength] ?? prefs.responseLength },
+    { label: 'Antwortlänge', value: RESPONSE_LENGTH_LABELS[prefs.responseLength] ?? prefs.responseLength },
     { label: 'Detailgrad', value: DETAIL_LEVEL_LABELS[prefs.detailLevel] ?? prefs.detailLevel },
-    { label: 'Proaktivitaet', value: PROACTIVITY_LABELS[prefs.proactivityLevel] ?? prefs.proactivityLevel },
+    { label: 'Proaktivität', value: PROACTIVITY_LABELS[prefs.proactivityLevel] ?? prefs.proactivityLevel },
     { label: 'Sprachstil', value: STYLE_LABELS[prefs.languageStyle] ?? prefs.languageStyle },
   ];
 
   return (
-    <div className="cognitive-list-card" role="region" aria-label="Gelernte Praeferenzen">
-      <div className="cognitive-section-title">Gelernte Praeferenzen</div>
+    <div className="cognitive-list-card" role="region" aria-label="Gelernte Präferenzen">
+      <div className="cognitive-section-title">Gelernte Präferenzen</div>
       <div className="preferences-grid">
         {items.map(item => (
           <div key={item.label} className="preference-item">
@@ -174,7 +175,7 @@ function PreferencesSection({ prefs }: { prefs: AdaptivePreferences | null | und
           </div>
         ))}
         {prefs.preferredTools.length > 0 && (
-          <div className="preference-item" style={{ gridColumn: '1 / -1' }}>
+          <div className="preference-item col-span-full">
             <div className="preference-label">Bevorzugte Tools</div>
             <div className="preference-value">
               {prefs.preferredTools.join(', ')}
@@ -200,7 +201,7 @@ function FeedbackSection({ entries }: { entries: FeedbackSummaryEntry[] | undefi
             <span className="cognitive-prediction-text">
               {FEEDBACK_TYPE_LABELS[entry.type] ?? entry.type}
             </span>
-            <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
+            <div className="flex gap-2 shrink-0">
               <span className="gap-action-badge" title="Durchschnittswert">
                 {entry.avgValue.toFixed(1)}
               </span>

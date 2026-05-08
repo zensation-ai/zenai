@@ -5,9 +5,7 @@
  * Supports install (with permission dialog), uninstall, enable, and disable.
  */
 
-import { useState } from 'react';
-import './ExtensionCard.css';
-
+import { useState, type CSSProperties } from 'react';
 // ===========================================
 // Types
 // ===========================================
@@ -53,7 +51,7 @@ interface ExtensionCardProps {
 
 const TYPE_COLORS: Record<ExtensionType, string> = {
   tool: '#3b82f6',
-  widget: '#8b5cf6',
+  widget: '#1a6b7a',
   theme: '#f59e0b',
   integration: '#10b981',
   agent: '#ef4444',
@@ -82,14 +80,14 @@ const ICON_MAP: Record<string, string> = {
 const PERMISSION_LABELS: Record<string, string> = {
   'tasks.read': 'Aufgaben lesen',
   'notifications.send': 'Benachrichtigungen senden',
-  'ui.theme': 'Erscheinungsbild aendern',
+  'ui.theme': 'Erscheinungsbild ändern',
   'github.read': 'GitHub-Daten lesen',
   'dashboard.widget': 'Dashboard-Widget anzeigen',
   'documents.read': 'Dokumente lesen',
   'documents.write': 'Dokumente schreiben',
   'emails.read': 'E-Mails lesen',
   'ai.invoke': 'KI-Modell nutzen',
-  'web.search': 'Web-Suche ausfuehren',
+  'web.search': 'Web-Suche ausführen',
   'memory.write': 'Wissensspeicher schreiben',
 };
 
@@ -154,12 +152,12 @@ export function ExtensionCard({
           <span className="extension-card-author">{extension.author}</span>
         </div>
         <span
-          className="extension-card-type-badge"
+          className="extension-card-type-badge bg-[var(--bg)] text-[color:var(--c)] border-[color:var(--bc)]"
           style={{
-            background: `${TYPE_COLORS[extension.type]}20`,
-            color: TYPE_COLORS[extension.type],
-            borderColor: `${TYPE_COLORS[extension.type]}40`,
-          }}
+            '--bg': `${TYPE_COLORS[extension.type]}20`,
+            '--c': TYPE_COLORS[extension.type],
+            '--bc': `${TYPE_COLORS[extension.type]}40`,
+          } as CSSProperties}
         >
           {TYPE_LABELS[extension.type]}
         </span>
@@ -207,9 +205,9 @@ export function ExtensionCard({
       {showPermissions && (
         <div className="extension-permission-overlay">
           <div className="extension-permission-dialog">
-            <h4>Berechtigungen fuer "{extension.name}"</h4>
+            <h4>Berechtigungen für "{extension.name}"</h4>
             <p className="extension-permission-subtitle">
-              Diese Erweiterung benoetigt folgende Berechtigungen:
+              Diese Erweiterung benötigt folgende Berechtigungen:
             </p>
             <ul className="extension-permission-list">
               {extension.permissions.map(perm => (

@@ -96,7 +96,7 @@ describe('GraphRAG Service', () => {
 
   describe('graphRAGRetrieve()', () => {
     it('should combine graph traversal with enhanced RAG', async () => {
-      const result = await graphRAGRetrieve('test query here', 'personal' as const);
+      const result = await graphRAGRetrieve('test query here', 'operations' as const);
 
       expect(result.results.length).toBeGreaterThan(0);
       expect(result.graphContext).toBeDefined();
@@ -111,7 +111,7 @@ describe('GraphRAG Service', () => {
         .mockResolvedValueOnce({ rows: [{ id: 'seed-1', title: 'Seed Idea' }] })
         .mockResolvedValueOnce({ rows: [{ id: 'related-1', title: 'Related', summary: 'A related idea' }] });
 
-      const result = await graphRAGRetrieve('innovative machine learning approach', 'personal' as const);
+      const result = await graphRAGRetrieve('innovative machine learning approach', 'operations' as const);
 
       expect(result.graphEnriched).toBe(true);
       expect(result.graphContext.relatedIdeas.length).toBeGreaterThan(0);
@@ -119,7 +119,7 @@ describe('GraphRAG Service', () => {
     });
 
     it('should filter out weak relationships', async () => {
-      const result = await graphRAGRetrieve('test query here', 'personal' as const);
+      const result = await graphRAGRetrieve('test query here', 'operations' as const);
 
       // related-2 has strength 0.2, below MIN_STRENGTH 0.3
       const ids = result.graphContext.relatedIdeas.map(r => r.id);
@@ -139,7 +139,7 @@ describe('GraphRAG Service', () => {
       });
 
       // Use words > 3 chars so seed ideas are found and graph is traversed
-      const result = await graphRAGRetrieve('innovative machine learning approach', 'personal' as const);
+      const result = await graphRAGRetrieve('innovative machine learning approach', 'operations' as const);
 
       // The overlapping result should be boosted (1.2x when in graph context)
       const boosted = result.results.find(r => r.id === 'related-1');
@@ -153,14 +153,14 @@ describe('GraphRAG Service', () => {
       // No seed ideas
       mockQueryContext.mockResolvedValue({ rows: [] });
 
-      const result = await graphRAGRetrieve('test query here', 'personal' as const);
+      const result = await graphRAGRetrieve('test query here', 'operations' as const);
 
       expect(result.graphEnriched).toBe(false);
       expect(result.results.length).toBeGreaterThan(0); // Still has RAG results
     });
 
     it('should respect maxResults option', async () => {
-      const result = await graphRAGRetrieve('test query here', 'personal' as const, { maxResults: 2 });
+      const result = await graphRAGRetrieve('test query here', 'operations' as const, { maxResults: 2 });
 
       expect(result.results.length).toBeLessThanOrEqual(2);
     });

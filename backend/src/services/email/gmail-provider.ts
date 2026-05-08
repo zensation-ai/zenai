@@ -26,7 +26,7 @@ import type {
 // Constants
 // ===========================================
 
-const CONTEXTS: AIContext[] = ['personal', 'work', 'learning', 'creative'];
+const CONTEXTS: AIContext[] = ['operations', 'finance', 'people', 'strategy'];
 
 const GMAIL_CLIENT_ID = process.env.GOOGLE_CLIENT_ID ?? '';
 const GMAIL_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET ?? '';
@@ -71,7 +71,7 @@ function parseEmailAddress(raw: string): { email: string; name?: string } {
 }
 
 function parseEmailList(raw: string): Array<{ email: string; name?: string }> {
-  if (!raw) return [];
+  if (!raw) {return [];}
   return raw.split(',').map((s) => parseEmailAddress(s.trim())).filter((a) => a.email);
 }
 
@@ -82,13 +82,13 @@ function parseEmailList(raw: string): Array<{ email: string; name?: string }> {
 function extractBodyParts(
   payload: gmail_v1.Schema$MessagePart | undefined
 ): { bodyText: string | null; bodyHtml: string | null } {
-  if (!payload) return { bodyText: null, bodyHtml: null };
+  if (!payload) {return { bodyText: null, bodyHtml: null };}
 
   let bodyText: string | null = null;
   let bodyHtml: string | null = null;
 
   function decode(data: string | null | undefined): string | null {
-    if (!data) return null;
+    if (!data) {return null;}
     return Buffer.from(data, 'base64').toString('utf-8');
   }
 
@@ -162,9 +162,9 @@ export class GmailProvider implements EmailProvider {
       const refreshed = await oauth2Client.refreshAccessToken();
       const creds = refreshed.credentials;
       await updateGoogleTokens(tokenId, {
-        accessToken: creds.access_token!,
+        accessToken: creds.access_token ?? '',
         refreshToken: creds.refresh_token ?? undefined,
-        expiresAt: new Date(creds.expiry_date!),
+        expiresAt: new Date(creds.expiry_date ?? Date.now()),
       });
       oauth2Client.setCredentials(creds);
     }
@@ -184,7 +184,7 @@ export class GmailProvider implements EmailProvider {
     ).join(' UNION ALL ');
 
     const result = await pool.query(unionSql, [accountId]);
-    if (result.rows.length === 0) return null;
+    if (result.rows.length === 0) {return null;}
     return result.rows[0].ctx as AIContext;
   }
 
@@ -197,7 +197,7 @@ export class GmailProvider implements EmailProvider {
     accountId: string,
     msg: gmail_v1.Schema$Message
   ): Promise<{ isNew: boolean }> {
-    const gmailMsgId = msg.id!;
+    const gmailMsgId = msg.id ?? '';
     const labelIds: string[] = msg.labelIds ?? [];
     const { folder, isRead, isStarred } = labelsToDbFields(labelIds);
 
@@ -302,7 +302,7 @@ export class GmailProvider implements EmailProvider {
         try {
           const msgResp = await gmail.users.messages.get({
             userId: 'me',
-            id: stub.id!,
+            id: stub.id ?? '',
             format: 'metadata',
             metadataHeaders: ['From', 'To', 'Cc', 'Subject', 'Date', 'Message-ID', 'In-Reply-To'],
           });
@@ -372,7 +372,7 @@ export class GmailProvider implements EmailProvider {
         // Messages added
         for (const added of item.messagesAdded ?? []) {
           const msgStub = added.message;
-          if (!msgStub?.id) continue;
+          if (!msgStub?.id) {continue;}
 
           try {
             const msgResp = await gmail.users.messages.get({
@@ -383,8 +383,8 @@ export class GmailProvider implements EmailProvider {
             });
 
             const { isNew } = await this.storeMessage(context, accountId, msgResp.data);
-            if (isNew) newMessages++;
-            else updatedMessages++;
+            if (isNew) {newMessages++;}
+            else {updatedMessages++;}
           } catch (err) {
             const errMsg = err instanceof Error ? err.message : String(err);
             errors.push({ messageId: msgStub.id, error: errMsg, recoverable: true });
@@ -394,7 +394,7 @@ export class GmailProvider implements EmailProvider {
         // Messages deleted
         for (const deleted of item.messagesDeleted ?? []) {
           const msgId = deleted.message?.id;
-          if (!msgId) continue;
+          if (!msgId) {continue;}
           try {
             await queryContext(
               context,
@@ -411,7 +411,7 @@ export class GmailProvider implements EmailProvider {
         // Label changes — treat as updates
         for (const labelItem of [...(item.labelsAdded ?? []), ...(item.labelsRemoved ?? [])]) {
           const msgStub = labelItem.message;
-          if (!msgStub?.id) continue;
+          if (!msgStub?.id) {continue;}
           try {
             const msgResp = await gmail.users.messages.get({
               userId: 'me',
@@ -420,8 +420,8 @@ export class GmailProvider implements EmailProvider {
               metadataHeaders: ['From', 'To', 'Cc', 'Subject', 'Date', 'Message-ID', 'In-Reply-To'],
             });
             const { isNew } = await this.storeMessage(context, accountId, msgResp.data);
-            if (isNew) newMessages++;
-            else updatedMessages++;
+            if (isNew) {newMessages++;}
+            else {updatedMessages++;}
           } catch (err) {
             const errMsg = err instanceof Error ? err.message : String(err);
             errors.push({ messageId: msgStub.id, error: errMsg, recoverable: true });
@@ -491,14 +491,14 @@ export class GmailProvider implements EmailProvider {
     let ctx = context;
     if (!ctx) {
       const ctxResult = await pool.query(
-        `SELECT 'personal' as ctx FROM personal.email_accounts WHERE id = $1
-         UNION ALL SELECT 'work' FROM work.email_accounts WHERE id = $1
-         UNION ALL SELECT 'learning' FROM learning.email_accounts WHERE id = $1
-         UNION ALL SELECT 'creative' FROM creative.email_accounts WHERE id = $1
+        `SELECT 'operations' as ctx FROM personal.email_accounts WHERE id = $1
+         UNION ALL SELECT 'finance' FROM work.email_accounts WHERE id = $1
+         UNION ALL SELECT 'people' FROM people.email_accounts WHERE id = $1
+         UNION ALL SELECT 'strategy' FROM creative.email_accounts WHERE id = $1
          LIMIT 1`,
         [accountId]
       );
-      ctx = (ctxResult.rows[0]?.ctx || 'personal') as AIContext;
+      ctx = (ctxResult.rows[0]?.ctx || 'operations') as AIContext;
     }
 
     const { gmail, account } = await this.getGmailClient(accountId, ctx);

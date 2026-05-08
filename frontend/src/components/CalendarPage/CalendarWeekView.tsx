@@ -3,9 +3,13 @@
  * 7-column week view with hourly time slots.
  */
 
-import { useMemo } from 'react';
+import { useMemo, type CSSProperties } from 'react';
+import { Calendar } from 'lucide-react';
 import type { CalendarEvent } from './types';
 import { EVENT_TYPE_COLORS } from './types';
+import { DashboardSkeleton } from '../skeletons/PageSkeletons';
+import { Button } from '@/components/ui/button';
+import { EmptyState } from '@/components/ui/empty-state';
 
 interface Props {
   currentDate: Date;
@@ -64,7 +68,22 @@ export function CalendarWeekView({ currentDate, events, loading, onEventClick, o
   }, [events, weekDays]);
 
   if (loading) {
-    return <div className="calendar-loading">Lade Wochenansicht...</div>;
+    return <DashboardSkeleton />;
+  }
+
+  if (events.length === 0) {
+    return (
+      <EmptyState
+        icon={<Calendar size={40} strokeWidth={1.5} />}
+        title="Keine Termine diese Woche"
+        description="Erstelle einen neuen Termin, um diese Woche zu befüllen."
+        action={
+          <Button variant="default" size="sm" onClick={() => onDateClick(new Date())}>
+            Termin erstellen
+          </Button>
+        }
+      />
+    );
   }
 
   return (
@@ -86,7 +105,7 @@ export function CalendarWeekView({ currentDate, events, loading, onEventClick, o
       {/* Time grid */}
       <div className="calendar-week__body">
         {HOURS.map(hour => (
-          <div key={`row-${hour}`} style={{ display: 'contents' }}>
+          <div key={`row-${hour}`} className="contents">
             <div className="calendar-week__time-label">
               {hour.toString().padStart(2, '0')}:00
             </div>
@@ -106,12 +125,12 @@ export function CalendarWeekView({ currentDate, events, loading, onEventClick, o
                   .map(p => (
                     <div
                       key={p.event.id}
-                      className="calendar-event-block"
+                      className="calendar-event-block bg-[var(--bg)] top-[var(--et)] h-[var(--eh)]"
                       style={{
-                        top: `${p.top}px`,
-                        height: `${p.height}px`,
-                        backgroundColor: p.event.color || EVENT_TYPE_COLORS[p.event.event_type] || '#4A90D9',
-                      }}
+                        '--et': `${p.top}px`,
+                        '--eh': `${p.height}px`,
+                        '--bg': p.event.color || EVENT_TYPE_COLORS[p.event.event_type] || '#4A90D9',
+                      } as CSSProperties}
                       onClick={(e) => { e.stopPropagation(); onEventClick(p.event); }}
                       title={p.event.title}
                     >

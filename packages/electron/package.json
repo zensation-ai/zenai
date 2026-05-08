@@ -5,23 +5,23 @@
   "description": "ZenAI Desktop App - Cloud Shell",
   "main": "dist/main.js",
   "scripts": {
-    "build": "tsc && cp src/offline.html dist/",
-    "dev": "tsc && cp src/offline.html dist/ && electron .",
+    "build": "tsc && cp src/offline.html dist/ && cp -r src/spotlight dist/",
+    "dev": "tsc && cp src/offline.html dist/ && cp -r src/spotlight dist/ && electron .",
     "clean": "rm -rf dist out",
     "typecheck": "tsc --noEmit",
     "test": "jest",
     "test:watch": "jest --watch",
-    "package:mac": "tsc && cp src/offline.html dist/ && electron-builder --mac",
-    "package:win": "tsc && cp src/offline.html dist/ && electron-builder --win",
-    "package:linux": "tsc && cp src/offline.html dist/ && electron-builder --linux",
-    "package:all": "tsc && cp src/offline.html dist/ && electron-builder --mac --win --linux"
+    "package:mac": "npm run build && electron-builder --mac",
+    "package:win": "npm run build && electron-builder --win",
+    "package:linux": "npm run build && electron-builder --linux",
+    "package:all": "npm run build && electron-builder --mac --win --linux"
   },
   "dependencies": {
     "electron-updater": "^6.3.0"
   },
   "devDependencies": {
     "@types/jest": "^29.5.0",
-    "electron": "^41.0.0",
+    "electron": "^41.1.0",
     "electron-builder": "^25.0.0",
     "jest": "^29.7.0",
     "ts-jest": "^29.2.0",

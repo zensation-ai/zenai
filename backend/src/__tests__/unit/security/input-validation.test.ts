@@ -74,8 +74,8 @@ describe('Security: Input Validation (Sprint 2)', () => {
   // ===========================================
   describe('ContextSchema', () => {
     it('should accept valid contexts', () => {
-      expect(ContextSchema.safeParse('personal').success).toBe(true);
-      expect(ContextSchema.safeParse('work').success).toBe(true);
+      expect(ContextSchema.safeParse('operations').success).toBe(true);
+      expect(ContextSchema.safeParse('finance').success).toBe(true);
     });
 
     it('should reject invalid contexts', () => {

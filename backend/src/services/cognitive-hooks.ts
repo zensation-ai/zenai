@@ -1,9 +1,13 @@
 /**
- * Cognitive Architecture Post-Response Hooks (Phase 125-140)
+ * Cognitive Architecture Post-Response Hooks (Phase 125-145)
  *
  * Fire-and-forget post-response cognitive processing.
- * Runs all Phase 125-140 subsystems after each chat response.
+ * Runs all Phase 125-145 subsystems after each chat response.
  * All steps catch errors independently — no step blocks others.
+ *
+ * Phase 145 additions:
+ *   8. NeuromodulatorEngine: emit events based on RAG confidence
+ *   9. MetacognitiveMonitor: track memory suggestion acceptance
  */
 
 import { logger } from '../utils/logger';
@@ -22,6 +26,10 @@ export interface PostResponseHookParams {
   confidence?: number;
   toolsUsed?: string[];
   sessionId?: string;
+  /** Phase 145: memory tools called in this response (remember/recall/etc) */
+  memoryToolsUsed?: string[];
+  /** Phase 145: count of memory results accepted/used in the response */
+  memoryResultsUsed?: number;
 }
 
 // ---------------------------------------------------------------------------
@@ -183,6 +191,90 @@ export async function runPostResponseHooks(params: PostResponseHookParams): Prom
         await applyHebbianDecayBatch(context as AIContext);
       } catch (err) {
         logger.debug('Cognitive hook: Hebbian decay skipped', {
+          error: err instanceof Error ? err.message : String(err),
+        });
+      }
+    })(),
+
+    // 8. Phase 145 PMA: NeuromodulatorEngine — emit events based on RAG confidence
+    // Maps confidence levels to biologically-inspired neuromodulator events:
+    //   high confidence (≥0.7) → dopamine (prediction confirmed, exploration reward)
+    //   medium confidence (0.4-0.7) → norepinephrine (uncertainty, learning rate boost)
+    //   low confidence (<0.4) → acetylcholine (attention needed, new-info seeking)
+    //   any response with tools → dopamine (action/reward)
+    (async () => {
+      if (!_userId) {return;}
+      try {
+        const { NeuromodulatorEngine } = await import('./memory/neuromodulator-engine');
+        const engine = new NeuromodulatorEngine();
+        const neuroEvent = { magnitude: 0, userId: _userId, context: context as AIContext };
+
+        if (confidence !== undefined) {
+          if (confidence >= 0.7) {
+            // High confidence = prediction confirmed → dopamine burst
+            await engine.emitEvent('confirmation', { ...neuroEvent, magnitude: confidence });
+          } else if (confidence >= 0.4) {
+            // Medium = uncertainty → norepinephrine (learning rate boost)
+            await engine.emitEvent('prediction_error', { ...neuroEvent, magnitude: 1 - confidence });
+          } else {
+            // Low confidence = novelty/surprise → acetylcholine (attention)
+            await engine.emitEvent('novelty', { ...neuroEvent, magnitude: Math.max(0.3, 1 - confidence) });
+          }
+        }
+
+        // Tool use indicates exploration/action → small dopamine
+        if (toolsUsed && toolsUsed.length > 0 && confidence === undefined) {
+          await engine.emitEvent('exploration', { ...neuroEvent, magnitude: 0.3 });
+        }
+
+        // Persist tonic state periodically (~20% of requests)
+        if (Math.random() < 0.2) {
+          await engine.persistState(_userId, context as AIContext);
+        }
+      } catch (err) {
+        logger.debug('Cognitive hook: Neuromodulator emission skipped', {
+          error: err instanceof Error ? err.message : String(err),
+        });
+      }
+    })(),
+
+    // 9. Phase 145 PMA: MetacognitiveMonitor — track memory tool acceptance
+    // When memory tools (remember/recall) were used, track whether the AI
+    // used/accepted the memory results (heuristic: if recall was called and
+    // response contains memory content, it was "accepted")
+    (async () => {
+      if (!_userId) {return;}
+      const memTools = params.memoryToolsUsed || (toolsUsed || []).filter(t =>
+        ['remember', 'recall', 'memory_introspect', 'core_memory_read'].includes(t)
+      );
+      if (memTools.length === 0) {return;}
+
+      try {
+        const { metacognitiveMonitor } = await import('./memory/metacognitive-monitor');
+
+        for (const tool of memTools) {
+          // recall/core_memory_read = suggestion was presented; assume accepted if response is long
+          const isRecallTool = ['recall', 'core_memory_read', 'memory_introspect'].includes(tool);
+          const accepted = isRecallTool ? response.length > 200 : true; // remember = always accepted
+          const suggestionType = isRecallTool ? 'positive' : 'confirming';
+
+          metacognitiveMonitor.trackAcceptance(_userId, context, suggestionType, accepted);
+        }
+
+        // Open novelty window on high prediction error
+        if (confidence !== undefined && confidence < 0.4) {
+          metacognitiveMonitor.openNoveltyWindow(_userId, context, 1 - confidence);
+        }
+
+        // Track efficiency metrics (~10% of requests)
+        if (Math.random() < 0.1) {
+          const tokens = query.length + response.length; // rough proxy
+          const precision = confidence || 0.5;
+          const quality = Math.min(1, response.length / 500); // rough quality proxy
+          metacognitiveMonitor.trackEfficiency(_userId, context, tokens, precision, quality);
+        }
+      } catch (err) {
+        logger.debug('Cognitive hook: MetacognitiveMonitor tracking skipped', {
           error: err instanceof Error ? err.message : String(err),
         });
       }

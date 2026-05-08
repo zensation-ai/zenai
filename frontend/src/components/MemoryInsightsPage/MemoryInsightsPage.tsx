@@ -1,19 +1,18 @@
 /**
  * Phase 53: Memory Insights Page
  *
- * Visualization and analysis tools for the HiMeS 4-layer memory system.
+ * Visualization and analysis tools for the HiMeS 7-layer memory system.
  * Tabs: Timeline, Conflicts, Curation, Impact
  *
  * Uses global axios instance (with auth interceptor from main.tsx).
  */
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, type CSSProperties } from 'react';
 import axios from 'axios';
 import { MemoryTimeline } from './MemoryTimeline';
 import { ConflictList } from './ConflictList';
 import { CurationPanel } from './CurationPanel';
-import './MemoryInsightsPage.css';
-
+import { MEMORY_LAYER_COLORS } from '../../constants/chart-colors';
 type Tab = 'timeline' | 'conflicts' | 'curation' | 'impact';
 
 interface MemoryInsightsPageProps {
@@ -40,12 +39,6 @@ interface MemoryStats {
   growthRate: number;
 }
 
-const LAYER_COLORS: Record<string, string> = {
-  working: '#a855f7',
-  episodic: '#22c55e',
-  short_term: '#3b82f6',
-  long_term: '#ff6b35',
-};
 
 const LAYER_LABELS: Record<string, string> = {
   working: 'Working Memory',
@@ -105,7 +98,7 @@ export function MemoryInsightsPage({ context, initialTab = 'timeline' }: MemoryI
             </div>
             {Object.entries(stats.byLayer).map(([layer, count]) => (
               <div className="stat-item" key={layer}>
-                <span className="stat-value" style={{ color: LAYER_COLORS[layer] }}>{count}</span>
+                <span className="stat-value text-[var(--c)]" style={{ '--c': MEMORY_LAYER_COLORS[layer as keyof typeof MEMORY_LAYER_COLORS] } as CSSProperties}>{count}</span>
                 <span className="stat-label">{LAYER_LABELS[layer] || layer}</span>
               </div>
             ))}
@@ -157,8 +150,8 @@ export function MemoryInsightsPage({ context, initialTab = 'timeline' }: MemoryI
                   <div className="impact-text">{impact.content}</div>
                   <div className="impact-meta">
                     <span
-                      className="impact-layer-badge"
-                      style={{ backgroundColor: LAYER_COLORS[impact.layer] || '#666' }}
+                      className="impact-layer-badge bg-[var(--bg)]"
+                      style={{ '--bg': MEMORY_LAYER_COLORS[impact.layer as keyof typeof MEMORY_LAYER_COLORS] || '#6b7280' } as CSSProperties}
                     >
                       {LAYER_LABELS[impact.layer] || impact.layer}
                     </span>
@@ -174,8 +167,8 @@ export function MemoryInsightsPage({ context, initialTab = 'timeline' }: MemoryI
                 </div>
                 <div className="impact-score-container">
                   <div
-                    className="impact-score-bar"
-                    style={{ width: `${Math.min(impact.influenceScore * 100, 100)}%` }}
+                    className="impact-score-bar w-[var(--bar)]"
+                    style={{ '--bar': `${Math.min(impact.influenceScore * 100, 100)}%` } as CSSProperties}
                   />
                   <span className="impact-score-value">{(impact.influenceScore * 100).toFixed(0)}%</span>
                 </div>

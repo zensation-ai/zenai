@@ -7,9 +7,6 @@ import {
   getRandomTip,
   FEEDBACK_REACTIONS,
 } from '../utils/aiPersonality';
-import '../neurodesign.css';
-import './AIBrain.css';
-
 interface AIBrainProps {
   isActive: boolean;
   activityType?: 'thinking' | 'transcribing' | 'searching' | 'processing' | 'learning' | 'success';
@@ -135,12 +132,11 @@ export function AIBrain({
 
         {/* Brain SVG - Sunset Orange Theme (Erkennungsmerkmal) - High Quality */}
         <svg
-          className="ai-brain-svg"
+          className="ai-brain-svg bg-transparent"
           viewBox="0 0 100 100"
           xmlns="http://www.w3.org/2000/svg"
           role="img"
           aria-label="AI Brain Animation"
-          style={{ background: 'transparent' }}
         >
           <defs>
             {/* Premium Sunset Orange Gradient - My Brain Signature */}

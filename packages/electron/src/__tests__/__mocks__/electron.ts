@@ -9,6 +9,7 @@
 function createMockBrowserWindow(self: BrowserWindow) {
   return {
     loadURL: jest.fn().mockResolvedValue(undefined),
+    loadFile: jest.fn().mockResolvedValue(undefined),
     show: jest.fn(),
     hide: jest.fn(),
     focus: jest.fn(),
@@ -17,10 +18,15 @@ function createMockBrowserWindow(self: BrowserWindow) {
     minimize: jest.fn(),
     maximize: jest.fn(),
     unmaximize: jest.fn(),
+    restore: jest.fn(),
     isVisible: jest.fn().mockReturnValue(false),
+    isMinimized: jest.fn().mockReturnValue(false),
+    isMaximized: jest.fn().mockReturnValue(false),
     isDestroyed: jest.fn().mockReturnValue(false),
     setSize: jest.fn(),
     getSize: jest.fn().mockReturnValue([680, 72]),
+    setBounds: jest.fn(),
+    getBounds: jest.fn().mockReturnValue({ x: 100, y: 140, width: 600, height: 56 }),
     setPosition: jest.fn(),
     getPosition: jest.fn().mockReturnValue([0, 0]),
     /** once auto-calls the callback for 'ready-to-show' */
@@ -54,6 +60,7 @@ export class BrowserWindow {
   opts: unknown;
   // Properties assigned via Object.assign in constructor — use definite assignment assertions
   loadURL!: jest.Mock;
+  loadFile!: jest.Mock;
   show!: jest.Mock;
   hide!: jest.Mock;
   focus!: jest.Mock;
@@ -62,10 +69,15 @@ export class BrowserWindow {
   minimize!: jest.Mock;
   maximize!: jest.Mock;
   unmaximize!: jest.Mock;
+  restore!: jest.Mock;
   isVisible!: jest.Mock;
+  isMinimized!: jest.Mock;
+  isMaximized!: jest.Mock;
   isDestroyed!: jest.Mock;
   setSize!: jest.Mock;
   getSize!: jest.Mock;
+  setBounds!: jest.Mock;
+  getBounds!: jest.Mock;
   setPosition!: jest.Mock;
   getPosition!: jest.Mock;
   once!: jest.Mock;
@@ -90,6 +102,7 @@ export class BrowserWindow {
 export class Tray {
   setContextMenu = jest.fn();
   setToolTip = jest.fn();
+  setImage = jest.fn();
   on = jest.fn();
   destroy = jest.fn();
 

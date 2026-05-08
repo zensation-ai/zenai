@@ -4,12 +4,17 @@
  * Extracted from index.ts (Phase 120) — contains tool handlers for
  * remember, recall, and memory_introspect (HiMeS integration).
  *
+ * Phase 145 PMA integration:
+ *   - remember → TripleCopyMemory.storeEvent() (FastCopy + MediumCopy)
+ *   - recall → ReconsolidationEngine.markLabile() + PriorityMap ranking
+ *
  * @module services/tool-handlers/memory-recall-tools
  */
 
 import { logger } from '../../utils/logger';
 import { ToolExecutionContext } from '../claude/tool-use';
 import { longTermMemory, episodicMemory, workingMemory, crossContextSharing } from '../memory';
+import type { AIContext } from '../../utils/database-context';
 
 // ===========================================
 // Helper Functions
@@ -74,7 +79,71 @@ export async function handleRemember(
   logger.debug('Tool: remember', { factType, confidence, context });
 
   try {
-    // Store in long-term memory
+    // Phase 145 PMA: Check for labile memories before storing
+    // If a recently-recalled memory is in its labile window and the new content
+    // relates to it, reconsolidate instead of blind insert (Nader 2000 paradigm)
+    let reconsolidated = false;
+    try {
+      const { reconsolidationEngine } = await import('../memory/reconsolidation-engine');
+      const labileWindows = reconsolidationEngine.getActiveWindows(context as AIContext);
+
+      if (labileWindows.length > 0) {
+        // Find the labile memory with highest PE to the new content
+        let bestMatch: { window: typeof labileWindows[0]; pe: number } | null = null;
+
+        for (const win of labileWindows) {
+          const pe = reconsolidationEngine.computePE(win.originalContent, content);
+          // Only reconsolidate if there's meaningful difference (PE > 0.05)
+          // but not complete novelty (PE < 0.95 — that's a genuinely new memory)
+          if (pe > 0.05 && pe < 0.95) {
+            if (!bestMatch || pe > bestMatch.pe) {
+              bestMatch = { window: win, pe };
+            }
+          }
+        }
+
+        if (bestMatch) {
+          // Get neuromodulator state for PE modulation
+          let neuroState: { norepinephrine: number; serotonin: number } | undefined;
+          try {
+            const { NeuromodulatorEngine } = await import('../memory/neuromodulator-engine');
+            const neuroEngine = new NeuromodulatorEngine();
+            const userId = execContext.userId || '00000000-0000-0000-0000-000000000001';
+            const state = await neuroEngine.getCurrentPhasicState(userId, context as AIContext);
+            neuroState = { norepinephrine: state.norepinephrine, serotonin: state.serotonin };
+          } catch {
+            // Proceed without neuromodulation
+          }
+
+          const result = await reconsolidationEngine.reconsolidate(
+            bestMatch.window.memoryId,
+            content,
+            context as AIContext,
+            execContext.sessionId,
+            neuroState,
+          );
+
+          if (result.mode && !result.blocked && !result.skipped) {
+            reconsolidated = true;
+            logger.info('PMA: Memory reconsolidated instead of blind insert', {
+              memoryId: bestMatch.window.memoryId,
+              mode: result.mode,
+              rawPE: result.rawPE,
+              effectivePE: result.effectivePE,
+            });
+          }
+        }
+      }
+    } catch (err) {
+      // Non-critical: fall through to normal addFact
+      logger.debug('PMA: Reconsolidation check skipped', {
+        error: err instanceof Error ? err.message : String(err),
+      });
+    }
+
+    // Store in long-term memory (always — even after reconsolidation,
+    // because reconsolidate only logs the event; the actual fact update
+    // is handled by addFact which does upsert-on-content-match)
     await longTermMemory.addFact(context, {
       factType: factType as 'preference' | 'behavior' | 'knowledge' | 'goal' | 'context',
       content,
@@ -86,7 +155,23 @@ export async function handleRemember(
       factType,
       confidence,
       contentPreview: content.substring(0, 50),
+      reconsolidated,
     });
+
+    // Phase 145 PMA: Create triple-copy (FastCopy + MediumCopy) for cascade dynamics
+    // DeepCopy will be created during sleep-compute via promoteToDeep()
+    try {
+      const { TripleCopyMemory } = await import('../memory/triple-copy-memory');
+      const tripleCopy = new TripleCopyMemory();
+      const userId = execContext.userId || '00000000-0000-0000-0000-000000000001';
+      await tripleCopy.storeEvent(content, context as AIContext, userId, confidence);
+      logger.debug('PMA: Triple-copy stored for remember', { factType, context });
+    } catch (err) {
+      // Non-critical: triple-copy is a bonus, LTM store already succeeded
+      logger.debug('PMA: Triple-copy store skipped', {
+        error: err instanceof Error ? err.message : String(err),
+      });
+    }
 
     // Confirm with appropriate response based on fact type
     const confirmationMessages: Record<string, string> = {
@@ -153,13 +238,79 @@ export async function handleRecall(
     if (memoryType === 'facts' || memoryType === 'all') {
       const longTermResults = await longTermMemory.retrieve(context, query);
 
-      if (longTermResults.facts.length > 0) {
-        factCount = longTermResults.facts.length;
+      let rankedFacts = longTermResults.facts;
+
+      // Phase 145 PMA: Rank recall results via PriorityMap
+      // Uses emotional valence + goal alignment to prioritize results
+      try {
+        const { priorityMap } = await import('../memory/priority-map');
+        const { NeuromodulatorEngine } = await import('../memory/neuromodulator-engine');
+        const neuroEngine = new NeuromodulatorEngine();
+        const userId = execContext.userId || '00000000-0000-0000-0000-000000000001';
+        const neuroState = await neuroEngine.getCurrentPhasicState(userId, context as AIContext);
+
+        // Score each fact and sort by priority
+        const scored = rankedFacts.map(fact => {
+          const score = priorityMap.score({
+            saliency: fact.confidence || 0.5,
+            emotionalValence: 0, // neutral default — emotional tagger not in recall path yet
+            rewardRelevance: fact.occurrences ? Math.min(1, fact.occurrences / 5) : 0.3,
+            goalAlignment: fact.confidence || 0.5,
+          }, {
+            dopamine: neuroState.dopamine,
+            norepinephrine: neuroState.norepinephrine,
+            serotonin: neuroState.serotonin,
+            acetylcholine: neuroState.acetylcholine,
+          });
+          return { fact, priority: score.composite };
+        });
+
+        scored.sort((a, b) => b.priority - a.priority);
+        rankedFacts = scored.map(s => s.fact);
+        logger.debug('PMA: Recall results ranked via PriorityMap', {
+          context, factCount: rankedFacts.length,
+        });
+      } catch (err) {
+        // Non-critical: fall back to default ordering
+        logger.debug('PMA: PriorityMap ranking skipped', {
+          error: err instanceof Error ? err.message : String(err),
+        });
+      }
+
+      if (rankedFacts.length > 0) {
+        factCount = rankedFacts.length;
         results.push('\n**Bekannte Fakten über dich:**');
 
-        for (const fact of longTermResults.facts.slice(0, limit)) {
+        for (const fact of rankedFacts.slice(0, limit)) {
           const confidenceLabel = fact.confidence >= 0.8 ? '🟢' : fact.confidence >= 0.6 ? '🟡' : '🔴';
           results.push(`${confidenceLabel} ${fact.content} (${fact.factType})`);
+        }
+
+        // Phase 145 PMA: Mark retrieved facts as labile (reconsolidation window)
+        // Each retrieved fact enters a 10-minute lability window where it can be
+        // updated via reconsolidation if new contradicting info arrives
+        try {
+          const { reconsolidationEngine } = await import('../memory/reconsolidation-engine');
+
+          for (const fact of rankedFacts.slice(0, limit)) {
+            const factId = (fact as any).id || (fact as any).factId;
+            if (factId) {
+              reconsolidationEngine.markLabile(
+                factId,
+                fact.factType || 'knowledge',
+                context as AIContext,
+                fact.content,
+                execContext.sessionId,
+              );
+            }
+          }
+          logger.debug('PMA: Retrieved facts marked labile', {
+            context, count: Math.min(rankedFacts.length, limit),
+          });
+        } catch (err) {
+          logger.debug('PMA: markLabile skipped', {
+            error: err instanceof Error ? err.message : String(err),
+          });
         }
       }
 

@@ -18,6 +18,31 @@ import { logger } from '../../utils/logger';
 import { generateEmbedding } from '../ai';
 import { formatForPgVector } from '../../utils/embedding';
 import { extractFactsFromEpisodes } from './llm-consolidation';
+import type { TemporalPrecision } from './temporal-normalizer';
+
+// ===========================================
+// Bi-temporal options (Phase H1.2)
+// ===========================================
+
+/**
+ * When the caller knows the real-world event timestamp (distinct from
+ * ingest time), pass it here. Used by the LoCoMo / dataset ingestion
+ * path so episodes carry both `created_at` (when WE ingested) and
+ * `event_time` (when the conversation actually took place).
+ *
+ * For interactive use the two coincide and the option can be omitted.
+ */
+export interface BiTemporalEpisodeOptions {
+  /** When the real-world event happened. Date or ISO-8601 string. */
+  eventTime?: Date | string | null;
+  /** Precision of `eventTime` — drives downstream interval semantics.
+   *  Matches services/memory/temporal-normalizer's TemporalPrecision union. */
+  eventTimePrecision?: TemporalPrecision | null;
+  /** Optional open-ended validity interval start. */
+  validFrom?: Date | string | null;
+  /** Optional open-ended validity interval end. */
+  validTo?: Date | string | null;
+}
 
 // ===========================================
 // Types & Interfaces
@@ -128,13 +153,22 @@ export class EpisodicMemoryService {
   // ===========================================
 
   /**
-   * Store a new episode
+   * Store a new episode.
+   *
+   * Pass `biTemporal` when the real-world event timestamp is distinct
+   * from ingest time (LoCoMo / dataset ingestion). Omit for interactive
+   * use — the legacy code path is unchanged.
+   *
+   * Bi-temporal columns require migration `phase_h_1_2_bi_temporal_edges.sql`.
+   * Until that runs the INSERT falls back to the legacy column list and
+   * logs a one-line warning so the call still succeeds.
    */
   async store(
     trigger: string,
     response: string,
     sessionId: string,
-    context: AIContext
+    context: AIContext,
+    biTemporal?: BiTemporalEpisodeOptions
   ): Promise<Episode> {
     try {
       // Generate embedding for the episode
@@ -156,30 +190,80 @@ export class EpisodicMemoryService {
         .filter(e => e.similarity >= CONFIG.MIN_LINK_SIMILARITY)
         .map(e => e.id);
 
-      // Insert into database
-      const result = await queryContext(
+      const baseParams = [
         context,
-        `INSERT INTO episodic_memories (
-          context, session_id, trigger, response,
-          emotional_valence, emotional_arousal,
-          time_of_day, day_of_week, is_weekend,
-          linked_episodes, embedding
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
-        RETURNING *`,
-        [
-          context,
-          sessionId,
-          trigger,
-          response,
-          emotional.valence,
-          emotional.arousal,
-          temporal.timeOfDay,
-          temporal.dayOfWeek,
-          temporal.isWeekend,
-          linkedEpisodeIds,
-          embedding.length > 0 ? formatForPgVector(embedding) : null,
-        ]
-      );
+        sessionId,
+        trigger,
+        response,
+        emotional.valence,
+        emotional.arousal,
+        temporal.timeOfDay,
+        temporal.dayOfWeek,
+        temporal.isWeekend,
+        linkedEpisodeIds,
+        embedding.length > 0 ? formatForPgVector(embedding) : null,
+      ];
+      const hasBiTemporal =
+        biTemporal !== undefined &&
+        (biTemporal.eventTime !== undefined ||
+          biTemporal.eventTimePrecision !== undefined ||
+          biTemporal.validFrom !== undefined ||
+          biTemporal.validTo !== undefined);
+
+      let result;
+      try {
+        if (hasBiTemporal) {
+          result = await queryContext(
+            context,
+            `INSERT INTO episodic_memories (
+              context, session_id, trigger, response,
+              emotional_valence, emotional_arousal,
+              time_of_day, day_of_week, is_weekend,
+              linked_episodes, embedding,
+              event_time, event_time_precision, valid_from, valid_to
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
+            RETURNING *`,
+            [
+              ...baseParams,
+              biTemporal!.eventTime ?? null,
+              biTemporal!.eventTimePrecision ?? null,
+              biTemporal!.validFrom ?? null,
+              biTemporal!.validTo ?? null,
+            ]
+          );
+        } else {
+          result = await queryContext(
+            context,
+            `INSERT INTO episodic_memories (
+              context, session_id, trigger, response,
+              emotional_valence, emotional_arousal,
+              time_of_day, day_of_week, is_weekend,
+              linked_episodes, embedding
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+            RETURNING *`,
+            baseParams
+          );
+        }
+      } catch (insertErr) {
+        const msg = (insertErr as Error).message;
+        if (hasBiTemporal && /column .*(event_time|valid_from|valid_to).*does not exist/i.test(msg)) {
+          // Migration window: bi-temporal columns not yet applied → retry legacy.
+          logger.warn('Bi-temporal columns not yet migrated; episode stored without them', { sessionId });
+          result = await queryContext(
+            context,
+            `INSERT INTO episodic_memories (
+              context, session_id, trigger, response,
+              emotional_valence, emotional_arousal,
+              time_of_day, day_of_week, is_weekend,
+              linked_episodes, embedding
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+            RETURNING *`,
+            baseParams
+          );
+        } else {
+          throw insertErr;
+        }
+      }
 
       const row = result.rows[0];
 
@@ -189,6 +273,7 @@ export class EpisodicMemoryService {
         context,
         linkedCount: linkedEpisodeIds.length,
         emotionalValence: emotional.valence,
+        biTemporal: hasBiTemporal,
       });
 
       return this.rowToEpisode(row);
@@ -969,6 +1054,56 @@ export class EpisodicMemoryService {
     }
     return [];
   }
+}
+
+// ===========================================
+// PMA 4.8.1: Encoding Quality Score
+// ===========================================
+
+/**
+ * Compute encoding quality for an episode at storage time.
+ * Higher quality → better consolidation priority during sleep.
+ *
+ * Weights: focus(0.3) + elaboration(0.3) + PE(0.3) + multimodal(0.1) = 1.0
+ */
+export function computeEncodingQuality(params: {
+  focusLevel?: number;
+  elaborationDepth?: number;
+  predictionError?: number;
+  multimodal?: boolean;
+}): { focusLevel: number; elaborationDepth: number; predictionError: number; multimodal: boolean; composite: number } {
+  const f = params.focusLevel ?? 0.5;
+  const e = params.elaborationDepth ?? 0.5;
+  const p = params.predictionError ?? 0;
+  const m = params.multimodal ?? false;
+  const composite = 0.3 * f + 0.3 * e + 0.3 * p + 0.1 * (m ? 1 : 0);
+  return { focusLevel: f, elaborationDepth: e, predictionError: p, multimodal: m, composite };
+}
+
+// ===========================================
+// PMA 4.8.6: Temporal Context Retrieval Bonus
+// ===========================================
+
+/**
+ * Compute circadian bonus for retrieval scoring.
+ * Memories encoded at similar times-of-day / days-of-week
+ * are easier to recall (Ebbinghaus temporal context effect).
+ *
+ * Returns a bonus in [0, 0.13] to add to retrieval scores.
+ */
+export function computeCircadianBonus(
+  storedTimeOfDay: string,
+  storedDayOfWeek: string,
+  storedIsWeekend: boolean,
+  currentTimeOfDay: string,
+  currentDayOfWeek: string,
+  currentIsWeekend: boolean,
+): number {
+  let bonus = 0;
+  if (storedTimeOfDay === currentTimeOfDay) bonus += 0.05;
+  if (storedDayOfWeek === currentDayOfWeek) bonus += 0.05;
+  if (storedIsWeekend === currentIsWeekend) bonus += 0.03;
+  return bonus;
 }
 
 // ===========================================

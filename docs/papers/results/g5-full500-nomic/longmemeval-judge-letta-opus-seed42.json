@@ -1,0 +1,3547 @@
+{
+  "model": "claude-opus-4-6",
+  "dataset_mode": "longmemeval",
+  "n_queries": 500,
+  "n_scored": 500,
+  "per_query": [
+    {
+      "query_id": "e47becba",
+      "category": "single-session-user",
+      "score": 5,
+      "rationale": "The first retrieved fact clearly states the user graduated with a degree in Business Administration, directly and completely answering the query.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "118b2229",
+      "category": "single-session-user",
+      "score": 5,
+      "rationale": "Fact 1 directly states the user's daily commute is 45 minutes each way, clearly and completely answering the query.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "51a45a95",
+      "category": "single-session-user",
+      "score": 3,
+      "rationale": "The facts confirm the user redeemed a $5 coupon on coffee creamer last Sunday and it was found in their email inbox, but the specific store or location where it was redeemed is not explicitly stated, though Target is heavily implied from context.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "58bf7951",
+      "category": "single-session-user",
+      "score": 5,
+      "rationale": "The retrieved facts clearly state the user attended a production of The Glass Menagerie at the local community theater.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "1e043500",
+      "category": "single-session-user",
+      "score": 5,
+      "rationale": "The first retrieved fact clearly states the user's Spotify playlist is called 'Summer Vibes', which directly and completely answers the query.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "c5e8278d",
+      "category": "single-session-user",
+      "score": 5,
+      "rationale": "The first retrieved fact clearly states the user's old last name was Johnson before changing it to Winters, directly and completely answering the query.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "6ade9755",
+      "category": "single-session-user",
+      "score": 3,
+      "rationale": "The facts mention the user practices at 'Serenity Yoga' studio and uses the Down Dog app at home, but the specific location detail of Serenity Yoga is only briefly referenced without full context about where it is.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "6f9b354f",
+      "category": "single-session-user",
+      "score": 0,
+      "rationale": "No facts were retrieved, so the query cannot be answered at all.",
+      "n_retrieved": 0
+    },
+    {
+      "query_id": "58ef2f1c",
+      "category": "single-session-user",
+      "score": 4,
+      "rationale": "The first retrieved fact clearly states the user volunteered at the 'Love is in the Air' fundraising dinner in February, which directly answers the query about when they volunteered at the animal shelter's fundraising dinner.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "f8c5f88b",
+      "category": "single-session-user",
+      "score": 5,
+      "rationale": "The first retrieved fact clearly states the user bought their new tennis racket from a sports store downtown, directly and completely answering the query.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "5d3d2817",
+      "category": "single-session-user",
+      "score": 3,
+      "rationale": "Fact 5 mentions the user's previous role at a startup managing a team of interns, and their new role as a senior marketing analyst, providing a partial answer about their previous occupation, though details about the specific job title at the startup are not explicitly stated.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "7527f7e2",
+      "category": "single-session-user",
+      "score": 5,
+      "rationale": "The retrieved facts clearly state that the user spent $800 on a designer handbag, directly and completely answering the query.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "c960da58",
+      "category": "single-session-user",
+      "score": 5,
+      "rationale": "Fact 4 explicitly states the user has 20 playlists on Spotify, which directly and completely answers the query.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "3b6f954b",
+      "category": "single-session-user",
+      "score": 5,
+      "rationale": "The first retrieved fact clearly states the user attended a study abroad program at the University of Melbourne, and the third fact confirms this, fully answering the query.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "726462e0",
+      "category": "single-session-user",
+      "score": 5,
+      "rationale": "The first retrieved fact explicitly states the user got a 10% discount on their first purchase from the new clothing brand last month, which directly and completely answers the query.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "94f70d80",
+      "category": "single-session-user",
+      "score": 5,
+      "rationale": "Fact 3 explicitly states the user assembled an IKEA bookshelf recently and it took 4 hours.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "66f24dbb",
+      "category": "single-session-user",
+      "score": 5,
+      "rationale": "The retrieved facts clearly and completely answer the query: the user bought a yellow dress and a pair of matching earrings for their sister's birthday.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "ad7109d1",
+      "category": "single-session-user",
+      "score": 5,
+      "rationale": "The first retrieved fact clearly states the user upgraded to a 500 Mbps internet plan about three weeks ago, which directly and completely answers the query.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "af8d2e46",
+      "category": "single-session-user",
+      "score": 5,
+      "rationale": "The first retrieved fact clearly states the user packed 7 shirts for their trip to Costa Rica, and the trip duration (5-day) is contextually supported.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "dccbc061",
+      "category": "single-session-user",
+      "score": 5,
+      "rationale": "Fact 3 explicitly states the user's previous stance on spirituality: they used to be a staunch atheist before exploring other possibilities like Buddhism.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "c8c3f81d",
+      "category": "single-session-user",
+      "score": 5,
+      "rationale": "The first retrieved fact directly states that Nike is the user's favorite brand for running shoes, completely answering the query.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "8ebdbe50",
+      "category": "single-session-user",
+      "score": 5,
+      "rationale": "The retrieved facts clearly and completely answer the query: the user completed a Data Science certification last month.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "6b168ec8",
+      "category": "single-session-user",
+      "score": 5,
+      "rationale": "The retrieved facts clearly state the user owns three bikes: a road bike, a mountain bike, and a commuter bike.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "75499fd8",
+      "category": "single-session-user",
+      "score": 1,
+      "rationale": "The retrieved facts mention a dog named Max and discuss collars and toys, but none of them state Max's breed.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "21436231",
+      "category": "single-session-user",
+      "score": 5,
+      "rationale": "Fact 3 explicitly states the user caught 12 largemouth bass on their last trip to Lake Michigan, which directly and completely answers the query.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "95bcc1c8",
+      "category": "single-session-user",
+      "score": 5,
+      "rationale": "The first retrieved fact explicitly states the user watched 10 amateur comedians perform at the open mic night, directly and completely answering the query.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "0862e8bf",
+      "category": "single-session-user",
+      "score": 5,
+      "rationale": "The first retrieved fact clearly states the user's cat's name is Luna.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "853b0a1d",
+      "category": "single-session-user",
+      "score": 5,
+      "rationale": "The retrieved facts clearly state that the user's grandma gave them the silver necklace on their 18th birthday, directly answering the query that they were 18 years old.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "a06e4cfe",
+      "category": "single-session-user",
+      "score": 5,
+      "rationale": "The first retrieved fact clearly states the user's preferred gin-to-vermouth ratio is 3:1 with a dash of citrus bitters, directly and completely answering the query.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "37d43f65",
+      "category": "single-session-user",
+      "score": 5,
+      "rationale": "The first retrieved fact clearly states the user upgraded their laptop's RAM to 16GB, which directly and completely answers the query.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "b86304ba",
+      "category": "single-session-user",
+      "score": 1,
+      "rationale": "The retrieved facts discuss art valuation in general and mention a flea market find worth triple its original price, but none contain specific information about a painting of a sunset or the amount the user paid for it.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "d52b4f67",
+      "category": "single-session-user",
+      "score": 5,
+      "rationale": "Fact 1 clearly states the user attended their cousin's wedding at the Grand Ballroom last weekend, directly and completely answering the query.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "25e5aa4f",
+      "category": "single-session-user",
+      "score": 4,
+      "rationale": "Fact #2 clearly states the user completed their undergrad in CS from UCLA, which directly answers the query.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "caf9ead2",
+      "category": "single-session-user",
+      "score": 5,
+      "rationale": "Fact 2 clearly and explicitly states it took about 5 hours to move everything into the new apartment, directly answering the query.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "8550ddae",
+      "category": "single-session-user",
+      "score": 0,
+      "rationale": "No facts were retrieved, so the query cannot be answered at all.",
+      "n_retrieved": 0
+    },
+    {
+      "query_id": "60d45044",
+      "category": "single-session-user",
+      "score": 0,
+      "rationale": "No facts were retrieved at all, so the query cannot be answered.",
+      "n_retrieved": 0
+    },
+    {
+      "query_id": "3f1e9474",
+      "category": "single-session-user",
+      "score": 5,
+      "rationale": "The retrieved facts clearly and completely answer the query: the user had a conversation about destiny with their friend Sarah.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "86b68151",
+      "category": "single-session-user",
+      "score": 5,
+      "rationale": "The first retrieved fact clearly states the new bookshelf is from IKEA, directly and completely answering the query.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "577d4d32",
+      "category": "single-session-user",
+      "score": 5,
+      "rationale": "Fact 3 explicitly states the user stops checking work emails and messages by 7 pm.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "ec81a493",
+      "category": "single-session-user",
+      "score": 4,
+      "rationale": "Fact 1 clearly states the signed poster from the favorite artist's debut album is a limited edition of only 500 copies worldwide, which directly answers the query about how many copies were released.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "15745da0",
+      "category": "single-session-user",
+      "score": 5,
+      "rationale": "Fact 3 explicitly states the user has been collecting vintage cameras for three months.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "e01b8e2f",
+      "category": "single-session-user",
+      "score": 5,
+      "rationale": "Fact 1 clearly states the user went to Hawaii with their family for a week last month, directly and completely answering the query.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "bc8a6e93",
+      "category": "single-session-user",
+      "score": 0,
+      "rationale": "None of the retrieved facts mention baking anything for a niece's birthday party; they are about Parisian desserts, cooking classes, and backyard party furniture.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "ccb36322",
+      "category": "single-session-user",
+      "score": 5,
+      "rationale": "The first retrieved fact clearly states the user has been listening to songs on Spotify lately, directly answering the query about their music streaming service.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "001be529",
+      "category": "single-session-user",
+      "score": 4,
+      "rationale": "Fact 1 clearly states the user waited over a year for their asylum application to be approved, which directly answers the query. Fact 2 confirms this context.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "b320f3f8",
+      "category": "single-session-user",
+      "score": 0,
+      "rationale": "No facts were retrieved, so the query cannot be answered at all.",
+      "n_retrieved": 0
+    },
+    {
+      "query_id": "19b5f2b3",
+      "category": "single-session-user",
+      "score": 0,
+      "rationale": "None of the retrieved facts contain any information about the user being in Japan or the duration of any trip.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "4fd1909e",
+      "category": "single-session-user",
+      "score": 5,
+      "rationale": "The retrieved facts clearly state the Imagine Dragons concert was attended at the Xfinity Center on June 15th.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "545bd2b5",
+      "category": "single-session-user",
+      "score": 5,
+      "rationale": "The first retrieved fact directly and completely answers the query, stating the user has been averaging around 2 hours of screen time on Instagram per day for the past two weeks.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "8a137a7f",
+      "category": "single-session-user",
+      "score": 3,
+      "rationale": "The facts indicate the user has a Philips LED bulb in their bedside lamp and mentions it has a warm tone, but there's no explicit mention of what type of bulb was replaced (i.e., what the previous bulb was before the Philips LED).",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "76d63226",
+      "category": "single-session-user",
+      "score": 0,
+      "rationale": "None of the retrieved facts are related to a Samsung TV or its size.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "86f00804",
+      "category": "single-session-user",
+      "score": 4,
+      "rationale": "The retrieved facts clearly indicate the user is currently reading 'The Seven Husbands of Evelyn Hugo' (fact 3), with the assistant also confirming this (fact 4). The answer is essentially complete, though there's some noise from other facts about book clubs and reading habits.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "8e9d538c",
+      "category": "single-session-user",
+      "score": 0,
+      "rationale": "No facts were retrieved, so the query cannot be answered at all.",
+      "n_retrieved": 0
+    },
+    {
+      "query_id": "311778f1",
+      "category": "single-session-user",
+      "score": 5,
+      "rationale": "Facts 1 and 5 both clearly state the user spent 10 hours last month watching documentaries on Netflix, directly and completely answering the query.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "c19f7a0b",
+      "category": "single-session-user",
+      "score": 5,
+      "rationale": "Fact 1 directly and explicitly states the user usually gets home from work around 6:30 pm on weekdays, which completely answers the query.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "4100d0a0",
+      "category": "single-session-user",
+      "score": 5,
+      "rationale": "The retrieved facts clearly and completely answer the query: the user's ethnicity is mixed Irish and Italian, as explicitly stated in fact 1 and confirmed in fact 2.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "29f2956b",
+      "category": "single-session-user",
+      "score": 0,
+      "rationale": "No facts were retrieved, so the query cannot be answered at all.",
+      "n_retrieved": 0
+    },
+    {
+      "query_id": "1faac195",
+      "category": "single-session-user",
+      "score": 5,
+      "rationale": "The first retrieved fact clearly states that the user's sister Emily lives in Denver.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "faba32e5",
+      "category": "single-session-user",
+      "score": 5,
+      "rationale": "The first retrieved fact directly states Alex marinated the BBQ ribs in special sauce for 24 hours, and the third fact confirms this detail, fully answering the query.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "f4f1d8a4",
+      "category": "single-session-user",
+      "score": 5,
+      "rationale": "The first retrieved fact clearly and directly states that the user's sister gave them the new stand mixer as a birthday gift last month.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "c14c00dd",
+      "category": "single-session-user",
+      "score": 5,
+      "rationale": "The retrieved facts clearly state the user uses a lavender scented shampoo from Trader Joe's, directly and completely answering the query.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "36580ce8",
+      "category": "single-session-user",
+      "score": 5,
+      "rationale": "Fact 4 directly and completely answers the query: the user initially thought their bronchitis was just a cold.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "3d86fd0a",
+      "category": "single-session-user",
+      "score": 5,
+      "rationale": "The first retrieved fact clearly states that the user met Sophia at a coffee shop in the city, directly and completely answering the query.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "a82c026e",
+      "category": "single-session-user",
+      "score": 0,
+      "rationale": "None of the retrieved facts mention beating a game last weekend; they are about attending a Lakers basketball game and sports standings, which is unrelated to the query about completing/beating a game.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "0862e8bf_abs",
+      "category": "single-session-user",
+      "score": 0,
+      "rationale": "None of the retrieved facts mention a hamster; they reference a cat named Luna and other unrelated topics.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "15745da0_abs",
+      "category": "single-session-user",
+      "score": 2,
+      "rationale": "The query asks about vintage films, but the retrieved facts are about vintage cameras; the user has been collecting vintage cameras for three months, not films, so the query is not actually answered.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "bc8a6e93_abs",
+      "category": "single-session-user",
+      "score": 0,
+      "rationale": "None of the retrieved facts mention baking anything for an uncle's birthday party.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "19b5f2b3_abs",
+      "category": "single-session-user",
+      "score": 0,
+      "rationale": "None of the retrieved facts are related to the user's query about their time in Korea; the facts cover unrelated topics like Philippine VAT, Jamaica, and Tamil language.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "29f2956b_abs",
+      "category": "single-session-user",
+      "score": 1,
+      "rationale": "The retrieved facts mention 30 minutes of daily guitar practice, not violin practice; there is no information about violin practice at all.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "f4f1d8a4_abs",
+      "category": "single-session-user",
+      "score": 0,
+      "rationale": "None of the retrieved facts mention anything about the user's dad or a birthday gift received from their dad.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "0a995998",
+      "category": "multi-session",
+      "score": 3,
+      "rationale": "The retrieved facts mention one item (a pair of boots from Zara) that needs to be picked up, but there's no comprehensive list of all clothing items needing pickup or return, so the answer is partial.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "6d550036",
+      "category": "multi-session",
+      "score": 1,
+      "rationale": "The retrieved facts mention some project-related activities but do not provide a count or list of projects the user has led or is currently leading.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "gpt4_59c863d7",
+      "category": "multi-session",
+      "score": 0,
+      "rationale": "No facts were retrieved, so the query cannot be answered at all.",
+      "n_retrieved": 0
+    },
+    {
+      "query_id": "b5ef892d",
+      "category": "multi-session",
+      "score": 3,
+      "rationale": "The facts mention a 5-day camping trip to Yellowstone and a 7-day Utah road trip that explicitly was not camping, giving a partial answer of 5 days but there may be other camping trips not captured in the retrieved facts.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "e831120c",
+      "category": "multi-session",
+      "score": 5,
+      "rationale": "The retrieved facts clearly state the MCU movies took about two weeks and the main Star Wars films took a week and a half, totaling approximately three and a half weeks.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "3a704032",
+      "category": "multi-session",
+      "score": 3,
+      "rationale": "The facts mention a peace lily and succulent acquired two weeks ago and a snake plant received last month, suggesting at least 3 plants, but there's no explicit count and the peace lily from fact 1 may overlap with fact 4, leaving the exact number uncertain.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "gpt4_d84a3211",
+      "category": "multi-session",
+      "score": 2,
+      "rationale": "Only one specific expense is mentioned ($25 chain + $40 lights = $65 on April 20th), but there's no comprehensive record of all bike-related expenses since the start of the year, so the total cannot be determined.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "aae3761f",
+      "category": "multi-session",
+      "score": 2,
+      "rationale": "Only two of the three road trip destinations and their driving times are mentioned (6 hours to Washington D.C. and 4 hours to Outer Banks), with no clear third destination's driving time from the user, so the total cannot be fully computed.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "gpt4_f2262a51",
+      "category": "multi-session",
+      "score": 3,
+      "rationale": "The retrieved facts mention Dr. Lee (dermatologist/biopsy), Dr. Patel (ENT specialist), a primary care physician, and a doctor for colonoscopy consultation, but the information is scattered and incomplete\u2014there may be other doctors not captured, and the exact count isn't definitively answerable.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "dd2973ad",
+      "category": "multi-session",
+      "score": 1,
+      "rationale": "The facts mention a doctor's appointment on Thursday and exhaustion afterward, but there is no information about what time the user went to bed the night before (Wednesday night).",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "c4a1ceb8",
+      "category": "multi-session",
+      "score": 2,
+      "rationale": "The retrieved facts mention several citrus fruits (orange, lemon, lime, grapefruit) used in cocktail recipes discussed with the user, but they don't provide a definitive count or comprehensive list of all citrus types the user has personally used, making it only a partial topical match without a clear answer.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "gpt4_a56e767c",
+      "category": "multi-session",
+      "score": 2,
+      "rationale": "The retrieved facts mention AFI Fest and Portland Film Festival as festivals the user attended/volunteered at, but there is no comprehensive count or complete list of all movie festivals attended, so the specific question of 'how many' cannot be answered.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "6cb6f249",
+      "category": "multi-session",
+      "score": 3,
+      "rationale": "The retrieved facts mention a 7-day (week-long) break and a 10-day break in mid-February, giving a partial answer of 17 days total, but there's no confirmation these are the only breaks taken, so key information about completeness is missing.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "46a3abf7",
+      "category": "multi-session",
+      "score": 3,
+      "rationale": "The facts mention a 20-gallon community tank (Amazonia), a previous 5-gallon tank, and a 1-gallon tank set up for a friend's kid, but it's unclear whether the old 5-gallon tank is still active, so the exact current count of tanks cannot be definitively determined.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "36b9f61e",
+      "category": "multi-session",
+      "score": 3,
+      "rationale": "Several luxury purchases are mentioned ($1,200 Gucci handbag, $800 evening gown, $500 leather boots), allowing a partial total (~$2,500), but there's no definitive complete list or confirmed time range, so key information may be missing.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "28dc39ac",
+      "category": "multi-session",
+      "score": 3,
+      "rationale": "The retrieved facts mention specific game completion times (25 hours for TLOU2, 30 hours for TLOU2 on hard, 10 hours for Celeste), which could be summed to approximately 65 hours, but there's no comprehensive total and it's unclear if these are all the user's games or if the two TLOU2 entries represent different playthroughs.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "gpt4_2f8be40d",
+      "category": "multi-session",
+      "score": 1,
+      "rationale": "The retrieved facts discuss Gurkha wedding customs and food, and mention one wedding attended (cousin's vineyard wedding in August), but do not provide a count of weddings attended this year.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "2e6d26dc",
+      "category": "multi-session",
+      "score": 4,
+      "rationale": "The retrieved facts identify three sets of new babies: cousin Rachel's son Max (born March), friends Mike and Emma's daughter Charlotte (born around the same time), and aunt's twins Ava and Lily (born April) \u2014 totaling 4 babies across 3 families in recent months, which essentially answers the query with minor noise.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "gpt4_15e38248",
+      "category": "multi-session",
+      "score": 4,
+      "rationale": "The retrieved facts mention buying a coffee table (from West Elm ~3 weeks ago), assembling an IKEA bookshelf (~2 months ago), and fixing a wobbly kitchen table leg (last weekend), totaling 3 furniture-related activities. No selling activity is mentioned, but the query is well-covered with only minor uncertainty about completeness.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "88432d0a",
+      "category": "multi-session",
+      "score": 3,
+      "rationale": "The retrieved facts mention three baking instances (sourdough bread on Tuesday, cookies last Thursday, chocolate cake for sister's birthday), but without knowing the exact dates relative to the current time, it's unclear if all fall within the past two weeks, and there may be other baking events not retrieved.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "80ec1f4f",
+      "category": "multi-session",
+      "score": 0,
+      "rationale": "The retrieved facts discuss plans to visit museums in Swansea but contain no information about actual museum or gallery visits made in February.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "d23cf73b",
+      "category": "multi-session",
+      "score": 1,
+      "rationale": "The retrieved facts mention interest in Ethiopian food and Pok Pok (Thai cuisine) and Tokyo restaurants, but there's no concrete information about which cuisines the user has actually learned to cook or tried in the past few months, making it impossible to count them.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "gpt4_7fce9456",
+      "category": "multi-session",
+      "score": 1,
+      "rationale": "The retrieved facts describe the townhouse viewing and offer dates but contain no information about how many properties were viewed before making the offer.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "d682f1a2",
+      "category": "multi-session",
+      "score": 0,
+      "rationale": "No facts were retrieved, so the query cannot be answered at all.",
+      "n_retrieved": 0
+    },
+    {
+      "query_id": "7024f17c",
+      "category": "multi-session",
+      "score": 1,
+      "rationale": "The retrieved facts mention a single 30-minute jog and discuss yoga planning/tips, but contain no actual data about total hours of jogging and yoga completed last week.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "gpt4_5501fe77",
+      "category": "multi-session",
+      "score": 3,
+      "rationale": "Fact 3 mentions Twitter growing from 420 to 540 followers, and fact 1/2 mention Facebook staying steady at 800, and fact 4 mentions TikTok growing quickly, but there's no comprehensive comparison across all platforms to definitively answer which had the most growth.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "gpt4_2ba83207",
+      "category": "multi-session",
+      "score": 3,
+      "rationale": "The facts mention spending $120 at Walmart, $60 at Publix via Instacart, and $80 at Trader Joe's (split with sister), suggesting Walmart was the highest spend, but the time references are vague and may not all fall within the past month, and there could be other unrecorded trips.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "2318644b",
+      "category": "multi-session",
+      "score": 4,
+      "rationale": "The facts reveal the user spent ~$30/night in Tokyo (hostel) and over $300/night in Hawaii (Maui resort), allowing computation of roughly $270+ more per night in Hawaii, though the Hawaii figure is approximate ('over $300').",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "2ce6a0f2",
+      "category": "multi-session",
+      "score": 2,
+      "rationale": "The retrieved facts mention one specific art event attended (the 'Women in Art' exhibition on February 10th) but don't provide a comprehensive count of all art-related events attended in the past month, so the query cannot be fully answered.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "gpt4_d12ceb0e",
+      "category": "multi-session",
+      "score": 1,
+      "rationale": "Only the parents' ages (55 and 58) are found; the user's own age and grandparents' ages are completely missing, making it impossible to compute the average.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "00ca467f",
+      "category": "multi-session",
+      "score": 0,
+      "rationale": "None of the retrieved facts have any relevance to doctor's appointments or anything related to medical visits in March.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "b3c15d39",
+      "category": "multi-session",
+      "score": 5,
+      "rationale": "The retrieved facts clearly state the remote shutter release was ordered on February 5th and arrived on February 10th, which means it took 5 days to receive it.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "gpt4_31ff4165",
+      "category": "multi-session",
+      "score": 0,
+      "rationale": "No facts were retrieved, so the query cannot be answered at all.",
+      "n_retrieved": 0
+    },
+    {
+      "query_id": "eeda8a6d",
+      "category": "multi-session",
+      "score": 3,
+      "rationale": "The facts reveal the 20-gallon tank has 10 neon tetras, 5 golden honey gouramis, and a small pleco (16 fish), and the old 10-gallon tank has a betta fish named Bubbles (1 fish), totaling 17 fish. However, the information is spread across facts and the user would need to piece it together; also it's unclear if additional fish were ever added.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "2788b940",
+      "category": "multi-session",
+      "score": 3,
+      "rationale": "The retrieved facts mention Zumba classes on Tuesdays and Thursdays and a yoga class on Sundays, indicating at least 3 fitness classes per week, but there's no explicit statement of the total number of weekly fitness classes attended.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "60bf93ed",
+      "category": "multi-session",
+      "score": 5,
+      "rationale": "The retrieved facts contain both the purchase date (1/15 from Amazon) and the arrival date (1/20), allowing the calculation that the laptop backpack took 5 days to arrive.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "9d25d4e0",
+      "category": "multi-session",
+      "score": 1,
+      "rationale": "Only one fact mentions acquiring a specific piece (a silver necklace last month), but there is no comprehensive information about how many pieces were acquired in the last two months.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "129d1232",
+      "category": "multi-session",
+      "score": 2,
+      "rationale": "Only one specific fundraising amount ($5,000 from a Bike-a-Thon) is mentioned, and it appears duplicated; there is no information about other charity events or a total sum across multiple events.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "60472f9c",
+      "category": "multi-session",
+      "score": 4,
+      "rationale": "The first retrieved fact clearly states the user has separate Trello boards for their thesis, Data Mining project, and Database Systems project, indicating 2 projects excluding the thesis, though the answer requires minor inference rather than being explicitly stated.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "gpt4_194be4b3",
+      "category": "multi-session",
+      "score": 0,
+      "rationale": "No facts were retrieved, so the query cannot be answered at all.",
+      "n_retrieved": 0
+    },
+    {
+      "query_id": "a9f6b44c",
+      "category": "multi-session",
+      "score": 0,
+      "rationale": "The retrieved facts are about bike shops along a cycling route and bike route recommendations, completely unrelated to the user's question about how many bikes they serviced or planned to service in March.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "d851d5ba",
+      "category": "multi-session",
+      "score": 3,
+      "rationale": "The retrieved facts mention three specific fundraising amounts ($500 for American Cancer Society, $250 for a local food bank, and over $1,000 for a children's hospital), but there may be other fundraising activities not captured, and the system does not provide a total sum.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "5a7937c8",
+      "category": "multi-session",
+      "score": 3,
+      "rationale": "The retrieved facts mention faith-related activities on December 10th (church holiday food drive), December 17th (Bible study), and December 24th (midnight mass), totaling 3 days, but there may be other faith-related activities in December not captured in these results, so the answer is partial.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "gpt4_ab202e7f",
+      "category": "multi-session",
+      "score": 4,
+      "rationale": "The retrieved facts mention fixing kitchen shelves (facts 1 and 3, which appear to be the same event), replacing a worn-out kitchen mat (fact 2), and upgrading to a toaster oven and decluttering countertops (fact 4). This gives at least 3 distinct kitchen items replaced or fixed (shelves, kitchen mat, toaster replacement), providing a fairly complete answer with minor uncertainty about whether all relevant items were retrieved.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "gpt4_e05b82a6",
+      "category": "multi-session",
+      "score": 4,
+      "rationale": "The retrieved facts contain specific rollercoaster rides from July (Mako, Kraken, Manta at SeaWorld), September (Space Mountain 3 times), and October (Xcelerator once, Revenge of the Mummy 3 times), allowing a count of approximately 10 rides across 4 events, though there could be missing events not retrieved.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "gpt4_731e37d7",
+      "category": "multi-session",
+      "score": 0,
+      "rationale": "No facts were retrieved, so the query cannot be answered at all.",
+      "n_retrieved": 0
+    },
+    {
+      "query_id": "edced276",
+      "category": "multi-session",
+      "score": 2,
+      "rationale": "Only the New York City trip duration (5 days) is found; there is no mention of any Hawaii trip, so the query cannot be fully answered.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "10d9b85a",
+      "category": "multi-session",
+      "score": 0,
+      "rationale": "None of the retrieved facts are related to attending workshops, lectures, or conferences in April.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "e3038f8c",
+      "category": "multi-session",
+      "score": 3,
+      "rationale": "The retrieved facts mention 25 rare coins specifically, and references to rare book collections and other rare items, but there is no comprehensive inventory or total count of all rare items the user possesses.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "2b8f3739",
+      "category": "multi-session",
+      "score": 3,
+      "rationale": "Two facts mention specific earnings ($225 from jam sales and $120 from herb sales, totaling $345), but there may be other market sales not captured in the retrieved facts, so the answer is partial.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "1a8a66a6",
+      "category": "multi-session",
+      "score": 1,
+      "rationale": "The retrieved facts mention a book subscription box and The New Yorker weekly issues, and a New York Times print subscription, but never explicitly state a count of magazine subscriptions, leaving the query essentially unanswered.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "c2ac3c61",
+      "category": "multi-session",
+      "score": 3,
+      "rationale": "Only one retrieved fact (fact 1) is directly relevant, stating the user completed two courses on edX, but there may be additional courses on other platforms not captured in the retrieved facts, so the total count is only partially answered.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "bf659f65",
+      "category": "multi-session",
+      "score": 1,
+      "rationale": "The retrieved facts mention one album download (Billie Eilish's 'Happier Than Ever' on Spotify) but do not provide a count or comprehensive list of purchased/downloaded albums or EPs.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "gpt4_372c3eed",
+      "category": "multi-session",
+      "score": 5,
+      "rationale": "Facts 1 and 3 together provide the complete answer: high school from 2010-2014 (4 years) and Bachelor's degree taking 4 years at UCLA, totaling 8 years of formal education.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "gpt4_2f91af09",
+      "category": "multi-session",
+      "score": 1,
+      "rationale": "The retrieved facts mention five short stories (fact 3) and reference a writing challenge and poetry, but do not provide a total count of all completed pieces including poems and writing challenge entries.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "81507db6",
+      "category": "multi-session",
+      "score": 2,
+      "rationale": "The retrieved facts mention attending Rachel's master's degree graduation ceremony a couple of weeks ago (one ceremony), but there is no information about any other graduation ceremonies in the past three months, so the query cannot be fully answered.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "88432d0a_abs",
+      "category": "multi-session",
+      "score": 0,
+      "rationale": "None of the retrieved facts mention egg tarts at all, let alone how many times the user baked them in the past two weeks.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "80ec1f4f_abs",
+      "category": "multi-session",
+      "score": 0,
+      "rationale": "None of the retrieved facts mention any museum or gallery visits in December; the visits mentioned are in January and February.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "eeda8a6d_abs",
+      "category": "multi-session",
+      "score": 0,
+      "rationale": "None of the retrieved facts mention a 30-gallon tank; they reference 20-gallon and 10-gallon tanks, so the query about the 30-gallon tank is completely unanswered.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "60bf93ed_abs",
+      "category": "multi-session",
+      "score": 0,
+      "rationale": "None of the retrieved facts mention an iPad case purchase or delivery timeline.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "edced276_abs",
+      "category": "multi-session",
+      "score": 0,
+      "rationale": "None of the retrieved facts mention Hawaii or Seattle; they cover Paris, Rome, New York City, and Japan, which are completely unrelated to the query.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "gpt4_372c3eed_abs",
+      "category": "multi-session",
+      "score": 3,
+      "rationale": "The facts show high school from 2010-2014 (4 years) and Bachelor's from UCLA taking 4 years (graduating 2020), totaling 8 years, but there is no information about actually completing a Master's degree, only considering pursuing one, so the total years including a Master's cannot be determined.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "8a2466db",
+      "category": "single-session-preference",
+      "score": 4,
+      "rationale": "The retrieved facts contain a detailed list of video editing learning resources including Adobe's official documentation, YouTube channels (Premiere Bro, Video Copilot, Adobe Creative Cloud), online course platforms (Udemy, LinkedIn Learning, Skillshare), and community forums, which collectively provide a strong answer to the query about video editing resources, though the focus is specifically on Adobe Premiere Pro rather than video editing in general.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "06878be2",
+      "category": "single-session-preference",
+      "score": 0,
+      "rationale": "No facts were retrieved, so the query cannot be answered at all.",
+      "n_retrieved": 0
+    },
+    {
+      "query_id": "75832dbd",
+      "category": "single-session-preference",
+      "score": 3,
+      "rationale": "The retrieved facts contain recommendations for research papers in deep learning for medical image analysis, which partially answers the query about recent publications, but lacks information about conferences and doesn't address the user's broader interests beyond this specific topic.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "0edc2aef",
+      "category": "single-session-preference",
+      "score": 0,
+      "rationale": "None of the retrieved facts are related to Miami; they all concern Seattle, Arizona, or other unrelated destinations.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "35a27287",
+      "category": "single-session-preference",
+      "score": 2,
+      "rationale": "The retrieved facts discuss cultural events and language exchange in general but contain no specific information about events happening this weekend near the user.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "32260d93",
+      "category": "single-session-preference",
+      "score": 1,
+      "rationale": "The retrieved facts are about board games, restaurants, podcasts, and other topics, but none contain recommendations for shows or movies to watch.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "195a1a1b",
+      "category": "single-session-preference",
+      "score": 2,
+      "rationale": "The retrieved facts touch on evening/nighttime topics like winding down by 9:30 pm and meditation before bed, but don't actually contain specific activity suggestions for the evening.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "afdc33df",
+      "category": "single-session-preference",
+      "score": 3,
+      "rationale": "The retrieved facts are kitchen-related and include some cleaning/organization tips (utensil organization, garbage disposal cleaning), but they don't directly address general kitchen cleanliness tips like wiping counters, cleaning as you go, dish management, etc.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "caf03d32",
+      "category": "single-session-preference",
+      "score": 3,
+      "rationale": "The retrieved facts contain slow cooker recipe suggestions and some general advice, but they don't specifically address troubleshooting or tips for improving slow cooker results, which is what the user is asking about.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "54026fce",
+      "category": "single-session-preference",
+      "score": 0,
+      "rationale": "No facts were retrieved, so the query cannot be answered at all.",
+      "n_retrieved": 0
+    },
+    {
+      "query_id": "06f04340",
+      "category": "single-session-preference",
+      "score": 0,
+      "rationale": "None of the retrieved facts contain any information about the user's homegrown ingredients or dinner suggestions; they are entirely about cocktails, glazes, and cultural ceremonies.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "6b7dfb22",
+      "category": "single-session-preference",
+      "score": 2,
+      "rationale": "The retrieved facts touch on painting and motivation topics but don't contain specific suggestions for finding new artistic inspiration when feeling stuck with paintings.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "1a1907b4",
+      "category": "single-session-preference",
+      "score": 4,
+      "rationale": "The retrieved facts contain multiple cocktail suggestions with detailed recipes, primarily featuring Hendrick's gin, which effectively answers the user's request for cocktail suggestions for a get-together, though the recommendations are specifically tailored to a previous conversation context rather than the current general query.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "09d032c9",
+      "category": "single-session-preference",
+      "score": 0,
+      "rationale": "None of the retrieved facts address phone battery life or provide any tips related to battery optimization.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "38146c39",
+      "category": "single-session-preference",
+      "score": 0,
+      "rationale": "None of the retrieved facts relate to chocolate chip cookies or provide any advice on improving them.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "d24813b1",
+      "category": "single-session-preference",
+      "score": 3,
+      "rationale": "The retrieved facts touch on baking (chocolate chip cookies, lemon poppyseed cake, slow cooker desserts) and party hosting, but don't specifically provide focused baking tips for a small colleague gathering; the answer is partial with relevant but scattered information.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "57f827a0",
+      "category": "single-session-preference",
+      "score": 0,
+      "rationale": "No facts were retrieved, so the query is completely unanswered.",
+      "n_retrieved": 0
+    },
+    {
+      "query_id": "95228167",
+      "category": "single-session-preference",
+      "score": 3,
+      "rationale": "The retrieved facts contain detailed comparisons between Stratocaster and Les Paul guitars and tips on specific guitar setups, which provide useful guitar-buying information, but they don't directly address general tips for what to look for when shopping for a new guitar at a music store.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "505af2f5",
+      "category": "single-session-preference",
+      "score": 4,
+      "rationale": "The retrieved facts contain a detailed homemade coffee creamer recipe (almond milk, vanilla extract, honey) along with extensive tips for improving it, including alternative ingredients, flavor combinations, and health enhancements, which collectively provide strong recommendations for a new coffee creamer recipe.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "75f70248",
+      "category": "single-session-preference",
+      "score": 4,
+      "rationale": "The retrieved facts strongly suggest the user has a cat (Max) that sheds a lot in their living room, and provide extensive context about dust, dander, allergens, and air quality issues that could cause sneezing, essentially answering the query about whether the living room could be causing their symptoms.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "d6233ab6",
+      "category": "single-session-preference",
+      "score": 0,
+      "rationale": "No facts were retrieved, so the query cannot be answered from the retrieved results.",
+      "n_retrieved": 0
+    },
+    {
+      "query_id": "1da05512",
+      "category": "single-session-preference",
+      "score": 1,
+      "rationale": "The retrieved facts are about laptop purchases, phone upgrades, RV rentals, and guitar shopping\u2014none address NAS devices at all.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "fca70973",
+      "category": "single-session-preference",
+      "score": 0,
+      "rationale": "No facts were retrieved, so the query cannot be answered at all.",
+      "n_retrieved": 0
+    },
+    {
+      "query_id": "b6025781",
+      "category": "single-session-preference",
+      "score": 4,
+      "rationale": "The retrieved facts collectively provide substantial meal prep recipe suggestions including protein sources with quinoa, roasted vegetables, lentil bolognese, Mexican-inspired dishes, and detailed side/add-in ideas, covering the query well with only minor gaps.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "a89d7624",
+      "category": "single-session-preference",
+      "score": 3,
+      "rationale": "Facts 3 and 5 mention Denver-related activities (Red Rocks, BBQ, music venues/festivals, concerts) providing partial but not comprehensive suggestions for things to do in Denver.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "b0479f84",
+      "category": "single-session-preference",
+      "score": 4,
+      "rationale": "The retrieved facts contain a comprehensive list of documentary recommendations across multiple genres that the user has previously expressed interest in, providing a strong and relevant answer to the query.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "1d4e3b97",
+      "category": "single-session-preference",
+      "score": 2,
+      "rationale": "Fact 4 mentions the user replaced their chain and cassette on February 1st which improved performance, which is directly relevant to the query about why the bike performs better, but the retrieved facts don't explicitly connect this to Sunday group rides or provide a clear answer to the user's question.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "07b6f563",
+      "category": "single-session-preference",
+      "score": 2,
+      "rationale": "The retrieved facts touch on accessories for various devices (Fitbit, Omron, PS5, iPhone wallet case) but don't directly provide phone accessory recommendations; only fact #4 mentions an iPhone wallet case but lacks the actual recommendations.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "1c0ddc50",
+      "category": "single-session-preference",
+      "score": 5,
+      "rationale": "The first retrieved fact provides a comprehensive and detailed list of activities for the user's commute, covering productive options, entertainment options, safety tips, and additional tips.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "0a34ad58",
+      "category": "single-session-preference",
+      "score": 3,
+      "rationale": "The retrieved facts contain some helpful Tokyo navigation tips (Suica card usage, transit directions, market visit tips) but don't directly address general anxiety about getting around Tokyo comprehensively\u2014missing broader tips like using Google Maps, learning basic phrases, or general transit system overview.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "d3ab962e",
+      "category": "multi-session",
+      "score": 0,
+      "rationale": "None of the retrieved facts mention specific hikes on two consecutive weekends or their distances.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "2311e44b",
+      "category": "multi-session",
+      "score": 4,
+      "rationale": "The retrieved facts show the book has 440 pages and the user is on page 250, allowing calculation of 190 pages remaining, though this isn't explicitly stated as a single fact.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "cc06de0d",
+      "category": "multi-session",
+      "score": 4,
+      "rationale": "The taxi ride cost $12 (fact 4) and the daily train fare is $6 (fact 1), so the taxi was $6 more expensive. The key facts are present to answer the query.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "a11281a2",
+      "category": "multi-session",
+      "score": 3,
+      "rationale": "The facts mention reaching 350 followers in two weeks and significant growth since the start of the year, but the starting follower count is never stated, so the exact increase cannot be determined.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "4f54b7c9",
+      "category": "multi-session",
+      "score": 0,
+      "rationale": "No facts were retrieved, so the query cannot be answered at all.",
+      "n_retrieved": 0
+    },
+    {
+      "query_id": "85fa3a3f",
+      "category": "multi-session",
+      "score": 4,
+      "rationale": "The retrieved facts contain the prices for the food bowl ($15), measuring cup ($5), flea and tick collar ($20), and dental chews ($10/month), allowing the total to be calculated as $50, though the dental chews price is only mentioned indirectly in the assistant's summary rather than directly stated by the user.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "9aaed6a3",
+      "category": "multi-session",
+      "score": 0,
+      "rationale": "The retrieved facts are entirely about Walmart+ cashback programs and have no information about any transaction at SaveMart last Thursday.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "1f2b8d4f",
+      "category": "multi-session",
+      "score": 3,
+      "rationale": "The facts establish the luxury boots cost $800 and budget alternatives range from $20-$100, but no specific pair is identified as 'the similar pair found at the budget store' and no explicit price difference is calculated.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "e6041065",
+      "category": "multi-session",
+      "score": 2,
+      "rationale": "The user mentions packing 'a lot of shoes' and wearing only two (sneakers and sandals), but the exact number of shoes packed is never stated, so the percentage cannot be calculated.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "51c32626",
+      "category": "multi-session",
+      "score": 0,
+      "rationale": "None of the retrieved facts contain any information about when the user submitted a research paper on sentiment analysis; they only discuss sentiment analysis techniques and tools in general.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "d905b33f",
+      "category": "multi-session",
+      "score": 2,
+      "rationale": "The facts mention a $30 original price and a discount/sale on the book, but the actual percentage discount is never stated in any of the retrieved facts.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "7405e8b1",
+      "category": "multi-session",
+      "score": 0,
+      "rationale": "The retrieved facts contain no information about the user's actual HelloFresh or UberEats orders or the specific discount percentages they received on their first orders from either platform.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "f35224e0",
+      "category": "multi-session",
+      "score": 0,
+      "rationale": "None of the retrieved facts contain any information about the user's listening history for 'How I Built This' or 'My Favorite Murder' podcasts.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "6456829e",
+      "category": "multi-session",
+      "score": 1,
+      "rationale": "The retrieved facts discuss tomato and cucumber care and gardening tips, but none contain information about how many plants the user initially planted for tomatoes and cucumbers, except fact 5 mentions 3 cucumber plants currently producing, which only partially addresses the query.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "a4996e51",
+      "category": "multi-session",
+      "score": 4,
+      "rationale": "The retrieved facts indicate the user typically works 40 hours per week, with some weeks going up to 45 hours, and during peak campaign seasons up to 50 hours per week, which essentially answers the query with minor ambiguity about whether 45 or 50 is the peak season figure.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "3c1045c8",
+      "category": "multi-session",
+      "score": 5,
+      "rationale": "The user's age is 32 and the average department age is 29.5, so the difference is 2.5 years; both facts needed are present in the retrieved results.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "60036106",
+      "category": "multi-session",
+      "score": 2,
+      "rationale": "The facts mention the Facebook ad campaign reaching ~2,000 people, but there is no specific number for the Instagram influencer collaboration reach, so the total cannot be determined.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "681a1674",
+      "category": "multi-session",
+      "score": 3,
+      "rationale": "The facts mention re-watching Spider-Man: No Way Home and Avengers: Endgame (2 movies), and watching four Marvel movies recently, but it's unclear exactly how many were re-watches versus first-time views, so the answer is partial.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "e25c3b8d",
+      "category": "multi-session",
+      "score": 5,
+      "rationale": "The retrieved facts clearly show the handbag was originally $500 and purchased at TK Maxx for $200, meaning the user saved $300.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "4adc0475",
+      "category": "multi-session",
+      "score": 5,
+      "rationale": "The retrieved facts clearly state 3 goals (fact 1) and 2 assists (fact 2) in the recreational indoor soccer league, giving a total of 5.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "4bc144e2",
+      "category": "multi-session",
+      "score": 5,
+      "rationale": "The retrieved facts clearly state the car wash cost $15 (February 3rd) and the parking ticket cost $50 (January 5th), totaling $65, which fully answers the query.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "ef66a6e5",
+      "category": "multi-session",
+      "score": 3,
+      "rationale": "The retrieved facts mention tennis played competitively in high school and swimming competitively in college (2 sports), but there's no confirmation this is exhaustive, and the user's query asks for a count which isn't directly stated.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "5025383b",
+      "category": "multi-session",
+      "score": 0,
+      "rationale": "No facts were retrieved, so the query cannot be answered at all.",
+      "n_retrieved": 0
+    },
+    {
+      "query_id": "a1cc6108",
+      "category": "multi-session",
+      "score": 0,
+      "rationale": "None of the retrieved facts contain any personal information about the user or anyone named Alex, making them completely unrelated to the query.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "9ee3ecd6",
+      "category": "multi-session",
+      "score": 0,
+      "rationale": "No facts were retrieved, so the query cannot be answered at all.",
+      "n_retrieved": 0
+    },
+    {
+      "query_id": "3fdac837",
+      "category": "multi-session",
+      "score": 0,
+      "rationale": "None of the retrieved facts contain any information about the user's duration of stay in Japan or Chicago.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "91b15a6e",
+      "category": "multi-session",
+      "score": 0,
+      "rationale": "No facts were retrieved, so the query cannot be answered at all.",
+      "n_retrieved": 0
+    },
+    {
+      "query_id": "27016adc",
+      "category": "multi-session",
+      "score": 3,
+      "rationale": "The renovation cost ($20,000) is clearly stated, and the countryside property price ($200,000) can be inferred from the assistant's estimate, yielding 10%, but the countryside property price is only mentioned indirectly in a tax calculation example rather than as a confirmed fact about the user's target property.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "720133ac",
+      "category": "multi-session",
+      "score": 1,
+      "rationale": "Only the vet consultation fee of $50 is mentioned; there is no information about flea medication cost, so the total cannot be determined.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "77eafa52",
+      "category": "multi-session",
+      "score": 4,
+      "rationale": "The initial quote was $2,500 and the corrected price was $2,800, so the user had to pay $300 more. Both figures are present in the retrieved facts, though the difference isn't explicitly stated.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "8979f9ec",
+      "category": "multi-session",
+      "score": 5,
+      "rationale": "The retrieved facts clearly state that the chicken fajitas provided 3 meals and the lentil soup provided 5 lunches, giving a total of 8 lunch meals.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "0100672e",
+      "category": "multi-session",
+      "score": 5,
+      "rationale": "The retrieved facts clearly show the user spent $60 on 5 coffee mugs for coworkers, which means $12 per mug.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "a96c20ee",
+      "category": "multi-session",
+      "score": 4,
+      "rationale": "Fact 1 mentions presenting a poster on thesis research at a first research conference, and Fact 3 mentions going to Harvard University for that first research conference, which together strongly imply the poster was presented at Harvard University.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "92a0aa75",
+      "category": "multi-session",
+      "score": 0,
+      "rationale": "None of the retrieved facts contain any information about the user's current job role or how long they've been in it.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "3fe836c9",
+      "category": "multi-session",
+      "score": 0,
+      "rationale": "No facts were retrieved, so the query cannot be answered at all.",
+      "n_retrieved": 0
+    },
+    {
+      "query_id": "1c549ce4",
+      "category": "multi-session",
+      "score": 4,
+      "rationale": "The retrieved facts contain the cost of the car cover ($120 from fact 3) and the detailing spray ($20 from fact 4), allowing the total of $140 to be computed, though no fact explicitly states the total.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "6c49646a",
+      "category": "multi-session",
+      "score": 3,
+      "rationale": "The facts mention 1,200 miles for the Yellowstone trip and 1,800 miles total for three other road trips (Durango, Breckenridge, Santa Fe), giving a total of 3,000 miles for four trips, but the Denver-to-Mount Rushmore and Denver-to-Aspen trips may or may not be additional trips, creating ambiguity about which four trips are meant.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "1192316e",
+      "category": "multi-session",
+      "score": 2,
+      "rationale": "The facts mention a 30-minute commute but do not include any information about how long it takes the user to get ready in the morning, so the total time cannot be determined.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "0ea62687",
+      "category": "multi-session",
+      "score": 5,
+      "rationale": "The retrieved facts clearly state the car was getting 30 mpg a few months ago and is now getting 28 mpg, so the difference is 2 miles per gallon.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "67e0d0f2",
+      "category": "multi-session",
+      "score": 3,
+      "rationale": "Fact 4 mentions completing 12 courses on Coursera, and fact 3 mentions courses on edX, but the exact total across all platforms is not explicitly stated or calculable from the retrieved facts.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "bb7c3b45",
+      "category": "multi-session",
+      "score": 4,
+      "rationale": "The retrieved facts show the heels were bought for $200 at an outlet mall and originally retailed for $500, allowing the savings of $300 to be calculated, though the exact savings amount is not explicitly stated.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "ba358f49",
+      "category": "multi-session",
+      "score": 0,
+      "rationale": "No facts were retrieved at all, so the query cannot be answered.",
+      "n_retrieved": 0
+    },
+    {
+      "query_id": "61f8c8f8",
+      "category": "multi-session",
+      "score": 2,
+      "rationale": "The retrieved facts contain the user's previous 5K time (45 minutes) but no information about a more recent 5K time, so the improvement comparison cannot be answered.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "60159905",
+      "category": "multi-session",
+      "score": 3,
+      "rationale": "The facts mention attending dinner parties at Sarah's place, Alex's place, and Mike's place, but there's no clear timeline establishing exactly how many were in the past month, and the user is also hosting one, making the count ambiguous.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "ef9cf60a",
+      "category": "multi-session",
+      "score": 0,
+      "rationale": "No facts were retrieved, so the query cannot be answered at all.",
+      "n_retrieved": 0
+    },
+    {
+      "query_id": "73d42213",
+      "category": "multi-session",
+      "score": 3,
+      "rationale": "Fact 5 states the user left home at 7 AM on Monday, and Fact 1 states the trip took two hours, so one can infer arrival at 9 AM, but the exact arrival time is not explicitly stated in any retrieved fact.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "bc149d6b",
+      "category": "multi-session",
+      "score": 3,
+      "rationale": "The retrieved facts mention a 50-pound batch of layer feed purchased recently, but there's no information about other feed purchases in the past two months, so the total weight across all purchases cannot be fully determined.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "099778bb",
+      "category": "multi-session",
+      "score": 4,
+      "rationale": "Fact 3 states women occupy 20 of the leadership positions, and fact 5 mentions 100 leadership positions total, implying 20% women in leadership, which essentially answers the query with minor ambiguity in phrasing.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "09ba9854",
+      "category": "multi-session",
+      "score": 4,
+      "rationale": "The retrieved facts contain the taxi cost (~$60) and the train cost (~$10 per the user's friend, or $20-$30 per the assistant's estimate), allowing one to calculate savings of roughly $30-$50, though the exact savings depend on which train cost estimate is used.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "d6062bb9",
+      "category": "multi-session",
+      "score": 2,
+      "rationale": "The facts mention the TikTok video has 1,456 views and the YouTube video is the most popular, but the YouTube video's view count is never stated, so the total cannot be determined.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "157a136e",
+      "category": "multi-session",
+      "score": 3,
+      "rationale": "The facts reveal the grandma is 75 and the user is likely 32, which would make the grandma 43 years older, but the user's age of 32 is only implied from a separate conversation about being 'in their 30s' and asking if 32 is young or old\u2014not explicitly confirmed as the user's age.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "c18a7dc8",
+      "category": "multi-session",
+      "score": 1,
+      "rationale": "Fact 2 mentions the user is 32 years old, but there is no information about when they graduated from college, so the query cannot be answered.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "a3332713",
+      "category": "multi-session",
+      "score": 4,
+      "rationale": "The retrieved facts show the brother's graduation gift was $100 and the coworker's baby shower gift was $100, totaling $200, which answers the query with minor noise from other gift tracking conversation.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "55241a1f",
+      "category": "multi-session",
+      "score": 4,
+      "rationale": "The retrieved facts clearly state 12 comments on the Facebook Live session and 21 comments on the most popular YouTube video, giving a total of 33, though the answer requires combining facts rather than being stated directly.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "a08a253f",
+      "category": "multi-session",
+      "score": 5,
+      "rationale": "The retrieved facts clearly show the user attends fitness classes 3 days a week: Zumba on Tuesdays and Thursdays, and weightlifting on Saturdays.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "f0e564bc",
+      "category": "multi-session",
+      "score": 2,
+      "rationale": "The retrieved facts mention $500 spent on high-end skincare products and reference a designer handbag (Coach), but the handbag's price is never stated, so the total amount cannot be determined.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "078150f1",
+      "category": "multi-session",
+      "score": 4,
+      "rationale": "The user's initial goal was $200 (fact 1) and they raised $250 (fact 3), so the answer ($50 more) can be derived from the retrieved facts, though it's not explicitly stated as a difference.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "8cf4d046",
+      "category": "multi-session",
+      "score": 0,
+      "rationale": "No facts were retrieved, so the query cannot be answered at all.",
+      "n_retrieved": 0
+    },
+    {
+      "query_id": "a346bb18",
+      "category": "multi-session",
+      "score": 0,
+      "rationale": "None of the retrieved facts contain any information about the user's marathon target time or actual finish time, so the query about exceeding a target time cannot be answered.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "37f165cf",
+      "category": "multi-session",
+      "score": 1,
+      "rationale": "The retrieved facts mention novels finished (a 416-page novel and 'The Nightingale' at 440 pages) but none are explicitly tied to January or March, so the specific query about which novels were finished in those months and their page counts cannot be answered.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "8e91e7d9",
+      "category": "multi-session",
+      "score": 2,
+      "rationale": "Only one fact mentions the user having a brother, but there is no information about total number of siblings, so the answer is incomplete.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "87f22b4a",
+      "category": "multi-session",
+      "score": 5,
+      "rationale": "The retrieved facts contain both the number of dozens sold (40) and the price per dozen ($3), allowing the calculation of $120 total egg sales this month.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "e56a43b9",
+      "category": "multi-session",
+      "score": 0,
+      "rationale": "No facts were retrieved, so the query cannot be answered at all.",
+      "n_retrieved": 0
+    },
+    {
+      "query_id": "efc3f7c2",
+      "category": "multi-session",
+      "score": 4,
+      "rationale": "The retrieved facts contain the key information: the user wakes up at 6:00 AM on Fridays (fact 4) and at 6:30 AM on other weekdays (facts 1 and 5), indicating 30 minutes earlier on Fridays. Minor noise from unrelated alarm app recommendations.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "21d02d0d",
+      "category": "multi-session",
+      "score": 3,
+      "rationale": "One missed fun run on March 26th is mentioned, but the user says they 'missed a few events' implying there may be more; the total count of missed fun runs in March is not clearly stated.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "2311e44b_abs",
+      "category": "multi-session",
+      "score": 0,
+      "rationale": "The retrieved facts contain no information about the book 'Sapiens' or the user's reading progress in it.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "6456829e_abs",
+      "category": "multi-session",
+      "score": 0,
+      "rationale": "No facts were retrieved, so the query cannot be answered at all.",
+      "n_retrieved": 0
+    },
+    {
+      "query_id": "e5ba910e_abs",
+      "category": "multi-session",
+      "score": 1,
+      "rationale": "The retrieved facts mention the headphones cost ($378) but contain no information about an iPad purchase or its cost, making it impossible to answer the total cost question.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "a96c20ee_abs",
+      "category": "multi-session",
+      "score": 3,
+      "rationale": "The facts mention presenting a poster at a first research conference and attending Harvard University for that conference, but it's described as thesis research rather than an undergrad course research project, and the Harvard mention is about attending a conference rather than explicitly being the university where the poster was presented for a course project.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "ba358f49_abs",
+      "category": "multi-session",
+      "score": 0,
+      "rationale": "The retrieved facts contain no information about Rachel's age or the user's marriage plans; the query cannot be answered at all from these facts.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "09ba9854_abs",
+      "category": "multi-session",
+      "score": 4,
+      "rationale": "The retrieved facts collectively provide bus fare (~$10-$20) and taxi fare (~$60 or more detailed estimates), allowing the user to calculate savings of roughly $40-$50, though the exact savings depend on the specific airport and destination.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "gpt4_59149c77",
+      "category": "temporal-reasoning",
+      "score": 1,
+      "rationale": "Fact 4 mentions the user attending the 'Ancient Civilizations' exhibit at the Met 'today,' but there is no mention of a visit to MoMA or any date information that would allow calculating the number of days between the two visits.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "gpt4_f49edff3",
+      "category": "temporal-reasoning",
+      "score": 4,
+      "rationale": "The retrieved facts contain all three events but don't explicitly state the chronological order; however, the conversation flow implies the nursery preparation happened first, then the baby shower shopping for the cousin, and then the phone case order, which can be inferred from the sequence of conversations.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "71017276",
+      "category": "temporal-reasoning",
+      "score": 1,
+      "rationale": "The retrieved facts discuss the crystal chandelier's history, care, and research resources, but none mention when the user met their aunt or received the chandelier, so the specific timing question cannot be answered.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "b46e15ed",
+      "category": "temporal-reasoning",
+      "score": 0,
+      "rationale": "No facts were retrieved, so the query cannot be answered at all.",
+      "n_retrieved": 0
+    },
+    {
+      "query_id": "gpt4_fa19884c",
+      "category": "temporal-reasoning",
+      "score": 2,
+      "rationale": "The retrieved facts confirm both events occurred (starting to play keyboard and discovering a bluegrass band) and both mention 'today,' but there are no specific dates or timestamps that would allow calculating the number of days between the two events.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "0bc8ad92",
+      "category": "temporal-reasoning",
+      "score": 2,
+      "rationale": "The retrieved facts discuss museum visits and mention a visit with a friend (the chemistry professor), but none specify when that visit occurred or how many months ago it was.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "af082822",
+      "category": "temporal-reasoning",
+      "score": 0,
+      "rationale": "None of the retrieved facts mention a Nordstrom friends and family sale or anything related to it.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "gpt4_4929293a",
+      "category": "temporal-reasoning",
+      "score": 4,
+      "rationale": "Fact 3 indicates the user was a bridesmaid at their cousin's wedding 'today,' and Fact 2 says they 'just came back from Michael's engagement party today,' but Fact 3 appears to precede Fact 2 chronologically since the cousin's wedding inspired wedding planning thoughts that were already in progress by the time of Michael's engagement party. The cousin's wedding happened first.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "gpt4_b5700ca9",
+      "category": "temporal-reasoning",
+      "score": 2,
+      "rationale": "The retrieved facts confirm the user attended the Maundy Thursday service at the Episcopal Church, but there is no date or timestamp information that would allow calculating how many days ago it occurred.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "9a707b81",
+      "category": "temporal-reasoning",
+      "score": 2,
+      "rationale": "Fact 4 mentions a baking class at a local culinary school 'yesterday' but says nothing about making a friend's birthday cake; the specific detail about the birthday cake and the number of days ago is not present.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "gpt4_1d4ab0c9",
+      "category": "temporal-reasoning",
+      "score": 2,
+      "rationale": "The retrieved facts mention both the start of watering and the first harvest, but lack any date or timestamp information needed to calculate the number of days between the two events.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "gpt4_e072b769",
+      "category": "temporal-reasoning",
+      "score": 0,
+      "rationale": "None of the retrieved facts contain any information about when the user started using Ibotta.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "0db4c65d",
+      "category": "temporal-reasoning",
+      "score": 2,
+      "rationale": "The retrieved facts mention both events (finishing 'The Seven Husbands of Evelyn Hugo' and attending the book reading event) but do not contain any information about the specific dates of these events or the number of days between them.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "gpt4_1d80365e",
+      "category": "temporal-reasoning",
+      "score": 2,
+      "rationale": "The retrieved facts confirm the user took a solo camping trip to Yosemite and mention starting and returning from it, but never specify the number of days spent on the trip.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "gpt4_7f6b06db",
+      "category": "temporal-reasoning",
+      "score": 2,
+      "rationale": "The facts mention a July Eastern Sierra trip and a May Golden Week trip to Kyoto/Osaka, but there is no clear mention of a third trip, and the chronological ordering of three trips is not explicitly stated or recoverable from the retrieved facts.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "gpt4_6dc9b45b",
+      "category": "temporal-reasoning",
+      "score": 0,
+      "rationale": "None of the retrieved facts mention the Seattle International Film Festival or any related attendance details.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "gpt4_8279ba02",
+      "category": "temporal-reasoning",
+      "score": 2,
+      "rationale": "The retrieved facts confirm the user bought a smoker (fact 5 says 'I just got a smoker today'), but there is no date/timestamp information available to calculate how many days ago the purchase was made.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "gpt4_18c2b244",
+      "category": "temporal-reasoning",
+      "score": 1,
+      "rationale": "The retrieved facts mention ShopRite rewards and Ibotta redemption but contain no information about the chronological order of the three specific events mentioned in the query.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "gpt4_a1b77f9c",
+      "category": "temporal-reasoning",
+      "score": 1,
+      "rationale": "The retrieved facts mention starting 'The Power' and 'Sapiens' but contain no information about duration/weeks spent on any of the three items, nor any mention of 'The Nightingale' at all.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "gpt4_1916e0ea",
+      "category": "temporal-reasoning",
+      "score": 1,
+      "rationale": "The retrieved facts mention the FarmFresh subscription cancellation but contain no information about an Instacart online grocery shopping event or any dates, making it impossible to determine the number of days between the two events.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "gpt4_7a0daae1",
+      "category": "temporal-reasoning",
+      "score": 1,
+      "rationale": "The retrieved facts mention receiving a new tennis racket but contain no information about when it was purchased or how many weeks elapsed between purchase and delivery.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "gpt4_468eb063",
+      "category": "temporal-reasoning",
+      "score": 0,
+      "rationale": "None of the retrieved facts mention anyone named Emma or any meeting with Emma.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "gpt4_7abb270c",
+      "category": "temporal-reasoning",
+      "score": 1,
+      "rationale": "The retrieved facts mention a few museum visits (Modern Art Gallery, Science Museum) but do not provide a list of six museums visited or their chronological order.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "gpt4_1e4a8aeb",
+      "category": "temporal-reasoning",
+      "score": 0,
+      "rationale": "No facts were retrieved, so the query cannot be answered at all.",
+      "n_retrieved": 0
+    },
+    {
+      "query_id": "gpt4_4fc4f797",
+      "category": "temporal-reasoning",
+      "score": 2,
+      "rationale": "The retrieved facts mention receiving feedback about soft suspension and planning to test the new setup at VIR, but they don't contain specific dates for both events needed to calculate the number of days between them, except a mention of April 24th for the track day without a clear date for when feedback was received.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "4dfccbf7",
+      "category": "temporal-reasoning",
+      "score": 3,
+      "rationale": "The facts establish that the user started ukulele lessons on a specific day and later took the guitar to Joe's shop, but no explicit dates or number of days between the two events are mentioned, so the exact answer cannot be determined.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "gpt4_61e13b3c",
+      "category": "temporal-reasoning",
+      "score": 1,
+      "rationale": "The retrieved facts mention the Farmers' Market sale and a 'Spring Fling' bundle concept, but contain no dates or timeline information needed to calculate the number of weeks between the two events.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "gpt4_45189cb4",
+      "category": "temporal-reasoning",
+      "score": 1,
+      "rationale": "Only one fact (fact 4) mentions a specific sports event watched (College Football National Championship), but there is no information about the order of multiple sports events in January.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "2ebe6c90",
+      "category": "temporal-reasoning",
+      "score": 0,
+      "rationale": "None of the retrieved facts mention 'The Nightingale' by Kristin Hannah or any reading duration information related to it.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "gpt4_e061b84f",
+      "category": "temporal-reasoning",
+      "score": 2,
+      "rationale": "The retrieved facts mention soccer (charity tournament) and volleyball (league game), which are two sports events, but there is no clear third sport mentioned, no dates/ordering information is provided, and the facts don't directly answer the question about the chronological order of three sports events.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "370a8ff4",
+      "category": "temporal-reasoning",
+      "score": 0,
+      "rationale": "No facts were retrieved, so the query cannot be answered at all.",
+      "n_retrieved": 0
+    },
+    {
+      "query_id": "gpt4_d6585ce8",
+      "category": "temporal-reasoning",
+      "score": 0,
+      "rationale": "None of the retrieved facts contain any information about concerts or musical events the user has personally attended; they are all generic recommendations and tips.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "gpt4_4ef30696",
+      "category": "temporal-reasoning",
+      "score": 0,
+      "rationale": "None of the retrieved facts contain any information about 'The Nightingale' or 'The Hitchhiker's Guide to the Galaxy', nor any specific dates related to reading those books.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "gpt4_ec93e27f",
+      "category": "temporal-reasoning",
+      "score": 3,
+      "rationale": "Fact 1 mentions taking buses lately, and Fact 2 mentions taking a train on March 3rd, but there's no clear way to determine which was more recent since the bus usage has no specific date, making the answer partial and ambiguous.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "6e984301",
+      "category": "temporal-reasoning",
+      "score": 4,
+      "rationale": "Fact 3 shows the user started sculpting classes, and Fact 4 mentions being in classes for about 6 weeks. Fact 1 shows the tool purchase. While the exact timing relationship requires inference (the 6-week mention in Fact 4 appears to be around the same time as the tool purchase in Fact 1), the key information is present to determine approximately 6 weeks, though the precise temporal ordering between facts isn't explicitly stated.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "8077ef71",
+      "category": "temporal-reasoning",
+      "score": 0,
+      "rationale": "The retrieved facts discuss charity events and a 'Walk for Cancer' event but contain no information about the user attending a networking event or when it occurred.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "gpt4_f420262c",
+      "category": "temporal-reasoning",
+      "score": 2,
+      "rationale": "The facts mention experiences with American Airlines (NY to LA, LAX to JFK) and United Airlines (Boston to Chicago), but there is no clear chronological ordering established, and the temporal references ('today', 'recently') are ambiguous and potentially conflicting across different conversations, making it impossible to determine a definitive earliest-to-latest order.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "gpt4_8e165409",
+      "category": "temporal-reasoning",
+      "score": 2,
+      "rationale": "The retrieved facts confirm both events (repotting the spider plant and giving cuttings to Mrs. Johnson) but contain no dates or timestamps, making it impossible to determine how many days passed between them.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "gpt4_74aed68e",
+      "category": "temporal-reasoning",
+      "score": 2,
+      "rationale": "The facts mention both the spark plug replacement and the Turbocharged Tuesdays event but do not provide specific dates for either, making it impossible to calculate the number of days between them.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "bcbe585f",
+      "category": "temporal-reasoning",
+      "score": 2,
+      "rationale": "The facts confirm the user attended a bird watching workshop at the local Audubon society, but there are no timestamps or dates on the messages, so it's impossible to determine how many weeks ago this occurred.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "gpt4_21adecb5",
+      "category": "temporal-reasoning",
+      "score": 1,
+      "rationale": "The retrieved facts mention the user submitted a master's thesis but contain no information about when they completed their undergraduate degree or the time gap between the two events.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "5e1b23de",
+      "category": "temporal-reasoning",
+      "score": 0,
+      "rationale": "None of the retrieved facts contain any information about the user attending a photography workshop or when it occurred.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "gpt4_98f46fc6",
+      "category": "temporal-reasoning",
+      "score": 1,
+      "rationale": "The retrieved facts discuss a charity gala and a charity bake sale but contain no information about the chronological order in which the user participated in these events.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "gpt4_af6db32f",
+      "category": "temporal-reasoning",
+      "score": 0,
+      "rationale": "None of the retrieved facts mention the Super Bowl or anything related to watching it.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "eac54adc",
+      "category": "temporal-reasoning",
+      "score": 0,
+      "rationale": "No facts were retrieved, so the query cannot be answered at all.",
+      "n_retrieved": 0
+    },
+    {
+      "query_id": "gpt4_7ddcf75f",
+      "category": "temporal-reasoning",
+      "score": 0,
+      "rationale": "No facts were retrieved, so the query cannot be answered at all.",
+      "n_retrieved": 0
+    },
+    {
+      "query_id": "gpt4_a2d1d1f6",
+      "category": "temporal-reasoning",
+      "score": 3,
+      "rationale": "The facts confirm the user harvested their first batch of herbs and that it happened on a specific day ('today' in the conversation), but there is no date or timestamp provided to calculate how many days ago it was.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "gpt4_85da3956",
+      "category": "temporal-reasoning",
+      "score": 0,
+      "rationale": "No facts were retrieved, so the query cannot be answered at all.",
+      "n_retrieved": 0
+    },
+    {
+      "query_id": "gpt4_b0863698",
+      "category": "temporal-reasoning",
+      "score": 0,
+      "rationale": "The retrieved facts discuss planning a future charity event and marathon training, but contain no information about a past 5K charity run or when it occurred.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "gpt4_68e94287",
+      "category": "temporal-reasoning",
+      "score": 2,
+      "rationale": "The retrieved facts mention the vegan chili recipe post but contain no information about the #PlankChallenge, making it impossible to determine which event happened first.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "gpt4_e414231e",
+      "category": "temporal-reasoning",
+      "score": 2,
+      "rationale": "The retrieved facts confirm both events occurred (fixing the mountain bike and deciding to upgrade pedals) but contain no date or timestamp information to determine how many days passed between them.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "gpt4_7ca326fa",
+      "category": "temporal-reasoning",
+      "score": 1,
+      "rationale": "Only one fact (fact 4) mentions Emma as a graduate, but there is no information about Rachel, Alex, or any graduation order among them.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "gpt4_7bc6cf22",
+      "category": "temporal-reasoning",
+      "score": 2,
+      "rationale": "The first retrieved fact confirms the user read the March 15th issue of The New Yorker 'today,' but there is no date or timestamp indicating when that conversation occurred, so the number of days ago cannot be determined.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "2ebe6c92",
+      "category": "temporal-reasoning",
+      "score": 1,
+      "rationale": "The retrieved facts mention a book being currently read ('The Song of Achilles') but none mention a book that was finished a week ago.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "gpt4_e061b84g",
+      "category": "temporal-reasoning",
+      "score": 3,
+      "rationale": "The retrieved facts mention a charity soccer tournament and a volleyball league game, but there's no clear temporal marker indicating which event was 'two weeks ago'; the soccer tournament is described as happening 'today' without a date reference to confirm timing.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "71017277",
+      "category": "temporal-reasoning",
+      "score": 0,
+      "rationale": "No facts were retrieved, so the query cannot be answered at all.",
+      "n_retrieved": 0
+    },
+    {
+      "query_id": "b46e15ee",
+      "category": "temporal-reasoning",
+      "score": 0,
+      "rationale": "No facts were retrieved, so the query cannot be answered at all.",
+      "n_retrieved": 0
+    },
+    {
+      "query_id": "gpt4_d6585ce9",
+      "category": "temporal-reasoning",
+      "score": 0,
+      "rationale": "None of the retrieved facts contain any information about who the user went with to a music event last Saturday.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "gpt4_1e4a8aec",
+      "category": "temporal-reasoning",
+      "score": 2,
+      "rationale": "The retrieved facts are about gardening topics generally but none mention a specific gardening activity the user did two weeks ago.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "gpt4_f420262d",
+      "category": "temporal-reasoning",
+      "score": 0,
+      "rationale": "None of the retrieved facts mention Valentine's Day or a flight on February 14th, so the query is completely unanswered.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "gpt4_59149c78",
+      "category": "temporal-reasoning",
+      "score": 2,
+      "rationale": "The retrieved facts mention art museum events but none specifically reference an event the user participated in 'two weeks ago' or its location.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "gpt4_e414231f",
+      "category": "temporal-reasoning",
+      "score": 3,
+      "rationale": "Facts 2 and 3 mention fixing a flat tire on a mountain bike (replacing inner tube, cleaning chain), but the timing is ambiguous\u2014one says 'a few weeks ago' and the other says 'today,' neither clearly specifying 'past weekend,' so the answer is partially present but not definitively confirmed.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "gpt4_4929293b",
+      "category": "temporal-reasoning",
+      "score": 0,
+      "rationale": "No facts were retrieved, so the query cannot be answered at all.",
+      "n_retrieved": 0
+    },
+    {
+      "query_id": "gpt4_468eb064",
+      "category": "temporal-reasoning",
+      "score": 0,
+      "rationale": "None of the retrieved facts mention a lunch meeting last Tuesday or any participants in such a meeting.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "gpt4_fa19884d",
+      "category": "temporal-reasoning",
+      "score": 2,
+      "rationale": "The retrieved facts discuss Jinsang extensively and suggest the user recently started listening to Jinsang, but none of them specifically mention 'last Friday' or confirm that Jinsang is the artist the user started listening to on that day.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "9a707b82",
+      "category": "temporal-reasoning",
+      "score": 1,
+      "rationale": "The retrieved facts discuss cooking topics like beef stroganoff, dinner parties, and Indian dishes, but none specifically mention cooking something for a friend a couple of days ago.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "eac54add",
+      "category": "temporal-reasoning",
+      "score": 0,
+      "rationale": "None of the retrieved facts relate to any personal business milestone mentioned by the user four weeks ago.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "4dfccbf8",
+      "category": "temporal-reasoning",
+      "score": 0,
+      "rationale": "None of the retrieved facts mention Rachel, any Wednesday event, or anything related to the user's query about an activity two months ago.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "0bc8ad93",
+      "category": "temporal-reasoning",
+      "score": 4,
+      "rationale": "The retrieved facts clearly indicate the user visited the Science Museum with a friend (a chemistry professor) for a behind-the-scenes tour, though the exact timing of 'two months ago' is not explicitly confirmed.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "6e984302",
+      "category": "temporal-reasoning",
+      "score": 0,
+      "rationale": "None of the retrieved facts mention any investment or competition purchase; they are entirely unrelated to the query.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "gpt4_8279ba03",
+      "category": "temporal-reasoning",
+      "score": 0,
+      "rationale": "None of the retrieved facts mention any kitchen appliance purchase, let alone one made 10 days ago.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "gpt4_b5700ca0",
+      "category": "temporal-reasoning",
+      "score": 0,
+      "rationale": "None of the retrieved facts contain any information about the user's personal attendance at a religious activity last week.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "gpt4_68e94288",
+      "category": "temporal-reasoning",
+      "score": 0,
+      "rationale": "None of the retrieved facts contain any information about the user's specific social media activity from 5 days ago.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "gpt4_2655b836",
+      "category": "temporal-reasoning",
+      "score": 4,
+      "rationale": "The facts indicate the user's first service was on March 15th and the first issue after that was a GPS system problem on March 22nd, which required dealership replacement. The answer is essentially present with minor gaps (no explicit statement that this was the 'first' issue, but the timeline strongly implies it).",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "gpt4_2487a7cb",
+      "category": "temporal-reasoning",
+      "score": 2,
+      "rationale": "Only the 'Data Analysis using Python' webinar is mentioned (two months ago), but there is no mention of the 'Effective Time Management' workshop, so the comparative question cannot be answered.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "gpt4_76048e76",
+      "category": "temporal-reasoning",
+      "score": 2,
+      "rationale": "The facts mention a bike repair in mid-February and car maintenance discussions, but there is no specific mention of when in February the car was taken care of, so the query about which came first cannot be answered.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "gpt4_2312f94c",
+      "category": "temporal-reasoning",
+      "score": 3,
+      "rationale": "The facts clearly state the Dell XPS 13 arrived on February 25th and was pre-ordered January 28th, but the exact acquisition date of the Samsung Galaxy S22 is not explicitly stated, only that a student discount and trade-in were used. Without a clear date for the phone purchase, we can't definitively compare which came first, though contextual clues suggest the phone may have been obtained around the same time or earlier.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "0bb5a684",
+      "category": "temporal-reasoning",
+      "score": 3,
+      "rationale": "The workshop date (January 10th) is clearly stated, but the date of the team meeting is never mentioned, so the number of days between them cannot be determined.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "08f4fc43",
+      "category": "temporal-reasoning",
+      "score": 0,
+      "rationale": "None of the retrieved facts are related to the user's query about the number of days between a Sunday mass at St. Mary's Church and an Ash Wednesday service at the cathedral.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "2c63a862",
+      "category": "temporal-reasoning",
+      "score": 1,
+      "rationale": "The retrieved facts confirm the user worked with Rachel and eventually found a house they loved, but none of them mention a specific number of days between starting with Rachel and finding the house.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "gpt4_385a5000",
+      "category": "temporal-reasoning",
+      "score": 0,
+      "rationale": "No facts were retrieved, so the query cannot be answered at all.",
+      "n_retrieved": 0
+    },
+    {
+      "query_id": "2a1811e2",
+      "category": "temporal-reasoning",
+      "score": 1,
+      "rationale": "The retrieved facts mention the Holi celebration date (February 26th) but contain no information about a Sunday mass at St. Mary's Church, making it impossible to determine the number of days between the two events.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "bbf86515",
+      "category": "temporal-reasoning",
+      "score": 0,
+      "rationale": "None of the retrieved facts mention 'Rack Fest' or 'Turbocharged Tuesdays' events, making them completely unrelated to the query.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "gpt4_5dcc0aab",
+      "category": "temporal-reasoning",
+      "score": 0,
+      "rationale": "No facts were retrieved, so the query cannot be answered at all.",
+      "n_retrieved": 0
+    },
+    {
+      "query_id": "gpt4_0b2f1d21",
+      "category": "temporal-reasoning",
+      "score": 2,
+      "rationale": "The facts establish that both events occurred (coffee maker purchase ~3 weeks ago, stand mixer malfunction requiring repair shop visit) but do not provide specific dates or a clear temporal ordering to determine which happened first.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "f0853d11",
+      "category": "temporal-reasoning",
+      "score": 1,
+      "rationale": "Only the 'Walk for Hunger' date (February 21st) is mentioned; there is no information about a 'Coastal Cleanup' event, so the number of days between them cannot be determined.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "gpt4_6ed717ea",
+      "category": "temporal-reasoning",
+      "score": 3,
+      "rationale": "The facts mention the training pads were bought 'about a month ago' and the dog bed '3 weeks ago,' suggesting the training pads for Luna were purchased first, but the timing is relative to different conversation timestamps, making the comparison uncertain.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "gpt4_70e84552",
+      "category": "temporal-reasoning",
+      "score": 4,
+      "rationale": "The retrieved facts show the fence was fixed three weeks ago and hoof trimming was done about two weeks ago, indicating the fence was fixed first. The answer is essentially present though it requires inference from the timeline details.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "a3838d2b",
+      "category": "temporal-reasoning",
+      "score": 3,
+      "rationale": "The retrieved facts mention 'Dance for a Cause' (May 1st) and 'Food for Thought' (September 25th) as charity events the user participated in, plus the 'Run for the Cure' event, but there's no clear timeline establishing which events occurred before 'Run for the Cure' and no definitive count of prior events.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "gpt4_93159ced",
+      "category": "temporal-reasoning",
+      "score": 2,
+      "rationale": "The facts mention the user has been at NovaTech for about 4 years and 3 months and graduated from UC Berkeley in Computer Science, but there is no information about how long they worked before starting at NovaTech or any prior work experience details.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "gpt4_2d58bcd6",
+      "category": "temporal-reasoning",
+      "score": 2,
+      "rationale": "The retrieved facts mention finishing 'The Hate U Give' but contain no information about reading or finishing 'The Nightingale', making it impossible to compare which was finished first.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "gpt4_65aabe59",
+      "category": "temporal-reasoning",
+      "score": 3,
+      "rationale": "Fact 2 mentions the smart thermostat was set up a month ago, and Fact 5 mentions the mesh network (Wi-Fi router) was upgraded 3 weeks ago, implying the smart thermostat was set up first, but the timeline is indirect and requires inference rather than an explicit statement of order.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "982b5123",
+      "category": "temporal-reasoning",
+      "score": 0,
+      "rationale": "None of the retrieved facts are related to booking an Airbnb in San Francisco or any travel-related topic.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "b9cfe692",
+      "category": "temporal-reasoning",
+      "score": 1,
+      "rationale": "Only the duration for 'The Nightingale' (about three weeks) is mentioned; there is no information about how long it took to finish 'The Seven Husbands of Evelyn Hugo', so the combined total cannot be determined.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "gpt4_4edbafa2",
+      "category": "temporal-reasoning",
+      "score": 0,
+      "rationale": "None of the retrieved facts mention any BBQ event in June or any related information.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "c8090214",
+      "category": "temporal-reasoning",
+      "score": 1,
+      "rationale": "The facts mention the iPhone 13 Pro was bought on Black Friday at Best Buy, but there is no mention of attending a Holiday Market or its date, so the specific time difference cannot be determined.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "gpt4_483dd43c",
+      "category": "temporal-reasoning",
+      "score": 0,
+      "rationale": "No facts were retrieved, so the query cannot be answered at all.",
+      "n_retrieved": 0
+    },
+    {
+      "query_id": "e4e14d04",
+      "category": "temporal-reasoning",
+      "score": 2,
+      "rationale": "The retrieved facts mention 'Book Lovers Unite' and a meetup, but do not specify how long the user had been a member when they attended the meetup.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "c9f37c46",
+      "category": "temporal-reasoning",
+      "score": 4,
+      "rationale": "Fact 2 says the user started watching stand-up regularly about 3 months ago, and fact 5 says they attended an open mic night last month. This implies they had been watching for roughly 2 months before attending, though the exact duration requires inference across two separate conversations and isn't explicitly stated as a single fact.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "gpt4_2c50253f",
+      "category": "temporal-reasoning",
+      "score": 3,
+      "rationale": "Fact 1 states the user recently started waking up at 7:00 AM (general), and Fact 3 says on Tuesdays and Thursdays they wake up 15 minutes earlier to meditate, implying 6:45 AM on those days. The answer can be inferred but the exact Tuesday/Thursday wake-up time is not explicitly stated.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "dcfa8644",
+      "category": "temporal-reasoning",
+      "score": 5,
+      "rationale": "The retrieved facts clearly state the Adidas running shoes were bought on January 10th and the Converse shoelace broke on January 24th, allowing calculation of 14 days.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "gpt4_b4a80587",
+      "category": "temporal-reasoning",
+      "score": 3,
+      "rationale": "The facts show the user received the prime lens and then took it on the coastal trip, implying the lens arrived first, but there is no explicit mention of when the lens arrived relative to the trip planning or a clear temporal ordering of the two events.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "gpt4_9a159967",
+      "category": "temporal-reasoning",
+      "score": 2,
+      "rationale": "The facts mention Southwest (1 flight in March) and United (1 flight in March), but there's no comprehensive data about all flights in March and April to definitively determine which airline was flown the most.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "cc6d1ec1",
+      "category": "temporal-reasoning",
+      "score": 0,
+      "rationale": "No facts were retrieved, so the query cannot be answered at all.",
+      "n_retrieved": 0
+    },
+    {
+      "query_id": "gpt4_8c8961ae",
+      "category": "temporal-reasoning",
+      "score": 4,
+      "rationale": "Fact 3 says the Europe trip with family was 'just last month,' and fact 4 says the Thailand solo trip was 'last year,' indicating the Thailand trip came first. The answer is essentially present, though the exact dates aren't given.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "gpt4_d9af6064",
+      "category": "temporal-reasoning",
+      "score": 5,
+      "rationale": "The retrieved facts clearly show the new router was set up on January 15th and the smart thermostat was set up on February 10th, so the router was set up first.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "gpt4_7de946e7",
+      "category": "temporal-reasoning",
+      "score": 5,
+      "rationale": "The facts clearly show the persistent cough began around late January (visited Dr. Smith on February 10th after three weeks of coughing), while the skin tag removal was on February 22nd, establishing the cough came first.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "d01c6aa8",
+      "category": "temporal-reasoning",
+      "score": 0,
+      "rationale": "None of the retrieved facts contain any information about the user's age or when they moved to the United States.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "993da5e2",
+      "category": "temporal-reasoning",
+      "score": 2,
+      "rationale": "The retrieved facts mention the furniture rearrangement happened three weeks ago but contain no information about when the area rug was purchased or how long it had been in use at the time of rearrangement.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "a3045048",
+      "category": "temporal-reasoning",
+      "score": 5,
+      "rationale": "The retrieved facts clearly state the gift was ordered on April 15th and the party was on April 22nd, meaning the gift was ordered 7 days before the party.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "gpt4_d31cdae3",
+      "category": "temporal-reasoning",
+      "score": 2,
+      "rationale": "The retrieved facts discuss a solo trip to the American Southwest and mention travel writers/Europe tangentially, but never explicitly state which trip came first or reference a prior solo trip to Europe.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "gpt4_cd90e484",
+      "category": "temporal-reasoning",
+      "score": 4,
+      "rationale": "The facts establish the binoculars were obtained exactly three weeks ago and the goldfinches were noticed a week ago during a neighborhood walk, implying about two weeks of use before seeing the goldfinches, though the exact timeline requires inference from combining facts.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "gpt4_88806d6e",
+      "category": "temporal-reasoning",
+      "score": 0,
+      "rationale": "None of the retrieved facts mention Mark, Sarah, or Tom, nor do they address the order in which the user met anyone.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "gpt4_4cd9eba1",
+      "category": "temporal-reasoning",
+      "score": 4,
+      "rationale": "The facts show acceptance on March 20th and pre-departure orientation sessions starting on 3/27 (March 27th), which is exactly 1 week after acceptance. The answer is derivable from the retrieved facts, though it requires calculation.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "gpt4_93f6379c",
+      "category": "temporal-reasoning",
+      "score": 0,
+      "rationale": "None of the retrieved facts are related to the query about joining 'Page Turners' or 'Marketing Professionals' groups.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "b29f3365",
+      "category": "temporal-reasoning",
+      "score": 2,
+      "rationale": "The retrieved facts mention the user bought a new guitar amp two weeks ago and that they take guitar lessons, but there is no information about how long they had been taking guitar lessons at the time of the amp purchase.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "gpt4_2f56ae70",
+      "category": "temporal-reasoning",
+      "score": 3,
+      "rationale": "Fact 4 mentions Apple TV+ as a service used 'for a few months now,' and fact 3 mentions Netflix, Hulu, and Amazon Prime used 'for the past 6 months,' suggesting Apple TV+ is more recent, but there's no definitive statement about which service was started most recently.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "6613b389",
+      "category": "temporal-reasoning",
+      "score": 1,
+      "rationale": "The facts establish the anniversary is July 22nd and that Rachel got engaged, but there is no information about when Rachel got engaged, so the query cannot be answered.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "gpt4_78cf46a3",
+      "category": "temporal-reasoning",
+      "score": 4,
+      "rationale": "Fact 2 states the narrator lost their phone charger about two weeks ago, and fact 5 mentions they are happy with their 'new phone case' (implying recent acquisition). The timeline suggests the charger was lost first, and the facts support answering the question, though the exact timing of the phone case receipt isn't explicitly stated.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "gpt4_0a05b494",
+      "category": "temporal-reasoning",
+      "score": 1,
+      "rationale": "The retrieved facts mention meeting the Australian tourist on the subway last Thursday but contain no information about meeting a woman selling jam at a farmer's market, making it impossible to determine who was met first.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "gpt4_1a1dc16d",
+      "category": "temporal-reasoning",
+      "score": 1,
+      "rationale": "The retrieved facts mention a pride parade on May 1st and a meeting agenda request, but there is no mention of a meeting with 'Rachel' nor any information about the chronological order of these events.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "gpt4_2f584639",
+      "category": "temporal-reasoning",
+      "score": 0,
+      "rationale": "No facts were retrieved, so the query cannot be answered at all.",
+      "n_retrieved": 0
+    },
+    {
+      "query_id": "gpt4_213fd887",
+      "category": "temporal-reasoning",
+      "score": 5,
+      "rationale": "The retrieved facts clearly establish that the user joined the volleyball league about 2 months ago and did the charity 5K run about 1 month ago, meaning the volleyball league came first.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "gpt4_5438fa52",
+      "category": "temporal-reasoning",
+      "score": 0,
+      "rationale": "None of the retrieved facts mention a cultural festival attendance or Spanish classes, so the query is completely unanswered.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "gpt4_c27434e8",
+      "category": "temporal-reasoning",
+      "score": 1,
+      "rationale": "The retrieved facts discuss both the Ferrari 288 GTO and Japanese Zero fighter plane models but contain no information about which project was started first or their relative timelines.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "gpt4_fe651585",
+      "category": "temporal-reasoning",
+      "score": 2,
+      "rationale": "The facts mention Alex adopting a baby girl from China in January, but contain no information about Rachel or when Rachel became a parent, so the comparison cannot be made.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "8c18457d",
+      "category": "temporal-reasoning",
+      "score": 4,
+      "rationale": "The retrieved facts contain both dates needed: the graduation gift was bought on 3/8 and the birthday gift on March 15th, allowing calculation of 7 days between them.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "gpt4_70e84552_abs",
+      "category": "temporal-reasoning",
+      "score": 3,
+      "rationale": "Fact 4 confirms the fence was fixed (congratulations on fixing it), and facts 3/5 discuss plans to get a new cow but don't mention purchasing three cows from Peter, so the temporal ordering of these two events cannot be fully determined from the retrieved facts.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "gpt4_93159ced_abs",
+      "category": "temporal-reasoning",
+      "score": 1,
+      "rationale": "The retrieved facts mention working at NovaTech (not Google) for about 4 years and 3 months, but there is no mention of Google or any prior work history before a current job at Google, so the query is not answered.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "982b5123_abs",
+      "category": "temporal-reasoning",
+      "score": 0,
+      "rationale": "None of the retrieved facts are related to booking an Airbnb in Sacramento.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "c8090214_abs",
+      "category": "temporal-reasoning",
+      "score": 0,
+      "rationale": "None of the retrieved facts mention an iPad purchase or a Holiday Market attendance, making them completely unrelated to the query.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "gpt4_c27434e8_abs",
+      "category": "temporal-reasoning",
+      "score": 3,
+      "rationale": "The retrieved facts mention the Ferrari model and provide some timeline info (started about three weeks ago), but there is no mention of when the Porsche 991 Turbo S model was started, so the query cannot be fully answered.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "gpt4_fe651585_abs",
+      "category": "temporal-reasoning",
+      "score": 0,
+      "rationale": "None of the retrieved facts contain any information about Tom or Alex becoming parents, so the query cannot be answered at all.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "6a1eabeb",
+      "category": "knowledge-update",
+      "score": 5,
+      "rationale": "The retrieved facts clearly contain the user's personal best time: initially 27:12 (fact 3), later improved to 25:50 (fact 2), providing a complete answer to the query.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "6aeb4375",
+      "category": "knowledge-update",
+      "score": 4,
+      "rationale": "The retrieved facts contain two different mentions: one where the user says they've tried four Korean restaurants and another where they say three, indicating the count may have changed over time. The most recent mention (fact 1) says four, which answers the query, though the conflicting numbers introduce minor ambiguity.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "830ce83f",
+      "category": "knowledge-update",
+      "score": 5,
+      "rationale": "The retrieved facts clearly and completely answer the query: Rachel moved to Chicago, supported by facts #1 and #5.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "852ce960",
+      "category": "knowledge-update",
+      "score": 5,
+      "rationale": "The retrieved facts clearly and explicitly state the user was pre-approved for $350,000 from Wells Fargo.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "945e3d21",
+      "category": "knowledge-update",
+      "score": 5,
+      "rationale": "Fact 2 clearly states the user does yoga twice a week to help relax and focus, and Fact 1 confirms yoga helps with anxiety, fully answering the query.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "d7c942c3",
+      "category": "knowledge-update",
+      "score": 5,
+      "rationale": "The retrieved facts clearly answer the query: initially the user's mom was using a paper list (fact 3), but later the user confirms they are now using the same grocery list app (fact 1), with the assistant also acknowledging this (fact 2).",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "71315a70",
+      "category": "knowledge-update",
+      "score": 5,
+      "rationale": "The retrieved facts clearly show the user spent 10-12 hours on their abstract ocean sculpture, with earlier mentions of 5-6 hours showing the progression.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "89941a93",
+      "category": "knowledge-update",
+      "score": 5,
+      "rationale": "The retrieved facts clearly show the user initially had three bikes (road, mountain, commuter) and later acquired a fourth (hybrid), so the user currently owns four bikes.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "ce6d2d27",
+      "category": "knowledge-update",
+      "score": 5,
+      "rationale": "The first two retrieved facts clearly and explicitly state that the user takes a cocktail-making class on Fridays.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "9ea5eabc",
+      "category": "knowledge-update",
+      "score": 0,
+      "rationale": "No facts were retrieved, so the query cannot be answered at all.",
+      "n_retrieved": 0
+    },
+    {
+      "query_id": "07741c44",
+      "category": "knowledge-update",
+      "score": 3,
+      "rationale": "The first retrieved fact mentions 'keeping them under the bed can indeed cause them to smell,' implying the user initially keeps old sneakers under the bed, but this is only an indirect reference and the explicit user statement about initial storage location is not directly retrieved.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "a1eacc2a",
+      "category": "knowledge-update",
+      "score": 4,
+      "rationale": "The retrieved facts contain two different counts: four stories (from the user's earlier statement) and seven stories in three months (from the assistant's later congratulation), indicating the number changed over time. The most recent count is seven, which essentially answers the query, though the evolving number introduces minor ambiguity.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "184da446",
+      "category": "knowledge-update",
+      "score": 0,
+      "rationale": "None of the retrieved facts mention 'A Short History of Nearly Everything' or how many pages the user has read of it.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "031748ae",
+      "category": "knowledge-update",
+      "score": 4,
+      "rationale": "The facts show the user initially led 4 engineers (fact 2) and later led 5 engineers (facts 4 and 5), providing both numbers, though the progression is implied rather than explicitly stated as 'when I started' vs 'now'.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "4d6b87c8",
+      "category": "knowledge-update",
+      "score": 4,
+      "rationale": "The retrieved facts contain the user's stated to-watch list count, though there is conflicting information: facts 1 and 3 say 25 titles while fact 4 says 20 titles, making it unclear which is the current number.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "0f05491a",
+      "category": "knowledge-update",
+      "score": 4,
+      "rationale": "The retrieved facts contain direct answers to the query about stars needed for gold level, though there is conflicting information (300 vs 400 stars) between two assistant responses, which introduces some uncertainty.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "08e075c7",
+      "category": "knowledge-update",
+      "score": 5,
+      "rationale": "The retrieved facts clearly answer the query: the user has mentioned using their Fitbit Charge 3 for 6 months (fact 1) and later for 9 months (fact 2), providing a complete picture of the duration of use over time.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "f9e8c073",
+      "category": "knowledge-update",
+      "score": 3,
+      "rationale": "Two conflicting answers are present: fact 3 says three sessions and fact 5 says five sessions, so the retrieved facts contain relevant information but are contradictory, leaving the exact answer uncertain.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "41698283",
+      "category": "knowledge-update",
+      "score": 3,
+      "rationale": "The facts indicate the user has a 70-200mm zoom lens (described as 'new' in one assistant message and 'recently' used in another), and is considering but hasn't yet purchased a wide-angle lens, suggesting the 70-200mm is the most recent purchase. However, there's no explicit statement like 'I just bought a 70-200mm lens' to definitively confirm it as the most recent purchase.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "2698e78f",
+      "category": "knowledge-update",
+      "score": 0,
+      "rationale": "No facts were retrieved, so the query cannot be answered at all.",
+      "n_retrieved": 0
+    },
+    {
+      "query_id": "b6019101",
+      "category": "knowledge-update",
+      "score": 3,
+      "rationale": "Two facts mention MCU film counts (4 and 5) from the last 3 months, but they contradict each other, making it unclear which is the accurate/most recent answer.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "45dc21b6",
+      "category": "knowledge-update",
+      "score": 5,
+      "rationale": "Fact #3 clearly states the user has tried 3 of Emma's recipes, which directly and completely answers the query.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "5a4f22c0",
+      "category": "knowledge-update",
+      "score": 1,
+      "rationale": "The retrieved facts mention Rachel as an old colleague from the user's previous company but never specify which company she is currently working at; the 'Company' field in the spreadsheet just says 'Old Company' as a placeholder.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "6071bd76",
+      "category": "knowledge-update",
+      "score": 2,
+      "rationale": "Fact #2 mentions the user's French press ratio (1 tbsp per 6 oz water), but there is no information about a previous ratio or any change/switch, so the query about whether they switched to more or less water cannot be answered.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "e493bb7c",
+      "category": "knowledge-update",
+      "score": 5,
+      "rationale": "The retrieved facts clearly state that the 'Ethereal Dreams' painting by Emma Taylor is currently hanging in the user's bedroom, specifically above their bed.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "618f13b2",
+      "category": "knowledge-update",
+      "score": 5,
+      "rationale": "The retrieved facts clearly and explicitly state that the user has worn their new black Converse Chuck Taylor All Star sneakers four times, directly answering the query.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "72e3ee87",
+      "category": "knowledge-update",
+      "score": 5,
+      "rationale": "The retrieved facts clearly state the user completed 50 episodes of Crash Course's Science series, directly and completely answering the query.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "c4ea545c",
+      "category": "knowledge-update",
+      "score": 2,
+      "rationale": "The facts mention current gym frequency (3 days in one fact, 4 times/week in another) but contain no information about previous gym frequency, making it impossible to answer whether frequency has increased.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "01493427",
+      "category": "knowledge-update",
+      "score": 4,
+      "rationale": "The retrieved facts contain two different counts (17 and 25) for new postcards added since the user started collecting again, with the most recent mention being 25, providing an answer but with some ambiguity due to the conflicting numbers.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "6a27ffc2",
+      "category": "knowledge-update",
+      "score": 5,
+      "rationale": "Multiple retrieved facts clearly and consistently state that the user has completed 30 videos of Corey Schafer's Python programming series.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "2133c1b5",
+      "category": "knowledge-update",
+      "score": 0,
+      "rationale": "No facts were retrieved, so the query cannot be answered at all.",
+      "n_retrieved": 0
+    },
+    {
+      "query_id": "18bc8abd",
+      "category": "knowledge-update",
+      "score": 4,
+      "rationale": "Fact 4 explicitly states the user's current favourite BBQ sauce is Kansas City Masterpiece BBQ sauce, which directly answers the query about their current BBQ sauce obsession.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "db467c8c",
+      "category": "knowledge-update",
+      "score": 3,
+      "rationale": "Fact 2 mentions parents living with the user for six months, and fact 3 mentions nine months, but there is no definitive or current duration stated, and the timeline is inconsistent across facts, providing only a partial answer.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "7a87bd0c",
+      "category": "knowledge-update",
+      "score": 4,
+      "rationale": "The retrieved facts show the user mentioned sticking to the routine for 3 weeks in one conversation and then 4 weeks in a later conversation, providing a clear answer about the duration, though the exact current timeframe relative to today is uncertain.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "e61a7584",
+      "category": "knowledge-update",
+      "score": 4,
+      "rationale": "Fact 3 explicitly states the user has had Luna for about 9 months, which directly answers the query, though this information may be outdated depending on when it was recorded.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "1cea1afa",
+      "category": "knowledge-update",
+      "score": 0,
+      "rationale": "No facts were retrieved, so the query cannot be answered at all.",
+      "n_retrieved": 0
+    },
+    {
+      "query_id": "ed4ddc30",
+      "category": "knowledge-update",
+      "score": 4,
+      "rationale": "The retrieved facts contain two different counts (20 dozen and 30 dozen) from different time points, with the most recent being 30 dozen, which likely represents the current stock. The answer is present but the conflicting numbers from different conversations introduce some ambiguity about the truly current count.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "8fb83627",
+      "category": "knowledge-update",
+      "score": 5,
+      "rationale": "Multiple retrieved facts clearly and consistently state that the user has finished reading three issues of National Geographic and is currently on the fourth.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "b01defab",
+      "category": "knowledge-update",
+      "score": 5,
+      "rationale": "The retrieved facts clearly show the user finished reading 'The Nightingale' by Kristin Hannah, as stated in facts 2 and 5 where the user explicitly says they finished it recently and found it powerful and emotional.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "22d2cb42",
+      "category": "knowledge-update",
+      "score": 3,
+      "rationale": "The user was planning to get their guitar serviced at Rhythm Central on Main St based on a friend's recommendation, but there's no confirmation they actually went there; the conversation only shows intent to call them.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "0e4e4c46",
+      "category": "knowledge-update",
+      "score": 5,
+      "rationale": "The retrieved facts clearly indicate the user's current highest score in Ticket to Ride is 132 points, with facts 3 and 5 both confirming this, and fact 2 showing the earlier score of 124 that was later surpassed.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "4b24c848",
+      "category": "knowledge-update",
+      "score": 4,
+      "rationale": "The retrieved facts show the user initially bought three tops and later mentioned having five tops from H&M, providing a clear answer of five tops so far, though there's some ambiguity about whether additional purchases were made after that.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "7e974930",
+      "category": "knowledge-update",
+      "score": 1,
+      "rationale": "The retrieved facts mention the user's small business market sales tracking but contain no specific information about earnings at the Downtown Farmers Market or any specific visit.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "603deb26",
+      "category": "knowledge-update",
+      "score": 5,
+      "rationale": "Multiple retrieved facts clearly and consistently state the user has tried making a Negroni at home 10 times since their friend Emma showed them how.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "59524333",
+      "category": "knowledge-update",
+      "score": 0,
+      "rationale": "No facts were retrieved, so the query cannot be answered at all.",
+      "n_retrieved": 0
+    },
+    {
+      "query_id": "5831f84d",
+      "category": "knowledge-update",
+      "score": 4,
+      "rationale": "Fact 1 mentions 12 Crash Course videos on computer science, and Fact 2 references 15 Crash Course videos in a few weeks, collectively providing a clear answer to the query about how many Crash Course videos were watched recently.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "eace081b",
+      "category": "knowledge-update",
+      "score": 1,
+      "rationale": "The retrieved facts confirm the user is planning a birthday trip to Hawaii but contain no information about where they plan to stay (hotel, resort, Airbnb, etc.).",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "affe2881",
+      "category": "knowledge-update",
+      "score": 5,
+      "rationale": "The retrieved facts clearly state the user has spotted 27 different species in their local park (fact 1), and a later update mentions reaching 32 species (fact 4), providing a complete answer to the query.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "50635ada",
+      "category": "knowledge-update",
+      "score": 2,
+      "rationale": "The facts mention the user just hit 20,000 miles making them eligible for Premier Silver, and an assistant response references Premier Gold status, but there is no clear statement about what the user's previous frequent flyer status was before their current one.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "e66b632c",
+      "category": "knowledge-update",
+      "score": 5,
+      "rationale": "Fact 5 explicitly states the user's personal best time for the charity 5K run was 27 minutes and 45 seconds, and Fact 1 mentions a later personal best of 26:30, while Fact 3 mentions shaving off about a minute and a half from the previous record, all consistently pointing to 27:45 as the previous personal best.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "0ddfec37",
+      "category": "knowledge-update",
+      "score": 4,
+      "rationale": "Fact 5 explicitly states the user has added 15 autographed baseballs in the first three months of collecting, which directly answers the query. Fact 2 mentions 20 baseballs in 'a few months' but fact 5 is more precise for the 'first three months' timeframe.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "f685340e",
+      "category": "knowledge-update",
+      "score": 0,
+      "rationale": "No facts were retrieved, so the query cannot be answered at all.",
+      "n_retrieved": 0
+    },
+    {
+      "query_id": "cc5ded98",
+      "category": "knowledge-update",
+      "score": 0,
+      "rationale": "No facts were retrieved, so the query cannot be answered at all.",
+      "n_retrieved": 0
+    },
+    {
+      "query_id": "dfde3500",
+      "category": "knowledge-update",
+      "score": 5,
+      "rationale": "The retrieved facts clearly state that the user meets with Juan every Wednesday evening for their language exchange class.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "69fee5aa",
+      "category": "knowledge-update",
+      "score": 5,
+      "rationale": "The retrieved facts clearly state the user has 37 pre-1920 American coins (fact 1), and fact 3 mentions adding a new coin (1915-S Barber quarter), which could update the total to 38, providing a complete answer.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "7401057b",
+      "category": "knowledge-update",
+      "score": 0,
+      "rationale": "No facts were retrieved, so the query cannot be answered at all.",
+      "n_retrieved": 0
+    },
+    {
+      "query_id": "cf22b7bf",
+      "category": "knowledge-update",
+      "score": 5,
+      "rationale": "The retrieved facts clearly and completely answer the query: the user has lost 10 pounds since starting to go to the gym consistently 3 months ago, as stated in fact 1.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "a2f3aa27",
+      "category": "knowledge-update",
+      "score": 3,
+      "rationale": "The retrieved facts mention the user had 1250 followers at some point, but this may not reflect the current count, and the information is embedded in a lengthy assistant response about Instagram Insights rather than directly answering the query.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "c7dc5443",
+      "category": "knowledge-update",
+      "score": 5,
+      "rationale": "The first retrieved fact clearly states the user's volleyball league record is 3-2, which directly and completely answers the query.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "06db6396",
+      "category": "knowledge-update",
+      "score": 4,
+      "rationale": "The retrieved facts contain two different counts (4 and 5 completed projects), with the most recent mention being 5, which essentially answers the query but introduces minor ambiguity about the exact current count.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "3ba21379",
+      "category": "knowledge-update",
+      "score": 5,
+      "rationale": "The retrieved facts clearly and repeatedly identify the user's current model as a Ford Mustang Shelby GT350R model (car model kit).",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "9bbe84a2",
+      "category": "knowledge-update",
+      "score": 3,
+      "rationale": "The retrieved facts show the user's goal was updated to level 150, but the previous goal before that update is not explicitly mentioned in any of the retrieved facts.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "10e09553",
+      "category": "knowledge-update",
+      "score": 2,
+      "rationale": "The retrieved facts mention the 7/22 trip where 9 largemouth bass were caught with Alex, but none of the facts contain information about an earlier fishing trip to Lake Michigan before 7/22 or how many bass were caught on that earlier trip.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "dad224aa",
+      "category": "knowledge-update",
+      "score": 4,
+      "rationale": "The retrieved facts clearly state the user's desired Saturday wake-up time is 8:00 am, and provide actual Saturday wake-up times (7:30 am and 9:30 am), though the answer shows weekend times vary rather than a single definitive Saturday time.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "ba61f0b9",
+      "category": "knowledge-update",
+      "score": 5,
+      "rationale": "The retrieved facts clearly state that Rachel leads a team of 10 people and half of them (5) are women, which directly and completely answers the query.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "42ec0761",
+      "category": "knowledge-update",
+      "score": 5,
+      "rationale": "Fact 5 clearly states the user has a spare screwdriver picked up when organizing their computer desk, directly answering the query.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "5c40ec5b",
+      "category": "knowledge-update",
+      "score": 0,
+      "rationale": "No facts were retrieved, so the query cannot be answered at all.",
+      "n_retrieved": 0
+    },
+    {
+      "query_id": "c6853660",
+      "category": "knowledge-update",
+      "score": 4,
+      "rationale": "Fact 4 shows the user wanted to increase to two cups, and Fact 2 shows the user later cut back to one cup, indicating the most recent change was a decrease. The answer is essentially present though it requires inference across two facts.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "26bdc477",
+      "category": "knowledge-update",
+      "score": 4,
+      "rationale": "Fact 2 explicitly states the Canon EOS 80D has been on five trips, and Fact 1 mentions three specific trips (Yellowstone, Yosemite, Grand Canyon), providing a clear answer with minor inconsistency between the two statements suggesting different points in time.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "0977f2af",
+      "category": "knowledge-update",
+      "score": 0,
+      "rationale": "None of the retrieved facts mention a kitchen gadget or an Air Fryer; they are entirely unrelated to the query.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "6aeb4375_abs",
+      "category": "knowledge-update",
+      "score": 0,
+      "rationale": "The query asks about Italian restaurants tried in the user's city, but none of the retrieved facts mention Italian restaurants at all; they only discuss Korean restaurants, New Orleans dining, and Tokyo trip planning.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "031748ae_abs",
+      "category": "knowledge-update",
+      "score": 3,
+      "rationale": "The query asks about 'Software Engineer Manager' role, but the retrieved facts discuss 'Senior Software Engineer' role with conflicting numbers (4 engineers in fact #2, 5 engineers in facts #4 and #5). The role title doesn't match and the engineer count is inconsistent, providing only a partial and potentially incorrect answer.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "2698e78f_abs",
+      "category": "knowledge-update",
+      "score": 0,
+      "rationale": "No facts were retrieved, so the query cannot be answered at all.",
+      "n_retrieved": 0
+    },
+    {
+      "query_id": "2133c1b5_abs",
+      "category": "knowledge-update",
+      "score": 2,
+      "rationale": "The retrieved facts mention a studio apartment in Harajuku (not Shinjuku) for about a month and a move in March, but neither confirms a current apartment in Shinjuku, so the query is only partially addressed with potentially related but mismatched details.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "0ddfec37_abs",
+      "category": "knowledge-update",
+      "score": 3,
+      "rationale": "Fact 5 mentions 15 autographed baseballs collected in three months, which partially answers the query but refers to baseballs not footballs; no facts mention autographed footballs at all.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "f685340e_abs",
+      "category": "knowledge-update",
+      "score": 3,
+      "rationale": "The facts mention playing tennis (not table tennis) every other week at the local park with friends, which partially answers the frequency question but the sport is different from what was asked.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "89941a94",
+      "category": "knowledge-update",
+      "score": 5,
+      "rationale": "The retrieved facts clearly show that before purchasing the gravel bike (which isn't mentioned yet in these conversations), the user had a road bike in addition to the mountain bike and commuter bike, and later also acquired a hybrid bike.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "07741c45",
+      "category": "knowledge-update",
+      "score": 0,
+      "rationale": "No facts were retrieved, so the query cannot be answered at all.",
+      "n_retrieved": 0
+    },
+    {
+      "query_id": "7161e7e2",
+      "category": "single-session-assistant",
+      "score": 2,
+      "rationale": "The retrieved facts contain the shift rotation sheet with a Sunday row, but agents are listed as 'Agent 1' through 'Agent 7' with no mention of anyone named 'Admon', so the specific query about Admon's Sunday rotation cannot be answered.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "c4f10528",
+      "category": "single-session-assistant",
+      "score": 4,
+      "rationale": "The retrieved facts collectively identify Miss Bee Providore as a restaurant in Cihampelas Walk that serves a great Nasi Goreng (Miss Bee's Nasi Goreng), which effectively answers the user's query, though the information comes from a general recommendation rather than a prior personal conversation.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "89527b6b",
+      "category": "single-session-assistant",
+      "score": 5,
+      "rationale": "The retrieved facts clearly contain the answer: the Plesiosaur had a blue scaly body, as described in the children's book about dinosaurs.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "e9327a54",
+      "category": "single-session-assistant",
+      "score": 5,
+      "rationale": "The retrieved facts clearly contain the previous conversation about Orlando dessert spots, and fact #1 specifically mentions The Sugar Factory with its giant milkshakes, directly answering the user's query.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "4c36ccef",
+      "category": "single-session-assistant",
+      "score": 5,
+      "rationale": "The retrieved facts clearly show the assistant recommended Roscioli as the romantic Italian restaurant in Rome for dinner, with full context from the original conversation.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "6ae235be",
+      "category": "single-session-assistant",
+      "score": 5,
+      "rationale": "The first retrieved fact clearly and completely lists the refining processes at the Lake Charles Refinery (atmospheric distillation, FCC, alkylation, hydrotreating) along with the other two CITGO refineries, directly answering the query.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "7e00a6cb",
+      "category": "single-session-assistant",
+      "score": 4,
+      "rationale": "The retrieved facts contain the previous hostel recommendation conversation, and the International Budget Hostel near the Red Light District is clearly identified, though the assistant never explicitly singled it out as a personal recommendation.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "1903aded",
+      "category": "single-session-assistant",
+      "score": 0,
+      "rationale": "The retrieved facts contain no list of work from home jobs for seniors; all results are about delegation worksheets for homeschooling mompreneurs, completely unrelated to the query.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "ceb54acb",
+      "category": "single-session-assistant",
+      "score": 4,
+      "rationale": "Fact 1 provides four alternative terms (sexual fixations, problematic sexual behaviors, sexual impulsivity, compulsive sexuality) and Fact 2 confirms 'sexual compulsions' was previously suggested, collectively answering the query well, though it's unclear if these were from the same conversation turn the user remembers.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "f523d9fe",
+      "category": "single-session-assistant",
+      "score": 5,
+      "rationale": "Fact 1 clearly states the user used 'Doc Martin' as the example show that went down and now only has the last season available.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "0e5e2d1a",
+      "category": "single-session-assistant",
+      "score": 0,
+      "rationale": "No facts were retrieved at all, so the query about the specific study's subject count cannot be answered.",
+      "n_retrieved": 0
+    },
+    {
+      "query_id": "fea54f57",
+      "category": "single-session-assistant",
+      "score": 5,
+      "rationale": "The retrieved facts clearly and completely contain the previous conversation about the Fifth Album, including the assistant's recommendation of 'Evolution' as the song that best exemplifies the band's growth and development.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "cc539528",
+      "category": "single-session-assistant",
+      "score": 3,
+      "rationale": "The retrieved facts mention back-end languages like Python, Java, SQL, and Node.js in the context of recommended learning resources, but there is no explicit prior recommendation of specific back-end programming languages to learn \u2014 only resources that happen to cover certain languages.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "dc439ea3",
+      "category": "single-session-assistant",
+      "score": 5,
+      "rationale": "The retrieved facts clearly and completely contain the answer: Hoop Dance is the traditional game often performed by skilled dancers at powwows, as stated in fact #1.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "18dcd5a5",
+      "category": "single-session-assistant",
+      "score": 5,
+      "rationale": "The first retrieved fact explicitly states the party will face 4 mummies, with full stat blocks and details, completely answering the query.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "488d3006",
+      "category": "single-session-assistant",
+      "score": 5,
+      "rationale": "The first retrieved fact directly and completely answers the query, identifying the GR-90 as the recommended hiking trail with panoramic views in the Natural Park of Moncayo mountain in Arag\u00f3n.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "58470ed2",
+      "category": "single-session-assistant",
+      "score": 0,
+      "rationale": "None of the retrieved facts are related to Borges, The Library of Babel, or its center and circumference.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "8cf51dda",
+      "category": "single-session-assistant",
+      "score": 5,
+      "rationale": "The retrieved facts contain the full grant aim page including all three objectives for the molecular subtypes and endometrial cancer project.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "1d4da289",
+      "category": "single-session-assistant",
+      "score": 5,
+      "rationale": "The retrieved facts clearly describe the two-factor authentication methods mentioned in previous conversations: fingerprint, facial recognition, biometric authentication, one-time passwords (OTP), and codes sent to mobile devices.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "8464fc84",
+      "category": "single-session-assistant",
+      "score": 4,
+      "rationale": "The first retrieved fact contains the answer: Roscioli is identified as 'a famous deli that serves the best cured meats, cheeses, and traditional Roman cuisine' near the Vatican, which directly answers the user's query.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "8aef76bc",
+      "category": "single-session-assistant",
+      "score": 5,
+      "rationale": "The retrieved facts clearly contain the previous conversation about DIY home decor projects, including the specific recommendation of Mod Podge as the sealant for the newspaper flower vase.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "71a3fd6b",
+      "category": "single-session-assistant",
+      "score": 5,
+      "rationale": "The retrieved facts clearly contain the phone number of the Speyer tourism board (+49 (0) 62 32 / 14 23 - 0) that was previously provided, fully answering the user's query.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "2bf43736",
+      "category": "single-session-assistant",
+      "score": 5,
+      "rationale": "The retrieved facts clearly and completely answer the query, identifying Chapter 4 of Book 1 in the second part of Tanqueray's Spiritual Life treatise as the chapter discussing vocal prayer and meditation for beginners.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "70b3e69b",
+      "category": "single-session-assistant",
+      "score": 3,
+      "rationale": "The retrieved facts discuss Catalan artists with nuanced perspectives on the political situation, including Marina Rossell, but none explicitly identifies a singer-songwriter who supports unity between Catalonia and Spain, which is the specific detail the user is asking about.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "8752c811",
+      "category": "single-session-assistant",
+      "score": 0,
+      "rationale": "No facts were retrieved at all, so the query cannot be answered.",
+      "n_retrieved": 0
+    },
+    {
+      "query_id": "3249768e",
+      "category": "single-session-assistant",
+      "score": 5,
+      "rationale": "The retrieved facts clearly contain the previous conversation about gin-based cocktails with five recommended bottles, and the fifth bottle was Absinthe.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "1b9b7252",
+      "category": "single-session-assistant",
+      "score": 0,
+      "rationale": "No facts were retrieved, so the query cannot be answered at all.",
+      "n_retrieved": 0
+    },
+    {
+      "query_id": "1568498a",
+      "category": "single-session-assistant",
+      "score": 0,
+      "rationale": "No facts were retrieved, so the query about a specific chess move cannot be answered at all.",
+      "n_retrieved": 0
+    },
+    {
+      "query_id": "6222b6eb",
+      "category": "single-session-assistant",
+      "score": 5,
+      "rationale": "The retrieved facts clearly and completely answer the query: 6S is the algorithm implemented in the SIAC_GEE tool, as stated in both fact 1 and fact 2.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "e8a79c70",
+      "category": "single-session-assistant",
+      "score": 4,
+      "rationale": "The retrieved facts contain the previous conversation about making a classic French omelette, with one recipe specifying 3 eggs and another specifying 2-3 eggs, which effectively answers the user's question about how many eggs were discussed.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "d596882b",
+      "category": "single-session-assistant",
+      "score": 5,
+      "rationale": "The retrieved facts clearly contain the previous recommendation of By Chloe, a popular plant-based eatery with multiple locations throughout the city, which directly answers the user's query.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "e3fc4d6e",
+      "category": "single-session-assistant",
+      "score": 5,
+      "rationale": "The retrieved fact #1 contains the full article text which clearly states that Dr. Arati Prabhakar is the President's Chief Advisor for Science and Technology and Director of the White House Office of Science and Technology Policy.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "51b23612",
+      "category": "single-session-assistant",
+      "score": 4,
+      "rationale": "The retrieved facts contain the specific Soviet cartoon mentioned in the previous conversation \u2014 'Nu, pogodi!' \u2014 described as mocking Western culture and portraying the Soviet Union as superior, which directly answers the user's query.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "3e321797",
+      "category": "single-session-assistant",
+      "score": 5,
+      "rationale": "The retrieved facts clearly contain the answer: the tomato juice mixed with lemon juice should be left on for 10 minutes before washing off with cold water.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "e982271f",
+      "category": "single-session-assistant",
+      "score": 5,
+      "rationale": "The retrieved facts clearly contain the full list of Portland indie music venues, with Revolution Hall being the last (10th) venue recommended.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "352ab8bd",
+      "category": "single-session-assistant",
+      "score": 5,
+      "rationale": "Fact 1 explicitly states the average improvement in framerate when using the HAMT agent was approximately 20%.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "fca762bc",
+      "category": "single-session-assistant",
+      "score": 5,
+      "rationale": "The retrieved facts clearly and completely contain the answer: Memrise is the app that uses mnemonics to help learners memorize words, phrases, and grammatical concepts.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "7a8d0b71",
+      "category": "single-session-assistant",
+      "score": 5,
+      "rationale": "The first retrieved fact clearly states the influencer marketing budget allocation was $2,000 as part of the DHL Wellness Retreats campaign plan.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "a40e080f",
+      "category": "single-session-assistant",
+      "score": 5,
+      "rationale": "The retrieved facts clearly and completely identify the two companies mentioned: Patagonia and Southwest Airlines, along with detailed explanations of how they prioritize employee safety and well-being.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "8b9d4367",
+      "category": "single-session-assistant",
+      "score": 5,
+      "rationale": "The retrieved facts clearly and completely identify Jaipur Rugs as the company employing over 40,000 people in the rug-manufacturing industry in Chaudhary.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "5809eb10",
+      "category": "single-session-assistant",
+      "score": 5,
+      "rationale": "The retrieved facts clearly state that 'The construction of the house began in 2014' in the background section of the case summary.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "41275add",
+      "category": "single-session-assistant",
+      "score": 5,
+      "rationale": "The first retrieved fact clearly and completely contains the Mayo Clinic video recommendation ('How to Sit Properly at a Desk to Avoid Back Pain' with URL) along with the full context of the previous conversation about workplace posture YouTube videos.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "4388e9dd",
+      "category": "single-session-assistant",
+      "score": 5,
+      "rationale": "The retrieved facts clearly show that Andy wears an 'untidy, stained white shirt' as specified in the user's original script prompt (fact 1).",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "4baee567",
+      "category": "single-session-assistant",
+      "score": 5,
+      "rationale": "The retrieved facts clearly and completely answer the query: the Chiefs played the Jaguars 12 times at Arrowhead Stadium, with detailed win/loss records provided.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "561fabcd",
+      "category": "single-session-assistant",
+      "score": 0,
+      "rationale": "No facts were retrieved, so there is no information to answer the query about the zombie's name.",
+      "n_retrieved": 0
+    },
+    {
+      "query_id": "b759caee",
+      "category": "single-session-assistant",
+      "score": 5,
+      "rationale": "The retrieved facts clearly contain the answer: Jessica Poole (@jessica_poole_jewellery) is the UK-based designer who works with unusual gemstones.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "ac031881",
+      "category": "single-session-assistant",
+      "score": 5,
+      "rationale": "The retrieved facts clearly and completely answer the query: the designation on the jumpsuit was 'LIV', which was interpreted as the Roman numeral for 54, leading to file number 54 in the records room.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "28bcfaac",
+      "category": "single-session-assistant",
+      "score": 0,
+      "rationale": "No facts were retrieved at all, so the query about a previously recommended music theory website cannot be answered.",
+      "n_retrieved": 0
+    },
+    {
+      "query_id": "16c90bf4",
+      "category": "single-session-assistant",
+      "score": 5,
+      "rationale": "The first retrieved fact directly and completely answers the query, specifying that a pilsner or lager was recommended as the specific beer type within the light/medium-bodied category for the Seco de Cordero recipe.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "c8f1aeed",
+      "category": "single-session-assistant",
+      "score": 5,
+      "rationale": "The retrieved facts clearly and completely answer the query: Pennsylvania was the state mentioned as an example requiring fracking companies to monitor groundwater quality at nearby wells before drilling and for a certain period after drilling is complete.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "eaca4986",
+      "category": "single-session-assistant",
+      "score": 3,
+      "rationale": "The user asks about chord progressions for the chorus of the second sad song, but the retrieved facts show songs with individual notes (not chord progressions). The first retrieved fact appears to be one sad song, but the second sad song is not clearly identified among the results. The romantic song (fact 3) doesn't seem to be a 'sad song.' The notes for the choruses are present but actual chord progressions were never provided, so the specific information requested is missing.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "c7cf7dfd",
+      "category": "single-session-assistant",
+      "score": 5,
+      "rationale": "The first retrieved fact clearly states that 'Nostalgia is an online store based in India that offers an expansive collection of traditional Indian fabrics, threads, and embellishments,' which directly and completely answers the user's query.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "e48988bc",
+      "category": "single-session-assistant",
+      "score": 5,
+      "rationale": "The retrieved facts clearly and completely identify Patagonia as the company discussed in the previous conversation about environmentally responsible supply chain practices, along with detailed information about their sustainability efforts.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "1de5cff2",
+      "category": "single-session-assistant",
+      "score": 5,
+      "rationale": "The retrieved facts clearly and completely identify Veja as the brand that uses wild rubber sourced from the Amazon rainforest, directly from the previous conversation about high-end fashion brands.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "65240037",
+      "category": "single-session-assistant",
+      "score": 0,
+      "rationale": "No facts were retrieved, so the query cannot be answered at all.",
+      "n_retrieved": 0
+    },
+    {
+      "query_id": "778164c6",
+      "category": "single-session-assistant",
+      "score": 0,
+      "rationale": "No facts were retrieved, so the query about a previously recommended Jamaican snapper dish with fruit cannot be answered at all.",
+      "n_retrieved": 0
+    }
+  ],
+  "aggregate": {
+    "mean": 2.564,
+    "ci_low": 2.408,
+    "ci_high": 2.742,
+    "normalized_mean": 0.5128,
+    "per_category": {
+      "single-session-user": {
+        "n": 70,
+        "mean": 3.6,
+        "normalized_mean": 0.72
+      },
+      "multi-session": {
+        "n": 133,
+        "mean": 2.2030075187969924,
+        "normalized_mean": 0.4406015037593985
+      },
+      "single-session-preference": {
+        "n": 30,
+        "mean": 2.066666666666667,
+        "normalized_mean": 0.4133333333333334
+      },
+      "temporal-reasoning": {
+        "n": 133,
+        "mean": 1.5488721804511278,
+        "normalized_mean": 0.3097744360902256
+      },
+      "knowledge-update": {
+        "n": 78,
+        "mean": 3.2564102564102564,
+        "normalized_mean": 0.6512820512820513
+      },
+      "single-session-assistant": {
+        "n": 56,
+        "mean": 3.8392857142857144,
+        "normalized_mean": 0.7678571428571429
+      }
+    }
+  },
+  "baseline": "letta"
+}

@@ -21,7 +21,16 @@ import { validateBody } from '../utils/schemas';
 import { CreateChatSessionSchema, ChatMessageSchema } from '../utils/schemas';
 import { isValidImageFormat } from '../services/claude-vision';
 import { inputScreeningMiddleware } from '../middleware/input-screening';
+import { promptSanitizerMiddleware } from '../middleware/prompt-sanitizer-middleware';
+import { createModerationMiddleware, extractFromFields } from '../middleware/moderation-factory';
 import { advancedRateLimiter } from '../services/security/rate-limit-advanced';
+
+// Sprint 1.2 + 1.10: Content-Moderation vor Persistierung. Chat-Body hat
+// typischerweise { message: string, ... } — wir prüfen auch 'content' als Fallback.
+const chatModeration = createModerationMiddleware({
+  domain: 'chat',
+  extractContent: extractFromFields(['message', 'content']),
+});
 import {
   handleCreateSession,
   handleListSessions,
@@ -94,13 +103,13 @@ generalChatRouter.get('/sessions', apiKeyAuth, asyncHandler(handleListSessions))
 generalChatRouter.get('/sessions/:id', apiKeyAuth, asyncHandler(handleGetSession));
 
 // POST /api/chat/sessions/:id/messages - Send message
-generalChatRouter.post('/sessions/:id/messages', apiKeyAuth, requireScope('write'), inputScreeningMiddleware, validateBody(ChatMessageSchema), asyncHandler(handleSendMessage));
+generalChatRouter.post('/sessions/:id/messages', apiKeyAuth, requireScope('write'), promptSanitizerMiddleware, inputScreeningMiddleware, validateBody(ChatMessageSchema), chatModeration, asyncHandler(handleSendMessage));
 
 // DELETE /api/chat/sessions/:id - Delete session
 generalChatRouter.delete('/sessions/:id', apiKeyAuth, requireScope('write'), asyncHandler(handleDeleteSession));
 
 // POST /api/chat/quick - Quick chat (no session required)
-generalChatRouter.post('/quick', apiKeyAuth, requireScope('write'), inputScreeningMiddleware, asyncHandler(handleQuickChat));
+generalChatRouter.post('/quick', apiKeyAuth, requireScope('write'), promptSanitizerMiddleware, inputScreeningMiddleware, chatModeration, asyncHandler(handleQuickChat));
 
 // POST /api/chat/sessions/:id/messages/vision - Vision message
 generalChatRouter.post(
@@ -124,4 +133,4 @@ generalChatRouter.put('/sessions/:sessionId/messages/:messageId/edit', apiKeyAut
 generalChatRouter.post('/sessions/:sessionId/messages/:messageId/regenerate', apiKeyAuth, requireScope('write'), asyncHandler(handleRegenerateMessage));
 
 // POST /api/chat/sessions/:id/messages/stream - Streaming message (SSE)
-generalChatRouter.post('/sessions/:id/messages/stream', apiKeyAuth, requireScope('write'), advancedRateLimiter.ai, inputScreeningMiddleware, validateBody(ChatMessageSchema), asyncHandler(handleStreamMessage));
+generalChatRouter.post('/sessions/:id/messages/stream', apiKeyAuth, requireScope('write'), advancedRateLimiter.ai, promptSanitizerMiddleware, inputScreeningMiddleware, validateBody(ChatMessageSchema), chatModeration, asyncHandler(handleStreamMessage));

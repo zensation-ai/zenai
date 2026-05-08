@@ -19,7 +19,7 @@ jest.mock('../../../utils/logger', () => ({
 }));
 
 jest.mock('../../../utils/database-context', () => ({
-  isValidContext: (ctx: string) => ['personal', 'work', 'learning', 'creative'].includes(ctx),
+  isValidContext: (ctx: string) => ['operations', 'finance', 'people', 'strategy'].includes(ctx),
 }));
 
 jest.mock('../../../utils/validation', () => ({
@@ -73,7 +73,7 @@ describe('MCP Internal Routes', () => {
 
     expect(res.status).toBe(200);
     expect(res.body.success).toBe(true);
-    expect(res.body.data.name).toBe('zenai-brain');
+    expect(res.body.data.name).toBe('zenai-spark');
     expect(res.body.data.status).toBe('running');
     expect(res.body.data.protocol).toBe('MCP 2026');
   });

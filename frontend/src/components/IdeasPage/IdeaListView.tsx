@@ -1,4 +1,5 @@
 import { useRef } from 'react';
+import type { CSSProperties } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { IdeaCard2 } from './IdeaCard2';
 import type { StructuredIdea } from '../../types';
@@ -35,20 +36,15 @@ export function IdeaListView({ ideas, onIdeaClick, selectionMode, selectedIds, o
     : ideas.map((_, i) => ({ key: i, index: i, start: i * (ROW_HEIGHT + GAP) }));
 
   return (
-    <div ref={parentRef} className="idea-list-view" style={{ overflow: 'auto', flex: 1 }}>
-      <div style={{ height: virtualizer.getTotalSize() || ideas.length * (ROW_HEIGHT + GAP), position: 'relative' }}>
+    <div ref={parentRef} className="idea-list-view overflow-auto flex-1">
+      <div className="relative h-[var(--total-h)]" style={{ '--total-h': `${virtualizer.getTotalSize() || ideas.length * (ROW_HEIGHT + GAP)}px` } as CSSProperties}>
         {itemsToRender.map(row => {
           const idea = ideas[row.index];
           return (
             <div
               key={row.key}
-              style={{
-                position: 'absolute',
-                top: row.start,
-                left: 0,
-                right: 0,
-                padding: '0 var(--spacing-4, 16px)',
-              }}
+              className="absolute left-0 right-0 top-[var(--top)]"
+              style={{ '--top': `${row.start}px`, padding: '0 var(--spacing-4, 16px)' } as CSSProperties}
             >
               <IdeaCard2
                 idea={idea}

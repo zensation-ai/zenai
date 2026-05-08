@@ -4,7 +4,7 @@
 
 jest.mock('../../../utils/database-context', () => ({
   queryContext: jest.fn(),
-  isValidContext: (ctx: string) => ['personal', 'work', 'learning', 'creative'].includes(ctx),
+  isValidContext: (ctx: string) => ['operations', 'finance', 'people', 'strategy'].includes(ctx),
 }));
 
 jest.mock('../../../utils/logger', () => ({
@@ -22,6 +22,10 @@ jest.mock('@anthropic-ai/sdk', () => ({
       create: jest.fn(),
     },
   })),
+}));
+
+jest.mock('../../../services/knowledge-graph/event-subgraph', () => ({
+  recordEvent: jest.fn().mockResolvedValue('mock-event-id'),
 }));
 
 import { queryContext } from '../../../utils/database-context';
@@ -72,7 +76,7 @@ describe('GraphBuilder', () => {
       // For entity resolution - no existing entities
       mockQueryContext.mockResolvedValue({ rows: [] } as any);
 
-      const result = await builder.extractFromText('TypeScript with React is great', 'source-1', 'personal');
+      const result = await builder.extractFromText('TypeScript with React is great', 'source-1', 'operations');
 
       expect(result.entities.length).toBe(2);
       expect(result.entities[0].name).toBe('TypeScript');
@@ -85,12 +89,12 @@ describe('GraphBuilder', () => {
 
       mockQueryContext.mockResolvedValue({ rows: [] } as any);
 
-      const result = await builder.extractFromText('some text', 'source-1', 'personal');
+      const result = await builder.extractFromText('some text', 'source-1', 'operations');
       expect(result.entities).toEqual([]);
     });
 
     it('should handle empty text', async () => {
-      const result = await builder.extractFromText('', 'source-1', 'personal');
+      const result = await builder.extractFromText('', 'source-1', 'operations');
       expect(result.entities).toEqual([]);
       expect(result.relations).toEqual([]);
     });
@@ -108,7 +112,7 @@ describe('GraphBuilder', () => {
       });
       mockQueryContext.mockResolvedValue({ rows: [] } as any);
 
-      const result = await builder.extractFromText('Python programming', 'source-1', 'personal');
+      const result = await builder.extractFromText('Python programming', 'source-1', 'operations');
       expect(result.entities.length).toBe(1);
       expect(result.entities[0].name).toBe('Python');
     });
@@ -127,7 +131,7 @@ describe('GraphBuilder', () => {
       });
       mockQueryContext.mockResolvedValue({ rows: [] } as any);
 
-      const result = await builder.extractFromText('Some text', 'source-1', 'personal');
+      const result = await builder.extractFromText('Some text', 'source-1', 'operations');
       expect(result.entities.length).toBe(1);
       expect(result.entities[0].name).toBe('Valid');
     });
@@ -136,7 +140,7 @@ describe('GraphBuilder', () => {
       mockCreate.mockRejectedValueOnce(new Error('API rate limited'));
       mockQueryContext.mockResolvedValue({ rows: [] } as any);
 
-      const result = await builder.extractFromText('Some text', 'source-1', 'personal');
+      const result = await builder.extractFromText('Some text', 'source-1', 'operations');
       expect(result.entities).toEqual([]);
     });
 
@@ -154,7 +158,7 @@ describe('GraphBuilder', () => {
       });
       mockQueryContext.mockResolvedValue({ rows: [] } as any);
 
-      const result = await builder.extractFromText('Some text', 'source-1', 'personal');
+      const result = await builder.extractFromText('Some text', 'source-1', 'operations');
       expect(result.entities[0].importance).toBe(10);
       expect(result.entities[1].importance).toBe(1);
     });
@@ -183,7 +187,7 @@ describe('GraphBuilder', () => {
       });
       mockQueryContext.mockResolvedValue({ rows: [] } as any);
 
-      const result = await builder.extractFromText('React requires JavaScript', 'source-1', 'personal');
+      const result = await builder.extractFromText('React requires JavaScript', 'source-1', 'operations');
       expect(result.relations.length).toBe(1);
       expect(result.relations[0].type).toBe('requires');
     });
@@ -205,7 +209,7 @@ describe('GraphBuilder', () => {
       });
       mockQueryContext.mockResolvedValue({ rows: [] } as any);
 
-      const result = await builder.extractFromText('React code', 'source-1', 'personal');
+      const result = await builder.extractFromText('React code', 'source-1', 'operations');
       // Relation filtered because NonExistent is not in entities
       expect(result.relations.length).toBe(0);
     });
@@ -229,7 +233,7 @@ describe('GraphBuilder', () => {
       });
       mockQueryContext.mockResolvedValue({ rows: [] } as any);
 
-      const result = await builder.extractFromText('React vs Vue', 'source-1', 'personal');
+      const result = await builder.extractFromText('React vs Vue', 'source-1', 'operations');
       expect(result.relations.length).toBe(1);
       expect(result.relations[0].source).toBe('React');
       expect(result.relations[0].target).toBe('Vue');
@@ -251,7 +255,7 @@ describe('GraphBuilder', () => {
         rows: [{ id: 'existing-id', name: 'TypeScript Language', similarity: '0.95' }],
       } as any);
 
-      const resolved = await builder.resolveEntities(entities, 'personal');
+      const resolved = await builder.resolveEntities(entities, 'operations');
       expect(resolved[0].id).toBe('existing-id');
       expect(resolved[0].name).toBe('TypeScript Language'); // Uses canonical name
     });
@@ -265,7 +269,7 @@ describe('GraphBuilder', () => {
         rows: [{ id: 'some-id', name: 'OldConcept', similarity: '0.5' }],
       } as any);
 
-      const resolved = await builder.resolveEntities(entities, 'personal');
+      const resolved = await builder.resolveEntities(entities, 'operations');
       expect(resolved[0].id).toBeUndefined();
       expect(resolved[0].name).toBe('NewConcept');
     });
@@ -277,7 +281,7 @@ describe('GraphBuilder', () => {
 
       mockQueryContext.mockResolvedValueOnce({ rows: [] } as any);
 
-      const resolved = await builder.resolveEntities(entities, 'personal');
+      const resolved = await builder.resolveEntities(entities, 'operations');
       expect(resolved[0].id).toBeUndefined();
     });
   });
@@ -304,7 +308,7 @@ describe('GraphBuilder', () => {
       // Relation insert
       mockQueryContext.mockResolvedValueOnce({ rows: [] } as any);
 
-      const result = await builder.upsertToGraph(entities, relations, 'source-1', 'personal');
+      const result = await builder.upsertToGraph(entities, relations, 'source-1', 'operations');
       expect(result.entitiesCreated).toBe(2);
       expect(result.relationsCreated).toBe(1);
     });
@@ -317,7 +321,7 @@ describe('GraphBuilder', () => {
       // Update query
       mockQueryContext.mockResolvedValueOnce({ rows: [] } as any);
 
-      const result = await builder.upsertToGraph(entities, [], 'source-1', 'personal');
+      const result = await builder.upsertToGraph(entities, [], 'source-1', 'operations');
       expect(result.entitiesUpdated).toBe(1);
       expect(result.entitiesCreated).toBe(0);
     });
@@ -334,7 +338,7 @@ describe('GraphBuilder', () => {
       // Entity A insert
       mockQueryContext.mockResolvedValueOnce({ rows: [{ id: 'id-a' }] } as any);
 
-      const result = await builder.upsertToGraph(entities, relations, 'source-1', 'personal');
+      const result = await builder.upsertToGraph(entities, relations, 'source-1', 'operations');
       expect(result.relationsCreated).toBe(0);
     });
 
@@ -345,7 +349,7 @@ describe('GraphBuilder', () => {
 
       mockQueryContext.mockRejectedValueOnce(new Error('DB error'));
 
-      const result = await builder.upsertToGraph(entities, [], 'source-1', 'personal');
+      const result = await builder.upsertToGraph(entities, [], 'source-1', 'operations');
       expect(result.entitiesCreated).toBe(0);
     });
   });
@@ -389,7 +393,7 @@ describe('GraphBuilder', () => {
       const result = await builder.extractFromText(
         'Docker and Kubernetes are used for container orchestration',
         'source-1',
-        'personal'
+        'operations'
       );
 
       expect(result.entityCount).toBe(2);
@@ -397,7 +401,7 @@ describe('GraphBuilder', () => {
     });
 
     it('should handle whitespace-only text', async () => {
-      const result = await builder.extractFromText('   \n\t  ', 'source-1', 'personal');
+      const result = await builder.extractFromText('   \n\t  ', 'source-1', 'operations');
       expect(result.entityCount).toBe(0);
     });
 
@@ -408,7 +412,7 @@ describe('GraphBuilder', () => {
         content: [{ type: 'text', text: '[]' }],
       });
 
-      const result = await builder.extractFromText(longText, 'source-1', 'personal');
+      const result = await builder.extractFromText(longText, 'source-1', 'operations');
       expect(result.entities).toEqual([]);
     });
   });
@@ -425,7 +429,7 @@ describe('GraphBuilder', () => {
 
       mockQueryContext.mockResolvedValue({ rows: [] } as any);
 
-      const result = await builder.extractFromText('Some text', 'source-1', 'personal');
+      const result = await builder.extractFromText('Some text', 'source-1', 'operations');
       expect(result.entities).toEqual([]);
     });
 
@@ -444,7 +448,7 @@ describe('GraphBuilder', () => {
       });
       mockQueryContext.mockResolvedValue({ rows: [] } as any);
 
-      const result = await builder.extractFromText('Some text', 'source-1', 'personal');
+      const result = await builder.extractFromText('Some text', 'source-1', 'operations');
       expect(result.entities.length).toBe(1);
       expect(result.entities[0].name).toBe('Good');
     });

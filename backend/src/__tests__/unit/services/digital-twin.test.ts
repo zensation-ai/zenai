@@ -13,7 +13,7 @@ import {
 const mockQueryContext = jest.fn();
 jest.mock('../../../utils/database-context', () => ({
   queryContext: (...args: unknown[]) => mockQueryContext(...args),
-  isValidContext: (c: string) => ['personal', 'work', 'learning', 'creative'].includes(c),
+  isValidContext: (c: string) => ['operations', 'finance', 'people', 'strategy'].includes(c),
 }));
 
 // Import after mocking
@@ -239,7 +239,7 @@ describe('Digital Twin Service', () => {
     it('should return empty profile when no data exists', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [] });
 
-      const profile = await getProfile('personal', TEST_USER_ID);
+      const profile = await getProfile('operations', TEST_USER_ID);
       expect(profile.sections).toEqual([]);
       expect(profile.radar).toBeDefined();
       expect(profile.lastUpdated).toBeNull();
@@ -253,7 +253,7 @@ describe('Digital Twin Service', () => {
         ],
       });
 
-      const profile = await getProfile('personal', TEST_USER_ID);
+      const profile = await getProfile('operations', TEST_USER_ID);
       expect(profile.sections).toHaveLength(1);
       expect(profile.sections[0].section).toBe('expertise');
       expect(profile.lastUpdated).toBe(now);
@@ -268,7 +268,7 @@ describe('Digital Twin Service', () => {
         .mockResolvedValueOnce({ rows: [] })  // SELECT check
         .mockResolvedValueOnce({ rows: [{ id: 'new-id', user_id: TEST_USER_ID, section: 'expertise', data: { areas: ['TS'] }, confidence: 0.7, source: 'knowledge_graph', updated_at: '', created_at: '' }] });
 
-      const result = await upsertProfileSection('personal', TEST_USER_ID, 'expertise', { areas: ['TS'] }, 'knowledge_graph', 0.7);
+      const result = await upsertProfileSection('operations', TEST_USER_ID, 'expertise', { areas: ['TS'] }, 'knowledge_graph', 0.7);
       expect(result.id).toBe('new-id');
       expect(mockQueryContext).toHaveBeenCalledTimes(2);
     });
@@ -278,7 +278,7 @@ describe('Digital Twin Service', () => {
         .mockResolvedValueOnce({ rows: [{ id: 'existing-id' }] })  // SELECT check
         .mockResolvedValueOnce({ rows: [{ id: 'existing-id', user_id: TEST_USER_ID, section: 'expertise', data: { areas: ['Python'] }, confidence: 1.0, source: 'user_correction', updated_at: '', created_at: '' }] });
 
-      const result = await upsertProfileSection('personal', TEST_USER_ID, 'expertise', { areas: ['Python'] }, 'user_correction');
+      const result = await upsertProfileSection('operations', TEST_USER_ID, 'expertise', { areas: ['Python'] }, 'user_correction');
       expect(result.data).toEqual({ areas: ['Python'] });
     });
 
@@ -287,7 +287,7 @@ describe('Digital Twin Service', () => {
         .mockResolvedValueOnce({ rows: [] })
         .mockResolvedValueOnce({ rows: [{ id: 'new', confidence: 1.0 }] } as any);
 
-      await upsertProfileSection('personal', TEST_USER_ID, 'expertise', {}, 'user_correction');
+      await upsertProfileSection('operations', TEST_USER_ID, 'expertise', {}, 'user_correction');
 
       // Check the INSERT was called with confidence = 1.0
       const insertCall = mockQueryContext.mock.calls[1];
@@ -301,7 +301,7 @@ describe('Digital Twin Service', () => {
     it('should return radar scores', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [] });
 
-      const radar = await getRadarScores('personal', TEST_USER_ID);
+      const radar = await getRadarScores('operations', TEST_USER_ID);
       expect(radar).toHaveProperty('analytical');
       expect(radar).toHaveProperty('creative');
       expect(radar).toHaveProperty('organized');
@@ -316,7 +316,7 @@ describe('Digital Twin Service', () => {
     it('should return empty array when no snapshots exist', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [] });
 
-      const result = await getEvolution('personal', TEST_USER_ID);
+      const result = await getEvolution('operations', TEST_USER_ID);
       expect(result).toEqual([]);
     });
 
@@ -328,7 +328,7 @@ describe('Digital Twin Service', () => {
         ],
       });
 
-      const result = await getEvolution('personal', TEST_USER_ID, 5);
+      const result = await getEvolution('operations', TEST_USER_ID, 5);
       expect(result).toHaveLength(2);
       expect(mockQueryContext.mock.calls[0][2]).toEqual([TEST_USER_ID, 5]);
     });
@@ -351,7 +351,7 @@ describe('Digital Twin Service', () => {
         rows: [{ id: 'snap-1', user_id: TEST_USER_ID, snapshot: {}, radar_scores: {}, created_at: '' }],
       });
 
-      const snapshot = await createSnapshot('personal', TEST_USER_ID);
+      const snapshot = await createSnapshot('operations', TEST_USER_ID);
       expect(snapshot.id).toBe('snap-1');
       expect(mockQueryContext).toHaveBeenCalledTimes(2);
     });
@@ -376,7 +376,7 @@ describe('Digital Twin Service', () => {
       // Mark applied
       mockQueryContext.mockResolvedValueOnce({ rows: [] });
 
-      const correction = await submitCorrection('personal', TEST_USER_ID, 'expertise', { areas: ['new'] }, 'Wrong');
+      const correction = await submitCorrection('operations', TEST_USER_ID, 'expertise', { areas: ['new'] }, 'Wrong');
       expect(correction.applied).toBe(true);
     });
 
@@ -389,7 +389,7 @@ describe('Digital Twin Service', () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [{ id: 'new-entry' }] } as any);  // upsert INSERT
       mockQueryContext.mockResolvedValueOnce({ rows: [] });  // mark applied
 
-      const correction = await submitCorrection('personal', TEST_USER_ID, 'goals', { items: ['Learn Rust'] });
+      const correction = await submitCorrection('operations', TEST_USER_ID, 'goals', { items: ['Learn Rust'] });
       expect(correction.applied).toBe(true);
     });
   });
@@ -443,7 +443,7 @@ describe('Digital Twin Service', () => {
       // 6b. upsert preferences - INSERT
       mockQueryContext.mockResolvedValueOnce({ rows: [{ id: 'p6', section: 'preferences', data: {}, confidence: 0.3, source: 'chat_analysis', updated_at: '', created_at: '' }] } as any);
 
-      const result = await aggregateProfile('personal', TEST_USER_ID);
+      const result = await aggregateProfile('operations', TEST_USER_ID);
       expect(result).toHaveLength(6);
     });
 
@@ -454,7 +454,7 @@ describe('Digital Twin Service', () => {
       // Should still return 6 sections (catch blocks return defaults)
       // Actually aggregateProfile catches internally per-query
       // The upsert calls will also fail, so the function will throw
-      await expect(aggregateProfile('personal', TEST_USER_ID)).rejects.toThrow();
+      await expect(aggregateProfile('operations', TEST_USER_ID)).rejects.toThrow();
     });
   });
 
@@ -473,9 +473,9 @@ describe('Digital Twin Service', () => {
       // getEvolution
       mockQueryContext.mockResolvedValueOnce({ rows: [] });
 
-      const exported = await exportProfile('personal', TEST_USER_ID);
+      const exported = await exportProfile('operations', TEST_USER_ID);
       expect(exported.version).toBe('1.0');
-      expect(exported.context).toBe('personal');
+      expect(exported.context).toBe('operations');
       expect(exported.exported_at).toBeDefined();
       expect(exported.radar).toBeDefined();
       expect(exported.sections).toBeDefined();
@@ -491,7 +491,7 @@ describe('Digital Twin Service', () => {
         ],
       });
 
-      const exported = await exportProfile('personal', TEST_USER_ID);
+      const exported = await exportProfile('operations', TEST_USER_ID);
       expect(exported.evolution_snapshots).toBe(2);
       expect((exported.recent_snapshots as unknown[]).length).toBe(2);
     });

@@ -9,7 +9,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import axios from 'axios';
 import { logError } from '../../utils/errors';
 import type { AIContext } from '../ContextSwitcher';
-import './MeetingProtocol.css';
+import { Button } from '@/components/ui/button';
 
 interface MeetingNote {
   id: string;
@@ -70,7 +70,7 @@ export function MeetingProtocol({ meetingId, meetingTitle, context, eventId }: M
     const fetchNotes = async () => {
       setLoading(true);
       try {
-        const res = await axios.get(`/api/meetings/${meetingId}/notes`, { params: { context } });
+        const res = await axios.get(`/api/${context}/meetings/${meetingId}/notes`);
         if (res.data.success) {
           const n = res.data.notes;
           setNotes(Array.isArray(n) ? n : n ? [n] : []);
@@ -193,7 +193,7 @@ export function MeetingProtocol({ meetingId, meetingTitle, context, eventId }: M
           formData.append('audio', audioBlobRef.current, 'meeting-recording.webm');
         }
         res = await axios.post(
-          `/api/meetings/${meetingId}/notes`,
+          `/api/${context}/meetings/${meetingId}/notes`,
           formData,
           { headers: { 'Content-Type': 'multipart/form-data' } },
         );
@@ -231,39 +231,40 @@ export function MeetingProtocol({ meetingId, meetingTitle, context, eventId }: M
   };
 
   if (loading) {
-    return <div className="meeting-protocol__loading">Lade Protokoll...</div>;
+    return <div className="flex items-center justify-center p-12 text-text-secondary text-[0.9rem]">Lade Protokoll...</div>;
   }
 
   return (
-    <div className="meeting-protocol">
-      <h3 className="meeting-protocol__title">
+    <div className="flex flex-col gap-4">
+      <h3 className="m-0 text-lg font-semibold text-text">
         {'\uD83C\uDF99\uFE0F'} Protokoll: {meetingTitle}
       </h3>
 
       {/* Recording controls */}
-      <div className="meeting-protocol__controls">
+      <div className="flex items-center gap-3">
         {!isRecording ? (
-          <button
-            className="meeting-protocol__record-btn"
+          <Button
+            variant="outline"
             onClick={startRecording}
           >
             {'\uD83C\uDF99\uFE0F'} Aufnahme starten
-          </button>
+          </Button>
         ) : (
-          <button
-            className="meeting-protocol__record-btn meeting-protocol__record-btn--active"
+          <Button
+            variant="outline"
+            className="bg-red-500/10 border-red-500 text-red-500 hover:bg-red-500/[0.18] animate-pulse"
             onClick={stopRecording}
           >
             {'\u23F9\uFE0F'} Aufnahme stoppen
-          </button>
+          </Button>
         )}
 
         {isRecording && (
           <>
-            <span className="meeting-protocol__recording-indicator">
+            <span className="text-[0.8rem] text-red-500 font-medium animate-pulse">
               Aufnahme l&auml;uft...
             </span>
-            <span className="meeting-protocol__recording-timer">
+            <span className="font-mono text-lg text-red-600 font-semibold">
               {formatDuration(recordingSeconds)}
             </span>
           </>
@@ -271,45 +272,46 @@ export function MeetingProtocol({ meetingId, meetingTitle, context, eventId }: M
       </div>
 
       {/* Transcript input */}
-      <div className="meeting-protocol__transcript">
-        <label htmlFor="meeting-transcript">Transkript / Notizen</label>
+      <div className="flex flex-col gap-2">
+        <label htmlFor="meeting-transcript" className="text-[0.8rem] font-medium text-text-secondary uppercase tracking-wide">Transkript / Notizen</label>
         <textarea
           id="meeting-transcript"
           value={transcript}
           onChange={e => setTranscript(e.target.value)}
           placeholder="Sprach-Transkript erscheint hier automatisch, oder manuell Notizen eingeben..."
           rows={6}
+          className="px-3 py-3 border border-glass-border rounded-md bg-surface text-text text-[0.9rem] font-[inherit] resize-y min-h-[120px] transition-colors focus:outline-none focus:border-primary focus:ring-[3px] focus:ring-primary/35"
         />
-        <button
-          className="meeting-protocol__process-btn"
+        <Button
+          className="self-end"
           onClick={processNotes}
           disabled={!transcript.trim() || processing}
         >
           {processing ? 'Verarbeite...' : 'Protokoll verarbeiten'}
-        </button>
+        </Button>
       </div>
 
       {uploadSize !== null && (
-        <div className="meeting-protocol__upload-info">
+        <div className="text-[0.8rem] text-blue-500 mt-1">
           Audio hochgeladen: {formatBytes(uploadSize)}
         </div>
       )}
 
       {error && (
-        <div className="meeting-protocol__error">{error}</div>
+        <div className="px-4 py-3 bg-red-500/10 border border-red-500/20 rounded-md text-red-500 text-[0.85rem]">{error}</div>
       )}
 
       {/* Audio playback */}
       {audioUrl && (
-        <div className="meeting-protocol__audio-player">
-          <h4>Audioaufnahme</h4>
-          <audio controls preload="metadata" src={audioUrl}>
+        <div className="my-4 p-3 bg-surface border border-glass-border rounded-lg">
+          <h4 className="m-0 mb-2 text-[0.8rem] font-semibold text-text-secondary uppercase tracking-wide">Audioaufnahme</h4>
+          <audio controls preload="metadata" src={audioUrl} className="w-full">
             Dein Browser unterst&uuml;tzt kein Audio-Playback.
           </audio>
           {notes.find(n => n.audio_duration_seconds || n.audio_size_bytes) && (() => {
             const audioNote = notes.find(n => n.audio_duration_seconds || n.audio_size_bytes);
             return (
-              <div className="meeting-protocol__audio-meta">
+              <div className="text-[0.8rem] text-text-muted mt-1 flex gap-3 flex-wrap">
                 {audioNote?.audio_duration_seconds && (
                   <span>Dauer: {formatDuration(audioNote.audio_duration_seconds)}</span>
                 )}
@@ -327,33 +329,33 @@ export function MeetingProtocol({ meetingId, meetingTitle, context, eventId }: M
 
       {/* Structured notes display */}
       {notes.length > 0 && (
-        <div className="meeting-protocol__notes">
+        <div className="flex flex-col gap-3">
           {notes.map((note, idx) => (
-            <div key={note.id || idx} className="meeting-protocol__note">
+            <div key={note.id || idx} className="bg-glass-bg border border-glass-border rounded-lg p-4 relative">
               {note.sentiment && (
-                <span className="meeting-protocol__sentiment" title={`Stimmung: ${note.sentiment}`}>
+                <span className="absolute top-3 right-4 text-xl" title={`Stimmung: ${note.sentiment}`}>
                   {getSentimentEmoji(note.sentiment)}
                 </span>
               )}
 
               {getNoteSummary(note) && (
-                <div className="meeting-protocol__section">
-                  <h4>Zusammenfassung</h4>
-                  <p>{getNoteSummary(note)}</p>
+                <div className="mb-4 last:mb-0">
+                  <h4 className="m-0 mb-1.5 text-[0.8rem] font-semibold text-text-secondary uppercase tracking-wide">Zusammenfassung</h4>
+                  <p className="m-0 text-[0.9rem] text-text leading-relaxed">{getNoteSummary(note)}</p>
                 </div>
               )}
 
               {note.raw_transcript && (
-                <div className="meeting-protocol__section">
-                  <h4>Rohtranskript</h4>
-                  <p>{note.raw_transcript}</p>
+                <div className="mb-4 last:mb-0">
+                  <h4 className="m-0 mb-1.5 text-[0.8rem] font-semibold text-text-secondary uppercase tracking-wide">Rohtranskript</h4>
+                  <p className="m-0 text-[0.9rem] text-text leading-relaxed">{note.raw_transcript}</p>
                 </div>
               )}
 
               {note.topics_discussed && note.topics_discussed.length > 0 && (
-                <div className="meeting-protocol__section">
-                  <h4>Besprochene Themen</h4>
-                  <ul>
+                <div className="mb-4 last:mb-0">
+                  <h4 className="m-0 mb-1.5 text-[0.8rem] font-semibold text-text-secondary uppercase tracking-wide">Besprochene Themen</h4>
+                  <ul className="m-0 pl-5 text-[0.9rem] text-text leading-relaxed">
                     {note.topics_discussed.map((topic, i) => (
                       <li key={i}>{topic}</li>
                     ))}
@@ -362,9 +364,9 @@ export function MeetingProtocol({ meetingId, meetingTitle, context, eventId }: M
               )}
 
               {note.key_points && note.key_points.length > 0 && (
-                <div className="meeting-protocol__section">
-                  <h4>Kernpunkte</h4>
-                  <ul>
+                <div className="mb-4 last:mb-0">
+                  <h4 className="m-0 mb-1.5 text-[0.8rem] font-semibold text-text-secondary uppercase tracking-wide">Kernpunkte</h4>
+                  <ul className="m-0 pl-5 text-[0.9rem] text-text leading-relaxed">
                     {note.key_points.map((point, i) => (
                       <li key={i}>{point}</li>
                     ))}
@@ -373,9 +375,9 @@ export function MeetingProtocol({ meetingId, meetingTitle, context, eventId }: M
               )}
 
               {note.decisions && note.decisions.length > 0 && (
-                <div className="meeting-protocol__section">
-                  <h4>Entscheidungen</h4>
-                  <ul>
+                <div className="mb-4 last:mb-0">
+                  <h4 className="m-0 mb-1.5 text-[0.8rem] font-semibold text-text-secondary uppercase tracking-wide">Entscheidungen</h4>
+                  <ul className="m-0 pl-5 text-[0.9rem] text-text leading-relaxed">
                     {note.decisions.map((d, i) => (
                       <li key={i}>{d}</li>
                     ))}
@@ -384,19 +386,19 @@ export function MeetingProtocol({ meetingId, meetingTitle, context, eventId }: M
               )}
 
               {note.action_items && note.action_items.length > 0 && (
-                <div className="meeting-protocol__section">
-                  <h4>Action Items</h4>
-                  <ul className="meeting-protocol__actions">
+                <div className="mb-4 last:mb-0">
+                  <h4 className="m-0 mb-1.5 text-[0.8rem] font-semibold text-text-secondary uppercase tracking-wide">Action Items</h4>
+                  <ul className="list-none !p-0 flex flex-col gap-1.5">
                     {note.action_items.map((item, i) => (
-                      <li key={i} className="meeting-protocol__action-item">
-                        <span className="meeting-protocol__action-task">{item.task}</span>
+                      <li key={i} className="flex flex-wrap items-baseline gap-2 px-2 py-1.5 bg-bg-secondary rounded-sm text-[0.85rem]">
+                        <span className="font-medium text-text">{item.task}</span>
                         {item.assignee && (
-                          <span className="meeting-protocol__action-assignee">
+                          <span className="text-primary text-[0.8rem]">
                             &rarr; {item.assignee}
                           </span>
                         )}
                         {item.deadline && (
-                          <span className="meeting-protocol__action-deadline">
+                          <span className="text-text-secondary text-[0.8rem]">
                             bis {new Date(item.deadline).toLocaleDateString('de-DE')}
                           </span>
                         )}
@@ -407,9 +409,9 @@ export function MeetingProtocol({ meetingId, meetingTitle, context, eventId }: M
               )}
 
               {note.follow_ups && note.follow_ups.length > 0 && (
-                <div className="meeting-protocol__section">
-                  <h4>Follow-ups</h4>
-                  <ul>
+                <div className="mb-4 last:mb-0">
+                  <h4 className="m-0 mb-1.5 text-[0.8rem] font-semibold text-text-secondary uppercase tracking-wide">Follow-ups</h4>
+                  <ul className="m-0 pl-5 text-[0.9rem] text-text leading-relaxed">
                     {note.follow_ups.map((f, i) => (
                       <li key={i}>{f}</li>
                     ))}
@@ -417,7 +419,7 @@ export function MeetingProtocol({ meetingId, meetingTitle, context, eventId }: M
                 </div>
               )}
 
-              <span className="meeting-protocol__timestamp">
+              <span className="block text-xs text-text-secondary text-right mt-2">
                 {note.created_at ? new Date(note.created_at).toLocaleString('de-DE') : ''}
               </span>
             </div>
@@ -426,9 +428,9 @@ export function MeetingProtocol({ meetingId, meetingTitle, context, eventId }: M
       )}
 
       {notes.length === 0 && !transcript && (
-        <div className="meeting-protocol__empty">
-          <p>Noch kein Protokoll vorhanden.</p>
-          <p>Starte eine Aufnahme oder gib manuell Notizen ein.</p>
+        <div className="text-center p-8 text-text-secondary text-[0.9rem]">
+          <p className="m-0 mb-1">Noch kein Protokoll vorhanden.</p>
+          <p className="m-0">Starte eine Aufnahme oder gib manuell Notizen ein.</p>
         </div>
       )}
     </div>

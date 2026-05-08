@@ -87,7 +87,7 @@ vi.mock('../SkeletonLoader', () => ({
 import { InsightsDashboard } from '../InsightsDashboard';
 
 const defaultProps = {
-  context: 'personal' as const,
+  context: 'operations' as const,
   onBack: vi.fn(),
   onSelectIdea: vi.fn(),
   initialTab: 'analytics' as const,
@@ -106,7 +106,7 @@ describe('InsightsDashboard Component', () => {
 
   it('shows page title and subtitle', () => {
     render(<InsightsDashboard {...defaultProps} />);
-    expect(screen.getByText('Insights')).toBeInTheDocument();
+    expect(screen.getByText('Einblicke')).toBeInTheDocument();
     expect(screen.getByText(/Deine Gedanken im/)).toBeInTheDocument();
   });
 
@@ -147,6 +147,6 @@ describe('InsightsDashboard Component', () => {
 
   it('passes context to HubPage', () => {
     render(<InsightsDashboard {...defaultProps} />);
-    expect(screen.getByTestId('hub-page')).toHaveAttribute('data-context', 'personal');
+    expect(screen.getByTestId('hub-page')).toHaveAttribute('data-context', 'operations');
   });
 });

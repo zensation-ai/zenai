@@ -1,10 +1,8 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, type CSSProperties } from 'react';
 import axios from 'axios';
 import { AIContext } from './ContextSwitcher';
 import { showToast } from './Toast';
 import { getTimeBasedGreeting } from '../utils/aiPersonality';
-import '../neurodesign.css';
-import './ProactiveDashboard.css';
 import { logError } from '../utils/errors';
 
 interface Suggestion {
@@ -33,10 +31,10 @@ interface ProactiveDashboardProps {
 }
 
 const CONTEXT_LABELS: Record<AIContext, string> = {
-  personal: 'Persönlich',
-  work: 'Arbeit',
-  learning: 'Lernen',
-  creative: 'Kreativ',
+  operations: 'Operations',
+  finance: 'Finance',
+  people: 'People',
+  strategy: 'Strategy',
 };
 
 const SUGGESTION_TYPE_LABELS: Record<string, string> = {
@@ -312,7 +310,7 @@ export function ProactiveDashboard({ onBack, context, embedded }: ProactiveDashb
           ) : (
             <div className="suggestions-list neuro-flow-list">
               {displayedSuggestions.map((suggestion, index) => (
-                <div key={suggestion.id} className="suggestion-card liquid-glass neuro-stagger-item neuro-hover-lift" style={{ animationDelay: `${index * 50}ms` }}>
+                <div key={suggestion.id} className="suggestion-card liquid-glass neuro-stagger-item neuro-hover-lift [animation-delay:var(--delay)]" style={{ '--delay': `${index * 50}ms` } as CSSProperties}>
                   <div className="suggestion-header">
                     <span className="suggestion-icon" aria-hidden="true">{getSuggestionIcon(suggestion.type)}</span>
                     <div className="suggestion-meta">
@@ -378,7 +376,7 @@ export function ProactiveDashboard({ onBack, context, embedded }: ProactiveDashb
           ) : (
             <div className="routines-list neuro-flow-list">
               {displayedRoutines.map((routine, index) => (
-                <div key={routine.id} className={`routine-card liquid-glass neuro-stagger-item neuro-hover-lift ${routine.enabled ? '' : 'disabled'}`} style={{ animationDelay: `${index * 50}ms` }}>
+                <div key={routine.id} className={`routine-card liquid-glass neuro-stagger-item neuro-hover-lift [animation-delay:var(--delay)] ${routine.enabled ? '' : 'disabled'}`} style={{ '--delay': `${index * 50}ms` } as CSSProperties}>
                   <div className="routine-info">
                     <h3 className="routine-name">{routine.name}</h3>
                     <p className="routine-pattern">{routine.pattern}</p>

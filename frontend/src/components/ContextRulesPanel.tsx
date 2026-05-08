@@ -8,8 +8,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { AIContext } from './ContextSwitcher';
 import { getApiBaseUrl, getApiFetchHeaders } from '../utils/apiConfig';
-import './ContextRulesPanel.css';
-
 // ─── Types ──────────────────────────────────────────────
 
 interface DataSource {
@@ -75,7 +73,7 @@ const DS_TYPE_LABELS: Record<string, string> = {
 
 const OPERATOR_LABELS: Record<string, string> = {
   equals: '=',
-  contains: 'enthaelt',
+  contains: 'enthält',
   gt: '>',
   lt: '<',
   regex: 'regex',
@@ -237,7 +235,7 @@ function RuleFormModal({
               </select>
             </div>
             <div className="ctx-rules-form-group">
-              <label className="ctx-rules-form-label">Prioritaet (1-100)</label>
+              <label className="ctx-rules-form-label">Priorität (1-100)</label>
               <input
                 className="ctx-rules-input"
                 type="number"
@@ -288,10 +286,9 @@ function RuleFormModal({
               {form.dataSources.map((ds, idx) => (
                 <div key={idx} className="ctx-rules-ds-item">
                   <select
-                    className="ctx-rules-select"
+                    className="ctx-rules-select max-w-[120px]"
                     value={ds.type}
                     onChange={e => updateDataSource(idx, 'type', e.target.value)}
-                    style={{ maxWidth: '120px' }}
                   >
                     <option value="db_query">Datenbank</option>
                     <option value="memory_layer">Memory</option>
@@ -356,20 +353,18 @@ function RuleFormModal({
                 {form.conditions.map((cond, idx) => (
                   <div key={idx} className="ctx-rules-ds-item">
                     <input
-                      className="ctx-rules-input"
+                      className="ctx-rules-input max-w-[120px]"
                       placeholder="Feld"
                       value={cond.field}
                       onChange={e => updateCondition(idx, 'field', e.target.value)}
-                      style={{ maxWidth: '120px' }}
                     />
                     <select
-                      className="ctx-rules-select"
+                      className="ctx-rules-select max-w-[100px]"
                       value={cond.operator}
                       onChange={e => updateCondition(idx, 'operator', e.target.value)}
-                      style={{ maxWidth: '100px' }}
                     >
                       <option value="equals">=</option>
-                      <option value="contains">enthaelt</option>
+                      <option value="contains">enthält</option>
                       <option value="gt">&gt;</option>
                       <option value="lt">&lt;</option>
                       <option value="regex">regex</option>
@@ -455,7 +450,7 @@ function PerformanceView({ context, rules }: { context: AIContext; rules: Contex
   if (stats.length === 0) {
     return (
       <div className="ctx-rules-perf-empty">
-        Noch keine Performance-Daten vorhanden. Regeln muessen zuerst ausgefuehrt werden.
+        Noch keine Performance-Daten vorhanden. Regeln müssen zuerst ausgeführt werden.
       </div>
     );
   }
@@ -467,7 +462,7 @@ function PerformanceView({ context, rules }: { context: AIContext; rules: Contex
           <div className="ctx-rules-perf-card-title">{getRuleName(stat.ruleId)}</div>
           <div className="ctx-rules-perf-stats">
             <div className="ctx-rules-perf-stat">
-              <span className="ctx-rules-perf-stat-label">Ausfuehrungen</span>
+              <span className="ctx-rules-perf-stat-label">Ausführungen</span>
               <span className="ctx-rules-perf-stat-value">{stat.totalExecutions}</span>
             </div>
             <div className="ctx-rules-perf-stat">
@@ -554,7 +549,7 @@ export function ContextRulesPanel({ context }: ContextRulesPanelProps) {
         r.id === rule.id ? { ...r, isActive: !r.isActive } : r
       ));
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Fehler beim Aendern');
+      alert(err instanceof Error ? err.message : 'Fehler beim Ändern');
     }
   };
 
@@ -566,7 +561,7 @@ export function ContextRulesPanel({ context }: ContextRulesPanelProps) {
       setDeletingId(null);
       setRules(prev => prev.filter(r => r.id !== id));
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Fehler beim Loeschen');
+      alert(err instanceof Error ? err.message : 'Fehler beim Löschen');
     }
   };
 
@@ -683,14 +678,14 @@ export function ContextRulesPanel({ context }: ContextRulesPanelProps) {
                       className="ctx-rules-btn ctx-rules-btn-delete"
                       onClick={() => setDeletingId(rule.id)}
                     >
-                      Loeschen
+                      Löschen
                     </button>
                   </div>
 
                   {/* Delete Confirmation */}
                   {deletingId === rule.id && (
                     <div className="ctx-rules-confirm-delete">
-                      <span>Regel &quot;{rule.name}&quot; wirklich loeschen?</span>
+                      <span>Regel &quot;{rule.name}&quot; wirklich löschen?</span>
                       <div className="ctx-rules-confirm-actions">
                         <button
                           type="button"
@@ -704,7 +699,7 @@ export function ContextRulesPanel({ context }: ContextRulesPanelProps) {
                           className="ctx-rules-btn ctx-rules-btn-delete"
                           onClick={() => handleDelete(rule.id)}
                         >
-                          Endgueltig loeschen
+                          Endgültig löschen
                         </button>
                       </div>
                     </div>

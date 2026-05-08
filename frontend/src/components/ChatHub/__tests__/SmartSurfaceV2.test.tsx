@@ -40,7 +40,7 @@ describe('SmartSurfaceV2', () => {
       refresh: vi.fn(),
     });
 
-    const { container } = render(<SmartSurfaceV2 context="personal" />);
+    const { container } = render(<SmartSurfaceV2 context="operations" />);
     expect(container.firstChild).toBeNull();
   });
 
@@ -55,7 +55,7 @@ describe('SmartSurfaceV2', () => {
       refresh: vi.fn(),
     });
 
-    const { container } = render(<SmartSurfaceV2 context="personal" />);
+    const { container } = render(<SmartSurfaceV2 context="operations" />);
     expect(container.firstChild).toBeNull();
   });
 
@@ -74,7 +74,7 @@ describe('SmartSurfaceV2', () => {
       refresh: vi.fn(),
     });
 
-    render(<SmartSurfaceV2 context="personal" />);
+    render(<SmartSurfaceV2 context="operations" />);
     const cards = screen.getAllByRole('article');
     expect(cards).toHaveLength(3);
 
@@ -97,10 +97,10 @@ describe('SmartSurfaceV2', () => {
       refresh: vi.fn(),
     });
 
-    render(<SmartSurfaceV2 context="personal" />);
+    render(<SmartSurfaceV2 context="operations" />);
     const liveRegion = screen.getByRole('region');
     expect(liveRegion).toHaveAttribute('aria-live', 'polite');
-    expect(liveRegion).toHaveAttribute('aria-label', 'Proaktive Vorschlaege');
+    expect(liveRegion).toHaveAttribute('aria-label', 'Proaktive Vorschläge');
   });
 
   it('calls dismiss when dismiss button is clicked', () => {
@@ -117,7 +117,7 @@ describe('SmartSurfaceV2', () => {
       refresh: vi.fn(),
     });
 
-    render(<SmartSurfaceV2 context="personal" />);
+    render(<SmartSurfaceV2 context="operations" />);
     const dismissBtn = screen.getByLabelText('Verwerfen');
     fireEvent.click(dismissBtn);
     expect(dismissFn).toHaveBeenCalledWith('abc');
@@ -139,7 +139,7 @@ describe('SmartSurfaceV2', () => {
       refresh: vi.fn(),
     });
 
-    render(<SmartSurfaceV2 context="personal" />);
+    render(<SmartSurfaceV2 context="operations" />);
     expect(screen.getAllByRole('article')).toHaveLength(3);
   });
 });

@@ -112,7 +112,7 @@ export const RevenueDashboard: React.FC = () => {
                   // eslint-disable-next-line @typescript-eslint/no-explicit-any
                   formatter={((value: any) => [`€${Number(value ?? 0).toFixed(2)}`, 'MRR']) as any}
                 />
-                <Line type="monotone" dataKey="mrr" stroke="#818cf8" strokeWidth={2} dot={false} />
+                <Line type="monotone" dataKey="mrr" stroke="#2d8a9e" strokeWidth={2} dot={false} />
               </LineChart>
             </ResponsiveContainer>
           </div>

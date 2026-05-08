@@ -1,9 +1,6 @@
-import { memo } from 'react';
+import { memo, type CSSProperties } from 'react';
 import { MEETING_TYPES, MEETING_STATUS } from '../constants/ideaTypes';
 import { formatDateWithWeekday, formatDuration } from '../utils/dateUtils';
-import './MeetingCard.css';
-import '../neurodesign.css';
-
 export interface Meeting {
   id: string;
   company_id: string;
@@ -58,8 +55,8 @@ function MeetingCardComponent({ meeting, onClick, hasNotes }: MeetingCardProps) 
           {hasNotes && <span className="has-notes-badge neuro-reward-badge" title="Hat Notizen">📝</span>}
         </div>
         <span
-          className="meeting-status"
-          style={{ backgroundColor: statusColor }}
+          className="meeting-status bg-[var(--bg)]"
+          style={{ '--bg': statusColor } as CSSProperties}
         >
           {statusLabel}
         </span>

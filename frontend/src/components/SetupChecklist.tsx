@@ -10,11 +10,9 @@
  * Dismissible, uses localStorage to track progress.
  */
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, type CSSProperties } from 'react';
 import type { Page } from '../types';
 import { safeLocalStorage } from '../utils/storage';
-import './SetupChecklist.css';
-
 interface SetupChecklistProps {
   onNavigate: (page: Page) => void;
   ideasCount: number;
@@ -31,7 +29,7 @@ const CHECKLIST_ITEMS: ChecklistItem[] = [
   { id: 'onboarding', label: 'Onboarding abgeschlossen', page: 'home', storageKey: 'zenai_onboarding_completed' },
   { id: 'first-idea', label: 'Erste Idee erstellt', page: 'ideas', storageKey: 'zenai_checklist_first_idea' },
   { id: 'chat-tried', label: 'Chat ausprobiert', page: 'chat', storageKey: 'zenai_checklist_chat_tried' },
-  { id: 'profile', label: 'Profil angepasst', page: 'settings', storageKey: 'zenai_checklist_profile' },
+  { id: 'profile', label: 'Profil angepasst', page: 'settings-user', storageKey: 'zenai_checklist_profile' },
 ];
 
 const DISMISSED_KEY = 'zenai_checklist_dismissed';
@@ -93,8 +91,8 @@ export function SetupChecklist({ onNavigate, ideasCount }: SetupChecklistProps) 
       <div className="setup-checklist-progress">
         <div className="setup-checklist-bar">
           <div
-            className="setup-checklist-bar-fill"
-            style={{ width: `${(completedCount / totalCount) * 100}%` }}
+            className="setup-checklist-bar-fill w-[var(--bar)]"
+            style={{ '--bar': `${(completedCount / totalCount) * 100}%` } as CSSProperties}
           />
         </div>
         <span className="setup-checklist-count">{completedCount}/{totalCount} erledigt</span>

@@ -14,7 +14,7 @@ import {
 } from '../../../services/tool-handlers/memory-management';
 
 const execContext = {
-  aiContext: 'personal' as const,
+  aiContext: 'operations' as const,
   sessionId: 'test-session',
 };
 
@@ -37,7 +37,7 @@ describe('Memory Management Tools', () => {
 
       expect(result).toContain('hochgestuft');
       expect(mockQueryContext).toHaveBeenCalledWith(
-        'personal',
+        'operations',
         expect.stringContaining('importance'),
         ['fact-1']
       );
@@ -73,7 +73,7 @@ describe('Memory Management Tools', () => {
 
       expect(result).toContain('herabgestuft');
       expect(mockQueryContext).toHaveBeenCalledWith(
-        'personal',
+        'operations',
         expect.stringContaining('confidence - 0.3'),
         ['fact-1']
       );
@@ -104,7 +104,7 @@ describe('Memory Management Tools', () => {
 
       expect(result).toContain('vergessen');
       expect(mockQueryContext).toHaveBeenCalledWith(
-        'personal',
+        'operations',
         expect.stringContaining('forgotten = true'),
         ['fact-1', 'User corrected this information']
       );

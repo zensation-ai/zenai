@@ -170,14 +170,14 @@ describe('Email Webhooks Routes', () => {
           data: { email_id: 'e1', to: ['info@zensation.ai'] },
         });
 
-      // The context passed to queryPublic should contain 'work'
+      // The context passed to queryPublic should contain 'finance'
       expect(mockQueryPublic).toHaveBeenCalledWith(
         expect.any(String),
-        expect.arrayContaining(['work'])
+        expect.arrayContaining(['finance'])
       );
     });
 
-    it('should map zensation.app to personal context', async () => {
+    it('should map zensation.app to operations context', async () => {
       mockIsResendConfigured.mockReturnValue(true);
       mockIsWebhookConfigured.mockReturnValue(false);
       mockQueryPublic.mockResolvedValue({ rows: [] });
@@ -191,7 +191,7 @@ describe('Email Webhooks Routes', () => {
 
       expect(mockQueryPublic).toHaveBeenCalledWith(
         expect.any(String),
-        expect.arrayContaining(['personal'])
+        expect.arrayContaining(['operations'])
       );
     });
   });

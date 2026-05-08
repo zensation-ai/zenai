@@ -107,6 +107,13 @@ const electronAPI = {
       ipcRenderer.invoke('backend:getUrl') as Promise<string>,
   },
 
+  // ─── Tray status ─────────────────────────────────────────────────────────
+
+  tray: {
+    /** Set tray icon status: 'idle' | 'thinking' | 'notification' */
+    setStatus: (status: string): void => ipcRenderer.send('tray:setStatus', status),
+  },
+
   // ─── Spotlight overlay ───────────────────────────────────────────────────
 
   spotlight: {
@@ -124,6 +131,13 @@ const electronAPI = {
 
     close: (): void => ipcRenderer.send('spotlight:close'),
     resize: (height: number): void => ipcRenderer.send('spotlight:resize', height),
+
+    /** Send a query to the backend via main process, returns response */
+    query: (text: string): Promise<{ response: string }> =>
+      ipcRenderer.invoke('spotlight:query', text) as Promise<{ response: string }>,
+
+    /** Open the query in the main chat window */
+    openInMain: (query: string): void => ipcRenderer.send('spotlight:openInMain', query),
   },
 };
 

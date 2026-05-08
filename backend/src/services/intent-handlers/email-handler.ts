@@ -11,7 +11,7 @@ import { queryContext } from '../../utils/database-context';
 import { queryOllamaJSON } from '../../utils/ollama';
 import { logger } from '../../utils/logger';
 import type { DetectedIntent } from '../intent-detector';
-import type { IntentHandlerResult } from './index';
+import type { IntentHandlerResult } from './intent-types';
 
 // ============================================================
 // Types

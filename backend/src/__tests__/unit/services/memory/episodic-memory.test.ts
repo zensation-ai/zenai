@@ -40,7 +40,7 @@ var mockGenerateEmbedding = generateEmbedding as jest.MockedFunction<typeof gene
 
 describe('Episodic Memory Service', () => {
   let service: EpisodicMemoryService;
-  const testContext: AIContext = 'personal';
+  const testContext: AIContext = 'operations';
 
   beforeEach(() => {
     service = new EpisodicMemoryService();
@@ -55,7 +55,7 @@ describe('Episodic Memory Service', () => {
   describe('store', () => {
     const mockDbRow = {
       id: 'test-id-123',
-      context: 'personal',
+      context: 'operations',
       session_id: 'session-123',
       trigger: 'User question',
       response: 'AI response',
@@ -147,7 +147,7 @@ describe('Episodic Memory Service', () => {
     const mockEpisodes = [
       {
         id: 'ep-1',
-        context: 'personal',
+        context: 'operations',
         session_id: 'session-1',
         trigger: 'First question',
         response: 'First response',
@@ -229,7 +229,7 @@ describe('Episodic Memory Service', () => {
     it('should return episode when found', async () => {
       const mockRow = {
         id: 'ep-123',
-        context: 'personal',
+        context: 'operations',
         session_id: 'session-1',
         trigger: 'Question',
         response: 'Answer',
@@ -380,7 +380,7 @@ describe('Episodic Memory Service', () => {
       const episodes: Episode[] = [
         {
           id: '1',
-          context: 'personal',
+          context: 'operations',
           sessionId: 'sess-1',
           timestamp: new Date(),
           trigger: 'Q1',
@@ -396,7 +396,7 @@ describe('Episodic Memory Service', () => {
         },
         {
           id: '2',
-          context: 'personal',
+          context: 'operations',
           sessionId: 'sess-1',
           timestamp: new Date(),
           trigger: 'Q2',
@@ -431,7 +431,7 @@ describe('Episodic Memory Service', () => {
       const excitedEpisodes: Episode[] = [
         {
           id: '1',
-          context: 'personal',
+          context: 'operations',
           sessionId: 'sess-1',
           timestamp: new Date(),
           trigger: 'Great!',

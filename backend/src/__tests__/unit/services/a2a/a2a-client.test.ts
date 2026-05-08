@@ -4,7 +4,7 @@
 
 jest.mock('../../../../utils/database-context', () => ({
   queryContext: jest.fn(),
-  isValidContext: jest.fn((ctx: string) => ['personal', 'work', 'learning', 'creative'].includes(ctx)),
+  isValidContext: jest.fn((ctx: string) => ['operations', 'finance', 'people', 'strategy'].includes(ctx)),
 }));
 
 jest.mock('../../../../utils/logger', () => ({
@@ -218,14 +218,14 @@ describe('A2AClient', () => {
 
       mockQueryContext.mockResolvedValueOnce({ rows: [mockAgentRow], rowCount: 1 } as any);
 
-      const agent = await client.registerAgent('personal' as any, {
+      const agent = await client.registerAgent('operations' as any, {
         name: 'Test Agent',
         url: 'https://agent.example.com',
       });
 
       expect(agent.name).toBe('Test Agent');
       expect(mockQueryContext).toHaveBeenCalledWith(
-        'personal',
+        'operations',
         expect.stringContaining('INSERT INTO a2a_external_agents'),
         expect.any(Array)
       );
@@ -235,7 +235,7 @@ describe('A2AClient', () => {
       mockFetch.mockRejectedValueOnce(new Error('Network error'));
       mockQueryContext.mockResolvedValueOnce({ rows: [mockAgentRow], rowCount: 1 } as any);
 
-      const agent = await client.registerAgent('personal' as any, {
+      const agent = await client.registerAgent('operations' as any, {
         name: 'Offline Agent',
         url: 'https://offline.example.com',
       });
@@ -248,12 +248,12 @@ describe('A2AClient', () => {
     it('should return active agents', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [mockAgentRow], rowCount: 1 } as any);
 
-      const agents = await client.listAgents('personal' as any);
+      const agents = await client.listAgents('operations' as any);
 
       expect(agents).toHaveLength(1);
       expect(agents[0].name).toBe('Test Agent');
       expect(mockQueryContext).toHaveBeenCalledWith(
-        'personal',
+        'operations',
         expect.stringContaining('is_active = true')
       );
     });
@@ -263,14 +263,14 @@ describe('A2AClient', () => {
     it('should remove an agent', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [{ id: 'agent-123' }], rowCount: 1 } as any);
 
-      await expect(client.removeAgent('personal' as any, 'agent-123')).resolves.not.toThrow();
+      await expect(client.removeAgent('operations' as any, 'agent-123')).resolves.not.toThrow();
     });
 
     it('should throw when agent not found', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any);
 
       await expect(
-        client.removeAgent('personal' as any, 'nonexistent')
+        client.removeAgent('operations' as any, 'nonexistent')
       ).rejects.toThrow('not found');
     });
   });
@@ -287,7 +287,7 @@ describe('A2AClient', () => {
       // Update health status
       mockQueryContext.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any);
 
-      const result = await client.healthCheck('personal' as any, 'agent-123');
+      const result = await client.healthCheck('operations' as any, 'agent-123');
 
       expect(result.status).toBe('healthy');
       expect(result.responseTimeMs).toBeGreaterThanOrEqual(0);
@@ -299,7 +299,7 @@ describe('A2AClient', () => {
       mockFetch.mockRejectedValueOnce(new Error('Connection refused'));
       mockQueryContext.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any);
 
-      const result = await client.healthCheck('personal' as any, 'agent-123');
+      const result = await client.healthCheck('operations' as any, 'agent-123');
 
       expect(result.status).toBe('unhealthy');
       expect(result.error).toContain('Connection refused');
@@ -309,7 +309,7 @@ describe('A2AClient', () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any);
 
       await expect(
-        client.healthCheck('personal' as any, 'nonexistent')
+        client.healthCheck('operations' as any, 'nonexistent')
       ).rejects.toThrow('not found');
     });
   });

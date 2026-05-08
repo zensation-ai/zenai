@@ -24,7 +24,7 @@ let approachingInterval: ReturnType<typeof setInterval> | null = null;
 let dailyDigestTimeout: ReturnType<typeof setTimeout> | null = null;
 let weeklyReviewTimeout: ReturnType<typeof setTimeout> | null = null;
 
-const CONTEXTS: AIContext[] = ['personal', 'work', 'learning', 'creative'];
+const CONTEXTS: AIContext[] = ['operations', 'finance', 'people', 'strategy'];
 
 // ===========================================
 // Producers

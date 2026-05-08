@@ -1,0 +1,60 @@
+# GitHub-standard citation metadata.
+# Renders as a "Cite this repository" widget on the GitHub repo page.
+# Edit and re-render via https://citation-file-format.github.io/.
+cff-version: 1.2.0
+title: "ZenBrain: A Neuroscience-Inspired 7-Layer Memory Architecture for Autonomous AI Systems"
+message: "If you use ZenBrain in your research, please cite this preprint."
+type: software
+authors:
+  - given-names: Alexander
+    family-names: Bering
+    affiliation: "Zensation AI"
+    orcid: "https://orcid.org/0009-0001-1793-012X"
+    email: "research@zensation.ai"
+identifiers:
+  - type: other
+    value: "arXiv:2604.23878"
+    description: "arXiv preprint"
+  - type: doi
+    value: "10.5281/zenodo.19353663"
+    description: "Zenodo concept DOI (resolves to latest version)"
+  - type: doi
+    value: "10.5281/zenodo.19353664"
+    description: "Zenodo V1 (priority anchor, 31 March 2026)"
+  - type: doi
+    value: "10.5281/zenodo.19481262"
+    description: "Zenodo V6 (latest static version, 9 April 2026)"
+repository-code: "https://github.com/zensation-ai/zenbrain"
+url: "https://arxiv.org/abs/2604.23878"
+abstract: >
+  ZenBrain is a 7-layer memory architecture integrating fifteen
+  neuroscience-inspired algorithms into a unified system for autonomous
+  AI agents. On LongMemEval-Full-500 it reaches 91.3% of long-context-
+  oracle accuracy at 1/106th the per-query token budget, and wins 12/12
+  head-to-head judge comparisons against Letta, Mem0, and A-Mem
+  (Bonferroni-corrected p ≤ 6.2×10⁻³¹).
+keywords:
+  - "agent memory"
+  - "neuroscience-inspired AI"
+  - "LLM-as-judge"
+  - "ablation study"
+  - "long-context evaluation"
+  - "predictive memory architecture"
+license: Apache-2.0
+version: "0.2.1"
+date-released: "2026-04-28"
+preferred-citation:
+  type: article
+  authors:
+    - given-names: Alexander
+      family-names: Bering
+      affiliation: "Zensation AI"
+      orcid: "https://orcid.org/0009-0001-1793-012X"
+  title: "ZenBrain: A Neuroscience-Inspired 7-Layer Memory Architecture for Autonomous AI Systems"
+  year: 2026
+  month: 4
+  journal: "arXiv preprint arXiv:2604.23878"
+  url: "https://arxiv.org/abs/2604.23878"
+  identifiers:
+    - type: other
+      value: "arXiv:2604.23878"

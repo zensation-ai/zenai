@@ -6,6 +6,7 @@
 
 import { queryPublic } from '../../utils/database-context';
 import { logger } from '../../utils/logger';
+import { truncateIpAddress } from '../../utils/privacy/ip-truncate';
 
 // ===========================================
 // Types
@@ -47,7 +48,7 @@ class SessionStore {
         input.userId,
         input.refreshTokenHash,
         JSON.stringify(input.deviceInfo),
-        input.ipAddress,
+        truncateIpAddress(input.ipAddress),
         input.expiresAt.toISOString(),
       ]
     );

@@ -9,6 +9,7 @@ import crypto from 'crypto';
 import { logger } from '../../utils/logger';
 import type { User } from './user-service';
 import { sessionStore } from './session-store';
+import type { OrgPlan } from '../../types/multi-tenancy';
 
 // ===========================================
 // Types
@@ -26,6 +27,17 @@ export interface AccessTokenPayload {
   role: string;
   iat: number;
   exp: number;
+  // Multi-tenancy (all optional for backward compat)
+  orgId?: string;
+  workspaceId?: string;
+  workspaceRole?: string;
+  /**
+   * Sprint 1.9: Org-Plan embedded in JWT so rate-limiter can tier without a
+   * per-request DB lookup. Resolved from public.organization_members +
+   * public.organizations.plan at token-issue time. Defaults to 'free' when the
+   * user has no org membership.
+   */
+  plan?: OrgPlan;
 }
 
 // ===========================================
@@ -53,6 +65,63 @@ function getJwtSecret(): string {
 // JWT Service
 // ===========================================
 
+const VALID_PLANS: ReadonlySet<OrgPlan> = new Set<OrgPlan>([
+  'free',
+  'personal',
+  'pro',
+  'business',
+  'enterprise',
+]);
+
+/**
+ * Sprint 1.9: Look up the user's highest org plan for embedding into the JWT.
+ *
+ * Strategy: pick the "strongest" plan across all orgs where the user is a
+ * member (an owner/admin on a free org who is also a member of a pro org
+ * effectively gets pro-tier API limits). Falls back to 'free' when the user
+ * has no org membership or the lookup fails.
+ *
+ * This runs ONCE at token-issue time (login/refresh/workspace-switch), not
+ * per request — that is precisely the point of embedding plan in the JWT.
+ */
+export async function lookupUserOrgPlan(userId: string): Promise<OrgPlan> {
+  try {
+    const { queryPublic } = await import('../../utils/database-context');
+    const result = await queryPublic(
+      `SELECT o.plan
+       FROM public.organization_members m
+       JOIN public.organizations o ON o.id = m.org_id
+       WHERE m.user_id = $1`,
+      [userId]
+    );
+    let best: OrgPlan = 'free';
+    const rank: Record<OrgPlan, number> = {
+      free: 0,
+      personal: 1,
+      pro: 2,
+      business: 3,
+      enterprise: 4,
+    };
+    for (const row of result.rows as Array<{ plan: unknown }>) {
+      const raw = row.plan;
+      if (typeof raw === 'string' && VALID_PLANS.has(raw as OrgPlan)) {
+        const candidate = raw as OrgPlan;
+        if (rank[candidate] > rank[best]) {
+          best = candidate;
+        }
+      }
+    }
+    return best;
+  } catch (error) {
+    logger.warn('Failed to look up user plan, defaulting to free', {
+      operation: 'jwt.lookupUserOrgPlan',
+      userId,
+      error: error instanceof Error ? error.message : String(error),
+    });
+    return 'free';
+  }
+}
+
 /**
  * Generate an access + refresh token pair for a user.
  * The refresh token is a random hex string stored as a hash in the session store.
@@ -64,11 +133,14 @@ export async function generateTokenPair(
 ): Promise<TokenPair> {
   const secret = getJwtSecret();
 
+  const plan = await lookupUserOrgPlan(user.id);
+
   const accessToken = jwt.sign(
     {
       sub: user.id,
       email: user.email,
       role: user.role,
+      plan,
     },
     secret,
     {
@@ -109,6 +181,33 @@ export async function generateTokenPair(
     refreshToken,
     expiresIn: ACCESS_TOKEN_TTL_SECONDS,
   };
+}
+
+/**
+ * Generate a new access token with workspace context.
+ * Called on workspace switch — issues new token without new refresh token.
+ *
+ * Sprint 1.9: When an explicit `plan` is provided (e.g. from the org being
+ * switched to), it is embedded. Otherwise, we fall back to the user's highest
+ * plan across all orgs via {@link lookupUserOrgPlan}. This keeps
+ * plan-aware rate-limiting correct across workspace switches.
+ */
+export async function generateWorkspaceToken(
+  user: { id: string; email: string; role: string },
+  workspace: { orgId: string; workspaceId: string; workspaceRole: string; plan?: OrgPlan }
+): Promise<string> {
+  const secret = getJwtSecret();
+  const plan = workspace.plan ?? (await lookupUserOrgPlan(user.id));
+  const payload: Omit<AccessTokenPayload, 'iat' | 'exp'> = {
+    sub: user.id,
+    email: user.email,
+    role: user.role,
+    orgId: workspace.orgId,
+    workspaceId: workspace.workspaceId,
+    workspaceRole: workspace.workspaceRole,
+    plan,
+  };
+  return jwt.sign(payload, secret, { expiresIn: ACCESS_TOKEN_TTL });
 }
 
 /**

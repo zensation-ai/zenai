@@ -28,7 +28,14 @@ import {
   updateExecutionStatus,
   getExecutionStatus,
 } from '../services/agent-checkpoints';
+import { agentAnalytics } from '../services/agents/agent-analytics';
 import { advancedRateLimiter } from '../services/security/rate-limit-advanced';
+import { requirePlan } from '../middleware/plan-gate';
+
+function safeParseJson(value: unknown, fallback: unknown[] = []): unknown {
+  if (typeof value !== 'string') return value ?? fallback;
+  try { return JSON.parse(value); } catch { return fallback; }
+}
 
 export const agentTeamsRouter = Router();
 
@@ -40,12 +47,13 @@ agentTeamsRouter.post(
   '/execute',
   apiKeyAuth,
   requireScope('write'),
+  requirePlan('pro'),
   advancedRateLimiter.ai,
   asyncHandler(async (req: Request, res: Response) => {
     const {
       task,
       context,
-      aiContext = 'personal',
+      aiContext = 'operations',
       strategy,
       skipReview,
       useGraph,
@@ -71,7 +79,7 @@ agentTeamsRouter.post(
     if (!isValidContext(aiContext)) {
       res.status(400).json({
         success: false,
-        error: 'Invalid aiContext. Must be one of: personal, work, learning, creative',
+        error: 'Invalid aiContext. Must be one of: operations, finance, people, strategy',
       });
       return;
     }
@@ -202,9 +210,9 @@ agentTeamsRouter.get(
   requireScope('read'),
   asyncHandler(async (req: Request, res: Response) => {
     const userId = getUserId(req);
-    const context = (req.query.context as string) || 'personal';
+    const context = (req.query.context as string) || 'operations';
     if (!isValidContext(context)) {
-      throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
+      throw new ValidationError('Invalid context. Use "operations", "finance", "people", or "strategy".');
     }
 
     const limit = toIntBounded(req.query.limit as string, 20, 1, 100);
@@ -228,7 +236,7 @@ agentTeamsRouter.get(
         task: row.task_description,
         strategy: row.strategy,
         finalOutput: row.final_output,
-        agents: typeof row.agent_results === 'string' ? JSON.parse(row.agent_results) : row.agent_results,
+        agents: safeParseJson(row.agent_results),
         executionTimeMs: row.execution_time_ms,
         tokens: row.tokens,
         success: row.success,
@@ -251,9 +259,9 @@ agentTeamsRouter.get(
   requireUUID('id'),
   asyncHandler(async (req: Request, res: Response) => {
     const userId = getUserId(req);
-    const context = (req.query.context as string) || 'personal';
+    const context = (req.query.context as string) || 'operations';
     if (!isValidContext(context)) {
-      throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
+      throw new ValidationError('Invalid context. Use "operations", "finance", "people", or "strategy".');
     }
 
     const result = await queryContext(
@@ -279,7 +287,7 @@ agentTeamsRouter.get(
         task: row.task_description,
         strategy: row.strategy,
         finalOutput: row.final_output,
-        agents: typeof row.agent_results === 'string' ? JSON.parse(row.agent_results) : row.agent_results,
+        agents: safeParseJson(row.agent_results),
         executionTimeMs: row.execution_time_ms,
         tokens: row.tokens,
         success: row.success,
@@ -302,9 +310,9 @@ agentTeamsRouter.post(
   requireUUID('id'),
   asyncHandler(async (req: Request, res: Response) => {
     const userId = getUserId(req);
-    const context = (req.body.context as string) || 'personal';
+    const context = (req.body.context as string) || 'operations';
     if (!isValidContext(context)) {
-      throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
+      throw new ValidationError('Invalid context. Use "operations", "finance", "people", or "strategy".');
     }
 
     // Fetch execution
@@ -366,6 +374,7 @@ agentTeamsRouter.post(
   '/execute/stream',
   apiKeyAuth,
   requireScope('write'),
+  requirePlan('pro'),
   advancedRateLimiter.ai,
   async (req: Request, res: Response) => {
     try {
@@ -373,7 +382,7 @@ agentTeamsRouter.post(
       const {
         task,
         context,
-        aiContext = 'personal',
+        aiContext = 'operations',
         strategy,
         skipReview,
         templateId,
@@ -399,7 +408,7 @@ agentTeamsRouter.post(
       if (!isValidContext(aiContext)) {
         res.status(400).json({
           success: false,
-          error: 'Invalid aiContext. Must be one of: personal, work, learning, creative',
+          error: 'Invalid aiContext. Must be one of: operations, finance, people, strategy',
         });
         return;
       }
@@ -486,7 +495,7 @@ agentTeamsRouter.get(
   requireScope('read'),
   asyncHandler(async (req: Request, res: Response) => {
     const userId = getUserId(req);
-    const context = (req.query.context as string) || 'personal';
+    const context = (req.query.context as string) || 'operations';
     if (!isValidContext(context)) {
       throw new ValidationError('Invalid context');
     }
@@ -561,6 +570,46 @@ agentTeamsRouter.get(
   })
 );
 
+/**
+ * GET /api/agents/analytics/overview — system-wide agent stats
+ */
+agentTeamsRouter.get(
+  '/analytics/overview',
+  apiKeyAuth,
+  requireScope('read'),
+  asyncHandler(async (_req: Request, res: Response) => {
+    const data = await agentAnalytics.getSystemOverview();
+    res.json({ success: true, data });
+  })
+);
+
+/**
+ * GET /api/agents/analytics/suggestions — optimization suggestions
+ */
+agentTeamsRouter.get(
+  '/analytics/suggestions',
+  apiKeyAuth,
+  requireScope('read'),
+  asyncHandler(async (_req: Request, res: Response) => {
+    const data = await agentAnalytics.getOptimizationSuggestions();
+    res.json({ success: true, data });
+  })
+);
+
+/**
+ * GET /api/agents/analytics/trends — usage trends
+ */
+agentTeamsRouter.get(
+  '/analytics/trends',
+  apiKeyAuth,
+  requireScope('read'),
+  asyncHandler(async (req: Request, res: Response) => {
+    const days = toIntBounded(req.query.days as string, 7, 1, 90);
+    const data = await agentAnalytics.getUsageTrends(days);
+    res.json({ success: true, data });
+  })
+);
+
 // ===========================================
 // Durable Execution: Pause / Resume / Cancel
 // ===========================================
@@ -576,7 +625,7 @@ agentTeamsRouter.post(
   requireUUID('id'),
   asyncHandler(async (req: Request, res: Response) => {
     const userId = getUserId(req);
-    const context = (req.body.context as string) || 'personal';
+    const context = (req.body.context as string) || 'operations';
     if (!isValidContext(context)) {
       throw new ValidationError('Invalid context');
     }
@@ -610,7 +659,7 @@ agentTeamsRouter.post(
   requireUUID('id'),
   asyncHandler(async (req: Request, res: Response) => {
     const userId = getUserId(req);
-    const context = (req.body.context as string) || 'personal';
+    const context = (req.body.context as string) || 'operations';
     if (!isValidContext(context)) {
       throw new ValidationError('Invalid context');
     }
@@ -639,7 +688,7 @@ agentTeamsRouter.get(
   requireUUID('id'),
   asyncHandler(async (req: Request, res: Response) => {
     const userId = getUserId(req);
-    const context = (req.query.context as string) || 'personal';
+    const context = (req.query.context as string) || 'operations';
     if (!isValidContext(context)) {
       throw new ValidationError('Invalid context');
     }
@@ -665,7 +714,7 @@ agentTeamsRouter.get(
   requireUUID('id'),
   asyncHandler(async (req: Request, res: Response) => {
     const userId = getUserId(req);
-    const context = (req.query.context as string) || 'personal';
+    const context = (req.query.context as string) || 'operations';
     if (!isValidContext(context)) {
       throw new ValidationError('Invalid context');
     }
@@ -687,7 +736,7 @@ agentTeamsRouter.get(
   requireUUID('id'),
   asyncHandler(async (req: Request, res: Response) => {
     const userId = getUserId(req);
-    const context = (req.query.context as string) || 'personal';
+    const context = (req.query.context as string) || 'operations';
     if (!isValidContext(context)) {
       throw new ValidationError('Invalid context');
     }

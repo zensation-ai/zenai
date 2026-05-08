@@ -73,7 +73,7 @@ vi.mock('../../utils/errors', () => ({
 import { CanvasPage } from '../CanvasPage';
 
 const defaultProps = {
-  context: 'personal',
+  context: 'operations',
 };
 
 describe('CanvasPage Component', () => {
@@ -107,7 +107,7 @@ describe('CanvasPage Component', () => {
         success: true,
         data: {
           id: 'new-doc-1',
-          context: 'personal',
+          context: 'operations',
           title: 'Neues Dokument',
           content: '',
           type: 'markdown',
@@ -127,7 +127,7 @@ describe('CanvasPage Component', () => {
 
     await waitFor(() => {
       expect(mockAxiosPost).toHaveBeenCalledWith('/api/canvas', {
-        context: 'personal',
+        context: 'operations',
         title: 'Neues Dokument',
         type: 'markdown',
       });
@@ -138,7 +138,7 @@ describe('CanvasPage Component', () => {
     render(<CanvasPage {...defaultProps} />);
 
     await waitFor(() => {
-      expect(mockAxiosGet).toHaveBeenCalledWith('/api/canvas?context=personal');
+      expect(mockAxiosGet).toHaveBeenCalledWith('/api/canvas?context=operations');
     });
   });
 
@@ -159,7 +159,7 @@ describe('CanvasPage Component', () => {
     render(<CanvasPage {...defaultProps} />);
 
     await waitFor(() => {
-      expect(mockAxiosGet).toHaveBeenCalledWith('/api/canvas?context=personal');
+      expect(mockAxiosGet).toHaveBeenCalledWith('/api/canvas?context=operations');
     });
   });
 
@@ -171,7 +171,7 @@ describe('CanvasPage Component', () => {
           documents: [
             {
               id: 'doc-1',
-              context: 'personal',
+              context: 'operations',
               title: 'Test Doc',
               content: '# Hello World',
               type: 'markdown',

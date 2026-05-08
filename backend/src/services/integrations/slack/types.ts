@@ -82,22 +82,22 @@ export interface SlackSyncJobData {
 
 /** Default channel name -> context mapping heuristics */
 export const DEFAULT_CHANNEL_CONTEXT_MAP: Record<string, AIContext> = {
-  engineering: 'work',
-  product: 'work',
-  sales: 'work',
-  ops: 'work',
-  random: 'personal',
-  general: 'personal',
-  watercooler: 'personal',
-  'off-topic': 'personal',
-  learning: 'learning',
-  'book-club': 'learning',
-  til: 'learning',
-  courses: 'learning',
-  brainstorm: 'creative',
-  design: 'creative',
-  ideas: 'creative',
-  creative: 'creative',
+  engineering: 'finance',
+  product: 'finance',
+  sales: 'finance',
+  ops: 'finance',
+  random: 'operations',
+  general: 'operations',
+  watercooler: 'operations',
+  'off-topic': 'operations',
+  learning: 'people',
+  'book-club': 'people',
+  til: 'people',
+  courses: 'people',
+  brainstorm: 'strategy',
+  design: 'strategy',
+  ideas: 'strategy',
+  creative: 'strategy',
 };
 
 /** Determine context for a channel name using heuristics */
@@ -108,5 +108,5 @@ export function inferChannelContext(channelName: string): AIContext {
       return context;
     }
   }
-  return 'work'; // default
+  return 'finance'; // default
 }

@@ -13,6 +13,7 @@
  * - Timeout and error handling
  */
 
+import { checkedFetch } from '../utils/checked-http';
 import { logger } from '../utils/logger';
 
 // ===========================================
@@ -206,7 +207,7 @@ export class MCPClient {
     const timeout = setTimeout(() => controller.abort(), this.config.timeout);
 
     try {
-      const response = await fetch(`${url}/mcp`, {
+      const response = await checkedFetch(`${url}/mcp`, {
         method: 'POST',
         headers,
         body: JSON.stringify({

@@ -10,6 +10,8 @@
 
 import { Request, Response, NextFunction } from 'express';
 import { ErrorCodes, AIContext, IdeaType, IdeaCategory, Priority } from '../types';
+// NOTE: This creates a benign circular dep with database-context (validation ↔ database-context).
+// Node.js CJS handles it fine at runtime since both modules only use each other's exports after init.
 import { isValidContext } from './database-context';
 import { ValidationError as RouteValidationError } from '../middleware/errorHandler';
 
@@ -368,7 +370,7 @@ export function validateEnum<T extends string>(
 // Context Validation
 // ===========================================
 
-const VALID_CONTEXTS: readonly AIContext[] = ['personal', 'work', 'learning', 'creative'];
+const VALID_CONTEXTS: readonly AIContext[] = ['operations', 'finance', 'people', 'strategy'];
 
 /**
  * Validate AI context parameter
@@ -389,8 +391,8 @@ export function validateContext(
 export function validateContextParam(context: string): AIContext {
   if (!isValidContext(context)) {
     throw new RouteValidationError(
-      'Invalid context. Use "personal", "work", "learning", or "creative".',
-      { context: 'must be "personal", "work", "learning", or "creative"' }
+      'Invalid context. Use "operations", "finance", "people", or "strategy".',
+      { context: 'must be "operations", "finance", "people", or "strategy"' }
     );
   }
   return context as AIContext;
@@ -660,7 +662,7 @@ export function requireContext(source: 'query' | 'params' = 'query') {
 
     if (!result.success) {
       return res.status(400).json({
-        error: 'Invalid context. Use "personal", "work", "learning", or "creative".'
+        error: 'Invalid context. Use "operations", "finance", "people", or "strategy".'
       });
     }
 
@@ -701,7 +703,7 @@ export function checkContext(
   const result = validateContext(contextValue);
 
   if (!result.success || !result.data) {
-    res.status(400).json({ error: 'Invalid context. Use "personal", "work", "learning", or "creative".' });
+    res.status(400).json({ error: 'Invalid context. Use "operations", "finance", "people", or "strategy".' });
     return null;
   }
 

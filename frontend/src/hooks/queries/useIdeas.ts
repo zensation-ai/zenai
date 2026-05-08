@@ -149,7 +149,7 @@ export function useArchiveIdeaMutation(context: AIContext) {
 
   return useMutation({
     mutationFn: async (id: string) => {
-      await axios.put(`/api/${context}/ideas/${id}`, { status: 'archived' });
+      await axios.put(`/api/${context}/ideas/${id}/archive`);
       return id;
     },
     onMutate: async (id) => {
@@ -220,7 +220,7 @@ export function useRestoreIdeaMutation(context: AIContext) {
 
   return useMutation({
     mutationFn: async (id: string) => {
-      await axios.put(`/api/${context}/ideas/${id}`, { status: 'active' });
+      await axios.put(`/api/${context}/ideas/${id}/restore`);
       return id;
     },
     onSettled: () => {
@@ -242,7 +242,7 @@ export function useToggleFavoriteMutation(context: AIContext) {
 
   return useMutation({
     mutationFn: async ({ id, isFavorite }: { id: string; isFavorite: boolean }) => {
-      await axios.put(`/api/${context}/ideas/${id}`, { is_favorite: isFavorite });
+      await axios.put(`/api/${context}/ideas/${id}/favorite`, { is_favorite: isFavorite });
       return { id, isFavorite };
     },
     onMutate: async ({ id, isFavorite }) => {

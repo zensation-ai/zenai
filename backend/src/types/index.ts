@@ -8,9 +8,9 @@
 // Context Types
 // ============================================
 
-export type AIContext = 'personal' | 'work' | 'learning' | 'creative' | 'demo';
+export type AIContext = 'operations' | 'finance' | 'people' | 'strategy' | 'demo';
 
-export const VALID_CONTEXTS: AIContext[] = ['personal', 'work', 'learning', 'creative', 'demo'];
+export const VALID_CONTEXTS: AIContext[] = ['operations', 'finance', 'people', 'strategy', 'demo'];
 
 export function isValidContext(context: string): context is AIContext {
   return VALID_CONTEXTS.includes(context as AIContext);

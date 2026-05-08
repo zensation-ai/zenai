@@ -280,7 +280,7 @@ describe('recordInformationGain', () => {
   it('writes information gain record to database', async () => {
     mockQueryContext.mockResolvedValueOnce({ rows: [] } as any);
 
-    await recordInformationGain('personal', {
+    await recordInformationGain('operations', {
       queryText: 'what is quantum computing',
       surprise: 0.8,
       novelty: 0.6,
@@ -289,7 +289,7 @@ describe('recordInformationGain', () => {
 
     expect(mockQueryContext).toHaveBeenCalledTimes(1);
     expect(mockQueryContext).toHaveBeenCalledWith(
-      'personal',
+      'operations',
       expect.stringContaining('INSERT'),
       expect.arrayContaining([0.8, 0.6, 0.48]),
     );
@@ -299,7 +299,7 @@ describe('recordInformationGain', () => {
     mockQueryContext.mockRejectedValueOnce(new Error('DB write failed'));
 
     await expect(
-      recordInformationGain('personal', {
+      recordInformationGain('operations', {
         queryText: 'test',
         surprise: 0.5,
         novelty: 0.5,

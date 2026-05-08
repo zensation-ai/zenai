@@ -14,7 +14,7 @@ import type { QueryParam } from '../utils/database-context';
 import { logger } from '../utils/logger';
 import { v4 as uuidv4 } from 'uuid';
 import { generateOpenAIResponse, isOpenAIAvailable } from '../services/openai';
-import axios from 'axios';
+import { checkedAxiosPost } from '../utils/checked-http';
 import { apiKeyAuth, requireScope } from '../middleware/auth';
 import { asyncHandler, ValidationError, NotFoundError } from '../middleware/errorHandler';
 import { recordLearningEvent } from '../services/evolution-analytics';
@@ -25,9 +25,9 @@ export const personalizationChatRouter = Router();
 const OLLAMA_URL = process.env.OLLAMA_URL || 'http://localhost:11434';
 
 // Helper: Execute query with proper schema routing
-// Personalization tables are in the personal schema (SET search_path TO personal, public)
+// Personalization tables are in the operations schema (SET search_path TO operations, public)
 async function query(sql: string, params?: QueryParam[]) {
-  return await queryContext('personal', sql, params);
+  return await queryContext('operations', sql, params);
 }
 
 // ===========================================
@@ -184,7 +184,7 @@ personalizationChatRouter.post('/chat', apiKeyAuth, asyncHandler(async (req: Req
 
   // Record learning event for evolution timeline (non-blocking)
   if (extractedFacts.length > 0) {
-    recordLearningEvent('personal', 'profile_enriched',
+    recordLearningEvent('operations', 'profile_enriched',
       `Profil erweitert: ${extractedFacts.length} neue Fakten`, {
         description: extractedFacts.map(f => `${f.category}: ${f.factKey}`).join(', '),
         impact_score: Math.min(0.3 + extractedFacts.length * 0.1, 0.8),
@@ -557,7 +557,7 @@ Benutzer-Antwort: "${message}"`;
   // Fallback to Ollama
   try {
     logger.info('Extracting facts with Ollama');
-    const response = await axios.post(
+    const response = await checkedAxiosPost<{ response: string }>(
       `${OLLAMA_URL}/api/generate`,
       {
         model: 'mistral:latest',
@@ -565,7 +565,7 @@ Benutzer-Antwort: "${message}"`;
         stream: false,
         options: { temperature: 0.3, num_predict: 500 }
       },
-      { timeout: 30000 }
+      { timeout: 30000, allowLoopback: true }
     );
 
     const text = response.data.response;
@@ -673,7 +673,7 @@ Nächste Frage die du stellen solltest (zum Thema ${getTopicLabel(nextTopic)}):
   // Fallback to Ollama
   try {
     logger.info('Generating AI response with Ollama');
-    const response = await axios.post(
+    const response = await checkedAxiosPost<{ response: string }>(
       `${OLLAMA_URL}/api/generate`,
       {
         model: 'mistral:latest',
@@ -681,7 +681,7 @@ Nächste Frage die du stellen solltest (zum Thema ${getTopicLabel(nextTopic)}):
         stream: false,
         options: { temperature: 0.8, num_predict: 300 }
       },
-      { timeout: 45000 }
+      { timeout: 45000, allowLoopback: true }
     );
 
     // Update topic stats
@@ -717,7 +717,7 @@ ${factsText}`;
   // Fallback to Ollama
   try {
     logger.info('Generating user summary with Ollama');
-    const response = await axios.post(
+    const response = await checkedAxiosPost<{ response: string }>(
       `${OLLAMA_URL}/api/generate`,
       {
         model: 'mistral:latest',
@@ -725,7 +725,7 @@ ${factsText}`;
         stream: false,
         options: { temperature: 0.7, num_predict: 200 }
       },
-      { timeout: 30000 }
+      { timeout: 30000, allowLoopback: true }
     );
 
     return response.data.response.trim();

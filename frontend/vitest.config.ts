@@ -6,33 +6,49 @@ import fs from 'fs';
 
 // Resolve packages for pnpm workspace compatibility
 // Uses require.resolve to follow Node's module resolution (handles pnpm store, hoisting, symlinks)
-function resolvePackage(pkg: string): string {
+// Returns the path to a specific file within the package (e.g. 'react/index.js')
+function resolvePackageFile(pkg: string, file: string): string {
+  const subpath = `${pkg}/${file}`;
+  // Search paths: local, worktree root, and main KI-AB repo (for pnpm workspaces / git worktrees)
+  const searchPaths = [
+    __dirname,
+    path.resolve(__dirname, '..'),
+    path.resolve(__dirname, '..', '..', '..', '..', 'KI-AB', 'frontend'),
+    path.resolve(__dirname, '..', '..', '..', '..', 'KI-AB'),
+  ];
+  // Try require.resolve for the specific file first (most accurate)
   try {
-    // require.resolve gives us the main entry point, we need the package directory
-    const resolved = require.resolve(pkg, { paths: [__dirname, path.resolve(__dirname, '..')] });
-    // Walk up from resolved entry to find the package root (directory containing package.json)
-    let dir = path.dirname(resolved);
+    return require.resolve(subpath, { paths: searchPaths });
+  } catch {
+    // Fallback: find package dir and join
+  }
+  // Find the package directory by resolving the main entry
+  try {
+    const mainResolved = require.resolve(pkg, { paths: searchPaths });
+    let dir = path.dirname(mainResolved);
     while (dir !== path.dirname(dir)) {
       if (fs.existsSync(path.join(dir, 'package.json'))) {
         const pkgJson = JSON.parse(fs.readFileSync(path.join(dir, 'package.json'), 'utf8'));
-        if (pkgJson.name === pkg) return dir;
+        if (pkgJson.name === pkg) return path.join(dir, file);
       }
       dir = path.dirname(dir);
     }
-    return path.dirname(resolved);
+    return path.join(path.dirname(mainResolved), file);
   } catch {
-    // Fallback to manual lookup
+    // Manual fallback using candidate directories
     const candidates = [
       path.resolve(__dirname, 'node_modules', pkg),
       path.resolve(__dirname, '..', 'node_modules', pkg),
+      path.resolve(__dirname, '..', '..', '..', '..', 'KI-AB', 'frontend', 'node_modules', pkg),
+      path.resolve(__dirname, '..', '..', '..', '..', 'KI-AB', 'node_modules', pkg),
     ];
     for (const c of candidates) {
       try {
         const real = fs.realpathSync(c);
-        if (fs.existsSync(real)) return real;
+        if (fs.existsSync(path.join(real, file))) return path.join(real, file);
       } catch { /* skip */ }
     }
-    return candidates[0];
+    return path.join(candidates[0], file);
   }
 }
 
@@ -99,11 +115,11 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': '/src',
-      'react/jsx-runtime': path.join(resolvePackage('react'), 'jsx-runtime'),
-      'react/jsx-dev-runtime': path.join(resolvePackage('react'), 'jsx-dev-runtime'),
-      'react': resolvePackage('react'),
-      'react-dom/client': path.join(resolvePackage('react-dom'), 'client'),
-      'react-dom': resolvePackage('react-dom'),
+      'react/jsx-runtime': resolvePackageFile('react', 'jsx-runtime.js'),
+      'react/jsx-dev-runtime': resolvePackageFile('react', 'jsx-dev-runtime.js'),
+      'react': resolvePackageFile('react', 'index.js'),
+      'react-dom/client': resolvePackageFile('react-dom', 'client.js'),
+      'react-dom': resolvePackageFile('react-dom', 'index.js'),
     },
   },
 });

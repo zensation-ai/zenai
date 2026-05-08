@@ -150,10 +150,10 @@ describe('Field Encryption Service', () => {
       const mod = loadModule(TEST_KEY);
       const encrypted = mod.encrypt('secret data');
 
-      // Tamper with the auth tag (3rd segment after enc:v1:)
+      // Tamper with the auth tag segment. Dual-key format (Sprint 1.5+):
+      // parts = ['enc', 'v1', keyId, iv, tag, cipher] → tag is parts[4].
       const parts = encrypted.split(':');
-      // parts: ['enc', 'v1', iv, tag, data]
-      parts[3] = 'AAAAAAAAAAAAAAAAAAAAAA=='; // Replace auth tag
+      parts[4] = 'AAAAAAAAAAAAAAAAAAAAAA=='; // Replace auth tag
       const tampered = parts.join(':');
 
       expect(() => mod.decrypt(tampered)).toThrow();
@@ -333,14 +333,15 @@ describe('Field Encryption Service', () => {
       expect(encrypted.startsWith('enc:v1:')).toBe(true);
     });
 
-    it('encrypted value should have 5 colon-separated parts', () => {
+    it('encrypted value should have 6 colon-separated parts (dual-key format)', () => {
       const mod = loadModule(TEST_KEY);
       const encrypted = mod.encrypt('test');
-      // Format: enc:v1:base64(iv):base64(tag):base64(data)
+      // Sprint 1.5 dual-key format: enc:v1:A:base64(iv):base64(tag):base64(data)
       const parts = encrypted.split(':');
-      expect(parts.length).toBe(5);
+      expect(parts.length).toBe(6);
       expect(parts[0]).toBe('enc');
       expect(parts[1]).toBe('v1');
+      expect(parts[2]).toBe('A'); // CURRENT key identifier
     });
   });
 

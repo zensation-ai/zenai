@@ -4,7 +4,7 @@
 
 jest.mock('../../../utils/database-context', () => ({
   queryContext: jest.fn(),
-  isValidContext: (ctx: string) => ['personal', 'work', 'learning', 'creative'].includes(ctx),
+  isValidContext: (ctx: string) => ['operations', 'finance', 'people', 'strategy'].includes(ctx),
 }));
 
 jest.mock('../../../utils/logger', () => ({
@@ -23,6 +23,16 @@ jest.mock('../../../services/knowledge-graph/community-summarizer', () => ({
   communitySummarizer: {
     searchCommunitySummaries: jest.fn(),
   },
+}));
+
+jest.mock('../../../services/knowledge-graph/event-subgraph', () => ({
+  getEntityActivityScore: jest.fn().mockResolvedValue({
+    totalEvents: 0,
+    eventsByType: {},
+    recencyScore: 0,
+    lastActivity: null,
+  }),
+  recordEvent: jest.fn().mockResolvedValue(undefined),
 }));
 
 import { queryContext } from '../../../utils/database-context';
@@ -69,11 +79,12 @@ describe('HybridRetriever', () => {
         ],
       } as any);
 
-      const results = await retriever.retrieve('artificial intelligence', 'personal', {
+      const results = await retriever.retrieve('artificial intelligence', 'operations', {
         enableVector: true,
         enableGraph: false,
         enableCommunity: false,
         enableBM25: false,
+        enableEventAware: false,
       });
 
       expect(results.length).toBeGreaterThan(0);
@@ -99,11 +110,12 @@ describe('HybridRetriever', () => {
         ],
       } as any);
 
-      const results = await retriever.retrieve('React framework', 'personal', {
+      const results = await retriever.retrieve('React framework', 'operations', {
         enableVector: false,
         enableGraph: true,
         enableCommunity: false,
         enableBM25: false,
+        enableEventAware: false,
       });
 
       expect(results.length).toBeGreaterThan(0);
@@ -121,11 +133,12 @@ describe('HybridRetriever', () => {
         rows: [{ id: 'idea-ts', title: 'TS Guide', content: 'TypeScript basics', score: '0.7' }],
       } as any);
 
-      const results = await retriever.retrieve('TypeScript programming', 'personal', {
+      const results = await retriever.retrieve('TypeScript programming', 'operations', {
         enableVector: false,
         enableGraph: true,
         enableCommunity: false,
         enableBM25: false,
+        enableEventAware: false,
       });
       expect(results.length).toBeGreaterThan(0);
     });
@@ -150,11 +163,12 @@ describe('HybridRetriever', () => {
         },
       ]);
 
-      const results = await retriever.retrieve('database technologies', 'personal', {
+      const results = await retriever.retrieve('database technologies', 'operations', {
         enableVector: false,
         enableGraph: false,
         enableCommunity: true,
         enableBM25: false,
+        enableEventAware: false,
       });
       expect(results.length).toBeGreaterThan(0);
       const communityResult = results.find(r => r.source === 'community');
@@ -174,11 +188,12 @@ describe('HybridRetriever', () => {
         ],
       } as any);
 
-      const results = await retriever.retrieve('GraphQL tutorial', 'personal', {
+      const results = await retriever.retrieve('GraphQL tutorial', 'operations', {
         enableVector: false,
         enableGraph: false,
         enableCommunity: false,
         enableBM25: true,
+        enableEventAware: false,
       });
       expect(results.length).toBeGreaterThan(0);
     });
@@ -202,11 +217,12 @@ describe('HybridRetriever', () => {
         return { rows: [{ id: 'b1', title: 'BM25 Result', content: 'Found by BM25', similarity: '0.6', rank: '0.6' }] } as any;
       });
 
-      const results = await retriever.retrieve('Kubernetes deployment', 'personal', {
+      const results = await retriever.retrieve('Kubernetes deployment', 'operations', {
         enableVector: true,
         enableGraph: false,
         enableCommunity: false,
         enableBM25: true,
+        enableEventAware: false,
       });
 
       expect(results.length).toBeGreaterThanOrEqual(2);
@@ -272,22 +288,24 @@ describe('HybridRetriever', () => {
         rows: [{ id: 'bm', title: 'BM25 Only', content: 'Found', rank: '0.5' }],
       } as any);
 
-      const results = await retriever.retrieve('test', 'personal', {
+      const results = await retriever.retrieve('test', 'operations', {
         enableVector: false,
         enableGraph: false,
         enableCommunity: false,
         enableBM25: true,
+        enableEventAware: false,
       });
 
       expect(results.length).toBeGreaterThan(0);
     });
 
     it('should return empty when all strategies disabled', async () => {
-      const results = await retriever.retrieve('test', 'personal', {
+      const results = await retriever.retrieve('test', 'operations', {
         enableVector: false,
         enableGraph: false,
         enableCommunity: false,
         enableBM25: false,
+        enableEventAware: false,
       });
 
       expect(results).toEqual([]);
@@ -306,11 +324,12 @@ describe('HybridRetriever', () => {
         rows: [{ id: 'b1', title: 'Fallback', content: 'BM25 result', rank: '0.5' }],
       } as any);
 
-      const results = await retriever.retrieve('test query', 'personal', {
+      const results = await retriever.retrieve('test query', 'operations', {
         enableVector: false,
         enableGraph: false,
         enableCommunity: false,
         enableBM25: true,
+        enableEventAware: false,
       });
       expect(results.length).toBeGreaterThan(0);
     });
@@ -321,11 +340,12 @@ describe('HybridRetriever', () => {
         rows: [{ id: 'v1', title: 'Vector', content: 'Works', similarity: '0.8' }],
       } as any);
 
-      const results = await retriever.retrieve('test query', 'personal', {
+      const results = await retriever.retrieve('test query', 'operations', {
         enableVector: true,
         enableGraph: false,
         enableCommunity: false,
         enableBM25: false,
+        enableEventAware: false,
       });
       expect(results.length).toBeGreaterThan(0);
     });
@@ -338,11 +358,12 @@ describe('HybridRetriever', () => {
 
       mockHybridRerank.mockRejectedValueOnce(new Error('Rerank failed'));
 
-      const results = await retriever.retrieve('test query', 'personal', {
+      const results = await retriever.retrieve('test query', 'operations', {
         enableVector: true,
         enableGraph: false,
         enableCommunity: false,
         enableBM25: false,
+        enableEventAware: false,
       });
       // Should still return results without reranking
       expect(results.length).toBeGreaterThan(0);
@@ -356,7 +377,7 @@ describe('HybridRetriever', () => {
         ],
       } as any);
 
-      const results = await retriever.retrieve('query', 'personal', {
+      const results = await retriever.retrieve('query', 'operations', {
         enableVector: true,
         enableGraph: false,
         enableCommunity: false,
@@ -378,11 +399,12 @@ describe('HybridRetriever', () => {
       // Vector: empty
       mockQueryContext.mockResolvedValueOnce({ rows: [] } as any);
 
-      const results = await retriever.retrieve('completely unknown query', 'personal', {
+      const results = await retriever.retrieve('completely unknown query', 'operations', {
         enableVector: true,
         enableGraph: false,
         enableCommunity: false,
         enableBM25: false,
+        enableEventAware: false,
       });
       expect(results).toEqual([]);
     });

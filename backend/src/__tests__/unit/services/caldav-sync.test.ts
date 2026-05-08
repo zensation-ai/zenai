@@ -8,7 +8,7 @@
 var mockQueryContext = jest.fn();
 jest.mock('../../../utils/database-context', () => ({
   queryContext: (...args: any[]) => mockQueryContext(...args),
-  isValidContext: jest.fn((ctx: string) => ['personal', 'work', 'learning', 'creative'].includes(ctx)),
+  isValidContext: jest.fn((ctx: string) => ['operations', 'finance', 'people', 'strategy'].includes(ctx)),
   AIContext: {},
 }));
 
@@ -84,7 +84,7 @@ describe('CalDAV Sync Service', () => {
     last_sync_at: null,
     last_sync_error: null,
     sync_token: null,
-    context: 'personal',
+    context: 'operations',
     metadata: '{}',
     created_at: new Date('2026-03-08T10:00:00Z'),
     updated_at: new Date('2026-03-08T10:00:00Z'),
@@ -98,7 +98,7 @@ describe('CalDAV Sync Service', () => {
     it('creates an account with encrypted password', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [mockAccountRow] });
 
-      const account = await createCalendarAccount('personal' as any, {
+      const account = await createCalendarAccount('operations' as any, {
         provider: 'icloud',
         username: 'test@icloud.com',
         password: 'test-pass',
@@ -116,7 +116,7 @@ describe('CalDAV Sync Service', () => {
     it('defaults caldav_url to icloud URL', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [mockAccountRow] });
 
-      await createCalendarAccount('personal' as any, {
+      await createCalendarAccount('operations' as any, {
         provider: 'icloud',
         username: 'test@icloud.com',
         password: 'test-pass',
@@ -131,7 +131,7 @@ describe('CalDAV Sync Service', () => {
     it('returns all accounts for a context', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [mockAccountRow] });
 
-      const accounts = await getCalendarAccounts('personal' as any);
+      const accounts = await getCalendarAccounts('operations' as any);
 
       expect(accounts).toHaveLength(1);
       expect(accounts[0].provider).toBe('icloud');
@@ -142,7 +142,7 @@ describe('CalDAV Sync Service', () => {
     it('returns empty array when no accounts', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [] });
 
-      const accounts = await getCalendarAccounts('work' as any);
+      const accounts = await getCalendarAccounts('finance' as any);
       expect(accounts).toHaveLength(0);
     });
   });
@@ -151,7 +151,7 @@ describe('CalDAV Sync Service', () => {
     it('returns account by id', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [mockAccountRow] });
 
-      const account = await getCalendarAccount('personal' as any, 'acc-1');
+      const account = await getCalendarAccount('operations' as any, 'acc-1');
 
       expect(account).not.toBeNull();
       expect(account!.id).toBe('acc-1');
@@ -160,7 +160,7 @@ describe('CalDAV Sync Service', () => {
     it('returns null when account not found', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [] });
 
-      const account = await getCalendarAccount('personal' as any, 'missing');
+      const account = await getCalendarAccount('operations' as any, 'missing');
       expect(account).toBeNull();
     });
   });
@@ -171,7 +171,7 @@ describe('CalDAV Sync Service', () => {
         rows: [{ ...mockAccountRow, display_name: 'New Name' }],
       });
 
-      const updated = await updateCalendarAccount('personal' as any, 'acc-1', {
+      const updated = await updateCalendarAccount('operations' as any, 'acc-1', {
         display_name: 'New Name',
       });
 
@@ -184,7 +184,7 @@ describe('CalDAV Sync Service', () => {
     it('encrypts password on update', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [mockAccountRow] });
 
-      await updateCalendarAccount('personal' as any, 'acc-1', {
+      await updateCalendarAccount('operations' as any, 'acc-1', {
         password: 'new-password',
       });
 
@@ -193,7 +193,7 @@ describe('CalDAV Sync Service', () => {
     });
 
     it('returns null when no updates provided', async () => {
-      const result = await updateCalendarAccount('personal' as any, 'acc-1', {});
+      const result = await updateCalendarAccount('operations' as any, 'acc-1', {});
       expect(result).toBeNull();
       expect(mockQueryContext).not.toHaveBeenCalled();
     });
@@ -201,7 +201,7 @@ describe('CalDAV Sync Service', () => {
     it('returns null when account not found', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [] });
 
-      const result = await updateCalendarAccount('personal' as any, 'missing', {
+      const result = await updateCalendarAccount('operations' as any, 'missing', {
         display_name: 'X',
       });
       expect(result).toBeNull();
@@ -214,7 +214,7 @@ describe('CalDAV Sync Service', () => {
         .mockResolvedValueOnce({ rows: [] } as any) // DELETE events
         .mockResolvedValueOnce({ rows: [{ id: 'acc-1' }] } as any); // DELETE account
 
-      const result = await deleteCalendarAccount('personal' as any, 'acc-1');
+      const result = await deleteCalendarAccount('operations' as any, 'acc-1');
 
       expect(result).toBe(true);
       expect(mockQueryContext).toHaveBeenCalledTimes(2);
@@ -227,7 +227,7 @@ describe('CalDAV Sync Service', () => {
         .mockResolvedValueOnce({ rows: [] } as any) // DELETE events
         .mockResolvedValueOnce({ rows: [] } as any); // DELETE account (not found)
 
-      const result = await deleteCalendarAccount('personal' as any, 'missing');
+      const result = await deleteCalendarAccount('operations' as any, 'missing');
       expect(result).toBe(false);
     });
   });
@@ -240,7 +240,7 @@ describe('CalDAV Sync Service', () => {
     it('throws if account not found', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [] });
 
-      await expect(syncAccount('personal' as any, 'missing')).rejects.toThrow('Account not found or disabled');
+      await expect(syncAccount('operations' as any, 'missing')).rejects.toThrow('Account not found or disabled');
     });
 
     it('throws if account is disabled', async () => {
@@ -248,7 +248,7 @@ describe('CalDAV Sync Service', () => {
         rows: [{ ...mockAccountRow, is_enabled: false }],
       });
 
-      await expect(syncAccount('personal' as any, 'acc-1')).rejects.toThrow('Account not found or disabled');
+      await expect(syncAccount('operations' as any, 'acc-1')).rejects.toThrow('Account not found or disabled');
     });
 
     it('returns zero counts when no enabled calendars', async () => {
@@ -258,7 +258,7 @@ describe('CalDAV Sync Service', () => {
       };
       mockQueryContext.mockResolvedValueOnce({ rows: [noCalAccount] });
 
-      const result = await syncAccount('personal' as any, 'acc-1');
+      const result = await syncAccount('operations' as any, 'acc-1');
 
       expect(result.created).toBe(0);
       expect(result.updated).toBe(0);
@@ -300,7 +300,7 @@ describe('CalDAV Sync Service', () => {
       // UPDATE account sync status
       mockQueryContext.mockResolvedValueOnce({ rows: [] });
 
-      const result = await syncAccount('personal' as any, 'acc-1');
+      const result = await syncAccount('operations' as any, 'acc-1');
 
       expect(result.created).toBe(1);
       expect(result.errors).toBe(0);
@@ -315,7 +315,7 @@ describe('CalDAV Sync Service', () => {
     it('returns false when event not found', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [] });
 
-      const result = await pushEventToRemote('personal' as any, 'missing');
+      const result = await pushEventToRemote('operations' as any, 'missing');
       expect(result).toBe(false);
     });
 
@@ -343,7 +343,7 @@ describe('CalDAV Sync Service', () => {
       // UPDATE after push
       mockQueryContext.mockResolvedValueOnce({ rows: [] });
 
-      const result = await pushEventToRemote('personal' as any, 'event-1');
+      const result = await pushEventToRemote('operations' as any, 'event-1');
 
       expect(result).toBe(true);
       expect(mockCreateRemoteEvent).toHaveBeenCalled();
@@ -373,7 +373,7 @@ describe('CalDAV Sync Service', () => {
       // UPDATE after push
       mockQueryContext.mockResolvedValueOnce({ rows: [] });
 
-      const result = await pushEventToRemote('personal' as any, 'event-1');
+      const result = await pushEventToRemote('operations' as any, 'event-1');
 
       expect(result).toBe(true);
       expect(mockUpdateRemoteEvent).toHaveBeenCalled();
@@ -405,7 +405,7 @@ describe('CalDAV Sync Service', () => {
       // UPDATE sync_state = 'pending'
       mockQueryContext.mockResolvedValueOnce({ rows: [] });
 
-      const result = await pushEventToRemote('personal' as any, 'event-1');
+      const result = await pushEventToRemote('operations' as any, 'event-1');
 
       expect(result).toBe(false);
       const updateCall = mockQueryContext.mock.calls[1];
@@ -417,7 +417,7 @@ describe('CalDAV Sync Service', () => {
     it('returns false when event has no external_uid', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [] });
 
-      const result = await deleteEventFromRemote('personal' as any, 'event-1');
+      const result = await deleteEventFromRemote('operations' as any, 'event-1');
       expect(result).toBe(false);
     });
 
@@ -433,7 +433,7 @@ describe('CalDAV Sync Service', () => {
         }],
       });
 
-      const result = await deleteEventFromRemote('personal' as any, 'event-1');
+      const result = await deleteEventFromRemote('operations' as any, 'event-1');
 
       expect(result).toBe(true);
       expect(mockDeleteRemoteEvent).toHaveBeenCalled();

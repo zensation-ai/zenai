@@ -19,7 +19,7 @@ jest.mock('../../../utils/logger', () => ({
 }));
 
 jest.mock('../../../utils/database-context', () => ({
-  isValidContext: (ctx: string) => ['personal', 'work', 'learning', 'creative'].includes(ctx),
+  isValidContext: (ctx: string) => ['operations', 'finance', 'people', 'strategy'].includes(ctx),
 }));
 
 const mockHandleMCPRequest = jest.fn();
@@ -55,7 +55,7 @@ describe('MCP Server Routes', () => {
     expect(res.body.jsonrpc).toBe('2.0');
     expect(mockHandleMCPRequest).toHaveBeenCalledWith(
       { jsonrpc: '2.0', id: 1, method: 'tools/list', params: {} },
-      'personal'
+      'operations'
     );
   });
 
@@ -63,13 +63,13 @@ describe('MCP Server Routes', () => {
     mockHandleMCPRequest.mockResolvedValue({ jsonrpc: '2.0', id: 2, result: {} });
 
     const res = await request(app)
-      .post('/api/mcp-server?context=work')
+      .post('/api/mcp-server?context=finance')
       .send({ jsonrpc: '2.0', id: 2, method: 'tools/list' });
 
     expect(res.status).toBe(200);
     expect(mockHandleMCPRequest).toHaveBeenCalledWith(
       expect.anything(),
-      'work'
+      'finance'
     );
   });
 

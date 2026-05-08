@@ -1,6 +1,7 @@
 import fs from 'fs/promises';
 import path from 'path';
 import { spawn } from 'child_process';
+import { checkedFetch } from './checked-http';
 import { logger } from './logger';
 
 /**
@@ -55,7 +56,7 @@ export async function analyzeImage(imagePath: string, context: string = 'general
     const prompt = getAnalysisPrompt(context);
 
     // Call Ollama with vision model (llava or similar)
-    const response = await fetch(`${ollamaUrl}/api/generate`, {
+    const response = await checkedFetch(`${ollamaUrl}/api/generate`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -70,6 +71,7 @@ export async function analyzeImage(imagePath: string, context: string = 'general
           num_predict: 500
         }
       }),
+      allowLoopback: true,
     });
 
     if (!response.ok) {

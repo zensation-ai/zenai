@@ -8,21 +8,19 @@
 
 import { useState, useCallback, useRef, memo } from 'react';
 import type { SmartSuggestion, SnoozeDuration } from '../../hooks/useSmartSuggestions';
-import { animations } from '../../design-system';
-import './SuggestionCard.css';
 
 const TYPE_CONFIG: Record<string, { icon: string; actionLabel: string; color: string }> = {
-  connection_discovered: { icon: '\uD83D\uDD17', actionLabel: 'Ansehen', color: '#7c3aed' },
-  task_reminder:         { icon: '\u23F0', actionLabel: 'Oeffnen', color: '#f59e0b' },
+  connection_discovered: { icon: '\uD83D\uDD17', actionLabel: 'Ansehen', color: '#1a6b7a' },
+  task_reminder:         { icon: '\u23F0', actionLabel: 'Öffnen', color: '#f59e0b' },
   email_followup:        { icon: '\u2709\uFE0F', actionLabel: 'Antworten', color: '#3b82f6' },
-  knowledge_insight:     { icon: '\uD83E\uDDE0', actionLabel: 'Details', color: '#8b5cf6' },
+  knowledge_insight:     { icon: '\uD83E\uDDE0', actionLabel: 'Details', color: '#1a6b7a' },
   context_switch:        { icon: '\uD83D\uDD00', actionLabel: 'Wechseln', color: '#06b6d4' },
   meeting_prep:          { icon: '\uD83D\uDCC5', actionLabel: 'Vorbereiten', color: '#10b981' },
-  learning_opportunity:  { icon: '\uD83D\uDCDA', actionLabel: 'Lernen', color: '#f97316' },
-  contradiction_alert:   { icon: '\u26A0\uFE0F', actionLabel: 'Pruefen', color: '#ef4444' },
-  morning_briefing:      { icon: '\u2600\uFE0F', actionLabel: 'Uebersicht', color: '#f59e0b' },
-  knowledge_gap:         { icon: '\uD83D\uDD0D', actionLabel: 'Recherchieren', color: '#8b5cf6' },
-  hypothesis:            { icon: '\uD83D\uDCA1', actionLabel: 'Pruefen', color: '#a855f7' },
+  learning_opportunity:  { icon: '\uD83D\uDCDA', actionLabel: 'Lernen', color: 'var(--accent-orange)' },
+  contradiction_alert:   { icon: '\u26A0\uFE0F', actionLabel: 'Prüfen', color: '#ef4444' },
+  morning_briefing:      { icon: '\u2600\uFE0F', actionLabel: 'Übersicht', color: '#f59e0b' },
+  knowledge_gap:         { icon: '\uD83D\uDD0D', actionLabel: 'Recherchieren', color: '#1a6b7a' },
+  hypothesis:            { icon: '\uD83D\uDCA1', actionLabel: 'Prüfen', color: '#a855f7' },
 };
 
 interface MorningBriefingMeta {
@@ -45,12 +43,12 @@ export const SuggestionCard = memo(function SuggestionCard({ suggestion, onDismi
   const cardRef = useRef<HTMLDivElement>(null);
 
   const isBriefing = suggestion.type === 'morning_briefing';
-  const config = TYPE_CONFIG[suggestion.type] || { icon: '\uD83D\uDCA1', actionLabel: 'Ansehen', color: '#6366f1' };
+  const config = TYPE_CONFIG[suggestion.type] || { icon: '\uD83D\uDCA1', actionLabel: 'Ansehen', color: '#144A56' };
 
   const runExitAnimation = useCallback((type: 'dismiss' | 'snooze', cb: () => void) => {
     setExitAnimation(type);
     // Wait for the CSS animation to finish before calling the callback
-    setTimeout(cb, animations.duration.layout);
+    setTimeout(cb, 250);
   }, []);
 
   const handleDismiss = useCallback(() => {
@@ -182,7 +180,7 @@ export const SuggestionCard = memo(function SuggestionCard({ suggestion, onDismi
             type="button"
             className="ds-suggestion-snooze-btn"
             onClick={() => setSnoozeOpen(prev => !prev)}
-            aria-label="Spaeter erinnern"
+            aria-label="Später erinnern"
             aria-expanded={snoozeOpen}
           >
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">

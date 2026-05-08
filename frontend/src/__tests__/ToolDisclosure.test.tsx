@@ -44,7 +44,7 @@ describe('ToolDisclosure', () => {
     expect(toggle.getAttribute('aria-expanded')).toBe('true');
     expect(screen.getByText('Durchsuche das Web')).toBeTruthy();
     expect(screen.getByText('Erinnere mich')).toBeTruthy();
-    expect(screen.getByText('Fuehre Code aus')).toBeTruthy();
+    expect(screen.getByText('Führe Code aus')).toBeTruthy();
   });
 
   it('should display formatted durations', () => {

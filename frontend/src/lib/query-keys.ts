@@ -3,10 +3,12 @@
  *
  * Type-safe, hierarchical query keys for React Query.
  * Every key includes the AI context for automatic cache isolation.
+ * Workspace-scoped keys include workspaceId prefix for multi-tenancy.
  *
  * Usage:
- *   queryKeys.ideas.list('personal', { status: 'active' })
- *   queryKeys.chat.sessions('work')
+ *   queryKeys.ideas.list('operations', { status: 'active' })
+ *   queryKeys.chat.sessions('finance')
+ *   queryKeys.workspace.members('ws-123')
  */
 
 /**
@@ -60,6 +62,8 @@ export const queryKeys = {
     list: (ctx: string, filters?: Record<string, unknown>) =>
       ['organizations', ctx, 'list', stableFilters(filters)] as const,
     detail: (ctx: string, id: string) => ['organizations', ctx, id] as const,
+    members: (orgId: string) => ['organizations', orgId, 'members'] as const,
+    invitations: (orgId: string) => ['organizations', orgId, 'invitations'] as const,
   },
 
   // Tasks
@@ -195,12 +199,12 @@ export const queryKeys = {
 
   // Learning
   learning: {
-    all: (ctx: string) => ['learning', ctx] as const,
-    dashboard: (ctx: string) => ['learning', ctx, 'dashboard'] as const,
-    focus: (ctx: string) => ['learning', ctx, 'focus'] as const,
-    suggestions: (ctx: string) => ['learning', ctx, 'suggestions'] as const,
-    research: (ctx: string) => ['learning', ctx, 'research'] as const,
-    profile: (ctx: string) => ['learning', ctx, 'profile'] as const,
+    all: (ctx: string) => ['people', ctx] as const,
+    dashboard: (ctx: string) => ['people', ctx, 'dashboard'] as const,
+    focus: (ctx: string) => ['people', ctx, 'focus'] as const,
+    suggestions: (ctx: string) => ['people', ctx, 'suggestions'] as const,
+    research: (ctx: string) => ['people', ctx, 'research'] as const,
+    profile: (ctx: string) => ['people', ctx, 'profile'] as const,
   },
 
   // My AI
@@ -235,5 +239,39 @@ export const queryKeys = {
     profile: () => ['settings', 'profile'] as const,
     preferences: () => ['settings', 'preferences'] as const,
     connectors: () => ['settings', 'connectors'] as const,
+  },
+
+  // Billing (per-user + org-level)
+  billing: {
+    status: () => ['billing', 'status'] as const,
+    credits: () => ['billing', 'credits'] as const,
+    org: (orgId: string) => ['billing', 'org', orgId] as const,
+  },
+
+  // Social Media
+  social: {
+    all: (ctx: string) => ['social', ctx] as const,
+    list: (ctx: string, filters?: Record<string, unknown>) =>
+      ['social', ctx, 'list', stableFilters(filters)] as const,
+    detail: (ctx: string, id: string) => ['social', ctx, id] as const,
+    calendar: (ctx: string) => ['social', ctx, 'calendar'] as const,
+    platforms: (ctx: string) => ['social', ctx, 'platforms'] as const,
+  },
+
+  // Multi-tenancy: Organizations & Workspaces
+  orgs: {
+    all: () => ['orgs'] as const,
+    list: () => ['orgs', 'list'] as const,
+    detail: (orgId: string) => ['orgs', orgId] as const,
+  },
+
+  workspace: {
+    all: (wsId: string) => ['workspace', wsId] as const,
+    detail: (wsId: string) => ['workspace', wsId, 'detail'] as const,
+    members: (wsId: string) => ['workspace', wsId, 'members'] as const,
+    invitations: (wsId: string) => ['workspace', wsId, 'invitations'] as const,
+    contexts: (wsId: string) => ['workspace', wsId, 'contexts'] as const,
+    audit: (wsId: string, filters?: Record<string, unknown>) =>
+      ['workspace', wsId, 'audit', stableFilters(filters)] as const,
   },
 } as const;

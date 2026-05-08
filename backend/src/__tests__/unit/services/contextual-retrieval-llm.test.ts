@@ -160,7 +160,7 @@ describe('Contextual Retrieval with LLM', () => {
         ],
       });
 
-      const result = await backfillTemplateContent('personal', 10);
+      const result = await backfillTemplateContent('operations', 10);
 
       expect(queryContext).toHaveBeenCalledTimes(1);
       expect(result).toHaveLength(2);
@@ -169,7 +169,7 @@ describe('Contextual Retrieval with LLM', () => {
     it('should return empty array when no template records found', async () => {
       queryContext.mockResolvedValueOnce({ rows: [] });
 
-      const result = await backfillTemplateContent('work', 5);
+      const result = await backfillTemplateContent('finance', 5);
 
       expect(result).toHaveLength(0);
     });

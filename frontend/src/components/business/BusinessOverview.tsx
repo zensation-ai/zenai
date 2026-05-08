@@ -84,7 +84,7 @@ export const BusinessOverview: React.FC<BusinessOverviewProps> = ({ onNavigateTa
 
   if (loading) {
     return <div className="business-kpi-grid">{Array.from({ length: 5 }, (_, i) => (
-      <div key={i} className="business-kpi-card" style={{ opacity: 0.5 }}>
+      <div key={i} className="business-kpi-card opacity-50">
         <div className="business-kpi-header"><span className="business-kpi-icon">...</span></div>
         <div className="business-kpi-value">--</div>
         <div className="business-kpi-label">Laden...</div>
@@ -92,9 +92,23 @@ export const BusinessOverview: React.FC<BusinessOverviewProps> = ({ onNavigateTa
     ))}</div>;
   }
 
+  const quickStats = [
+    { label: 'Abonnements', value: data.revenue.activeSubscriptions.toString() },
+    { label: 'Abwanderungsrate', value: formatPercent(data.revenue.churnRate) },
+    { label: 'Absprungrate', value: formatPercent(data.traffic.bounceRate) },
+    { label: 'SEO-Klickrate', value: formatPercent(data.seo.ctr) },
+    { label: 'Ø Position', value: data.seo.avgPosition.toFixed(1) },
+    { label: 'Antwortzeit', value: `${data.health.avgResponseTime}ms` },
+  ];
+
   return (
-    <div>
-      {error && <div className="business-empty-text" style={{ color: 'var(--danger, #f87171)', marginBottom: '1rem' }}>{error}</div>}
+    <div className="space-y-6 pt-4">
+      {error && (
+        <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-danger/10 border border-danger/20 text-sm text-danger">
+          <span>⚠️</span>
+          <span>{error}</span>
+        </div>
+      )}
       <div className="business-kpi-grid">
         {kpis.map((kpi) => (
           <div
@@ -120,33 +134,17 @@ export const BusinessOverview: React.FC<BusinessOverviewProps> = ({ onNavigateTa
         ))}
       </div>
 
-      <div className="business-section">
-        <div className="business-section-title">📈 Schnellübersicht</div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
-          <div>
-            <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.8rem', marginBottom: '0.25rem' }}>Subscriptions</div>
-            <div style={{ fontSize: '1.2rem', fontWeight: 600 }}>{data.revenue.activeSubscriptions}</div>
-          </div>
-          <div>
-            <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.8rem', marginBottom: '0.25rem' }}>Churn Rate</div>
-            <div style={{ fontSize: '1.2rem', fontWeight: 600 }}>{formatPercent(data.revenue.churnRate)}</div>
-          </div>
-          <div>
-            <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.8rem', marginBottom: '0.25rem' }}>Bounce Rate</div>
-            <div style={{ fontSize: '1.2rem', fontWeight: 600 }}>{formatPercent(data.traffic.bounceRate)}</div>
-          </div>
-          <div>
-            <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.8rem', marginBottom: '0.25rem' }}>SEO CTR</div>
-            <div style={{ fontSize: '1.2rem', fontWeight: 600 }}>{formatPercent(data.seo.ctr)}</div>
-          </div>
-          <div>
-            <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.8rem', marginBottom: '0.25rem' }}>Ø Position</div>
-            <div style={{ fontSize: '1.2rem', fontWeight: 600 }}>{data.seo.avgPosition.toFixed(1)}</div>
-          </div>
-          <div>
-            <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.8rem', marginBottom: '0.25rem' }}>Response Time</div>
-            <div style={{ fontSize: '1.2rem', fontWeight: 600 }}>{data.health.avgResponseTime}ms</div>
-          </div>
+      <div className="rounded-xl border border-border/60 bg-surface/40 p-5">
+        <h3 className="text-sm font-semibold text-text mb-4 flex items-center gap-2">
+          <span>📈</span> Schnellübersicht
+        </h3>
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+          {quickStats.map((stat) => (
+            <div key={stat.label}>
+              <div className="text-xs text-text-muted mb-1">{stat.label}</div>
+              <div className="text-lg font-semibold text-text">{stat.value}</div>
+            </div>
+          ))}
         </div>
       </div>
     </div>

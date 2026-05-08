@@ -125,9 +125,9 @@ export const RadarChart: React.FC<RadarChartProps> = ({ scores, size = 280 }) =>
         {/* Data polygon */}
         <polygon
           points={dataPolygon}
-          fill="var(--brand-primary, #6366f1)"
+          fill="var(--brand-primary, #144A56)"
           fillOpacity={0.2}
-          stroke="var(--brand-primary, #6366f1)"
+          stroke="var(--brand-primary, #144A56)"
           strokeWidth="2"
           className="radar-data-polygon"
         />
@@ -139,7 +139,7 @@ export const RadarChart: React.FC<RadarChartProps> = ({ scores, size = 280 }) =>
             cx={point.x}
             cy={point.y}
             r={hoveredAxis === AXES[i].key ? 6 : 4}
-            fill="var(--brand-primary, #6366f1)"
+            fill="var(--brand-primary, #144A56)"
             stroke="white"
             strokeWidth="2"
             className="radar-data-point"

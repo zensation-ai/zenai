@@ -29,9 +29,9 @@ import { getUserId } from '../utils/user-context';
  * Get context from request
  */
 export function getContext(req: Request): AIContext {
-  const context = (req.headers['x-ai-context'] as string) || (req.query.context as string) || 'personal';
+  const context = (req.headers['x-ai-context'] as string) || (req.query.context as string) || 'operations';
   if (!isValidContext(context)) {
-    throw new ValidationError(`Invalid context: ${context}. Must be one of: personal, work, learning, creative`);
+    throw new ValidationError(`Invalid context: ${context}. Must be one of: operations, finance, people, strategy`);
   }
   return context;
 }

@@ -16,7 +16,7 @@ import {
 
 jest.mock('../../../utils/database-context', () => ({
   queryContext: jest.fn(),
-  isValidContext: (ctx: string) => ['personal', 'work', 'learning', 'creative'].includes(ctx),
+  isValidContext: (ctx: string) => ['operations', 'finance', 'people', 'strategy'].includes(ctx),
 }));
 
 jest.mock('../../../utils/logger', () => ({
@@ -189,7 +189,7 @@ describe('processRecallEvents', () => {
 
     const events: RecallEvent[] = [{ factId: 'fact-1', type: 'success', retrievability: 0.7 }];
 
-    await processRecallEvents('personal', events);
+    await processRecallEvents('operations', events);
 
     expect(mockUpdateAfterRecall).toHaveBeenCalledWith(
       expect.objectContaining({ difficulty: 5.0, stability: 7.0 }),
@@ -206,7 +206,7 @@ describe('processRecallEvents', () => {
 
     const events: RecallEvent[] = [{ factId: 'fact-1', type: 'partial', retrievability: 0.7 }];
 
-    await processRecallEvents('personal', events);
+    await processRecallEvents('operations', events);
 
     expect(mockUpdateAfterRecall).toHaveBeenCalledWith(
       expect.objectContaining({ difficulty: 5.0, stability: 7.0 }),
@@ -222,7 +222,7 @@ describe('processRecallEvents', () => {
 
     const events: RecallEvent[] = [{ factId: 'fact-1', type: 'forgot', retrievability: 0.3 }];
 
-    await processRecallEvents('personal', events);
+    await processRecallEvents('operations', events);
 
     expect(mockUpdateAfterForgot).toHaveBeenCalledWith(
       expect.objectContaining({ difficulty: 5.0, stability: 7.0 }),
@@ -241,7 +241,7 @@ describe('processRecallEvents', () => {
 
     const events: RecallEvent[] = [{ factId: 'fact-1', type: 'success', retrievability: 0.7 }];
 
-    await processRecallEvents('personal', events);
+    await processRecallEvents('operations', events);
 
     const updateCall = mockQueryContext.mock.calls[1];
     expect(updateCall[1]).toMatch(/UPDATE.*learned_facts/i);
@@ -255,7 +255,7 @@ describe('processRecallEvents', () => {
 
     const events: RecallEvent[] = [{ factId: 'missing-fact', type: 'success', retrievability: 0.7 }];
 
-    await processRecallEvents('personal', events);
+    await processRecallEvents('operations', events);
 
     expect(mockUpdateAfterRecall).not.toHaveBeenCalled();
     expect(mockQueryContext).toHaveBeenCalledTimes(1); // only SELECT, no UPDATE
@@ -274,7 +274,7 @@ describe('processRecallEvents', () => {
       { factId: 'fact-2', type: 'forgot', retrievability: 0.2 },
     ];
 
-    await processRecallEvents('personal', events);
+    await processRecallEvents('operations', events);
 
     expect(mockUpdateAfterRecall).toHaveBeenCalledTimes(1);
     expect(mockUpdateAfterForgot).toHaveBeenCalledTimes(1);
@@ -292,7 +292,7 @@ describe('processRecallEvents', () => {
     ];
 
     // Should not throw
-    await expect(processRecallEvents('personal', events)).resolves.toBeUndefined();
+    await expect(processRecallEvents('operations', events)).resolves.toBeUndefined();
 
     // fact-2 should still be processed
     expect(mockUpdateAfterRecall).toHaveBeenCalledTimes(1);
@@ -303,7 +303,7 @@ describe('processRecallEvents', () => {
       .mockResolvedValueOnce({ rows: [makeDbRow()] } as any)
       .mockResolvedValueOnce({ rows: [] } as any);
 
-    const result = await processRecallEvents('personal', [
+    const result = await processRecallEvents('operations', [
       { factId: 'fact-1', type: 'success', retrievability: 0.7 },
     ]);
 
@@ -311,7 +311,7 @@ describe('processRecallEvents', () => {
   });
 
   test('handles empty events array without DB calls', async () => {
-    await processRecallEvents('personal', []);
+    await processRecallEvents('operations', []);
     expect(mockQueryContext).not.toHaveBeenCalled();
   });
 
@@ -322,10 +322,10 @@ describe('processRecallEvents', () => {
 
     const events: RecallEvent[] = [{ factId: 'fact-1', type: 'success', retrievability: 0.7 }];
 
-    await processRecallEvents('work', events);
+    await processRecallEvents('finance', events);
 
-    expect(mockQueryContext.mock.calls[0][0]).toBe('work');
-    expect(mockQueryContext.mock.calls[1][0]).toBe('work');
+    expect(mockQueryContext.mock.calls[0][0]).toBe('finance');
+    expect(mockQueryContext.mock.calls[1][0]).toBe('finance');
   });
 
   test('last_accessed is updated in the UPDATE query', async () => {
@@ -335,7 +335,7 @@ describe('processRecallEvents', () => {
 
     const events: RecallEvent[] = [{ factId: 'fact-1', type: 'partial', retrievability: 0.5 }];
 
-    await processRecallEvents('personal', events);
+    await processRecallEvents('operations', events);
 
     const updateCall = mockQueryContext.mock.calls[1];
     // The UPDATE SQL should reference last_accessed

@@ -83,7 +83,7 @@ vi.mock('../SkeletonLoader', () => ({
 import { MyAIPage } from '../MyAIPage';
 
 const defaultProps = {
-  context: 'personal' as const,
+  context: 'operations' as const,
   onBack: vi.fn(),
   initialTab: 'personalize' as const,
 };
@@ -153,6 +153,6 @@ describe('MyAIPage Component', () => {
 
   it('passes context to HubPage', () => {
     render(<MyAIPage {...defaultProps} />);
-    expect(screen.getByTestId('hub-page')).toHaveAttribute('data-context', 'personal');
+    expect(screen.getByTestId('hub-page')).toHaveAttribute('data-context', 'operations');
   });
 });

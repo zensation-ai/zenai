@@ -7,11 +7,9 @@
  * - Policies: Governance-Richtlinien verwalten
  */
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, type CSSProperties } from 'react';
 import { AIContext } from './ContextSwitcher';
 import { getApiBaseUrl, getApiFetchHeaders } from '../utils/apiConfig';
-import './GovernanceDashboard.css';
-
 interface GovernanceAction {
   id: string;
   context: string;
@@ -69,7 +67,7 @@ interface GovernanceDashboardProps {
 const RISK_COLORS: Record<string, string> = {
   low: '#4ade80',
   medium: '#fbbf24',
-  high: '#f97316',
+  high: 'var(--accent-orange)',
   critical: '#ef4444',
 };
 
@@ -274,8 +272,8 @@ function PendingActions({ context }: { context: AIContext }) {
           <div key={action.id} className="governance-card" role="listitem">
             <div className="governance-card-header">
               <span
-                className="governance-risk-badge"
-                style={{ background: RISK_COLORS[action.risk_level] || '#888' }}
+                className="governance-risk-badge bg-[var(--c)]"
+                style={{ '--c': RISK_COLORS[action.risk_level] || '#888' } as CSSProperties}
               >
                 {action.risk_level.toUpperCase()}
               </span>
@@ -421,8 +419,8 @@ function ActionHistory({ context }: { context: AIContext }) {
             <div key={action.id} className="governance-card governance-card-compact">
               <div className="governance-card-header">
                 <span
-                  className="governance-risk-badge"
-                  style={{ background: RISK_COLORS[action.risk_level] || '#888' }}
+                  className="governance-risk-badge bg-[var(--c)]"
+                  style={{ '--c': RISK_COLORS[action.risk_level] || '#888' } as CSSProperties}
                 >
                   {action.risk_level}
                 </span>
@@ -626,6 +624,7 @@ function PoliciesManager({ context }: { context: AIContext }) {
               aria-label="Aktionstyp"
             >
               <option value="agent_action">Agent-Aktion</option>
+              <option value="hyperagent_action">HyperAgent-Aktion</option>
               <option value="send_email">E-Mail senden</option>
               <option value="create_task">Task erstellen</option>
               <option value="proactive_action">Proaktive Aktion</option>
@@ -689,8 +688,8 @@ function PoliciesManager({ context }: { context: AIContext }) {
             >
               <div className="governance-card-header">
                 <span
-                  className="governance-risk-badge"
-                  style={{ background: RISK_COLORS[policy.risk_level] || '#888' }}
+                  className="governance-risk-badge bg-[var(--c)]"
+                  style={{ '--c': RISK_COLORS[policy.risk_level] || '#888' } as CSSProperties}
                 >
                   {policy.risk_level}
                 </span>

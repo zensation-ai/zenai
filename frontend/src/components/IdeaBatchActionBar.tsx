@@ -5,8 +5,6 @@
  * Adapted from DocumentVaultPage/BatchActionBar pattern.
  */
 
-import './IdeaBatchActionBar.css';
-
 interface IdeaBatchActionBarProps {
   selectedCount: number;
   totalCount: number;

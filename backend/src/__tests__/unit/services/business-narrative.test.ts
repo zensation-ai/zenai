@@ -23,7 +23,7 @@ import {
 const mockQueryContext = jest.fn();
 jest.mock('../../../utils/database-context', () => ({
   queryContext: (...args: unknown[]) => mockQueryContext(...args),
-  isValidContext: (c: string) => ['personal', 'work', 'learning', 'creative'].includes(c),
+  isValidContext: (c: string) => ['operations', 'finance', 'people', 'strategy'].includes(c),
 }));
 
 jest.mock('../../../utils/logger', () => ({
@@ -207,7 +207,7 @@ describe('Business Narrative Service', () => {
       // Mock all DB calls to return empty/defaults
       mockQueryContext.mockResolvedValue({ rows: [], rowCount: 0 });
 
-      const digest = await generateDailyDigest('personal' as const, 'user-1');
+      const digest = await generateDailyDigest('operations' as const, 'user-1');
       expect(digest).toBeDefined();
       expect(digest.date).toBeDefined();
       expect(digest.sections).toBeInstanceOf(Array);
@@ -218,7 +218,7 @@ describe('Business Narrative Service', () => {
     it('should include anomaly count', async () => {
       mockQueryContext.mockResolvedValue({ rows: [], rowCount: 0 });
 
-      const digest = await generateDailyDigest('work' as const, 'user-1');
+      const digest = await generateDailyDigest('finance' as const, 'user-1');
       expect(typeof digest.anomalyCount).toBe('number');
     });
 
@@ -237,14 +237,14 @@ describe('Business Narrative Service', () => {
       // Suggestions returns empty
       mockQueryContext.mockResolvedValueOnce({ rows: [{ active: '0', top_type: null }], rowCount: 1 });
 
-      const digest = await generateDailyDigest('personal' as const, 'user-1');
+      const digest = await generateDailyDigest('operations' as const, 'user-1');
       expect(digest.actionItems.some(a => a.includes('ueberfaellig'))).toBe(true);
     });
 
     it('should handle DB errors gracefully', async () => {
       mockQueryContext.mockRejectedValue(new Error('DB error'));
 
-      const digest = await generateDailyDigest('personal' as const, 'user-1');
+      const digest = await generateDailyDigest('operations' as const, 'user-1');
       expect(digest).toBeDefined();
       expect(digest.sections.length).toBe(5);
     });
@@ -257,7 +257,7 @@ describe('Business Narrative Service', () => {
     it('should generate report with period dates', async () => {
       mockQueryContext.mockResolvedValue({ rows: [], rowCount: 0 });
 
-      const report = await generateWeeklyReport('work' as const, 'user-1');
+      const report = await generateWeeklyReport('finance' as const, 'user-1');
       expect(report.periodStart).toBeDefined();
       expect(report.periodEnd).toBeDefined();
       expect(report.sections.length).toBeGreaterThan(0);
@@ -266,14 +266,14 @@ describe('Business Narrative Service', () => {
     it('should include trend summary', async () => {
       mockQueryContext.mockResolvedValue({ rows: [], rowCount: 0 });
 
-      const report = await generateWeeklyReport('personal' as const, 'user-1');
+      const report = await generateWeeklyReport('operations' as const, 'user-1');
       expect(report.trendSummary).toBeInstanceOf(Array);
     });
 
     it('should generate overall narrative', async () => {
       mockQueryContext.mockResolvedValue({ rows: [], rowCount: 0 });
 
-      const report = await generateWeeklyReport('personal' as const, 'user-1');
+      const report = await generateWeeklyReport('operations' as const, 'user-1');
       expect(report.overallNarrative).toContain('Wochenbericht');
     });
   });
@@ -285,7 +285,7 @@ describe('Business Narrative Service', () => {
     it('should return empty array when no anomalies', async () => {
       mockQueryContext.mockResolvedValue({ rows: [], rowCount: 0 });
 
-      const anomalies = await detectAllAnomalies('personal' as const, 'user-1');
+      const anomalies = await detectAllAnomalies('operations' as const, 'user-1');
       expect(anomalies).toBeInstanceOf(Array);
     });
 
@@ -306,7 +306,7 @@ describe('Business Narrative Service', () => {
       // Email returns normal
       mockQueryContext.mockResolvedValueOnce({ rows: [], rowCount: 0 });
 
-      const anomalies = await detectAllAnomalies('work' as const, 'user-1');
+      const anomalies = await detectAllAnomalies('finance' as const, 'user-1');
       // May or may not detect depending on current value position
       expect(anomalies).toBeInstanceOf(Array);
     });
@@ -333,7 +333,7 @@ describe('Business Narrative Service', () => {
         }],
       });
 
-      const kpis = await listKPIs('work' as const, 'user-1');
+      const kpis = await listKPIs('finance' as const, 'user-1');
       expect(kpis).toHaveLength(1);
       expect(kpis[0].name).toBe('Monthly Revenue');
       expect(kpis[0].formula.sources).toEqual(['revenue']);
@@ -341,7 +341,7 @@ describe('Business Narrative Service', () => {
 
     it('should return empty array when no KPIs', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [] });
-      const kpis = await listKPIs('personal' as const, 'user-1');
+      const kpis = await listKPIs('operations' as const, 'user-1');
       expect(kpis).toEqual([]);
     });
   });
@@ -363,7 +363,7 @@ describe('Business Narrative Service', () => {
       };
       mockQueryContext.mockResolvedValueOnce({ rows: [mockRow] });
 
-      const kpi = await createKPI('personal' as const, 'user-1', {
+      const kpi = await createKPI('operations' as const, 'user-1', {
         name: 'Task Rate',
         description: 'Weekly completion',
         formula: { sources: ['tasks'], aggregation: 'avg' },
@@ -393,19 +393,19 @@ describe('Business Narrative Service', () => {
       };
       mockQueryContext.mockResolvedValueOnce({ rows: [mockRow] });
 
-      const kpi = await updateKPI('work' as const, 'user-1', 'kpi-1', { name: 'Updated KPI' });
+      const kpi = await updateKPI('finance' as const, 'user-1', 'kpi-1', { name: 'Updated KPI' });
       expect(kpi).not.toBeNull();
       expect(kpi!.name).toBe('Updated KPI');
     });
 
     it('should return null when nothing to update', async () => {
-      const kpi = await updateKPI('work' as const, 'user-1', 'kpi-1', {});
+      const kpi = await updateKPI('finance' as const, 'user-1', 'kpi-1', {});
       expect(kpi).toBeNull();
     });
 
     it('should return null when KPI not found', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [] });
-      const kpi = await updateKPI('work' as const, 'user-1', 'kpi-x', { name: 'Test' });
+      const kpi = await updateKPI('finance' as const, 'user-1', 'kpi-x', { name: 'Test' });
       expect(kpi).toBeNull();
     });
   });
@@ -413,13 +413,13 @@ describe('Business Narrative Service', () => {
   describe('deleteKPI', () => {
     it('should return true on successful delete', async () => {
       mockQueryContext.mockResolvedValueOnce({ rowCount: 1 });
-      const deleted = await deleteKPI('personal' as const, 'user-1', 'kpi-1');
+      const deleted = await deleteKPI('operations' as const, 'user-1', 'kpi-1');
       expect(deleted).toBe(true);
     });
 
     it('should return false when KPI not found', async () => {
       mockQueryContext.mockResolvedValueOnce({ rowCount: 0 });
-      const deleted = await deleteKPI('personal' as const, 'user-1', 'kpi-x');
+      const deleted = await deleteKPI('operations' as const, 'user-1', 'kpi-x');
       expect(deleted).toBe(false);
     });
   });
@@ -443,7 +443,7 @@ describe('Business Narrative Service', () => {
         // Tasks
         .mockResolvedValueOnce({ rows: [] });
 
-      const trends = await getTrends('work' as const, 'user-1', 7);
+      const trends = await getTrends('finance' as const, 'user-1', 7);
       expect(trends.length).toBeGreaterThanOrEqual(1);
       expect(trends[0].metric).toBe('Revenue');
       expect(trends[0].dataPoints.length).toBe(3);
@@ -451,13 +451,13 @@ describe('Business Narrative Service', () => {
 
     it('should handle DB errors gracefully', async () => {
       mockQueryContext.mockRejectedValue(new Error('DB error'));
-      const trends = await getTrends('personal' as const, 'user-1', 7);
+      const trends = await getTrends('operations' as const, 'user-1', 7);
       expect(trends).toEqual([]);
     });
 
     it('should return empty for insufficient data', async () => {
       mockQueryContext.mockResolvedValue({ rows: [{ d: '2026-03-10', revenue: '100' }] });
-      const trends = await getTrends('personal' as const, 'user-1', 7);
+      const trends = await getTrends('operations' as const, 'user-1', 7);
       // Only 1 data point per source, not enough for trend
       expect(trends).toEqual([]);
     });

@@ -164,6 +164,13 @@ export async function createCalendarEvent(
   // Generate reminders
   await generateReminders(context, event);
 
+  // Bridge to Episodic Memory — calendar events become recallable experiences
+  bridgeEventToEpisodicMemory(context, event).catch(err => {
+    logger.warn('Failed to bridge calendar event to episodic memory', {
+      error: err instanceof Error ? err.message : String(err),
+    });
+  });
+
   logger.info('Calendar event created', {
     id, title: input.title, eventType, context, aiGenerated,
     operation: 'createCalendarEvent'
@@ -667,4 +674,132 @@ export async function getEventMeetingId(
   `, params);
 
   return result.rows.length > 0 ? (result.rows[0].meeting_id as string | null) : null;
+}
+
+// ===========================================
+// Episodic Memory Bridge (Stufe 7.1)
+// ===========================================
+
+/**
+ * Store calendar event as episodic memory for prospective memory
+ * (McDaniel & Einstein 2007) — the brain remembers future intentions.
+ */
+async function bridgeEventToEpisodicMemory(
+  context: AIContext,
+  event: CalendarEvent
+): Promise<void> {
+  const { episodicMemory } = await import('./memory/episodic-memory');
+
+  const participantNames = event.participants
+    .filter(Boolean)
+    .join(', ');
+
+  const trigger = `Kalender: ${event.title}${event.location ? ` (${event.location})` : ''}`;
+  const response = [
+    `${event.event_type} am ${new Date(event.start_time).toLocaleDateString('de-DE')}`,
+    event.description || '',
+    participantNames ? `Teilnehmer: ${participantNames}` : '',
+  ].filter(Boolean).join('. ');
+
+  await episodicMemory.store(trigger, response, `calendar-${event.id}`, context);
+
+  // Bridge participants to Knowledge Graph (Stufe 7.2)
+  if (event.participants.length > 0) {
+    bridgeParticipantsToKnowledgeGraph(context, event).catch(err => {
+      logger.warn('Failed to bridge participants to knowledge graph', {
+        error: err instanceof Error ? err.message : String(err),
+      });
+    });
+  }
+
+  // Emit prospective memory event
+  import('./event-system').then(({ emitSystemEvent }) =>
+    emitSystemEvent({
+      context,
+      eventType: 'memory.fact_learned',
+      eventSource: 'calendar',
+      payload: {
+        factType: 'calendar_event',
+        content: event.title,
+        eventType: event.event_type,
+        startTime: event.start_time,
+        participants: event.participants.length,
+      },
+    })
+  ).catch(err => {
+    logger.warn('Failed to emit calendar memory event', {
+      error: err instanceof Error ? err.message : String(err),
+    });
+  });
+}
+
+/**
+ * Bridge meeting participants to Knowledge Graph (Stufe 7.2)
+ *
+ * Creates PERSON entities for participants and `meets_with` relations
+ * between them. Hebbian-like: frequent meetings strengthen edges.
+ */
+async function bridgeParticipantsToKnowledgeGraph(
+  context: AIContext,
+  event: CalendarEvent
+): Promise<void> {
+  for (const participant of event.participants) {
+    if (!participant) continue;
+
+    // Upsert participant as entity (increment mention_count if exists)
+    await queryContext(context, `
+      INSERT INTO knowledge_entities (name, type, description, importance, source_ids, aliases, metadata)
+      VALUES ($1, 'person', $2, 0.5, ARRAY[$3::uuid], ARRAY[]::text[], $4)
+      ON CONFLICT (name) WHERE type = 'person'
+      DO UPDATE SET
+        mention_count = knowledge_entities.mention_count + 1,
+        metadata = jsonb_set(
+          COALESCE(knowledge_entities.metadata, '{}')::jsonb,
+          '{last_meeting}',
+          to_jsonb($5::text)
+        ),
+        updated_at = NOW()
+    `, [
+      participant,
+      `Meeting participant`,
+      event.id,
+      JSON.stringify({ lastMeeting: event.start_time }),
+      event.start_time,
+    ]).catch(() => {
+      // ON CONFLICT may fail if unique constraint differs — non-critical
+    });
+  }
+
+  // Create meets_with relations between all participant pairs
+  for (let i = 0; i < event.participants.length; i++) {
+    for (let j = i + 1; j < event.participants.length; j++) {
+      const nameA = event.participants[i];
+      const nameB = event.participants[j];
+      if (!nameA || !nameB) continue;
+
+      await queryContext(context, `
+        INSERT INTO knowledge_relations (source_entity_id, target_entity_id, relation_type, strength, metadata)
+        SELECT a.id, b.id, 'meets_with', 0.5, $3
+        FROM knowledge_entities a, knowledge_entities b
+        WHERE a.name = $1 AND a.type = 'person'
+          AND b.name = $2 AND b.type = 'person'
+        ON CONFLICT DO NOTHING
+      `, [
+        nameA,
+        nameB,
+        JSON.stringify({
+          eventTitle: event.title,
+          eventDate: event.start_time,
+          location: event.location,
+        }),
+      ]).catch(() => {
+        // Non-critical — relation may already exist
+      });
+    }
+  }
+
+  logger.info('[Calendar] Participants bridged to knowledge graph', {
+    eventId: event.id,
+    participants: event.participants.length,
+  });
 }

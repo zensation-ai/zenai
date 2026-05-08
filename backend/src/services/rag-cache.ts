@@ -15,7 +15,7 @@ import { cache, cacheKeys } from '../utils/cache';
 import { ragCache } from '../utils/semantic-cache';
 import { logger } from '../utils/logger';
 import type { AIContext } from '../utils/database-context';
-import type { EnhancedRAGResult } from './enhanced-rag';
+import type { EnhancedRAGResult } from './rag-types';
 
 // ===========================================
 // Configuration

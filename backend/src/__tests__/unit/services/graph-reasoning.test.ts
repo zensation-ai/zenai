@@ -57,7 +57,7 @@ describe('Knowledge Graph Reasoning', () => {
       // Cache insertion
       mockQueryContext.mockResolvedValue({ rows: [] } as never);
 
-      const result = await inferTransitiveRelations('personal');
+      const result = await inferTransitiveRelations('operations');
 
       expect(result).toHaveLength(1);
       expect(result[0].sourceId).toBe('a');
@@ -70,7 +70,7 @@ describe('Knowledge Graph Reasoning', () => {
     it('should return empty array on error', async () => {
       mockQueryContext.mockRejectedValueOnce(new Error('DB error'));
 
-      const result = await inferTransitiveRelations('personal');
+      const result = await inferTransitiveRelations('operations');
       expect(result).toEqual([]);
     });
   });
@@ -89,7 +89,7 @@ describe('Knowledge Graph Reasoning', () => {
         ],
       } as never);
 
-      const result = await detectContradictions('personal');
+      const result = await detectContradictions('operations');
 
       expect(result).toHaveLength(1);
       expect(result[0].inferenceType).toBe('contradiction');
@@ -98,7 +98,7 @@ describe('Knowledge Graph Reasoning', () => {
 
     it('should return empty on no contradictions', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [] } as never);
-      const result = await detectContradictions('personal');
+      const result = await detectContradictions('operations');
       expect(result).toEqual([]);
     });
   });
@@ -120,7 +120,7 @@ describe('Knowledge Graph Reasoning', () => {
       // Store community
       mockQueryContext.mockResolvedValueOnce({ rows: [] } as never);
 
-      const result = await detectCommunities('personal');
+      const result = await detectCommunities('operations');
 
       expect(result).toHaveLength(1);
       expect(result[0].memberCount).toBe(3);
@@ -129,7 +129,7 @@ describe('Knowledge Graph Reasoning', () => {
 
     it('should return empty on error', async () => {
       mockQueryContext.mockRejectedValueOnce(new Error('DB error'));
-      const result = await detectCommunities('personal');
+      const result = await detectCommunities('operations');
       expect(result).toEqual([]);
     });
   });
@@ -149,7 +149,7 @@ describe('Knowledge Graph Reasoning', () => {
         ],
       } as never);
 
-      const result = await calculateCentrality('personal');
+      const result = await calculateCentrality('operations');
 
       expect(result).toHaveLength(1);
       expect(result[0].ideaId).toBe('hub-1');
@@ -160,7 +160,7 @@ describe('Knowledge Graph Reasoning', () => {
 
     it('should return empty on error', async () => {
       mockQueryContext.mockRejectedValueOnce(new Error('DB error'));
-      const result = await calculateCentrality('personal');
+      const result = await calculateCentrality('operations');
       expect(result).toEqual([]);
     });
   });
@@ -186,7 +186,7 @@ describe('Knowledge Graph Reasoning', () => {
       // No more steps
       mockQueryContext.mockResolvedValueOnce({ rows: [] } as never);
 
-      const result = await generateLearningPath('personal', 'start', { maxSteps: 5 });
+      const result = await generateLearningPath('operations', 'start', { maxSteps: 5 });
 
       expect(result).toHaveLength(2);
       expect(result[0].order).toBe(1);
@@ -197,7 +197,7 @@ describe('Knowledge Graph Reasoning', () => {
 
     it('should return empty if start idea not found', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [] } as never);
-      const result = await generateLearningPath('personal', 'nonexistent');
+      const result = await generateLearningPath('operations', 'nonexistent');
       expect(result).toEqual([]);
     });
   });
@@ -208,10 +208,10 @@ describe('Knowledge Graph Reasoning', () => {
         rows: [{ id: 'rel-1' }],
       } as never);
 
-      const id = await createManualRelation('personal', 'a', 'b', 'supports', 0.9);
+      const id = await createManualRelation('operations', 'a', 'b', 'supports', 0.9);
       expect(id).toBe('rel-1');
       expect(mockQueryContext).toHaveBeenCalledWith(
-        'personal',
+        'operations',
         expect.stringContaining('INSERT INTO idea_relations'),
         expect.arrayContaining(['a', 'b', 'supports'])
       );
@@ -220,10 +220,10 @@ describe('Knowledge Graph Reasoning', () => {
     it('should clamp strength to 0-1 range', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [{ id: 'rel-1' }] } as never);
 
-      await createManualRelation('personal', 'a', 'b', 'supports', 1.5);
+      await createManualRelation('operations', 'a', 'b', 'supports', 1.5);
       // Strength should be clamped to 1
       expect(mockQueryContext).toHaveBeenCalledWith(
-        'personal',
+        'operations',
         expect.any(String),
         expect.arrayContaining([1])
       );
@@ -234,11 +234,11 @@ describe('Knowledge Graph Reasoning', () => {
     it('should update strength', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [] } as never);
 
-      await updateRelationStrength('personal', 'a', 'b', 0.6);
+      await updateRelationStrength('operations', 'a', 'b', 0.6);
       expect(mockQueryContext).toHaveBeenCalledWith(
-        'personal',
+        'operations',
         expect.stringContaining('UPDATE idea_relations'),
-        ['a', 'b', 0.6, 'personal']
+        ['a', 'b', 0.6, 'operations']
       );
     });
   });
@@ -247,11 +247,11 @@ describe('Knowledge Graph Reasoning', () => {
     it('should delete a relation', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [] } as never);
 
-      await deleteRelation('personal', 'a', 'b');
+      await deleteRelation('operations', 'a', 'b');
       expect(mockQueryContext).toHaveBeenCalledWith(
-        'personal',
+        'operations',
         expect.stringContaining('DELETE FROM idea_relations'),
-        ['a', 'b', 'personal']
+        ['a', 'b', 'operations']
       );
     });
   });

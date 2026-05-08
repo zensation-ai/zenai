@@ -8,8 +8,6 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import axios from 'axios';
 import type { AIContext } from '../ContextSwitcher';
-import './LocationAutocomplete.css';
-
 interface PlaceSuggestion {
   placeId: string;
   description: string;
@@ -31,7 +29,7 @@ export function LocationAutocomplete({
   onChange,
   onPlaceSelect,
   context,
-  placeholder = 'z.B. Buero, Zoom, ...',
+  placeholder = 'z.B. Büro, Zoom, ...',
   id = 'event-location',
 }: LocationAutocompleteProps) {
   const [suggestions, setSuggestions] = useState<PlaceSuggestion[]>([]);

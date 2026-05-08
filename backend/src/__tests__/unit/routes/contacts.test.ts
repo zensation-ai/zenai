@@ -101,7 +101,7 @@ describe('Contacts & CRM Routes', () => {
   // ===========================================
   describe('GET /api/:context/contacts', () => {
     it('should list contacts', async () => {
-      const res = await request(app).get('/api/personal/contacts');
+      const res = await request(app).get('/api/operations/contacts');
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
       expect(res.body.data).toHaveLength(1);
@@ -116,7 +116,7 @@ describe('Contacts & CRM Routes', () => {
 
   describe('GET /api/:context/contacts/stats', () => {
     it('should return contact stats', async () => {
-      const res = await request(app).get('/api/personal/contacts/stats');
+      const res = await request(app).get('/api/operations/contacts/stats');
       expect(res.status).toBe(200);
       expect(res.body.data.total).toBe(10);
     });
@@ -124,7 +124,7 @@ describe('Contacts & CRM Routes', () => {
 
   describe('GET /api/:context/contacts/follow-ups', () => {
     it('should return follow-up suggestions', async () => {
-      const res = await request(app).get('/api/personal/contacts/follow-ups');
+      const res = await request(app).get('/api/operations/contacts/follow-ups');
       expect(res.status).toBe(200);
       expect(res.body.data).toHaveLength(1);
     });
@@ -135,21 +135,21 @@ describe('Contacts & CRM Routes', () => {
   // ===========================================
   describe('GET /api/:context/contacts/:id', () => {
     it('should return a contact', async () => {
-      const res = await request(app).get(`/api/personal/contacts/${UUID}`);
+      const res = await request(app).get(`/api/operations/contacts/${UUID}`);
       expect(res.status).toBe(200);
       expect(res.body.data.display_name).toBe('Max Mustermann');
     });
 
     it('should return 404 for non-existent contact', async () => {
       mockGetContact.mockResolvedValueOnce(null);
-      const res = await request(app).get(`/api/personal/contacts/${UUID}`);
+      const res = await request(app).get(`/api/operations/contacts/${UUID}`);
       expect(res.status).toBe(404);
     });
 
     it('should return 400 for invalid UUID', async () => {
       const { isValidUUID } = require('../../../utils/validation');
       isValidUUID.mockReturnValueOnce(false);
-      const res = await request(app).get('/api/personal/contacts/not-a-uuid');
+      const res = await request(app).get('/api/operations/contacts/not-a-uuid');
       expect(res.status).toBe(400);
     });
   });
@@ -157,7 +157,7 @@ describe('Contacts & CRM Routes', () => {
   describe('POST /api/:context/contacts', () => {
     it('should create a contact', async () => {
       const res = await request(app)
-        .post('/api/personal/contacts')
+        .post('/api/operations/contacts')
         .send({ display_name: 'New Contact', email: 'new@example.com' });
       expect(res.status).toBe(201);
       expect(res.body.success).toBe(true);
@@ -165,7 +165,7 @@ describe('Contacts & CRM Routes', () => {
 
     it('should return 400 without display_name', async () => {
       const res = await request(app)
-        .post('/api/personal/contacts')
+        .post('/api/operations/contacts')
         .send({ email: 'test@example.com' });
       expect(res.status).toBe(400);
     });
@@ -174,7 +174,7 @@ describe('Contacts & CRM Routes', () => {
   describe('PUT /api/:context/contacts/:id', () => {
     it('should update a contact', async () => {
       const res = await request(app)
-        .put(`/api/personal/contacts/${UUID}`)
+        .put(`/api/operations/contacts/${UUID}`)
         .send({ display_name: 'Updated Contact' });
       expect(res.status).toBe(200);
       expect(res.body.data.display_name).toBe('Updated Contact');
@@ -183,7 +183,7 @@ describe('Contacts & CRM Routes', () => {
     it('should return 404 for non-existent contact', async () => {
       mockUpdateContact.mockResolvedValueOnce(null);
       const res = await request(app)
-        .put(`/api/personal/contacts/${UUID}`)
+        .put(`/api/operations/contacts/${UUID}`)
         .send({ display_name: 'X' });
       expect(res.status).toBe(404);
     });
@@ -191,14 +191,14 @@ describe('Contacts & CRM Routes', () => {
 
   describe('DELETE /api/:context/contacts/:id', () => {
     it('should delete a contact', async () => {
-      const res = await request(app).delete(`/api/personal/contacts/${UUID}`);
+      const res = await request(app).delete(`/api/operations/contacts/${UUID}`);
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
     });
 
     it('should return 404 for non-existent contact', async () => {
       mockDeleteContact.mockResolvedValueOnce(false);
-      const res = await request(app).delete(`/api/personal/contacts/${UUID}`);
+      const res = await request(app).delete(`/api/operations/contacts/${UUID}`);
       expect(res.status).toBe(404);
     });
   });
@@ -208,7 +208,7 @@ describe('Contacts & CRM Routes', () => {
   // ===========================================
   describe('GET /api/:context/contacts/:id/timeline', () => {
     it('should return interaction timeline', async () => {
-      const res = await request(app).get(`/api/personal/contacts/${UUID}/timeline`);
+      const res = await request(app).get(`/api/operations/contacts/${UUID}/timeline`);
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
       expect(res.body.total).toBe(0);
@@ -218,7 +218,7 @@ describe('Contacts & CRM Routes', () => {
   describe('POST /api/:context/contacts/:id/interactions', () => {
     it('should add an interaction', async () => {
       const res = await request(app)
-        .post(`/api/personal/contacts/${UUID}/interactions`)
+        .post(`/api/operations/contacts/${UUID}/interactions`)
         .send({ interaction_type: 'call', notes: 'Discussed project' });
       expect(res.status).toBe(201);
       expect(res.body.data.interaction_type).toBe('call');
@@ -226,7 +226,7 @@ describe('Contacts & CRM Routes', () => {
 
     it('should return 400 without interaction_type', async () => {
       const res = await request(app)
-        .post(`/api/personal/contacts/${UUID}/interactions`)
+        .post(`/api/operations/contacts/${UUID}/interactions`)
         .send({ notes: 'No type provided' });
       expect(res.status).toBe(400);
     });
@@ -237,7 +237,7 @@ describe('Contacts & CRM Routes', () => {
   // ===========================================
   describe('GET /api/:context/organizations', () => {
     it('should list organizations', async () => {
-      const res = await request(app).get('/api/personal/organizations');
+      const res = await request(app).get('/api/operations/organizations');
       expect(res.status).toBe(200);
       expect(res.body.data).toHaveLength(1);
       expect(res.body.data[0].name).toBe('Acme Corp');
@@ -246,14 +246,14 @@ describe('Contacts & CRM Routes', () => {
 
   describe('GET /api/:context/organizations/:id', () => {
     it('should return an organization', async () => {
-      const res = await request(app).get(`/api/personal/organizations/${UUID}`);
+      const res = await request(app).get(`/api/operations/organizations/${UUID}`);
       expect(res.status).toBe(200);
       expect(res.body.data.name).toBe('Acme Corp');
     });
 
     it('should return 404 for non-existent organization', async () => {
       mockGetOrganization.mockResolvedValueOnce(null);
-      const res = await request(app).get(`/api/personal/organizations/${UUID}`);
+      const res = await request(app).get(`/api/operations/organizations/${UUID}`);
       expect(res.status).toBe(404);
     });
   });
@@ -261,7 +261,7 @@ describe('Contacts & CRM Routes', () => {
   describe('POST /api/:context/organizations', () => {
     it('should create an organization', async () => {
       const res = await request(app)
-        .post('/api/personal/organizations')
+        .post('/api/operations/organizations')
         .send({ name: 'New Org', industry: 'Tech' });
       expect(res.status).toBe(201);
       expect(res.body.success).toBe(true);
@@ -269,7 +269,7 @@ describe('Contacts & CRM Routes', () => {
 
     it('should return 400 without name', async () => {
       const res = await request(app)
-        .post('/api/personal/organizations')
+        .post('/api/operations/organizations')
         .send({ industry: 'Tech' });
       expect(res.status).toBe(400);
     });
@@ -278,7 +278,7 @@ describe('Contacts & CRM Routes', () => {
   describe('PUT /api/:context/organizations/:id', () => {
     it('should update an organization', async () => {
       const res = await request(app)
-        .put(`/api/personal/organizations/${UUID}`)
+        .put(`/api/operations/organizations/${UUID}`)
         .send({ name: 'Updated Org' });
       expect(res.status).toBe(200);
       expect(res.body.data.name).toBe('Updated Org');
@@ -287,7 +287,7 @@ describe('Contacts & CRM Routes', () => {
     it('should return 404 for non-existent organization', async () => {
       mockUpdateOrganization.mockResolvedValueOnce(null);
       const res = await request(app)
-        .put(`/api/personal/organizations/${UUID}`)
+        .put(`/api/operations/organizations/${UUID}`)
         .send({ name: 'X' });
       expect(res.status).toBe(404);
     });
@@ -295,14 +295,14 @@ describe('Contacts & CRM Routes', () => {
 
   describe('DELETE /api/:context/organizations/:id', () => {
     it('should delete an organization', async () => {
-      const res = await request(app).delete(`/api/personal/organizations/${UUID}`);
+      const res = await request(app).delete(`/api/operations/organizations/${UUID}`);
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
     });
 
     it('should return 404 for non-existent organization', async () => {
       mockDeleteOrganization.mockResolvedValueOnce(false);
-      const res = await request(app).delete(`/api/personal/organizations/${UUID}`);
+      const res = await request(app).delete(`/api/operations/organizations/${UUID}`);
       expect(res.status).toBe(404);
     });
   });

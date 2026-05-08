@@ -20,7 +20,8 @@ export type ActionType =
   | 'modify_data'
   | 'agent_action'
   | 'proactive_action'
-  | 'automation_action';
+  | 'automation_action'
+  | 'social_publish';
 
 export type ActionSource =
   | 'agent'

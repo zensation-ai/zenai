@@ -26,12 +26,14 @@ import { addMessage, updateSessionTitle, createSession } from '../general-chat/c
 import { getClaudeClient, CLAUDE_MODEL } from '../claude/client';
 import { isClaudeAvailable } from '../claude';
 import { memoryCoordinator } from '../memory';
+import { recordVoicePhase } from './voice-metrics';
+import { getTracer } from '../observability/tracing';
 
 // ============================================================
 // Types
 // ============================================================
 
-type AIContext = 'personal' | 'work' | 'learning' | 'creative' | 'demo';
+type AIContext = 'operations' | 'finance' | 'people' | 'strategy' | 'demo';
 
 export interface VoicePipelineConfig {
   sttProvider?: string;
@@ -219,52 +221,83 @@ export class VoicePipeline {
 
     session.isProcessing = true;
 
-    try {
-      // Concatenate buffered audio
-      const fullAudio = audioProcessor.concatenateAudio(session.audioBuffer);
-      session.audioBuffer = []; // Clear buffer
-
-      if (fullAudio.length === 0) {
-        session.isProcessing = false;
-        return { vad };
-      }
-
-      // Calculate audio duration
-      const audioDuration = audioProcessor.calculateDuration(fullAudio.length);
-      session.totalAudioDuration_ms += audioDuration;
-
-      // STT: transcribe audio
-      const sttResult: STTResult = await sttService.transcribe(fullAudio, {
-        language: session.config.language?.split('-')[0] || 'de',
-        provider: session.config.sttProvider,
-        format: 'webm',
+    const tracer = getTracer('voice');
+    return tracer.startActiveSpan('voice.pipeline.turn', async (span) => {
+      span.setAttributes({
+        'voice.session_id': sessionId,
+        'voice.context': session.context,
+        'voice.mode': 'batch',
       });
 
-      if (!sttResult.text || sttResult.text.trim().length === 0) {
+      const turnStart = Date.now();
+      try {
+        const ingestStart = Date.now();
+        // Concatenate buffered audio
+        const fullAudio = audioProcessor.concatenateAudio(session.audioBuffer);
+        session.audioBuffer = []; // Clear buffer
+        recordVoicePhase('audio_ingest', Date.now() - ingestStart);
+
+        if (fullAudio.length === 0) {
+          session.isProcessing = false;
+          span.setAttribute('voice.turn.outcome', 'empty_audio');
+          span.end();
+          return { vad };
+        }
+
+        // Calculate audio duration
+        const audioDuration = audioProcessor.calculateDuration(fullAudio.length);
+        session.totalAudioDuration_ms += audioDuration;
+
+        // STT: transcribe audio
+        const sttResult: STTResult = await sttService.transcribe(fullAudio, {
+          language: session.config.language?.split('-')[0] || 'de',
+          provider: session.config.sttProvider,
+          format: 'webm',
+        });
+
+        if (!sttResult.text || sttResult.text.trim().length === 0) {
+          session.isProcessing = false;
+          span.setAttribute('voice.turn.outcome', 'empty_transcript');
+          span.end();
+          return { vad, transcript: '' };
+        }
+
+        // LLM + TTS: process transcript
+        const result = await this.processTranscript(session, sttResult.text);
+
+        session.turnCount++;
         session.isProcessing = false;
-        return { vad, transcript: '' };
+
+        const totalDuration = Date.now() - turnStart;
+        recordVoicePhase('end_to_end', totalDuration, { outcome: 'ok' });
+        span.setAttributes({
+          'voice.turn.duration_ms': totalDuration,
+          'voice.turn.outcome': 'ok',
+          'voice.turn.transcript_length': sttResult.text.length,
+          'voice.turn.response_length': result.responseText.length,
+        });
+        span.end();
+
+        return {
+          vad,
+          transcript: sttResult.text,
+          responseAudio: result.responseAudio,
+          responseText: result.responseText,
+        };
+      } catch (error) {
+        session.isProcessing = false;
+        const totalDuration = Date.now() - turnStart;
+        recordVoicePhase('end_to_end', totalDuration, { outcome: 'error' });
+        span.recordException(error);
+        span.setStatus({ code: 2, message: error instanceof Error ? error.message : String(error) });
+        span.end();
+        logger.error('Voice pipeline processing failed', error instanceof Error ? error : undefined, {
+          sessionId,
+          operation: 'voice-pipeline',
+        });
+        throw error;
       }
-
-      // LLM + TTS: process transcript
-      const result = await this.processTranscript(session, sttResult.text);
-
-      session.turnCount++;
-      session.isProcessing = false;
-
-      return {
-        vad,
-        transcript: sttResult.text,
-        responseAudio: result.responseAudio,
-        responseText: result.responseText,
-      };
-    } catch (error) {
-      session.isProcessing = false;
-      logger.error('Voice pipeline processing failed', error instanceof Error ? error : undefined, {
-        sessionId,
-        operation: 'voice-pipeline',
-      });
-      throw error;
-    }
+    });
   }
 
   /**
@@ -282,12 +315,20 @@ export class VoicePipeline {
     transcript: string
   ): Promise<{ responseAudio: Buffer[]; responseText: string }> {
     // Send to Claude via general chat
-    const chatResult = await sendMessage(
-      session.chatSessionId,
-      transcript,
-      session.context,
-      false
-    );
+    const llmStart = Date.now();
+    let chatResult;
+    try {
+      chatResult = await sendMessage(
+        session.chatSessionId,
+        transcript,
+        session.context,
+        false
+      );
+      recordVoicePhase('llm', Date.now() - llmStart, { outcome: 'ok' });
+    } catch (error) {
+      recordVoicePhase('llm', Date.now() - llmStart, { outcome: 'error' });
+      throw error;
+    }
 
     const responseText = chatResult.assistantMessage.content;
 
@@ -375,59 +416,90 @@ export class VoicePipeline {
 
     session.isProcessing = true;
 
-    try {
-      // Concatenate buffered audio
-      const fullAudio = audioProcessor.concatenateAudio(session.audioBuffer);
-      session.audioBuffer = [];
-
-      if (fullAudio.length === 0) {
-        session.isProcessing = false;
-        return { vad };
-      }
-
-      // Calculate audio duration
-      const audioDuration = audioProcessor.calculateDuration(fullAudio.length);
-      session.totalAudioDuration_ms += audioDuration;
-
-      // STT: transcribe audio
-      const sttResult: STTResult = await sttService.transcribe(fullAudio, {
-        language: session.config.language?.split('-')[0] || 'de',
-        provider: session.config.sttProvider,
-        format: 'webm',
+    const tracer = getTracer('voice');
+    return tracer.startActiveSpan('voice.pipeline.turn', async (span) => {
+      span.setAttributes({
+        'voice.session_id': sessionId,
+        'voice.context': session.context,
+        'voice.mode': 'streaming',
       });
 
-      if (!sttResult.text || sttResult.text.trim().length === 0) {
+      const turnStart = Date.now();
+      try {
+        const ingestStart = Date.now();
+        // Concatenate buffered audio
+        const fullAudio = audioProcessor.concatenateAudio(session.audioBuffer);
+        session.audioBuffer = [];
+        recordVoicePhase('audio_ingest', Date.now() - ingestStart);
+
+        if (fullAudio.length === 0) {
+          session.isProcessing = false;
+          span.setAttribute('voice.turn.outcome', 'empty_audio');
+          span.end();
+          return { vad };
+        }
+
+        // Calculate audio duration
+        const audioDuration = audioProcessor.calculateDuration(fullAudio.length);
+        session.totalAudioDuration_ms += audioDuration;
+
+        // STT: transcribe audio
+        const sttResult: STTResult = await sttService.transcribe(fullAudio, {
+          language: session.config.language?.split('-')[0] || 'de',
+          provider: session.config.sttProvider,
+          format: 'webm',
+        });
+
+        if (!sttResult.text || sttResult.text.trim().length === 0) {
+          session.isProcessing = false;
+          span.setAttribute('voice.turn.outcome', 'empty_transcript');
+          span.end();
+          return { vad, transcript: '' };
+        }
+
+        // Use sentence-level streaming LLM + TTS
+        const responseText = await this.processTranscriptStreaming(
+          session,
+          sttResult.text,
+          onAudioChunk,
+        );
+
+        if (onResponseText) {
+          onResponseText(responseText);
+        }
+
+        session.turnCount++;
         session.isProcessing = false;
-        return { vad, transcript: '' };
+
+        const totalDuration = Date.now() - turnStart;
+        recordVoicePhase('end_to_end', totalDuration, { outcome: 'ok' });
+        span.setAttributes({
+          'voice.turn.duration_ms': totalDuration,
+          'voice.turn.outcome': 'ok',
+          'voice.turn.transcript_length': sttResult.text.length,
+          'voice.turn.response_length': responseText.length,
+        });
+        span.end();
+
+        return {
+          vad,
+          transcript: sttResult.text,
+          responseText,
+        };
+      } catch (error) {
+        session.isProcessing = false;
+        const totalDuration = Date.now() - turnStart;
+        recordVoicePhase('end_to_end', totalDuration, { outcome: 'error' });
+        span.recordException(error);
+        span.setStatus({ code: 2, message: error instanceof Error ? error.message : String(error) });
+        span.end();
+        logger.error('Voice pipeline streaming processing failed', error instanceof Error ? error : undefined, {
+          sessionId,
+          operation: 'voice-pipeline',
+        });
+        throw error;
       }
-
-      // Use sentence-level streaming LLM + TTS
-      const responseText = await this.processTranscriptStreaming(
-        session,
-        sttResult.text,
-        onAudioChunk,
-      );
-
-      if (onResponseText) {
-        onResponseText(responseText);
-      }
-
-      session.turnCount++;
-      session.isProcessing = false;
-
-      return {
-        vad,
-        transcript: sttResult.text,
-        responseText,
-      };
-    } catch (error) {
-      session.isProcessing = false;
-      logger.error('Voice pipeline streaming processing failed', error instanceof Error ? error : undefined, {
-        sessionId,
-        operation: 'voice-pipeline',
-      });
-      throw error;
-    }
+    });
   }
 
   /**
@@ -481,6 +553,7 @@ export class VoicePipeline {
     }));
 
     // Stream from Claude API
+    const llmStart = Date.now();
     const client = getClaudeClient();
     const stream = client.messages.stream({
       model: CLAUDE_MODEL,
@@ -559,7 +632,13 @@ export class VoicePipeline {
     });
 
     // Wait for stream to complete
-    await stream.finalMessage();
+    try {
+      await stream.finalMessage();
+      recordVoicePhase('llm', Date.now() - llmStart, { outcome: 'ok' });
+    } catch (error) {
+      recordVoicePhase('llm', Date.now() - llmStart, { outcome: 'error' });
+      throw error;
+    }
 
     // Flush any remaining text in the buffer as the final sentence
     if (textBuffer.trim().length > 0) {
@@ -621,7 +700,7 @@ export class VoicePipeline {
    * @param withAudio Whether to also generate TTS audio
    */
   async generateMorningBriefing(
-    context: 'personal' | 'work' | 'learning' | 'creative' | 'demo',
+    context: 'operations' | 'finance' | 'people' | 'strategy' | 'demo',
     userId: string,
     withAudio: boolean = false
   ): Promise<{ text: string; audioBuffer?: Buffer }> {

@@ -6,7 +6,7 @@
  */
 
 export type IntegrationCategory = 'email' | 'calendar' | 'messaging' | 'storage' | 'crm' | 'dev';
-export type AIContext = 'personal' | 'work' | 'learning' | 'creative';
+export type AIContext = 'operations' | 'finance' | 'people' | 'strategy';
 export type IntegrationStatus = 'connected' | 'disconnected' | 'error' | 'syncing';
 
 export const SYNC_INTERVAL_MIN = 5;

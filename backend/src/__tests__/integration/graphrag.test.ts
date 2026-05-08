@@ -25,6 +25,10 @@ jest.mock('../../middleware/auth', () => ({
   requireScope: jest.fn(() => (_req: unknown, _res: unknown, next: () => void) => next()),
 }));
 
+jest.mock('../../middleware/plan-gate', () => ({
+  requirePlan: jest.fn(() => (_req: unknown, _res: unknown, next: () => void) => next()),
+}));
+
 jest.mock('../../utils/user-context', () => ({
   getUserId: jest.fn(() => '00000000-0000-0000-0000-000000000001'),
   SYSTEM_USER_ID: '00000000-0000-0000-0000-000000000001',
@@ -38,7 +42,7 @@ const mockQueryContext = jest.fn();
 
 jest.mock('../../utils/database-context', () => ({
   queryContext: (...args: unknown[]) => mockQueryContext(...args),
-  isValidContext: jest.fn((ctx: string) => ['personal', 'work', 'learning', 'creative'].includes(ctx)),
+  isValidContext: jest.fn((ctx: string) => ['operations', 'finance', 'people', 'strategy'].includes(ctx)),
   AIContext: {},
 }));
 
@@ -107,7 +111,7 @@ describe('GraphRAG API Integration Tests', () => {
       mockExtractFromText.mockResolvedValueOnce(result);
 
       const res = await request(app)
-        .post('/api/personal/graphrag/extract')
+        .post('/api/operations/graphrag/extract')
         .send({ text: 'TypeScript is a programming language' })
         .expect(200);
 
@@ -116,7 +120,7 @@ describe('GraphRAG API Integration Tests', () => {
       expect(mockExtractFromText).toHaveBeenCalledWith(
         'TypeScript is a programming language',
         '00000000-0000-0000-0000-000000000000',
-        'personal'
+        'operations'
       );
     });
 
@@ -124,16 +128,16 @@ describe('GraphRAG API Integration Tests', () => {
       mockExtractFromText.mockResolvedValueOnce({ entities: [], relations: [] });
 
       await request(app)
-        .post('/api/personal/graphrag/extract')
+        .post('/api/operations/graphrag/extract')
         .send({ text: 'Hello', sourceId: VALID_UUID })
         .expect(200);
 
-      expect(mockExtractFromText).toHaveBeenCalledWith('Hello', VALID_UUID, 'personal');
+      expect(mockExtractFromText).toHaveBeenCalledWith('Hello', VALID_UUID, 'operations');
     });
 
     it('should return 400 for missing text', async () => {
       const res = await request(app)
-        .post('/api/personal/graphrag/extract')
+        .post('/api/operations/graphrag/extract')
         .send({})
         .expect(400);
 
@@ -142,7 +146,7 @@ describe('GraphRAG API Integration Tests', () => {
 
     it('should return 400 for empty text', async () => {
       const res = await request(app)
-        .post('/api/personal/graphrag/extract')
+        .post('/api/operations/graphrag/extract')
         .send({ text: '   ' })
         .expect(400);
 
@@ -162,7 +166,7 @@ describe('GraphRAG API Integration Tests', () => {
       mockQueryContext.mockResolvedValueOnce({ rows: entities });
 
       const res = await request(app)
-        .get('/api/personal/graphrag/entities')
+        .get('/api/operations/graphrag/entities')
         .expect(200);
 
       expect(res.body.success).toBe(true);
@@ -173,7 +177,7 @@ describe('GraphRAG API Integration Tests', () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [] });
 
       await request(app)
-        .get('/api/personal/graphrag/entities?type=person')
+        .get('/api/operations/graphrag/entities?type=person')
         .expect(200);
 
       const sql = mockQueryContext.mock.calls[0][1] as string;
@@ -184,7 +188,7 @@ describe('GraphRAG API Integration Tests', () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [] });
 
       await request(app)
-        .get('/api/personal/graphrag/entities?search=react')
+        .get('/api/operations/graphrag/entities?search=react')
         .expect(200);
 
       const sql = mockQueryContext.mock.calls[0][1] as string;
@@ -205,7 +209,7 @@ describe('GraphRAG API Integration Tests', () => {
         .mockResolvedValueOnce({ rows: relations });
 
       const res = await request(app)
-        .get(`/api/personal/graphrag/entities/${VALID_UUID}`)
+        .get(`/api/operations/graphrag/entities/${VALID_UUID}`)
         .expect(200);
 
       expect(res.body.success).toBe(true);
@@ -217,7 +221,7 @@ describe('GraphRAG API Integration Tests', () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [] });
 
       const res = await request(app)
-        .get(`/api/personal/graphrag/entities/${VALID_UUID}`)
+        .get(`/api/operations/graphrag/entities/${VALID_UUID}`)
         .expect(404);
 
       expect(res.body.success).toBe(false);
@@ -233,7 +237,7 @@ describe('GraphRAG API Integration Tests', () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [{ id: VALID_UUID }] });
 
       const res = await request(app)
-        .delete(`/api/personal/graphrag/entities/${VALID_UUID}`)
+        .delete(`/api/operations/graphrag/entities/${VALID_UUID}`)
         .expect(200);
 
       expect(res.body.success).toBe(true);
@@ -244,7 +248,7 @@ describe('GraphRAG API Integration Tests', () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [] });
 
       const res = await request(app)
-        .delete(`/api/personal/graphrag/entities/${VALID_UUID}`)
+        .delete(`/api/operations/graphrag/entities/${VALID_UUID}`)
         .expect(404);
 
       expect(res.body.success).toBe(false);
@@ -261,7 +265,7 @@ describe('GraphRAG API Integration Tests', () => {
       mockRetrieve.mockResolvedValueOnce(results);
 
       const res = await request(app)
-        .post('/api/personal/graphrag/retrieve')
+        .post('/api/operations/graphrag/retrieve')
         .send({ query: 'What is React?' })
         .expect(200);
 
@@ -271,7 +275,7 @@ describe('GraphRAG API Integration Tests', () => {
 
     it('should return 400 for missing query', async () => {
       const res = await request(app)
-        .post('/api/personal/graphrag/retrieve')
+        .post('/api/operations/graphrag/retrieve')
         .send({})
         .expect(400);
 
@@ -280,7 +284,7 @@ describe('GraphRAG API Integration Tests', () => {
 
     it('should return 400 for empty query', async () => {
       const res = await request(app)
-        .post('/api/personal/graphrag/retrieve')
+        .post('/api/operations/graphrag/retrieve')
         .send({ query: '   ' })
         .expect(400);
 
@@ -298,7 +302,7 @@ describe('GraphRAG API Integration Tests', () => {
       mockGetCommunitySummaries.mockResolvedValueOnce(summaries);
 
       const res = await request(app)
-        .get('/api/personal/graphrag/communities')
+        .get('/api/operations/graphrag/communities')
         .expect(200);
 
       expect(res.body.success).toBe(true);
@@ -315,7 +319,7 @@ describe('GraphRAG API Integration Tests', () => {
       mockRefreshStaleCommunitySummaries.mockResolvedValueOnce(3);
 
       const res = await request(app)
-        .post('/api/personal/graphrag/communities/refresh')
+        .post('/api/operations/graphrag/communities/refresh')
         .send({ maxAgeHours: 12 })
         .expect(200);
 
@@ -334,7 +338,7 @@ describe('GraphRAG API Integration Tests', () => {
       mockIndexBatch.mockResolvedValueOnce(result);
 
       const res = await request(app)
-        .post('/api/personal/graphrag/index')
+        .post('/api/operations/graphrag/index')
         .send({ limit: 20 })
         .expect(200);
 

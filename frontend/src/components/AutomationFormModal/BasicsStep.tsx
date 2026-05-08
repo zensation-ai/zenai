@@ -17,7 +17,7 @@ export function BasicsStep({ formData, errors, firstInputRef, updateField }: Bas
           ref={firstInputRef}
           id="afm-name"
           type="text"
-          className={`liquid-glass-input ${errors.name ? 'has-error' : ''}`}
+          className={`bg-[var(--color-glass-bg)] backdrop-blur-md border border-[var(--color-glass-border)] rounded-lg px-4 py-2.5 text-sm text-[var(--color-text)] placeholder:text-[var(--color-text-muted)] focus:outline-none focus:ring-2 transition-shadow ${errors.name ? 'ring-[var(--color-danger)]/50' : 'focus:ring-[var(--color-primary)]/50'}`}
           value={formData.name}
           onChange={e => updateField('name', e.target.value)}
           placeholder="z.B. Dringende Ideen taggen"
@@ -30,7 +30,7 @@ export function BasicsStep({ formData, errors, firstInputRef, updateField }: Bas
         <label htmlFor="afm-description">Beschreibung</label>
         <textarea
           id="afm-description"
-          className="liquid-glass-input"
+          className="bg-[var(--color-glass-bg)] backdrop-blur-md border border-[var(--color-glass-border)] rounded-lg px-4 py-2.5 text-sm text-[var(--color-text)] placeholder:text-[var(--color-text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/50 transition-shadow"
           value={formData.description}
           onChange={e => updateField('description', e.target.value)}
           placeholder="Was macht diese Automation?"

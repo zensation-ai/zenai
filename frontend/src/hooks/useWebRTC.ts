@@ -46,6 +46,7 @@ export function useWebRTC(options: UseWebRTCOptions): UseWebRTCReturn {
   const [sessionId, setSessionId] = useState<string | null>(null);
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const reconnectAttemptsRef = useRef(0);
   const optionsRef = useRef(options);
   optionsRef.current = options;
 
@@ -139,6 +140,7 @@ export function useWebRTC(options: UseWebRTCOptions): UseWebRTCReturn {
     return new Promise<void>((resolve, reject) => {
       ws.onopen = () => {
         setIsConnected(true);
+        reconnectAttemptsRef.current = 0;
 
         // Send join message to create session
         ws.send(JSON.stringify({
@@ -168,15 +170,18 @@ export function useWebRTC(options: UseWebRTCOptions): UseWebRTCReturn {
         setIsConnected(false);
         setSessionId(null);
 
-        // Auto-reconnect after 3 seconds
+        // Auto-reconnect with exponential backoff (3s, 6s, 12s, 24s, max 30s)
+        const attempt = reconnectAttemptsRef.current;
+        const delay = Math.min(3000 * Math.pow(2, attempt), 30000);
+        reconnectAttemptsRef.current = attempt + 1;
+
         reconnectTimeoutRef.current = setTimeout(() => {
           if (wsRef.current === ws) {
-            // Only reconnect if this is still the current connection
             connect().catch(() => {
-              // Reconnect failed silently
+              // Reconnect failed, next attempt will use higher backoff
             });
           }
-        }, 3000);
+        }, delay);
       };
 
       ws.onmessage = handleMessage;

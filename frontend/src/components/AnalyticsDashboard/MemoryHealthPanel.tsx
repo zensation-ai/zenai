@@ -1,7 +1,7 @@
 /**
  * Phase 50: Memory Health Panel
  *
- * Displays health metrics for the HiMeS 4-Layer Memory system:
+ * Displays health metrics for the HiMeS 7-Layer Memory system:
  * - Health Score gauge (SVG circle)
  * - Memory layer cards with counts and details
  * - Memory distribution bar visualization
@@ -10,7 +10,7 @@
  * Accepts data matching the backend MemoryHealthResult shape.
  */
 
-import React from 'react';
+import React, { type CSSProperties } from 'react';
 
 // ===========================================
 // Types (mirrors backend MemoryHealthResult)
@@ -43,13 +43,13 @@ const LAYER_COLORS: Record<string, string> = {
   working: '#a855f7',
   shortTerm: '#3b82f6',
   episodic: '#22c55e',
-  longTerm: '#ff6b35',
+  longTerm: 'var(--primary)',
 };
 
 function getScoreColor(score: number): string {
   if (score >= 75) return '#22c55e';
   if (score >= 50) return '#f59e0b';
-  if (score >= 25) return '#f97316';
+  if (score >= 25) return 'var(--accent-orange)';
   return '#ef4444';
 }
 
@@ -103,19 +103,11 @@ export const MemoryHealthPanel: React.FC<MemoryHealthPanelProps> = ({
   const maxCount = Math.max(...layers.map(l => l.count), 1);
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+    <div className="flex flex-col gap-6">
       {/* Top Row: Health Score + Key Metrics */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'auto 1fr', gap: '1.5rem', alignItems: 'start' }}>
+      <div className="grid grid-cols-[auto_1fr] gap-6 items-start">
         {/* Health Score Gauge (SVG) */}
-        <div style={{
-          ...sectionStyle,
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          minWidth: '160px',
-          padding: '1.5rem',
-        }}>
+        <div className="flex flex-col items-center justify-center min-w-[160px] rounded-xl border border-white/[0.06] bg-white/[0.03] p-6">
           <svg width="120" height="120" viewBox="0 0 100 100">
             <circle
               cx="50" cy="50" r="42"
@@ -131,7 +123,7 @@ export const MemoryHealthPanel: React.FC<MemoryHealthPanelProps> = ({
               strokeDasharray={`${filled} ${circumference}`}
               strokeLinecap="round"
               transform="rotate(-90 50 50)"
-              style={{ transition: 'stroke-dasharray 0.6s ease' }}
+              className="transition-[stroke-dasharray] duration-[600ms] ease-in-out"
             />
             <text x="50" y="46" textAnchor="middle" fontSize="22" fontWeight="bold" fill={scoreColor}>
               {overall.healthScore}
@@ -143,17 +135,17 @@ export const MemoryHealthPanel: React.FC<MemoryHealthPanelProps> = ({
         </div>
 
         {/* Key Metrics */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '0.75rem' }}>
+        <div className="grid grid-cols-[repeat(auto-fit,minmax(130px,1fr))] gap-3">
           <MetricCard label="Gesamt" value={String(overall.totalMemories)} />
           <MetricCard
             label="Konsolidierung"
             value={overall.lastConsolidation || 'N/A'}
-            sublabel="Letzte Ausfuehrung"
+            sublabel="Letzte Ausführung"
           />
           <MetricCard
             label="Decay"
             value={overall.lastDecay || 'N/A'}
-            sublabel="Letzte Ausfuehrung"
+            sublabel="Letzte Ausführung"
           />
           <MetricCard
             label="Long-Term konsolidiert"
@@ -165,25 +157,25 @@ export const MemoryHealthPanel: React.FC<MemoryHealthPanelProps> = ({
       </div>
 
       {/* Memory Distribution (CSS bars) */}
-      <div style={sectionStyle}>
-        <h4 style={headingStyle}>Memory-Verteilung</h4>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+      <div className="rounded-xl border border-white/[0.06] bg-white/[0.03] p-4">
+        <h4 className="m-0 mb-3 text-sm font-medium text-white/70">Memory-Verteilung</h4>
+        <div className="flex flex-col gap-3">
           {layers.map(layer => (
-            <div key={layer.name} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-              <div style={{ width: '80px', fontSize: '0.8rem', color: 'rgba(255,255,255,0.7)' }}>
+            <div key={layer.name} className="flex items-center gap-3">
+              <div className="w-[80px] text-[0.8rem] text-white/70">
                 {layer.name}
               </div>
-              <div style={{ flex: 1, height: '20px', background: 'rgba(255,255,255,0.06)', borderRadius: '4px', overflow: 'hidden' }}>
-                <div style={{
-                  width: `${(layer.count / maxCount) * 100}%`,
-                  height: '100%',
-                  background: layer.color,
-                  borderRadius: '4px',
-                  transition: 'width 0.4s ease',
-                  minWidth: layer.count > 0 ? '4px' : '0',
-                }} />
+              <div className="flex-1 h-5 bg-white/[0.06] rounded overflow-hidden">
+                <div
+                  className="h-full rounded transition-[width] duration-[400ms] ease-in-out w-[var(--bar)] bg-[var(--c)] min-w-[var(--min)]"
+                  style={{
+                    '--bar': `${(layer.count / maxCount) * 100}%`,
+                    '--c': layer.color,
+                    '--min': layer.count > 0 ? '4px' : '0',
+                  } as CSSProperties}
+                />
               </div>
-              <div style={{ width: '40px', textAlign: 'right', fontSize: '0.85rem', fontWeight: 600, color: 'rgba(255,255,255,0.8)' }}>
+              <div className="w-10 text-right text-[0.85rem] font-semibold text-white/80">
                 {layer.count}
               </div>
             </div>
@@ -192,7 +184,7 @@ export const MemoryHealthPanel: React.FC<MemoryHealthPanelProps> = ({
       </div>
 
       {/* Layer Detail Cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '0.75rem' }}>
+      <div className="grid grid-cols-[repeat(auto-fit,minmax(220px,1fr))] gap-3">
         <LayerDetailCard
           title="Working Memory"
           color={LAYER_COLORS.working}
@@ -226,7 +218,7 @@ export const MemoryHealthPanel: React.FC<MemoryHealthPanelProps> = ({
           items={[
             { label: 'Gesamt', value: String(longTerm.count) },
             { label: 'Konsolidiert', value: String(longTerm.consolidatedCount) },
-            { label: 'Durchschn. Staerke', value: longTerm.avgStrength.toFixed(3) },
+            { label: 'Durchschn. Stärke', value: longTerm.avgStrength.toFixed(3) },
           ]}
         />
       </div>
@@ -244,20 +236,18 @@ const MetricCard: React.FC<{
   sublabel?: string;
   color?: string;
 }> = ({ label, value, sublabel, color }) => (
-  <div style={{
-    background: 'rgba(255,255,255,0.04)',
-    borderRadius: '0.75rem',
-    padding: '0.75rem',
-    border: '1px solid rgba(255,255,255,0.06)',
-  }}>
-    <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)', marginBottom: '0.25rem' }}>
+  <div className="bg-white/[0.04] rounded-xl p-3 border border-white/[0.06]">
+    <div className="text-[0.7rem] text-white/50 mb-1">
       {label}
     </div>
-    <div style={{ fontSize: '1.1rem', fontWeight: 600, color: color || 'rgba(255,255,255,0.9)' }}>
+    <div
+      className="text-[1.1rem] font-semibold text-[var(--c)]"
+      style={{ '--c': color || 'rgba(255,255,255,0.9)' } as CSSProperties}
+    >
       {value}
     </div>
     {sublabel && (
-      <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.4)', marginTop: '0.1rem' }}>
+      <div className="text-[0.7rem] text-white/40 mt-[0.1rem]">
         {sublabel}
       </div>
     )}
@@ -269,16 +259,16 @@ const LayerDetailCard: React.FC<{
   color: string;
   items: Array<{ label: string; value: string }>;
 }> = ({ title, color, items }) => (
-  <div style={{
-    ...sectionStyle,
-    borderLeft: `3px solid ${color}`,
-  }}>
-    <h4 style={{ ...headingStyle, color }}>{title}</h4>
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+  <div
+    className="rounded-xl border border-white/[0.06] bg-white/[0.03] p-4 [border-left:3px_solid_var(--c)]"
+    style={{ '--c': color } as CSSProperties}
+  >
+    <h4 className="m-0 mb-3 text-sm font-medium text-[var(--c)]">{title}</h4>
+    <div className="flex flex-col gap-[0.4rem]">
       {items.map(item => (
-        <div key={item.label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <span style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.5)' }}>{item.label}</span>
-          <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'rgba(255,255,255,0.9)' }}>{item.value}</span>
+        <div key={item.label} className="flex justify-between items-center">
+          <span className="text-[0.8rem] text-white/50">{item.label}</span>
+          <span className="text-[0.85rem] font-semibold text-white/90">{item.value}</span>
         </div>
       ))}
     </div>
@@ -286,21 +276,7 @@ const LayerDetailCard: React.FC<{
 );
 
 // ===========================================
-// Styles
+// Styles (removed – migrated to Tailwind)
 // ===========================================
-
-const sectionStyle: React.CSSProperties = {
-  background: 'rgba(255,255,255,0.03)',
-  borderRadius: '0.75rem',
-  padding: '1rem',
-  border: '1px solid rgba(255,255,255,0.06)',
-};
-
-const headingStyle: React.CSSProperties = {
-  margin: '0 0 0.75rem 0',
-  fontSize: '0.875rem',
-  fontWeight: 500,
-  color: 'rgba(255,255,255,0.7)',
-};
 
 export default MemoryHealthPanel;

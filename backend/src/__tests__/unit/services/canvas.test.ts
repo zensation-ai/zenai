@@ -45,32 +45,32 @@ describe('Canvas Service', () => {
   describe('createCanvasDocument', () => {
     it('should create a document with defaults', async () => {
       const row = {
-        id: 'uuid-1234', context: 'personal', title: 'My Doc',
+        id: 'uuid-1234', context: 'operations', title: 'My Doc',
         content: '', type: 'markdown', language: null,
         chat_session_id: null, created_at: '2026-01-01', updated_at: '2026-01-01',
       };
       mockQuery.mockResolvedValueOnce({ rows: [row] });
 
-      const result = await createCanvasDocument('personal', 'My Doc');
+      const result = await createCanvasDocument('operations', 'My Doc');
 
       expect(result.id).toBe('uuid-1234');
       expect(result.title).toBe('My Doc');
       expect(result.type).toBe('markdown');
       expect(mockQuery).toHaveBeenCalledWith(
         expect.stringContaining('INSERT INTO canvas_documents'),
-        expect.arrayContaining(['uuid-1234', 'personal', 'My Doc'])
+        expect.arrayContaining(['uuid-1234', 'operations', 'My Doc'])
       );
     });
 
     it('should accept custom type and language', async () => {
       const row = {
-        id: 'uuid-1234', context: 'work', title: 'Code',
+        id: 'uuid-1234', context: 'finance', title: 'Code',
         content: 'console.log()', type: 'code', language: 'typescript',
         chat_session_id: null, created_at: '2026-01-01', updated_at: '2026-01-01',
       };
       mockQuery.mockResolvedValueOnce({ rows: [row] });
 
-      const result = await createCanvasDocument('work', 'Code', 'code', 'typescript', 'console.log()');
+      const result = await createCanvasDocument('finance', 'Code', 'code', 'typescript', 'console.log()');
 
       expect(result.type).toBe('code');
       expect(result.language).toBe('typescript');
@@ -80,7 +80,7 @@ describe('Canvas Service', () => {
   describe('getCanvasDocument', () => {
     it('should return document by id', async () => {
       const row = {
-        id: 'doc-1', context: 'personal', title: 'Test',
+        id: 'doc-1', context: 'operations', title: 'Test',
         content: 'Hello', type: 'markdown', language: null,
         chat_session_id: null, created_at: '2026-01-01', updated_at: '2026-01-01',
       };
@@ -103,7 +103,7 @@ describe('Canvas Service', () => {
   describe('listCanvasDocuments', () => {
     it('should return documents and total', async () => {
       const row = {
-        id: 'doc-1', context: 'personal', title: 'Doc',
+        id: 'doc-1', context: 'operations', title: 'Doc',
         content: '', type: 'markdown', language: null,
         chat_session_id: null, created_at: '2026-01-01', updated_at: '2026-01-01',
       };
@@ -111,7 +111,7 @@ describe('Canvas Service', () => {
         .mockResolvedValueOnce({ rows: [row] })
         .mockResolvedValueOnce({ rows: [{ total: 1 }] });
 
-      const result = await listCanvasDocuments('personal');
+      const result = await listCanvasDocuments('operations');
 
       expect(result.documents).toHaveLength(1);
       expect(result.total).toBe(1);
@@ -122,7 +122,7 @@ describe('Canvas Service', () => {
         .mockResolvedValueOnce({ rows: [] })
         .mockResolvedValueOnce({ rows: [{ total: 0 }] });
 
-      await listCanvasDocuments('personal');
+      await listCanvasDocuments('operations');
 
       const params = mockQuery.mock.calls[0][1] as unknown[];
       expect(params).toContain(SYSTEM_USER);
@@ -132,7 +132,7 @@ describe('Canvas Service', () => {
   describe('updateCanvasDocument', () => {
     it('should update title', async () => {
       const row = {
-        id: 'doc-1', context: 'personal', title: 'New Title',
+        id: 'doc-1', context: 'operations', title: 'New Title',
         content: 'old', type: 'markdown', language: null,
         chat_session_id: null, created_at: '2026-01-01', updated_at: '2026-01-02',
       };
@@ -146,7 +146,7 @@ describe('Canvas Service', () => {
 
     it('should auto-save version when content changes', async () => {
       const row = {
-        id: 'doc-1', context: 'personal', title: 'Doc',
+        id: 'doc-1', context: 'operations', title: 'Doc',
         content: 'new content', type: 'markdown', language: null,
         chat_session_id: null, created_at: '2026-01-01', updated_at: '2026-01-02',
       };
@@ -168,7 +168,7 @@ describe('Canvas Service', () => {
 
     it('should return current doc when no updates', async () => {
       const row = {
-        id: 'doc-1', context: 'personal', title: 'Test',
+        id: 'doc-1', context: 'operations', title: 'Test',
         content: '', type: 'markdown', language: null,
         chat_session_id: null, created_at: '2026-01-01', updated_at: '2026-01-01',
       };
@@ -186,6 +186,47 @@ describe('Canvas Service', () => {
 
       const result = await updateCanvasDocument('nope', { title: 'x' });
       expect(result).toBeNull();
+    });
+
+    it('should update board_data and stringify it for SQL', async () => {
+      const boardData = {
+        nodes: [{ id: 'n1', type: 'note', position: { x: 100, y: 200 }, data: { text: 'Hello' } }],
+        edges: [{ id: 'e1', source: 'n1', target: 'n2' }],
+      };
+      const row = {
+        id: 'doc-1', context: 'operations', title: 'Board Doc',
+        content: '', type: 'markdown', language: null,
+        board_data: boardData,
+        chat_session_id: null, created_at: '2026-01-01', updated_at: '2026-01-02',
+      };
+      mockQuery.mockResolvedValueOnce({ rows: [row] });
+
+      const result = await updateCanvasDocument('doc-1', { board_data: boardData });
+
+      expect(result).not.toBeNull();
+      const sql = mockQuery.mock.calls[0][0] as string;
+      expect(sql).toContain('UPDATE canvas_documents');
+      expect(sql).toContain('board_data');
+      // board_data should be JSON-stringified in the params
+      const params = mockQuery.mock.calls[0][1] as unknown[];
+      expect(params[0]).toBe(JSON.stringify(boardData));
+    });
+
+    it('should update board_data with empty nodes and edges', async () => {
+      const emptyBoard = { nodes: [], edges: [] };
+      const row = {
+        id: 'doc-1', context: 'operations', title: 'Empty Board',
+        content: '', type: 'markdown', language: null,
+        board_data: emptyBoard,
+        chat_session_id: null, created_at: '2026-01-01', updated_at: '2026-01-02',
+      };
+      mockQuery.mockResolvedValueOnce({ rows: [row] });
+
+      const result = await updateCanvasDocument('doc-1', { board_data: emptyBoard });
+
+      expect(result).not.toBeNull();
+      const params = mockQuery.mock.calls[0][1] as unknown[];
+      expect(params[0]).toBe(JSON.stringify(emptyBoard));
     });
   });
 
@@ -244,7 +285,7 @@ describe('Canvas Service', () => {
       mockQuery.mockResolvedValueOnce({ rows: [{ content: 'restored content' }] });
       // updateCanvasDocument → UPDATE
       const updatedRow = {
-        id: 'doc-1', context: 'personal', title: 'Doc',
+        id: 'doc-1', context: 'operations', title: 'Doc',
         content: 'restored content', type: 'markdown', language: null,
         chat_session_id: null, created_at: '2026-01-01', updated_at: '2026-01-02',
       };

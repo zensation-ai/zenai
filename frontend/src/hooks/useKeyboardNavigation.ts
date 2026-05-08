@@ -23,7 +23,7 @@ const G_KEY_MAP: Record<string, { page: Page; label: string }> = {
   b: { page: 'business', label: 'Business' },
   l: { page: 'learning', label: 'Lernen' },
   a: { page: 'my-ai', label: 'Meine KI' },
-  s: { page: 'settings', label: 'Einstellungen' },
+  s: { page: 'settings-user', label: 'Einstellungen' },
   f: { page: 'finance', label: 'Finanzen' },
   k: { page: 'contacts', label: 'Kontakte' },
   r: { page: 'browser', label: 'Browser' },

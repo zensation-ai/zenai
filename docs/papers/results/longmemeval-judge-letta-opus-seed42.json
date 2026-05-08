@@ -1,0 +1,257 @@
+{
+  "model": "claude-opus-4-6",
+  "dataset_mode": "longmemeval",
+  "n_queries": 30,
+  "n_scored": 30,
+  "per_query": [
+    {
+      "query_id": "a06e4cfe",
+      "category": "single-session-user",
+      "score": 5,
+      "rationale": "The first retrieved fact clearly states the user's preferred gin-to-vermouth ratio is 3:1 with a dash of citrus bitters, directly and completely answering the query.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "60d45044",
+      "category": "single-session-user",
+      "score": 0,
+      "rationale": "No facts were retrieved at all, so the query cannot be answered.",
+      "n_retrieved": 0
+    },
+    {
+      "query_id": "001be529",
+      "category": "single-session-user",
+      "score": 0,
+      "rationale": "No facts were retrieved, so the query cannot be answered at all.",
+      "n_retrieved": 0
+    },
+    {
+      "query_id": "36580ce8",
+      "category": "single-session-user",
+      "score": 5,
+      "rationale": "Fact 4 directly and completely answers the query: the user initially thought their bronchitis was just a cold.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "15745da0_abs",
+      "category": "single-session-user",
+      "score": 2,
+      "rationale": "The query asks about vintage films, but the retrieved facts are about vintage cameras; the user has been collecting vintage cameras for three months, not films, so the query is not actually answered.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "gpt4_7fce9456",
+      "category": "multi-session",
+      "score": 1,
+      "rationale": "The retrieved facts describe the townhouse offer and purchase process in Brookside but contain no information about how many properties were viewed before making the offer.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "00ca467f",
+      "category": "multi-session",
+      "score": 0,
+      "rationale": "No facts were retrieved, so the query cannot be answered at all.",
+      "n_retrieved": 0
+    },
+    {
+      "query_id": "gpt4_731e37d7",
+      "category": "multi-session",
+      "score": 0,
+      "rationale": "No facts were retrieved, so the query cannot be answered at all.",
+      "n_retrieved": 0
+    },
+    {
+      "query_id": "bf659f65",
+      "category": "multi-session",
+      "score": 1,
+      "rationale": "The retrieved facts mention one album download (Billie Eilish's 'Happier Than Ever' on Spotify) but do not provide a count or comprehensive list of purchased/downloaded albums or EPs.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "edced276_abs",
+      "category": "multi-session",
+      "score": 0,
+      "rationale": "None of the retrieved facts mention Hawaii or Seattle; they cover Paris, Rome, New York City, and Japan, which are completely unrelated to the query.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "6b7dfb22",
+      "category": "single-session-preference",
+      "score": 0,
+      "rationale": "No facts were retrieved, so the query cannot be answered at all from the retrieved results.",
+      "n_retrieved": 0
+    },
+    {
+      "query_id": "57f827a0",
+      "category": "single-session-preference",
+      "score": 0,
+      "rationale": "No facts were retrieved, so the query is completely unanswered.",
+      "n_retrieved": 0
+    },
+    {
+      "query_id": "75f70248",
+      "category": "single-session-preference",
+      "score": 4,
+      "rationale": "The retrieved facts strongly suggest the user has a cat (Max) that sheds a lot in their living room, and provide extensive context about dust, dander, allergens, and air quality issues that could cause sneezing, essentially answering the query about whether the living room could be causing their symptoms.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "b0479f84",
+      "category": "single-session-preference",
+      "score": 4,
+      "rationale": "The retrieved facts contain a comprehensive list of documentary recommendations across multiple genres that the user has previously expressed interest in, providing a strong and relevant answer to the query.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "07b6f563",
+      "category": "single-session-preference",
+      "score": 2,
+      "rationale": "The retrieved facts touch on accessories for various devices (Fitbit, Omron, PS5, iPhone) but don't directly address general phone accessories; only fact #4 mentions a phone wallet case request without providing recommendations.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "gpt4_4929293a",
+      "category": "temporal-reasoning",
+      "score": 4,
+      "rationale": "Fact 3 indicates the user was a bridesmaid at their cousin's wedding 'today,' and Fact 2 says they 'just came back from Michael's engagement party today,' but comparing the two: Fact 3's context (cousin's wedding) appears to precede Fact 2 (Michael's engagement party), since in Fact 2 the user references already thinking about wedding plans inspired by the cousin's wedding. This allows inferring the cousin's wedding happened first, though the temporal ordering relies on contextual inference rather than explicit dates.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "2ebe6c90",
+      "category": "temporal-reasoning",
+      "score": 0,
+      "rationale": "None of the retrieved facts mention 'The Nightingale' by Kristin Hannah or any reading duration information related to it.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "2ebe6c92",
+      "category": "temporal-reasoning",
+      "score": 1,
+      "rationale": "The retrieved facts mention books being read or discussed but none mention a book that was finished a week ago; the closest is 'The Song of Achilles' which was only halfway done.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "gpt4_59149c78",
+      "category": "temporal-reasoning",
+      "score": 0,
+      "rationale": "No facts were retrieved, so the query cannot be answered at all.",
+      "n_retrieved": 0
+    },
+    {
+      "query_id": "b29f3365",
+      "category": "temporal-reasoning",
+      "score": 2,
+      "rationale": "The retrieved facts mention the user bought a new guitar amp two weeks ago and that they take guitar lessons, but there is no information about how long they had been taking guitar lessons at the time of the amp purchase.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "ce6d2d27",
+      "category": "knowledge-update",
+      "score": 5,
+      "rationale": "Multiple retrieved facts clearly and consistently state that the user takes a cocktail-making class on Fridays.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "affe2881",
+      "category": "knowledge-update",
+      "score": 5,
+      "rationale": "The retrieved facts clearly state the user has spotted 27 different species in their local park (fact 1), and a later update mentions reaching 32 species (fact 4), providing a complete answer to the query.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "50635ada",
+      "category": "knowledge-update",
+      "score": 2,
+      "rationale": "The facts mention the user just hit 20,000 miles making them eligible for Premier Silver status, and an assistant response references Premier Gold status, but there is no clear mention of a previous status before the current one \u2014 the information is contradictory and doesn't explicitly state what the previous status was.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "f685340e",
+      "category": "knowledge-update",
+      "score": 0,
+      "rationale": "No facts were retrieved, so the query cannot be answered at all.",
+      "n_retrieved": 0
+    },
+    {
+      "query_id": "cc5ded98",
+      "category": "knowledge-update",
+      "score": 0,
+      "rationale": "No facts were retrieved, so the query cannot be answered at all.",
+      "n_retrieved": 0
+    },
+    {
+      "query_id": "ceb54acb",
+      "category": "single-session-assistant",
+      "score": 4,
+      "rationale": "Fact 1 provides four alternative terms (sexual fixations, problematic sexual behaviors, sexual impulsivity, compulsive sexuality) and Fact 2 provides the 'sexual compulsions' term mentioned in the query, collectively answering the question well, though it's unclear if these were from the same conversation turn or if there was an earlier list of five options that included 'sexual compulsions' plus four others.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "f523d9fe",
+      "category": "single-session-assistant",
+      "score": 5,
+      "rationale": "Fact 1 clearly states the user used 'Doc Martin' as the example show that went down and now only has the last season available.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "8464fc84",
+      "category": "single-session-assistant",
+      "score": 4,
+      "rationale": "The first retrieved fact contains the answer: Roscioli is identified as 'a famous deli that serves the best cured meats, cheeses, and traditional Roman cuisine' near the Vatican, which directly answers the user's query.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "e8a79c70",
+      "category": "single-session-assistant",
+      "score": 4,
+      "rationale": "The retrieved facts contain the previous conversation about making a classic French omelette, with one recipe specifying 3 eggs and another specifying 2-3 eggs, which effectively answers the user's question about how many eggs were discussed.",
+      "n_retrieved": 5
+    },
+    {
+      "query_id": "4388e9dd",
+      "category": "single-session-assistant",
+      "score": 0,
+      "rationale": "No facts were retrieved, so there is no information available to answer the query about Andy's costume in a previously written comedy movie script.",
+      "n_retrieved": 0
+    }
+  ],
+  "aggregate": {
+    "mean": 2.0,
+    "ci_low": 1.3,
+    "ci_high": 2.7333333333333334,
+    "normalized_mean": 0.4,
+    "per_category": {
+      "single-session-user": {
+        "n": 5,
+        "mean": 2.4,
+        "normalized_mean": 0.48
+      },
+      "multi-session": {
+        "n": 5,
+        "mean": 0.4,
+        "normalized_mean": 0.08
+      },
+      "single-session-preference": {
+        "n": 5,
+        "mean": 2.0,
+        "normalized_mean": 0.4
+      },
+      "temporal-reasoning": {
+        "n": 5,
+        "mean": 1.4,
+        "normalized_mean": 0.27999999999999997
+      },
+      "knowledge-update": {
+        "n": 5,
+        "mean": 2.4,
+        "normalized_mean": 0.48
+      },
+      "single-session-assistant": {
+        "n": 5,
+        "mean": 3.4,
+        "normalized_mean": 0.6799999999999999
+      }
+    }
+  },
+  "baseline": "letta"
+}

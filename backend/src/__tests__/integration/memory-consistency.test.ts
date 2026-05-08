@@ -1,6 +1,6 @@
 describe('Memory Pipeline Consistency', () => {
   test('fact structure is valid', () => {
-    const fact = { content: 'Test fact', importance: 0.8, context: 'personal' };
+    const fact = { content: 'Test fact', importance: 0.8, context: 'operations' };
     expect(fact.importance).toBeGreaterThan(0);
     expect(fact.importance).toBeLessThanOrEqual(1);
   });

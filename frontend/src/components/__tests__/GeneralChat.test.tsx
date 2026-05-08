@@ -123,7 +123,7 @@ describe('GeneralChat Component', () => {
 
   describe('Rendering', () => {
     it('should render empty state initially', async () => {
-      render(<GeneralChat context="personal" />);
+      render(<GeneralChat context="operations" />);
 
       await waitFor(() => {
         expect(screen.getByText('Test Title')).toBeInTheDocument();
@@ -132,7 +132,7 @@ describe('GeneralChat Component', () => {
     });
 
     it('should render input area', async () => {
-      render(<GeneralChat context="personal" />);
+      render(<GeneralChat context="operations" />);
 
       await waitFor(() => {
         expect(screen.getByPlaceholderText(/Frag mich etwas/i)).toBeInTheDocument();
@@ -140,7 +140,7 @@ describe('GeneralChat Component', () => {
     });
 
     it('should render send button', async () => {
-      render(<GeneralChat context="personal" />);
+      render(<GeneralChat context="operations" />);
 
       await waitFor(() => {
         expect(screen.getByRole('button', { name: /Nachricht senden/i })).toBeInTheDocument();
@@ -148,7 +148,7 @@ describe('GeneralChat Component', () => {
     });
 
     it('should render image upload button', async () => {
-      render(<GeneralChat context="personal" />);
+      render(<GeneralChat context="operations" />);
 
       await waitFor(() => {
         expect(screen.getByRole('button', { name: /Bild hinzufügen/i })).toBeInTheDocument();
@@ -159,7 +159,7 @@ describe('GeneralChat Component', () => {
       // Mock slow API response
       mockedAxios.get.mockImplementation(() => new Promise(() => {}));
 
-      render(<GeneralChat context="personal" />);
+      render(<GeneralChat context="operations" />);
 
       await waitFor(() => {
         expect(screen.getByRole('status')).toBeInTheDocument();
@@ -167,7 +167,7 @@ describe('GeneralChat Component', () => {
     });
 
     it('should apply compact class when isCompact is true', async () => {
-      render(<GeneralChat context="personal" isCompact />);
+      render(<GeneralChat context="operations" isCompact />);
 
       await waitFor(() => {
         const chat = document.querySelector('.general-chat');
@@ -183,7 +183,7 @@ describe('GeneralChat Component', () => {
   describe('Message Sending', () => {
     it('should send message when button is clicked', async () => {
       const user = userEvent.setup();
-      render(<GeneralChat context="personal" />);
+      render(<GeneralChat context="operations" />);
 
       await waitFor(() => {
         expect(screen.getByPlaceholderText(/Frag mich etwas/i)).toBeInTheDocument();
@@ -198,14 +198,14 @@ describe('GeneralChat Component', () => {
       await waitFor(() => {
         expect(mockedAxios.post).toHaveBeenCalledWith(
           expect.stringContaining('/sessions'),
-          expect.objectContaining({ context: 'personal' })
+          expect.objectContaining({ context: 'operations' })
         );
       });
     });
 
     it('should send message on Enter key', async () => {
       const user = userEvent.setup();
-      render(<GeneralChat context="personal" />);
+      render(<GeneralChat context="operations" />);
 
       await waitFor(() => {
         expect(screen.getByPlaceholderText(/Frag mich etwas/i)).toBeInTheDocument();
@@ -221,7 +221,7 @@ describe('GeneralChat Component', () => {
 
     it('should not send empty message', async () => {
       const user = userEvent.setup();
-      render(<GeneralChat context="personal" />);
+      render(<GeneralChat context="operations" />);
 
       await waitFor(() => {
         expect(screen.getByPlaceholderText(/Frag mich etwas/i)).toBeInTheDocument();
@@ -236,7 +236,7 @@ describe('GeneralChat Component', () => {
 
     it('should clear input after sending', async () => {
       const user = userEvent.setup();
-      render(<GeneralChat context="personal" />);
+      render(<GeneralChat context="operations" />);
 
       await waitFor(() => {
         expect(screen.getByPlaceholderText(/Frag mich etwas/i)).toBeInTheDocument();
@@ -257,7 +257,7 @@ describe('GeneralChat Component', () => {
       // Make API call hang
       mockedAxios.post.mockImplementation(() => new Promise(() => {}));
 
-      render(<GeneralChat context="personal" />);
+      render(<GeneralChat context="operations" />);
 
       await waitFor(() => {
         expect(screen.getByPlaceholderText(/Frag mich etwas/i)).toBeInTheDocument();
@@ -279,7 +279,7 @@ describe('GeneralChat Component', () => {
 
   describe('Vision Integration', () => {
     it('should enable send button when only image is selected', async () => {
-      render(<GeneralChat context="personal" />);
+      render(<GeneralChat context="operations" />);
 
       await waitFor(() => {
         expect(screen.getByPlaceholderText(/Frag mich etwas/i)).toBeInTheDocument();
@@ -298,7 +298,7 @@ describe('GeneralChat Component', () => {
     });
 
     it('should change placeholder when image is selected', async () => {
-      render(<GeneralChat context="personal" />);
+      render(<GeneralChat context="operations" />);
 
       await waitFor(() => {
         expect(screen.getByPlaceholderText(/Frag mich etwas/i)).toBeInTheDocument();
@@ -316,7 +316,7 @@ describe('GeneralChat Component', () => {
 
     it('should use vision endpoint when sending with images', async () => {
       const user = userEvent.setup();
-      render(<GeneralChat context="personal" />);
+      render(<GeneralChat context="operations" />);
 
       await waitFor(() => {
         expect(screen.getByPlaceholderText(/Frag mich etwas/i)).toBeInTheDocument();
@@ -352,7 +352,7 @@ describe('GeneralChat Component', () => {
 
     it('should clear images after sending', async () => {
       const user = userEvent.setup();
-      render(<GeneralChat context="personal" />);
+      render(<GeneralChat context="operations" />);
 
       await waitFor(() => {
         expect(screen.getByPlaceholderText(/Frag mich etwas/i)).toBeInTheDocument();
@@ -409,7 +409,7 @@ describe('GeneralChat Component', () => {
           },
         });
 
-      render(<GeneralChat context="personal" />);
+      render(<GeneralChat context="operations" />);
 
       await waitFor(() => {
         expect(screen.getByText('Previous message')).toBeInTheDocument();
@@ -419,7 +419,7 @@ describe('GeneralChat Component', () => {
 
     it('should create new session when none exists', async () => {
       const user = userEvent.setup();
-      render(<GeneralChat context="personal" />);
+      render(<GeneralChat context="operations" />);
 
       await waitFor(() => {
         expect(screen.getByPlaceholderText(/Frag mich etwas/i)).toBeInTheDocument();
@@ -431,7 +431,7 @@ describe('GeneralChat Component', () => {
       await waitFor(() => {
         expect(mockedAxios.post).toHaveBeenCalledWith(
           '/api/chat/sessions',
-          expect.objectContaining({ context: 'personal' })
+          expect.objectContaining({ context: 'operations' })
         );
       });
     });
@@ -452,7 +452,7 @@ describe('GeneralChat Component', () => {
           },
         });
 
-      render(<GeneralChat context="personal" />);
+      render(<GeneralChat context="operations" />);
 
       await waitFor(() => {
         expect(screen.getByRole('button', { name: /Neue Chat-Session/i })).toBeInTheDocument();
@@ -486,7 +486,7 @@ describe('GeneralChat Component', () => {
           },
         });
 
-      render(<GeneralChat context="personal" />);
+      render(<GeneralChat context="operations" />);
 
       await waitFor(() => {
         const message = screen.getByText('User message');
@@ -516,7 +516,7 @@ describe('GeneralChat Component', () => {
           },
         });
 
-      render(<GeneralChat context="personal" />);
+      render(<GeneralChat context="operations" />);
 
       await waitFor(() => {
         expect(screen.getByText('TestAI')).toBeInTheDocument();
@@ -534,7 +534,7 @@ describe('GeneralChat Component', () => {
         })
         .mockImplementation(() => new Promise(() => {})); // Vision upload hangs
 
-      render(<GeneralChat context="personal" />);
+      render(<GeneralChat context="operations" />);
 
       await waitFor(() => {
         expect(screen.getByPlaceholderText(/Frag mich etwas/i)).toBeInTheDocument();
@@ -578,7 +578,7 @@ describe('GeneralChat Component', () => {
           },
         });
 
-      render(<GeneralChat context="personal" />);
+      render(<GeneralChat context="operations" />);
 
       await waitFor(() => {
         expect(screen.getByText('Bold text')).toBeInTheDocument();
@@ -594,42 +594,42 @@ describe('GeneralChat Component', () => {
 
   describe('Context Handling', () => {
     it('should load personal context sessions', async () => {
-      render(<GeneralChat context="personal" />);
+      render(<GeneralChat context="operations" />);
 
       await waitFor(() => {
         expect(mockedAxios.get).toHaveBeenCalledWith(
-          expect.stringContaining('context=personal'),
+          expect.stringContaining('context=operations'),
           expect.any(Object)
         );
       });
     });
 
     it('should load work context sessions', async () => {
-      render(<GeneralChat context="work" />);
+      render(<GeneralChat context="finance" />);
 
       await waitFor(() => {
         expect(mockedAxios.get).toHaveBeenCalledWith(
-          expect.stringContaining('context=work'),
+          expect.stringContaining('context=finance'),
           expect.any(Object)
         );
       });
     });
 
     it('should reload sessions when context changes', async () => {
-      const { rerender } = render(<GeneralChat context="personal" />);
+      const { rerender } = render(<GeneralChat context="operations" />);
 
       await waitFor(() => {
         expect(mockedAxios.get).toHaveBeenCalledWith(
-          expect.stringContaining('context=personal'),
+          expect.stringContaining('context=operations'),
           expect.any(Object)
         );
       });
 
-      rerender(<GeneralChat context="work" />);
+      rerender(<GeneralChat context="finance" />);
 
       await waitFor(() => {
         expect(mockedAxios.get).toHaveBeenCalledWith(
-          expect.stringContaining('context=work'),
+          expect.stringContaining('context=finance'),
           expect.any(Object)
         );
       });
@@ -647,7 +647,7 @@ describe('GeneralChat Component', () => {
       // Mock fetch to reject (text messages use SSE streaming via fetch)
       vi.mocked(global.fetch).mockRejectedValueOnce(new Error('Network error'));
 
-      render(<GeneralChat context="personal" />);
+      render(<GeneralChat context="operations" />);
 
       await waitFor(() => {
         expect(screen.getByPlaceholderText(/Frag mich etwas/i)).toBeInTheDocument();

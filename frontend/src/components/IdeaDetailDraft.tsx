@@ -88,7 +88,7 @@ export function IdeaDetailDraft({
                   className="expand-button neuro-press-effect neuro-focus-ring neuro-hover-lift"
                   onClick={() => setDraftExpanded(!draftExpanded)}
                   aria-expanded={draftExpanded}
-                  aria-label={draftExpanded ? 'Einklappen' : 'Vollstaendig anzeigen'}
+                  aria-label={draftExpanded ? 'Einklappen' : 'Vollständig anzeigen'}
                 >
                   {draftExpanded ? 'Weniger anzeigen' : 'Mehr anzeigen'}
                 </button>

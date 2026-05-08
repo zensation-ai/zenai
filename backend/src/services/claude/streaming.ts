@@ -23,6 +23,8 @@ import { safeStringify } from '../../utils/safe-stringify';
 import { sanitizeError } from '../../utils/sanitize-error';
 import { getClaudeClient, CLAUDE_MODEL } from './client';
 import { getAnthropicBetaHeaders } from './client';
+import { AgUIEventAdapter } from '../agui/event-adapter';
+import { AgUIStateManager } from '../agui/state-manager';
 import {
   CompactionConfig,
   COMPACTION_BETA,
@@ -31,8 +33,13 @@ import {
   calculateTokensSaved,
   recordCompaction,
 } from './context-compaction';
-import { isAdaptiveEnabled, getAdaptiveBudget } from './thinking-budget';
+import { isAdaptiveEnabled, getAdaptiveBudget, getThinkingBudget } from './thinking-budget';
+import type { ThinkingTier } from './thinking-budget';
 import type { EffortLevel } from '../chat-modes';
+import { scanOutput, type OutputFinding } from '../chat-guardrails';
+import { getAuditLogger } from '../security/audit-logger';
+import { recordGuardrailBlock } from '../observability/metrics';
+import type { AIContext } from '../../utils/database-context';
 
 // ===========================================
 // Types & Interfaces
@@ -51,6 +58,7 @@ export type StreamEventType =
   | 'tool_use_start'    // Tool call initiated
   | 'tool_use_end'      // Tool call complete
   | 'compaction_info'   // Context was compacted (infinite conversations)
+  | 'guardrail_block'   // Output scanner tripped (secret leak / sys-prompt disclosure / jailbreak echo)
   | 'error'             // Error occurred
   | 'done';             // Stream complete
 
@@ -69,6 +77,10 @@ export interface StreamEvent {
     };
     error?: string;
     requestId?: string;
+    /** Guardrail-block payload: findings from scanOutput() */
+    findings?: OutputFinding[];
+    /** Primary reason to display to the user when a guardrail trips */
+    reason?: OutputFinding;
     metadata?: {
       inputTokens?: number;
       outputTokens?: number;
@@ -119,6 +131,14 @@ export interface StreamingOptions {
   effort?: EffortLevel;
   /** Whether to include structured outputs beta header for tool use */
   structuredOutputs?: boolean;
+  /** Enable AG-UI protocol dual-emit alongside existing SSE events */
+  agui?: boolean;
+  /** Override the default Claude model (e.g. for tier-based routing) */
+  modelOverride?: string;
+  /** Authenticated user ID, used to attribute guardrail-block audit events. */
+  userId?: string;
+  /** Context schema for audit-log writes when a guardrail trips. */
+  context?: AIContext;
 }
 
 /**
@@ -158,6 +178,24 @@ const MAX_TOOL_TIME_MS = TIMEOUTS.CLAUDE_TOOL_BUDGET;
 
 /** Hard cap on tool execution iterations (beyond maxToolIterations) */
 const MAX_TOOL_ITERATIONS_HARD_CAP = 10;
+
+/** Sliding-window size for streaming output guardrail scanning. Large enough
+ * to catch secrets that span two token deltas (40 chars is a common secret
+ * width, so we keep 20× that), small enough to keep regex scan cost bounded. */
+export const GUARDRAIL_OUTPUT_WINDOW = 1200;
+
+/**
+ * Advance the rolling guardrail buffer by appending `chunk` and clipping to the
+ * last `GUARDRAIL_OUTPUT_WINDOW` characters. Exported so unit tests and other
+ * streaming frontends (e.g. non-Anthropic providers) can share the window
+ * bookkeeping without reimplementing the slice math.
+ */
+export function extendGuardrailWindow(prev: string, chunk: string): string {
+  const combined = prev + chunk;
+  return combined.length <= GUARDRAIL_OUTPUT_WINDOW
+    ? combined
+    : combined.slice(combined.length - GUARDRAIL_OUTPUT_WINDOW);
+}
 
 /**
  * Truncate a tool result string if it exceeds the SSE size limit.
@@ -215,8 +253,19 @@ export function getClaudeBreakerStats(): CircuitBreakerStats {
  * Send an SSE event to the client
  */
 export function sendSSE(res: Response, event: StreamEvent): void {
-  const eventString = `event: ${event.type}\ndata: ${safeStringify(event.data)}\n\n`;
-  res.write(eventString);
+  if (res.writableEnded || res.destroyed) return;
+  try {
+    const eventString = `event: ${event.type}\ndata: ${safeStringify(event.data)}\n\n`;
+    res.write(eventString);
+  } catch {
+    // Client disconnected — safe to ignore
+  }
+}
+
+/** Safe write to response — ignores errors from disconnected clients */
+function safeWrite(res: Response, data: string): void {
+  if (res.writableEnded || res.destroyed) return;
+  try { res.write(data); } catch { /* client disconnected */ }
 }
 
 /**
@@ -252,6 +301,10 @@ export async function streamToSSE(
   const client = getClaudeClient();
   const requestId = opts.requestId || crypto.randomUUID();
 
+  // AG-UI dual-emit: create adapter and state manager when enabled
+  const aguiAdapter = opts.agui ? new AgUIEventAdapter(opts.sessionId || requestId) : null;
+  const _aguiState = opts.agui ? new AgUIStateManager() : null;
+
   logger.info('Starting SSE stream', {
     requestId,
     enableThinking: opts.enableThinking,
@@ -264,18 +317,25 @@ export async function streamToSSE(
   try {
     // Build request parameters
     const params: Record<string, unknown> = {
-      model: CLAUDE_MODEL,
+      model: opts.modelOverride || CLAUDE_MODEL,
       max_tokens: opts.maxTokens ?? 16000,
       messages,
       stream: true,
     };
 
     // Add Extended Thinking if enabled (requires specific model and settings)
+    let thinkingTierInfo: ThinkingTier | null = null;
     if (opts.enableThinking) {
-      // Use adaptive budget (generous default) when enabled, otherwise use calculated budget
-      const rawBudget = isAdaptiveEnabled()
-        ? getAdaptiveBudget()
-        : (opts.thinkingBudget ?? 10000);
+      // Use 4-tier adaptive budget when enabled, otherwise use calculated budget
+      let rawBudget: number;
+      if (isAdaptiveEnabled()) {
+        const lastMessage = messages[messages.length - 1];
+        const userInput = typeof lastMessage?.content === 'string' ? lastMessage.content : '';
+        thinkingTierInfo = getThinkingBudget(userInput, undefined);
+        rawBudget = opts.thinkingBudget ?? thinkingTierInfo.budget;
+      } else {
+        rawBudget = opts.thinkingBudget ?? 10000;
+      }
       // API requires max_tokens > budget_tokens — cap budget to leave room for response
       const maxTokens = (params.max_tokens as number) || 16000;
       const budgetTokens = Math.min(rawBudget, maxTokens - 1024);
@@ -330,11 +390,34 @@ export async function streamToSSE(
       requestOpts
     );
 
+    // Emit thinking tier info before any thinking/content events
+    if (thinkingTierInfo) {
+      safeWrite(res, `event: thinking_tier\ndata: ${JSON.stringify({
+        tier: thinkingTierInfo.tier,
+        display: thinkingTierInfo.display,
+        label: thinkingTierInfo.label,
+        budget: thinkingTierInfo.budget,
+      })}\n\n`);
+    }
+
+    // AG-UI: emit RUN_STARTED
+    if (aguiAdapter) {
+      safeWrite(res, aguiAdapter.runStarted(opts.sessionId || requestId, {
+        thinkingTier: thinkingTierInfo || undefined,
+      }));
+    }
+
     let isInThinking = false;
     let isInContent = false;
     let thinkingContent = '';
     let responseContent = '';
     let compactionDetected = false;
+    /** Sliding-window of the last ~1200 chars of streamed output, re-scanned
+     * after every token batch. Reset only on stream end. */
+    let guardrailWindow = '';
+    /** Once true, the output scanner has tripped: drop all further tokens
+     * and refuse to forward deltas to the client or to Claude. */
+    let guardrailBlocked = false;
 
     // Safety timeout: abort stream if Claude API hangs (90 seconds)
     streamTimeout = setTimeout(() => {
@@ -362,23 +445,86 @@ export async function streamToSSE(
       // Propagate error to SSE client so it doesn't hang
       try {
         sendSSE(res, { type: 'error', data: { error: err.message || 'Stream connection lost', requestId } });
+        if (aguiAdapter) safeWrite(res, aguiAdapter.runError(err.message || 'Stream connection lost'));
       } catch { /* stream already broken */ }
     });
 
     // Handle text content deltas
     stream.on('text', (text: string) => {
+      if (guardrailBlocked) {return;}
+
       if (!isInContent) {
         sendSSE(res, { type: 'content_start', data: {} });
+        if (aguiAdapter) safeWrite(res, aguiAdapter.textMessageStart('assistant'));
         isInContent = true;
       }
+
+      // Advance the guardrail window, then scan. We scan the sliding window
+      // (not the whole `responseContent`) so cost is bounded per-chunk even
+      // on very long responses; secrets up to ~1200 chars are still caught.
+      guardrailWindow = extendGuardrailWindow(guardrailWindow, text);
+      const verdict = scanOutput(guardrailWindow);
+      if (!verdict.safe) {
+        guardrailBlocked = true;
+        const reason = verdict.findings[0];
+        logger.warn('Guardrail tripped on streaming output — aborting stream', {
+          requestId,
+          sessionId: opts.sessionId,
+          findings: verdict.findings,
+          operation: 'claude.streaming.guardrail',
+        });
+        sendSSE(res, {
+          type: 'guardrail_block',
+          data: { findings: verdict.findings, reason, requestId },
+        });
+        if (aguiAdapter) safeWrite(res, aguiAdapter.runError(`guardrail_block:${reason}`));
+
+        // Prometheus metric so the GuardrailBlockSpike alert has data.
+        try {
+          recordGuardrailBlock(reason, {
+            surface: 'chat.stream.output',
+            context: opts.context,
+          });
+        } catch {
+          /* metrics are best-effort */
+        }
+
+        // Fire-and-forget audit event. Failures must not block the response.
+        if (opts.userId) {
+          getAuditLogger()
+            .logSecurityEvent({
+              eventType: 'sensitive_data_access',
+              userId: opts.userId,
+              severity: 'warning',
+              context: opts.context ?? 'operations',
+              details: {
+                surface: 'chat.stream.output',
+                sessionId: opts.sessionId,
+                requestId,
+                findings: verdict.findings,
+              },
+            })
+            .catch((err) => {
+              logger.debug('Guardrail audit-log suppressed', {
+                error: err instanceof Error ? err.message : String(err),
+              });
+            });
+        }
+
+        stream.abort();
+        return;
+      }
+
       responseContent += text;
       sendSSE(res, { type: 'content_delta', data: { content: text } });
+      if (aguiAdapter) safeWrite(res, aguiAdapter.textMessageContent(text));
     });
 
     // Handle thinking deltas incrementally (streams each chunk as it arrives)
     stream.on('thinking', (thinkingDelta: string) => {
       thinkingContent += thinkingDelta;
       sendSSE(res, { type: 'thinking_delta', data: { thinking: thinkingDelta } });
+      if (aguiAdapter) safeWrite(res, aguiAdapter.textMessageContent(thinkingDelta));
     });
 
     // Handle block-level events for start/end markers, tool use, and compaction
@@ -386,15 +532,18 @@ export async function streamToSSE(
       if (event.type === 'content_block_start') {
         if (event.content_block.type === 'thinking') {
           sendSSE(res, { type: 'thinking_start', data: {} });
+          if (aguiAdapter) safeWrite(res, aguiAdapter.textMessageStart('thinking'));
           isInThinking = true;
         } else if (event.content_block.type === 'tool_use') {
           sendSSE(res, {
             type: 'tool_use_start',
             data: { tool: { name: event.content_block.name } },
           });
+          if (aguiAdapter) safeWrite(res, aguiAdapter.toolCallStart(event.content_block.name));
         }
       } else if (event.type === 'content_block_stop' && isInThinking) {
         sendSSE(res, { type: 'thinking_end', data: { thinking: thinkingContent } });
+        if (aguiAdapter) safeWrite(res, aguiAdapter.textMessageEnd());
         isInThinking = false;
       }
     });
@@ -484,6 +633,7 @@ export async function streamToSSE(
             type: 'tool_use_start',
             data: { tool: { name: toolBlock.name, input: toolBlock.input as Record<string, unknown> } },
           });
+          if (aguiAdapter) safeWrite(res, aguiAdapter.toolCallStart(toolBlock.name, toolBlock.input as Record<string, unknown>));
 
           try {
             const rawResult = await opts.toolExecutor(
@@ -501,12 +651,13 @@ export async function streamToSSE(
               type: 'tool_use_end',
               data: { tool: { name: toolBlock.name, result: truncateForSSE(result) } },
             });
+            if (aguiAdapter) safeWrite(res, aguiAdapter.toolCallEnd(toolBlock.name, truncateForSSE(result)));
 
             // Emit panel_action SSE event for open_panel tool calls
             if (toolBlock.name === 'open_panel') {
               try {
                 const panelResult = JSON.parse(rawResult) as { panel?: string; filter?: string };
-                res.write(`event: panel_action\ndata: ${JSON.stringify({ action: 'open', panel: panelResult.panel, filter: panelResult.filter })}\n\n`);
+                safeWrite(res, `event: panel_action\ndata: ${JSON.stringify({ action: 'open', panel: panelResult.panel, filter: panelResult.filter })}\n\n`);
               } catch {
                 // Ignore JSON parse errors — panel_action is best-effort
               }
@@ -523,6 +674,7 @@ export async function streamToSSE(
               type: 'tool_use_end',
               data: { tool: { name: toolBlock.name, result: `Error: ${errorMsg}` } },
             });
+            if (aguiAdapter) safeWrite(res, aguiAdapter.toolCallEnd(toolBlock.name, `Error: ${errorMsg}`));
           }
         }
 
@@ -555,7 +707,7 @@ export async function streamToSSE(
 
         // Stream follow-up response with tool results
         const followUpParams: Record<string, unknown> = {
-          model: CLAUDE_MODEL,
+          model: opts.modelOverride || CLAUDE_MODEL,
           max_tokens: opts.maxTokens ?? 16000,
           messages: currentMessages,
           stream: true,
@@ -563,12 +715,17 @@ export async function streamToSSE(
         };
 
         if (opts.enableThinking) {
-          const budgetTokens = isAdaptiveEnabled()
-            ? getAdaptiveBudget()
-            : (opts.thinkingBudget ?? 10000);
+          let followUpBudget: number;
+          if (isAdaptiveEnabled() && thinkingTierInfo) {
+            followUpBudget = opts.thinkingBudget ?? thinkingTierInfo.budget;
+          } else if (isAdaptiveEnabled()) {
+            followUpBudget = getAdaptiveBudget();
+          } else {
+            followUpBudget = opts.thinkingBudget ?? 10000;
+          }
           followUpParams.thinking = {
             type: 'enabled',
-            budget_tokens: budgetTokens,
+            budget_tokens: followUpBudget,
           };
           followUpParams.temperature = 1;
         } else if (opts.temperature !== undefined) {
@@ -601,25 +758,30 @@ export async function streamToSSE(
         followUpStream.on('text', (text: string) => {
           if (!isInContent) {
             sendSSE(res, { type: 'content_start', data: {} });
+            if (aguiAdapter) safeWrite(res, aguiAdapter.textMessageStart('assistant'));
             isInContent = true;
           }
           responseContent += text;
           sendSSE(res, { type: 'content_delta', data: { content: text } });
+          if (aguiAdapter) safeWrite(res, aguiAdapter.textMessageContent(text));
         });
 
         followUpStream.on('thinking', (thinkingDelta: string) => {
           thinkingContent += thinkingDelta;
           sendSSE(res, { type: 'thinking_delta', data: { thinking: thinkingDelta } });
+          if (aguiAdapter) safeWrite(res, aguiAdapter.textMessageContent(thinkingDelta));
         });
 
         followUpStream.on('streamEvent', (event: Anthropic.MessageStreamEvent) => {
           if (event.type === 'content_block_start') {
             if (event.content_block.type === 'thinking') {
               sendSSE(res, { type: 'thinking_start', data: {} });
+              if (aguiAdapter) safeWrite(res, aguiAdapter.textMessageStart('thinking'));
               isInThinking = true;
             }
           } else if (event.type === 'content_block_stop' && isInThinking) {
             sendSSE(res, { type: 'thinking_end', data: { thinking: thinkingContent } });
+            if (aguiAdapter) safeWrite(res, aguiAdapter.textMessageEnd());
             isInThinking = false;
           }
         });
@@ -638,6 +800,12 @@ export async function streamToSSE(
 
     // Send completion event with metadata
     const usage = finalMessage.usage;
+
+    // AG-UI: emit text message end if content was being streamed
+    if (aguiAdapter && isInContent) {
+      safeWrite(res, aguiAdapter.textMessageEnd());
+    }
+
     sendSSE(res, {
       type: 'done',
       data: {
@@ -651,6 +819,15 @@ export async function streamToSSE(
         },
       },
     });
+
+    // AG-UI: emit RUN_FINISHED
+    if (aguiAdapter) {
+      safeWrite(res, aguiAdapter.runFinished({
+        inputTokens: usage?.input_tokens ?? 0,
+        outputTokens: usage?.output_tokens ?? 0,
+        thinkingTokens: thinkingContent.length > 0 ? Math.ceil(thinkingContent.length / 4) : undefined,
+      }));
+    }
 
     logger.info('SSE stream complete', {
       requestId,
@@ -677,6 +854,9 @@ export async function streamToSSE(
       type: 'error',
       data: { error: sanitized.message, requestId },
     });
+    if (aguiAdapter) {
+      try { res.write(aguiAdapter.runError(sanitized.message)); } catch { /* stream broken */ }
+    }
   } finally {
     // Ensure all timers are cleaned up regardless of how we exit
     clearTimeout(streamTimeout);
@@ -707,19 +887,25 @@ export async function streamAndCollect(
 
   // Build request parameters
   const params: Record<string, unknown> = {
-    model: CLAUDE_MODEL,
+    model: opts.modelOverride || CLAUDE_MODEL,
     max_tokens: opts.maxTokens ?? 16000,
     messages,
     stream: true,
   };
 
   if (opts.enableThinking) {
-    const budgetTokens = isAdaptiveEnabled()
-      ? getAdaptiveBudget()
-      : (opts.thinkingBudget ?? 10000);
+    let collectBudget: number;
+    if (isAdaptiveEnabled()) {
+      const lastMessage = messages[messages.length - 1];
+      const userInput = typeof lastMessage?.content === 'string' ? lastMessage.content : '';
+      const tierInfo = getThinkingBudget(userInput, undefined);
+      collectBudget = opts.thinkingBudget ?? tierInfo.budget;
+    } else {
+      collectBudget = opts.thinkingBudget ?? 10000;
+    }
     params.thinking = {
       type: 'enabled',
-      budget_tokens: budgetTokens,
+      budget_tokens: collectBudget,
     };
     params.temperature = 1;
   } else if (opts.temperature !== undefined) {
@@ -859,7 +1045,10 @@ export async function thinkingStream(
   tools?: Anthropic.Tool[],
   toolExecutor?: StreamingToolExecutor,
   requestId?: string,
-  abortSignal?: AbortSignal
+  abortSignal?: AbortSignal,
+  modelOverride?: string,
+  userId?: string,
+  context?: AIContext
 ): Promise<void> {
   setupSSEHeaders(res);
 
@@ -874,5 +1063,8 @@ export async function thinkingStream(
     toolExecutor,
     requestId,
     abortSignal,
+    modelOverride,
+    userId,
+    context,
   });
 }

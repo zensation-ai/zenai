@@ -93,7 +93,7 @@ describe('Meetings Search & Processing', () => {
       const row = makeMeetingNotesRow();
       mockQueryContext.mockResolvedValueOnce({ rows: [row] } as any);
 
-      const results = await searchMeetingsFullText('budget', 10, 'work');
+      const results = await searchMeetingsFullText('budget', 10, 'finance');
 
       expect(results).toHaveLength(1);
       expect(results[0].meeting.title).toBe('Sprint Planning');
@@ -107,7 +107,7 @@ describe('Meetings Search & Processing', () => {
       });
       mockQueryContext.mockResolvedValueOnce({ rows: [row] } as any);
 
-      const results = await searchMeetingsFullText('budget', 10, 'work');
+      const results = await searchMeetingsFullText('budget', 10, 'finance');
 
       expect(results[0].snippet).toContain('budget');
     });
@@ -115,7 +115,7 @@ describe('Meetings Search & Processing', () => {
     it('should return empty array for no matches', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [] } as any);
 
-      const results = await searchMeetingsFullText('nonexistent', 10, 'work');
+      const results = await searchMeetingsFullText('nonexistent', 10, 'finance');
 
       expect(results).toEqual([]);
     });
@@ -123,10 +123,10 @@ describe('Meetings Search & Processing', () => {
     it('should pass search query and limit to database', async () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [] } as any);
 
-      await searchMeetingsFullText('timeline', 5, 'personal');
+      await searchMeetingsFullText('timeline', 5, 'operations');
 
       expect(mockQueryContext).toHaveBeenCalledWith(
-        'personal',
+        'operations',
         expect.stringContaining('plainto_tsquery'),
         ['timeline', 5]
       );
@@ -136,7 +136,7 @@ describe('Meetings Search & Processing', () => {
       const row = makeMeetingNotesRow({ rank: 0.95 });
       mockQueryContext.mockResolvedValueOnce({ rows: [row] } as any);
 
-      const results = await searchMeetingsFullText('project', 10, 'work');
+      const results = await searchMeetingsFullText('project', 10, 'finance');
 
       expect(results[0].similarity).toBe(0.95);
     });
@@ -145,7 +145,7 @@ describe('Meetings Search & Processing', () => {
       const row = makeMeetingNotesRow({ rank: null });
       mockQueryContext.mockResolvedValueOnce({ rows: [row] } as any);
 
-      const results = await searchMeetingsFullText('project', 10, 'work');
+      const results = await searchMeetingsFullText('project', 10, 'finance');
 
       expect(results[0].similarity).toBe(0);
     });
@@ -154,7 +154,7 @@ describe('Meetings Search & Processing', () => {
       const row = makeMeetingNotesRow();
       mockQueryContext.mockResolvedValueOnce({ rows: [row] } as any);
 
-      const results = await searchMeetingsFullText('budget', 10, 'work');
+      const results = await searchMeetingsFullText('budget', 10, 'finance');
 
       expect(results[0].notes.key_decisions).toEqual(['Approved Q2 budget']);
       expect(results[0].notes.action_items).toHaveLength(1);
@@ -183,7 +183,7 @@ describe('Meetings Search & Processing', () => {
       // Second call: fulltext search
       mockQueryContext.mockResolvedValueOnce({ rows: [fulltextB, fulltextA] } as any);
 
-      const results = await searchMeetingsHybrid('project', 10, 'work');
+      const results = await searchMeetingsHybrid('project', 10, 'finance');
 
       // Both meetings should appear, merged via RRF
       expect(results.length).toBeGreaterThanOrEqual(1);
@@ -200,7 +200,7 @@ describe('Meetings Search & Processing', () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [semanticOnly] } as any);
       mockQueryContext.mockResolvedValueOnce({ rows: [] } as any);
 
-      const results = await searchMeetingsHybrid('unique topic', 10, 'work');
+      const results = await searchMeetingsHybrid('unique topic', 10, 'finance');
 
       expect(results).toHaveLength(1);
       expect(results[0].notes.id).toBe('notes-only-sem');
@@ -213,7 +213,7 @@ describe('Meetings Search & Processing', () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [] } as any);
       mockQueryContext.mockResolvedValueOnce({ rows: [fulltextOnly] } as any);
 
-      const results = await searchMeetingsHybrid('keyword', 10, 'work');
+      const results = await searchMeetingsHybrid('keyword', 10, 'finance');
 
       expect(results).toHaveLength(1);
       expect(results[0].notes.id).toBe('notes-only-ft');
@@ -228,7 +228,7 @@ describe('Meetings Search & Processing', () => {
       mockQueryContext.mockResolvedValueOnce({ rows } as any);
       mockQueryContext.mockResolvedValueOnce({ rows: [] } as any);
 
-      const results = await searchMeetingsHybrid('test', 3, 'work');
+      const results = await searchMeetingsHybrid('test', 3, 'finance');
 
       expect(results.length).toBeLessThanOrEqual(3);
     });
@@ -249,7 +249,7 @@ describe('Meetings Search & Processing', () => {
       // Fulltext also returns this row (snippet will be generated)
       mockQueryContext.mockResolvedValueOnce({ rows: [row] } as any);
 
-      const results = await searchMeetingsHybrid('budget', 10, 'work');
+      const results = await searchMeetingsHybrid('budget', 10, 'finance');
 
       expect(results[0].snippet).toBeDefined();
     });
@@ -280,7 +280,7 @@ describe('Meetings Search & Processing', () => {
     });
 
     it('should return structured meeting notes', async () => {
-      const notes = await processMeetingNotes(meetingId, transcript, 'work');
+      const notes = await processMeetingNotes(meetingId, transcript, 'finance');
 
       expect(notes.meeting_id).toBe(meetingId);
       expect(notes.structured_summary).toBe('Product launch planned for Q3.');
@@ -301,7 +301,7 @@ describe('Meetings Search & Processing', () => {
         mimeType: 'audio/webm',
       };
 
-      const notes = await processMeetingNotes(meetingId, transcript, 'work', audioMeta);
+      const notes = await processMeetingNotes(meetingId, transcript, 'finance', audioMeta);
 
       // Verify the INSERT call includes audio metadata params
       const insertCall = mockQueryContext.mock.calls[0];
@@ -323,7 +323,7 @@ describe('Meetings Search & Processing', () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [] } as any); // INSERT
       mockQueryContext.mockResolvedValueOnce({ rows: [{ id: meetingId }] } as any); // UPDATE status
 
-      const notes = await processMeetingNotes(meetingId, transcript, 'work');
+      const notes = await processMeetingNotes(meetingId, transcript, 'finance');
 
       // Audio metadata params should be null
       const insertCall = mockQueryContext.mock.calls[0];
@@ -341,7 +341,7 @@ describe('Meetings Search & Processing', () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [] } as any);
       mockQueryContext.mockResolvedValueOnce({ rows: [{ id: meetingId }] } as any);
 
-      await processMeetingNotes(meetingId, transcript, 'work');
+      await processMeetingNotes(meetingId, transcript, 'finance');
 
       const insertCall = mockQueryContext.mock.calls[0];
       const sql = insertCall[1] as string;
@@ -355,7 +355,7 @@ describe('Meetings Search & Processing', () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [] } as any);
       mockQueryContext.mockResolvedValueOnce({ rows: [{ id: meetingId }] } as any);
 
-      const notes = await processMeetingNotes(meetingId, transcript, 'work');
+      const notes = await processMeetingNotes(meetingId, transcript, 'finance');
 
       expect(notes.structured_summary).toBe(transcript.substring(0, 200));
       expect(notes.key_decisions).toEqual([]);
@@ -367,7 +367,7 @@ describe('Meetings Search & Processing', () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [] } as any);
       mockQueryContext.mockResolvedValueOnce({ rows: [{ id: meetingId }] } as any);
 
-      const notes = await processMeetingNotes(meetingId, transcript, 'work');
+      const notes = await processMeetingNotes(meetingId, transcript, 'finance');
 
       for (const item of notes.action_items) {
         expect(item.completed).toBe(false);
@@ -379,7 +379,7 @@ describe('Meetings Search & Processing', () => {
       mockQueryContext.mockResolvedValueOnce({ rows: [] } as any); // INSERT
       mockQueryContext.mockResolvedValueOnce({ rows: [{ id: meetingId }] } as any); // UPDATE
 
-      await processMeetingNotes(meetingId, transcript, 'work');
+      await processMeetingNotes(meetingId, transcript, 'finance');
 
       // Second call should be the status update
       const updateCall = mockQueryContext.mock.calls[1];
@@ -398,7 +398,7 @@ describe('Meetings Search & Processing', () => {
         .mockResolvedValueOnce({ rows: [] } as any) // meetings query
         .mockResolvedValueOnce({ rows: [{ total: '0' }] } as any); // count query
 
-      await getMeetings({ has_audio: true, context: 'work' });
+      await getMeetings({ has_audio: true, context: 'finance' });
 
       const meetingsQuery = mockQueryContext.mock.calls[0][1] as string;
       expect(meetingsQuery).toContain('LEFT JOIN meeting_notes');
@@ -410,7 +410,7 @@ describe('Meetings Search & Processing', () => {
         .mockResolvedValueOnce({ rows: [] } as any)
         .mockResolvedValueOnce({ rows: [{ total: '0' }] } as any);
 
-      await getMeetings({ context: 'work' });
+      await getMeetings({ context: 'finance' });
 
       const meetingsQuery = mockQueryContext.mock.calls[0][1] as string;
       expect(meetingsQuery).not.toContain('LEFT JOIN meeting_notes');

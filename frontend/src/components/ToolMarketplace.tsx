@@ -7,8 +7,6 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import type { AIContext } from './ContextSwitcher';
-import './ToolMarketplace.css';
-
 const API_URL = import.meta.env.VITE_API_URL || '';
 const API_KEY = import.meta.env.VITE_API_KEY || '';
 
@@ -238,7 +236,7 @@ export function ToolMarketplace({ context, installedServers, onInstall }: ToolMa
               <p className="tm-card-desc">{server.description}</p>
 
               <div className="tm-card-meta">
-                <span className="tm-meta-item" title="Geschaetzte Tools">
+                <span className="tm-meta-item" title="Geschätzte Tools">
                   ~{server.estimatedTools} Tools
                 </span>
                 <span className="tm-meta-item" title="Beliebtheit">

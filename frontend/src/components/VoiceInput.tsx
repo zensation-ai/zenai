@@ -12,8 +12,6 @@ import { AIContext } from './ContextSwitcher';
 import axios from 'axios';
 import { showToast } from './Toast';
 import { getErrorMessage, logError } from '../utils/errors';
-import './VoiceInput.css';
-
 interface VoiceInputProps {
   /** Called when transcription is complete */
   onTranscript: (text: string) => void;
@@ -31,7 +29,7 @@ export function VoiceInput({
   onTranscript,
   onRecordingChange,
   disabled = false,
-  context = 'personal',
+  context = 'operations',
   compact = true,
 }: VoiceInputProps) {
   const [recording, setRecording] = useState(false);

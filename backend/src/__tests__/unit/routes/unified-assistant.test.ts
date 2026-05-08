@@ -24,7 +24,7 @@ jest.mock('../../../utils/logger', () => ({
 
 jest.mock('../../../utils/database-context', () => ({
   queryContext: jest.fn(),
-  isValidContext: jest.fn((ctx: string) => ['personal', 'work', 'learning', 'creative'].includes(ctx)),
+  isValidContext: jest.fn((ctx: string) => ['operations', 'finance', 'people', 'strategy'].includes(ctx)),
   AIContext: {},
 }));
 
@@ -64,7 +64,7 @@ describe('Unified Assistant Routes', () => {
       mockProcessQuery.mockReturnValue(result);
 
       const res = await request(app)
-        .post('/api/personal/assistant/query')
+        .post('/api/operations/assistant/query')
         .send({ query: 'Find my recent ideas' });
 
       expect(res.status).toBe(200);
@@ -75,7 +75,7 @@ describe('Unified Assistant Routes', () => {
 
     it('should reject empty query', async () => {
       const res = await request(app)
-        .post('/api/personal/assistant/query')
+        .post('/api/operations/assistant/query')
         .send({ query: '' });
 
       expect(res.status).toBe(400);
@@ -83,7 +83,7 @@ describe('Unified Assistant Routes', () => {
 
     it('should reject missing query', async () => {
       const res = await request(app)
-        .post('/api/personal/assistant/query')
+        .post('/api/operations/assistant/query')
         .send({});
 
       expect(res.status).toBe(400);
@@ -101,7 +101,7 @@ describe('Unified Assistant Routes', () => {
       mockProcessQuery.mockImplementation(() => { throw new Error('Processing failed'); });
 
       const res = await request(app)
-        .post('/api/personal/assistant/query')
+        .post('/api/operations/assistant/query')
         .send({ query: 'test query' });
 
       expect(res.status).toBe(500);
@@ -113,7 +113,7 @@ describe('Unified Assistant Routes', () => {
       mockProcessQuery.mockReturnValue(result);
 
       await request(app)
-        .post('/api/personal/assistant/query')
+        .post('/api/operations/assistant/query')
         .send({ query: 'help me', pageContext: 'ideas' });
 
       expect(mockRecordInteraction).toHaveBeenCalled();
@@ -126,7 +126,7 @@ describe('Unified Assistant Routes', () => {
       mockGetSuggestionsForPage.mockReturnValue(suggestions);
 
       const res = await request(app)
-        .get('/api/personal/assistant/suggestions?page=ideas');
+        .get('/api/operations/assistant/suggestions?page=ideas');
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
@@ -136,7 +136,7 @@ describe('Unified Assistant Routes', () => {
     it('should use dashboard as default page', async () => {
       mockGetSuggestionsForPage.mockReturnValue([]);
 
-      await request(app).get('/api/personal/assistant/suggestions');
+      await request(app).get('/api/operations/assistant/suggestions');
 
       expect(mockGetSuggestionsForPage).toHaveBeenCalledWith('dashboard');
     });
@@ -150,7 +150,7 @@ describe('Unified Assistant Routes', () => {
   describe('POST /api/:context/assistant/execute', () => {
     it('should delegate action to frontend', async () => {
       const res = await request(app)
-        .post('/api/personal/assistant/execute')
+        .post('/api/operations/assistant/execute')
         .send({ actionId: 'create_idea', params: { title: 'Test' } });
 
       expect(res.status).toBe(200);
@@ -161,7 +161,7 @@ describe('Unified Assistant Routes', () => {
 
     it('should reject missing actionId', async () => {
       const res = await request(app)
-        .post('/api/personal/assistant/execute')
+        .post('/api/operations/assistant/execute')
         .send({});
 
       expect(res.status).toBe(400);
@@ -173,7 +173,7 @@ describe('Unified Assistant Routes', () => {
       const history = [{ id: '1', query: 'test', createdAt: '2026-01-01' }];
       mockGetInteractionHistory.mockResolvedValue(history);
 
-      const res = await request(app).get('/api/personal/assistant/history');
+      const res = await request(app).get('/api/operations/assistant/history');
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
@@ -183,9 +183,9 @@ describe('Unified Assistant Routes', () => {
     it('should respect limit parameter', async () => {
       mockGetInteractionHistory.mockResolvedValue([]);
 
-      await request(app).get('/api/personal/assistant/history?limit=10');
+      await request(app).get('/api/operations/assistant/history?limit=10');
 
-      expect(mockGetInteractionHistory).toHaveBeenCalledWith('personal', '00000000-0000-0000-0000-000000000001', 10);
+      expect(mockGetInteractionHistory).toHaveBeenCalledWith('operations', '00000000-0000-0000-0000-000000000001', 10);
     });
   });
 });

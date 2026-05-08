@@ -44,16 +44,21 @@ draftsRouter.use(apiKeyAuth);
 // ===========================================
 // POST /api/:context/drafts/debug-detect
 // Debug endpoint to test draft detection without generating
+// Only available in development
 // ===========================================
 draftsRouter.post(
   '/:context/drafts/debug-detect',
   requireScope('read'),
   asyncHandler(async (req: Request, res: Response) => {
+    if (process.env.NODE_ENV === 'production') {
+      res.status(404).json({ success: false, error: 'Not found' });
+      return;
+    }
     const { context } = req.params;
     const { text, type = 'task' } = req.body;
 
     if (!isValidContext(context)) {
-      throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
+      throw new ValidationError('Invalid context. Use "operations", "finance", "people", or "strategy".');
     }
 
     if (!text) {
@@ -96,7 +101,7 @@ draftsRouter.get(
     const { context, ideaId } = req.params;
 
     if (!isValidContext(context)) {
-      throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
+      throw new ValidationError('Invalid context. Use "operations", "finance", "people", or "strategy".');
     }
 
     const draft = await getDraftForIdea(ideaId, context as AIContext);
@@ -142,7 +147,7 @@ draftsRouter.post(
     const { forceRegenerate = false, title, summary, rawTranscript, keywords, type, category } = req.body;
 
     if (!isValidContext(context)) {
-      throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
+      throw new ValidationError('Invalid context. Use "operations", "finance", "people", or "strategy".');
     }
 
     // Check if draft already exists
@@ -211,7 +216,7 @@ draftsRouter.put(
     const { rating, feedback, contentReusedPercent } = req.body;
 
     if (!isValidContext(context)) {
-      throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
+      throw new ValidationError('Invalid context. Use "operations", "finance", "people", or "strategy".');
     }
 
     if (rating !== undefined && (rating < 1 || rating > 5)) {
@@ -246,7 +251,7 @@ draftsRouter.delete(
     const { context, draftId } = req.params;
 
     if (!isValidContext(context)) {
-      throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
+      throw new ValidationError('Invalid context. Use "operations", "finance", "people", or "strategy".');
     }
 
     await discardDraft(draftId, context as AIContext);
@@ -272,7 +277,7 @@ draftsRouter.get(
     const { status, limit = '20', offset = '0' } = req.query;
 
     if (!isValidContext(context)) {
-      throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
+      throw new ValidationError('Invalid context. Use "operations", "finance", "people", or "strategy".');
     }
 
     const drafts = await listDrafts(context as AIContext, {
@@ -307,7 +312,7 @@ draftsRouter.put(
     const { context, draftId } = req.params;
 
     if (!isValidContext(context)) {
-      throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
+      throw new ValidationError('Invalid context. Use "operations", "finance", "people", or "strategy".');
     }
 
     await markDraftViewed(draftId, context as AIContext);
@@ -347,7 +352,7 @@ draftsRouter.post(
     } = req.body;
 
     if (!isValidContext(context)) {
-      throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
+      throw new ValidationError('Invalid context. Use "operations", "finance", "people", or "strategy".');
     }
 
     if (!rating || rating < 1 || rating > 5) {
@@ -427,7 +432,7 @@ draftsRouter.post(
     const { isPositive } = req.body;
 
     if (!isValidContext(context)) {
-      throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
+      throw new ValidationError('Invalid context. Use "operations", "finance", "people", or "strategy".');
     }
 
     if (typeof isPositive !== 'boolean') {
@@ -460,7 +465,7 @@ draftsRouter.post(
     const { context, draftId } = req.params;
 
     if (!isValidContext(context)) {
-      throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
+      throw new ValidationError('Invalid context. Use "operations", "finance", "people", or "strategy".');
     }
 
     await recordDraftCopy(draftId, context as AIContext);
@@ -483,7 +488,7 @@ draftsRouter.get(
     const { context, draftId } = req.params;
 
     if (!isValidContext(context)) {
-      throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
+      throw new ValidationError('Invalid context. Use "operations", "finance", "people", or "strategy".');
     }
 
     const history = await getDraftFeedbackHistory(draftId, context as AIContext);
@@ -508,7 +513,7 @@ draftsRouter.get(
     const { days = '30' } = req.query;
 
     if (!isValidContext(context)) {
-      throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
+      throw new ValidationError('Invalid context. Use "operations", "finance", "people", or "strategy".');
     }
 
     const analytics = await getFeedbackAnalytics(
@@ -537,7 +542,7 @@ draftsRouter.get(
     const { context } = req.params;
 
     if (!isValidContext(context)) {
-      throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
+      throw new ValidationError('Invalid context. Use "operations", "finance", "people", or "strategy".');
     }
 
     const patterns = await getPatternEffectiveness(context as AIContext);
@@ -577,7 +582,7 @@ draftsRouter.get(
     const { limit = '10' } = req.query;
 
     if (!isValidContext(context)) {
-      throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
+      throw new ValidationError('Invalid context. Use "operations", "finance", "people", or "strategy".');
     }
 
     const drafts = await getDraftsNeedingFeedback(
@@ -605,7 +610,7 @@ draftsRouter.get(
     const { status = 'pending' } = req.query;
 
     if (!isValidContext(context)) {
-      throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
+      throw new ValidationError('Invalid context. Use "operations", "finance", "people", or "strategy".');
     }
 
     const validStatuses = ['pending', 'applied', 'rejected', 'testing'];
@@ -638,7 +643,7 @@ draftsRouter.put(
     const { action } = req.body;
 
     if (!isValidContext(context)) {
-      throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
+      throw new ValidationError('Invalid context. Use "operations", "finance", "people", or "strategy".');
     }
 
     const validActions = ['applied', 'rejected', 'testing'];

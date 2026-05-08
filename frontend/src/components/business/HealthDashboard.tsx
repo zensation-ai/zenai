@@ -2,7 +2,7 @@
  * HealthDashboard - Uptime & Performance Monitoring
  */
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, type CSSProperties } from 'react';
 import axios from 'axios';
 import type { PerformanceMetrics } from '../../types/business';
 
@@ -78,7 +78,7 @@ export const HealthDashboard: React.FC = () => {
               <div className="business-kpi-card">
                 <div className="business-kpi-header"><span className="business-kpi-icon">✅</span></div>
                 <div className="business-kpi-value">{uptime.uptimePercentage.toFixed(2)}%</div>
-                <div className="business-kpi-label">Verfuegbarkeit</div>
+                <div className="business-kpi-label">Verfügbarkeit</div>
               </div>
               <div className="business-kpi-card">
                 <div className="business-kpi-header"><span className="business-kpi-icon">⚡</span></div>
@@ -98,7 +98,7 @@ export const HealthDashboard: React.FC = () => {
             </div>
 
             {uptime.monitors.length > 0 && (
-              <table className="business-table" style={{ marginTop: '1rem' }}>
+              <table className="business-table mt-4">
                 <thead><tr><th>Monitor</th><th>Status</th><th>Uptime</th><th>Antwortzeit</th></tr></thead>
                 <tbody>
                   {uptime.monitors.map((m) => (
@@ -120,7 +120,7 @@ export const HealthDashboard: React.FC = () => {
 
       {/* Performance Section */}
       <div className="business-section">
-        <div className="business-section-title" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div className="business-section-title flex justify-between items-center">
           <span>⚡ Performance (Lighthouse)</span>
           <button type="button" className="business-btn" onClick={runAudit} disabled={auditing}>
             {auditing ? 'Audit läuft...' : '🔄 Neues Audit'}
@@ -131,27 +131,27 @@ export const HealthDashboard: React.FC = () => {
             <div className="business-kpi-grid">
               <div className="business-kpi-card">
                 <div className="business-kpi-header"><span className="business-kpi-icon">🎯</span></div>
-                <div className="business-kpi-value" style={{ color: getScoreColor(performance.score) }}>{performance.score}/100</div>
+                <div className="business-kpi-value text-[var(--sc)]" style={{ '--sc': getScoreColor(performance.score) } as CSSProperties}>{performance.score}/100</div>
                 <div className="business-kpi-label">Performance</div>
               </div>
               <div className="business-kpi-card">
                 <div className="business-kpi-header"><span className="business-kpi-icon">♿</span></div>
-                <div className="business-kpi-value" style={{ color: getScoreColor(performance.accessibilityScore) }}>{performance.accessibilityScore}/100</div>
+                <div className="business-kpi-value text-[var(--sc)]" style={{ '--sc': getScoreColor(performance.accessibilityScore) } as CSSProperties}>{performance.accessibilityScore}/100</div>
                 <div className="business-kpi-label">Accessibility</div>
               </div>
               <div className="business-kpi-card">
                 <div className="business-kpi-header"><span className="business-kpi-icon">✅</span></div>
-                <div className="business-kpi-value" style={{ color: getScoreColor(performance.bestPracticesScore) }}>{performance.bestPracticesScore}/100</div>
+                <div className="business-kpi-value text-[var(--sc)]" style={{ '--sc': getScoreColor(performance.bestPracticesScore) } as CSSProperties}>{performance.bestPracticesScore}/100</div>
                 <div className="business-kpi-label">Best Practices</div>
               </div>
               <div className="business-kpi-card">
                 <div className="business-kpi-header"><span className="business-kpi-icon">🔍</span></div>
-                <div className="business-kpi-value" style={{ color: getScoreColor(performance.seoScore) }}>{performance.seoScore}/100</div>
+                <div className="business-kpi-value text-[var(--sc)]" style={{ '--sc': getScoreColor(performance.seoScore) } as CSSProperties}>{performance.seoScore}/100</div>
                 <div className="business-kpi-label">SEO Score</div>
               </div>
             </div>
 
-            <div style={{ marginTop: '1rem' }}>
+            <div className="mt-4">
               <div className="business-section-title">Core Web Vitals</div>
               <div className="business-kpi-grid">
                 <div className="business-kpi-card">

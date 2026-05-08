@@ -1,11 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, type CSSProperties } from 'react';
 import axios from 'axios';
 import type { Meeting } from './MeetingCard';
 import { formatDateLong, formatDuration } from '../utils/dateUtils';
 import { getErrorMessage } from '../utils/errors';
 import type { MeetingNotes } from '../types/meeting';
-import './MeetingDetail.css';
-import '../neurodesign.css';
 
 interface MeetingDetailProps {
   meeting: Meeting;
@@ -188,8 +186,8 @@ export function MeetingDetail({ meeting, notes, onClose, onNotesAdded }: Meeting
                     <div key={index} className="action-item">
                       <div className="action-item-header">
                         <span
-                          className="priority-dot"
-                          style={{ backgroundColor: PRIORITY_COLORS[item.priority] }}
+                          className="priority-dot bg-[var(--c)]"
+                          style={{ '--c': PRIORITY_COLORS[item.priority] } as CSSProperties}
                         />
                         <span className="action-task">{item.task}</span>
                       </div>

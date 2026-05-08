@@ -11,8 +11,8 @@
  * - Scrollable content when fully open
  */
 
-import { useRef, useEffect, useCallback, useState, type ReactNode } from 'react';
-import './BottomSheet.css';
+import { useRef, useEffect, useCallback, useState, type ReactNode, type CSSProperties } from 'react';
+import { cn } from '@/lib/utils';
 
 export type SnapPoint = 'peek' | 'half' | 'full';
 
@@ -88,7 +88,6 @@ export function BottomSheet({
 
   // Touch handlers for swipe-to-close
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
-    // Only track from the handle area or when content is scrolled to top
     const touch = e.touches[0];
     touchStartY.current = touch.clientY;
     touchStartTime.current = Date.now();
@@ -135,10 +134,13 @@ export function BottomSheet({
   const translateY = isClosing ? '100%' : `${currentTranslateY}px`;
 
   return (
-    <div className="bottom-sheet-overlay" aria-modal="true" role="dialog">
+    <div className="fixed inset-0 z-[400] flex items-end justify-center" aria-modal="true" role="dialog">
       {/* Backdrop */}
       <div
-        className={`bottom-sheet-backdrop ${isClosing ? 'closing' : ''}`}
+        className={cn(
+          'absolute inset-0 bg-black/40',
+          isClosing ? 'animate-bs-backdrop-out' : 'animate-bs-backdrop-in',
+        )}
         onClick={handleClose}
         aria-hidden="true"
       />
@@ -146,30 +148,33 @@ export function BottomSheet({
       {/* Sheet */}
       <div
         ref={sheetRef}
-        className={`bottom-sheet ${isClosing ? 'closing' : ''}`}
+        className={cn(
+          'relative w-full max-w-[600px] bg-surface rounded-t-2xl shadow-[0_-4px_24px_rgba(0,0,0,0.4)] flex flex-col overflow-hidden will-change-transform [height:var(--h)] [transform:var(--tf)]',
+          isClosing ? 'animate-bs-slide-down' : 'animate-bs-slide-up',
+        )}
         style={{
-          height: `${sheetHeight}vh`,
-          transform: `translateY(${translateY})`,
+          '--h': `${sheetHeight}vh`,
+          '--tf': `translateY(${translateY})`,
           transition: isDragging ? 'none' : undefined,
-        }}
+        } as CSSProperties}
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
       >
         {/* Drag Handle */}
-        <div className="bottom-sheet-handle" aria-hidden="true">
-          <div className="bottom-sheet-handle-bar" />
+        <div className="flex justify-center pt-2.5 pb-1.5 cursor-grab" aria-hidden="true">
+          <div className="w-9 h-1 rounded-sm bg-border" />
         </div>
 
         {/* Optional Title */}
         {title && (
-          <div className="bottom-sheet-header">
-            <h2 className="bottom-sheet-title">{title}</h2>
+          <div className="px-4 pb-2 border-b border-border">
+            <h2 className="text-base font-semibold m-0">{title}</h2>
           </div>
         )}
 
         {/* Content */}
-        <div className="bottom-sheet-content" ref={contentRef}>
+        <div className="flex-1 overflow-y-auto [-webkit-overflow-scrolling:touch]" ref={contentRef}>
           {children}
         </div>
       </div>

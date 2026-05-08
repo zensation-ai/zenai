@@ -508,7 +508,7 @@ export function stopCalDAVScheduler(): void {
 }
 
 async function runScheduledSync(): Promise<void> {
-  const contexts: AIContext[] = ['personal', 'work', 'learning', 'creative'];
+  const contexts: AIContext[] = ['operations', 'finance', 'people', 'strategy'];
 
   for (const ctx of contexts) {
     try {

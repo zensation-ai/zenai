@@ -100,6 +100,19 @@ export interface ImprovementOpportunity {
   estimatedImpact: number;
 }
 
+export interface RetentionCurvePoint {
+  day: number;
+  retention: number;
+}
+
+export interface RetentionCurveData {
+  factId: string;
+  difficulty: number;
+  stability: number;
+  nextReview: string | null;
+  curvePoints: RetentionCurvePoint[];
+}
+
 export interface ImprovementBudget {
   maxActionsPerDay: number;
   usedToday: number;
@@ -248,6 +261,26 @@ export function useFSRSStats(context: AIContext, enabled = true) {
       }
     },
     enabled,
+    staleTime: 60_000,
+  });
+}
+
+export function useRetentionCurve(context: AIContext, factId: string | null) {
+  return useQuery({
+    queryKey: ['cognitive', 'retentionCurve', context, factId],
+    queryFn: async ({ signal }) => {
+      try {
+        const response = await axios.get<{ success: boolean; data: RetentionCurveData }>(
+          `/api/${context}/memory/fsrs/retention-curve/${factId}`,
+          { signal }
+        );
+        return response.data?.data ?? null;
+      } catch (error) {
+        logError('useRetentionCurve', error);
+        throw error;
+      }
+    },
+    enabled: !!factId,
     staleTime: 60_000,
   });
 }

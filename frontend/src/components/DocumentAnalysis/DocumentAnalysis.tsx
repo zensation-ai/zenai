@@ -14,7 +14,7 @@
  * @module components/DocumentAnalysis/DocumentAnalysis
  */
 
-import { useState, useCallback, useRef, useEffect } from 'react';
+import { useState, useCallback, useRef, useEffect, type CSSProperties } from 'react';
 import axios from 'axios';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -23,8 +23,6 @@ import { getErrorMessage } from '../../utils/errors';
 import { getApiFetchHeaders, getApiBaseUrl } from '../../utils/apiConfig';
 import { ArtifactPanel } from '../ArtifactPanel';
 import type { Artifact } from '../../types/artifacts';
-import '../DocumentAnalysis.css';
-
 import type {
   DocumentAnalysisProps,
   AnalysisTemplate,
@@ -762,8 +760,8 @@ export function DocumentAnalysis({ onBack }: DocumentAnalysisProps) {
             <div className="doc-streaming-header">
               <div className="doc-streaming-progress-bar">
                 <div
-                  className="doc-streaming-progress-fill"
-                  style={{ width: `${streamProgress}%` }}
+                  className="doc-streaming-progress-fill w-[var(--bar)]"
+                  style={{ '--bar': `${streamProgress}%` } as CSSProperties}
                 />
               </div>
               <span className="doc-streaming-stage">{streamStage}</span>
@@ -786,10 +784,10 @@ export function DocumentAnalysis({ onBack }: DocumentAnalysisProps) {
               <h3>{streamStage || 'Dokument wird analysiert...'}</h3>
               <p>Claude liest und analysiert dein Dokument.</p>
               {streamProgress > 0 && (
-                <div className="doc-streaming-progress-bar" style={{ width: '200px' }}>
+                <div className="doc-streaming-progress-bar w-[200px]">
                   <div
-                    className="doc-streaming-progress-fill"
-                    style={{ width: `${streamProgress}%` }}
+                    className="doc-streaming-progress-fill w-[var(--bar)]"
+                    style={{ '--bar': `${streamProgress}%` } as CSSProperties}
                   />
                 </div>
               )}

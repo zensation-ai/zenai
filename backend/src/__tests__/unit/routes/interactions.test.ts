@@ -19,7 +19,7 @@ jest.mock('../../../utils/logger', () => ({
 }));
 
 jest.mock('../../../utils/database-context', () => ({
-  isValidContext: jest.fn((ctx: string) => ['personal', 'work', 'learning', 'creative'].includes(ctx)),
+  isValidContext: jest.fn((ctx: string) => ['operations', 'finance', 'people', 'strategy'].includes(ctx)),
   AIContext: {},
 }));
 
@@ -78,7 +78,7 @@ describe('Interactions Routes', () => {
       mockTrackInteraction.mockResolvedValueOnce('int-1');
 
       const res = await request(app)
-        .post('/api/personal/interactions')
+        .post('/api/operations/interactions')
         .send({
           entity_type: 'idea',
           entity_id: 'i1',
@@ -100,7 +100,7 @@ describe('Interactions Routes', () => {
 
     it('should return 400 for invalid entity_type', async () => {
       const res = await request(app)
-        .post('/api/personal/interactions')
+        .post('/api/operations/interactions')
         .send({ entity_type: 'nonexistent', interaction_type: 'view' });
 
       expect(res.status).toBe(400);
@@ -108,7 +108,7 @@ describe('Interactions Routes', () => {
 
     it('should return 400 for invalid interaction_type', async () => {
       const res = await request(app)
-        .post('/api/personal/interactions')
+        .post('/api/operations/interactions')
         .send({ entity_type: 'idea', interaction_type: 'nonexistent' });
 
       expect(res.status).toBe(400);
@@ -116,7 +116,7 @@ describe('Interactions Routes', () => {
 
     it('should return 400 when entity_type is missing', async () => {
       const res = await request(app)
-        .post('/api/personal/interactions')
+        .post('/api/operations/interactions')
         .send({ interaction_type: 'view' });
 
       expect(res.status).toBe(400);
@@ -130,7 +130,7 @@ describe('Interactions Routes', () => {
       mockTrackView.mockResolvedValueOnce(undefined);
 
       const res = await request(app)
-        .post('/api/personal/interactions/view')
+        .post('/api/operations/interactions/view')
         .send({ entity_type: 'idea', entity_id: 'i1', duration_ms: 5000 });
 
       expect(res.status).toBe(200);
@@ -139,7 +139,7 @@ describe('Interactions Routes', () => {
 
     it('should return 400 when entity_type is missing', async () => {
       const res = await request(app)
-        .post('/api/personal/interactions/view')
+        .post('/api/operations/interactions/view')
         .send({ entity_id: 'i1' });
 
       expect(res.status).toBe(400);
@@ -147,7 +147,7 @@ describe('Interactions Routes', () => {
 
     it('should return 400 when entity_id is missing', async () => {
       const res = await request(app)
-        .post('/api/personal/interactions/view')
+        .post('/api/operations/interactions/view')
         .send({ entity_type: 'idea' });
 
       expect(res.status).toBe(400);
@@ -161,7 +161,7 @@ describe('Interactions Routes', () => {
       mockTrackSearchClick.mockResolvedValueOnce(undefined);
 
       const res = await request(app)
-        .post('/api/personal/interactions/search-click')
+        .post('/api/operations/interactions/search-click')
         .send({ query: 'test query', result_id: 'r1', position: 3 });
 
       expect(res.status).toBe(200);
@@ -170,7 +170,7 @@ describe('Interactions Routes', () => {
 
     it('should return 400 when query is missing', async () => {
       const res = await request(app)
-        .post('/api/personal/interactions/search-click')
+        .post('/api/operations/interactions/search-click')
         .send({ result_id: 'r1' });
 
       expect(res.status).toBe(400);
@@ -184,7 +184,7 @@ describe('Interactions Routes', () => {
       mockTrackFeedback.mockResolvedValueOnce(undefined);
 
       const res = await request(app)
-        .post('/api/personal/interactions/feedback')
+        .post('/api/operations/interactions/feedback')
         .send({
           entity_type: 'idea',
           entity_id: 'i1',
@@ -198,7 +198,7 @@ describe('Interactions Routes', () => {
 
     it('should return 400 when required fields are missing', async () => {
       const res = await request(app)
-        .post('/api/personal/interactions/feedback')
+        .post('/api/operations/interactions/feedback')
         .send({ entity_type: 'idea' });
 
       expect(res.status).toBe(400);
@@ -212,11 +212,11 @@ describe('Interactions Routes', () => {
       mockRecordCorrection.mockResolvedValueOnce('corr-1');
 
       const res = await request(app)
-        .post('/api/personal/corrections')
+        .post('/api/operations/corrections')
         .send({
           idea_id: 'i1',
           field: 'category',
-          old_value: 'personal',
+          old_value: 'operations',
           new_value: 'technology',
         });
 
@@ -226,7 +226,7 @@ describe('Interactions Routes', () => {
 
     it('should return 400 for invalid field', async () => {
       const res = await request(app)
-        .post('/api/personal/corrections')
+        .post('/api/operations/corrections')
         .send({
           idea_id: 'i1',
           field: 'invalid_field',
@@ -239,7 +239,7 @@ describe('Interactions Routes', () => {
 
     it('should return 400 when required fields missing', async () => {
       const res = await request(app)
-        .post('/api/personal/corrections')
+        .post('/api/operations/corrections')
         .send({ idea_id: 'i1' });
 
       expect(res.status).toBe(400);
@@ -255,7 +255,7 @@ describe('Interactions Routes', () => {
       ]);
 
       const res = await request(app)
-        .get('/api/personal/corrections/idea/550e8400-e29b-41d4-a716-446655440000');
+        .get('/api/operations/corrections/idea/550e8400-e29b-41d4-a716-446655440000');
 
       expect(res.status).toBe(200);
       expect(res.body.corrections).toHaveLength(1);
@@ -266,7 +266,7 @@ describe('Interactions Routes', () => {
       mockGetIdeaCorrectionHistory.mockResolvedValueOnce([]);
 
       const res = await request(app)
-        .get('/api/personal/corrections/idea/550e8400-e29b-41d4-a716-446655440000');
+        .get('/api/operations/corrections/idea/550e8400-e29b-41d4-a716-446655440000');
 
       expect(res.status).toBe(200);
       expect(res.body.corrections).toHaveLength(0);
@@ -282,7 +282,7 @@ describe('Interactions Routes', () => {
       ]);
 
       const res = await request(app)
-        .post('/api/personal/corrections/suggest')
+        .post('/api/operations/corrections/suggest')
         .send({ content: 'AI and machine learning project', current_values: {} });
 
       expect(res.status).toBe(200);
@@ -291,7 +291,7 @@ describe('Interactions Routes', () => {
 
     it('should return 400 when content is missing', async () => {
       const res = await request(app)
-        .post('/api/personal/corrections/suggest')
+        .post('/api/operations/corrections/suggest')
         .send({});
 
       expect(res.status).toBe(400);

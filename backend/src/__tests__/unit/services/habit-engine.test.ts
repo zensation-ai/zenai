@@ -7,7 +7,7 @@ import { queryContext } from '../../../utils/database-context';
 jest.mock('../../../utils/database-context', () => ({
   queryContext: jest.fn(),
   isValidContext: jest.fn((ctx: string) =>
-    ['personal', 'work', 'learning', 'creative'].includes(ctx),
+    ['operations', 'finance', 'people', 'strategy'].includes(ctx),
   ),
 }));
 
@@ -62,11 +62,11 @@ describe('recordActivity', () => {
   it('should insert activity and return ID', async () => {
     mockQueryContext.mockResolvedValueOnce({ rows: [] } as any);
 
-    const result = await recordActivity('personal', 'user-1', 'page_visit', { page: '/dashboard' });
+    const result = await recordActivity('operations', 'user-1', 'page_visit', { page: '/dashboard' });
 
     expect(result.id).toBe('mock-uuid-habit');
     expect(mockQueryContext).toHaveBeenCalledWith(
-      'personal',
+      'operations',
       expect.stringContaining('INSERT INTO habit_activities'),
       expect.arrayContaining(['mock-uuid-habit', 'user-1', 'page_visit']),
     );
@@ -75,7 +75,7 @@ describe('recordActivity', () => {
   it('should extract page from metadata', async () => {
     mockQueryContext.mockResolvedValueOnce({ rows: [] } as any);
 
-    await recordActivity('personal', 'user-1', 'page_visit', { page: '/chat' });
+    await recordActivity('operations', 'user-1', 'page_visit', { page: '/chat' });
 
     const args = mockQueryContext.mock.calls[0][2] as unknown[];
     expect(args[3]).toBe('/chat'); // page parameter
@@ -84,7 +84,7 @@ describe('recordActivity', () => {
   it('should use empty string when page not in metadata', async () => {
     mockQueryContext.mockResolvedValueOnce({ rows: [] } as any);
 
-    await recordActivity('personal', 'user-1', 'task_complete', {});
+    await recordActivity('operations', 'user-1', 'task_complete', {});
 
     const args = mockQueryContext.mock.calls[0][2] as unknown[];
     expect(args[3]).toBe(''); // page defaults to ''
@@ -93,7 +93,7 @@ describe('recordActivity', () => {
   it('should use empty metadata when not provided', async () => {
     mockQueryContext.mockResolvedValueOnce({ rows: [] } as any);
 
-    await recordActivity('personal', 'user-1', 'break');
+    await recordActivity('operations', 'user-1', 'break');
 
     const args = mockQueryContext.mock.calls[0][2] as unknown[];
     expect(args[4]).toBe('{}'); // JSON.stringify({})
@@ -102,7 +102,7 @@ describe('recordActivity', () => {
   it('should serialize metadata as JSON', async () => {
     mockQueryContext.mockResolvedValueOnce({ rows: [] } as any);
 
-    await recordActivity('personal', 'user-1', 'page_visit', { page: '/chat', duration: 120 });
+    await recordActivity('operations', 'user-1', 'page_visit', { page: '/chat', duration: 120 });
 
     const args = mockQueryContext.mock.calls[0][2] as unknown[];
     const parsed = JSON.parse(args[4] as string);
@@ -111,7 +111,7 @@ describe('recordActivity', () => {
   });
 
   it('should work with all valid contexts', async () => {
-    for (const ctx of ['personal', 'work', 'learning', 'creative'] as const) {
+    for (const ctx of ['operations', 'finance', 'people', 'strategy'] as const) {
       mockQueryContext.mockReset();
       mockQueryContext.mockResolvedValueOnce({ rows: [] } as any);
 
@@ -124,7 +124,7 @@ describe('recordActivity', () => {
   it('should propagate database errors', async () => {
     mockQueryContext.mockRejectedValueOnce(new Error('Insert failed'));
 
-    await expect(recordActivity('personal', 'user-1', 'page_visit')).rejects.toThrow('Insert failed');
+    await expect(recordActivity('operations', 'user-1', 'page_visit')).rejects.toThrow('Insert failed');
   });
 });
 
@@ -150,7 +150,7 @@ describe('detectPatterns', () => {
     // Persist pattern (1 insert)
     mockQueryContext.mockResolvedValueOnce({ rows: [] } as any);
 
-    const patterns = await detectPatterns('personal', 'user-1');
+    const patterns = await detectPatterns('operations', 'user-1');
 
     expect(patterns).toHaveLength(1);
     expect(patterns[0].pattern_type).toBe('routine');
@@ -167,7 +167,7 @@ describe('detectPatterns', () => {
     mockQueryContext.mockResolvedValueOnce({ rows: [] } as any); // break
     mockQueryContext.mockResolvedValueOnce({ rows: [] } as any); // persist
 
-    const patterns = await detectPatterns('personal', 'user-1');
+    const patterns = await detectPatterns('operations', 'user-1');
 
     expect(patterns).toHaveLength(1);
     expect(patterns[0].pattern_type).toBe('productivity');
@@ -182,7 +182,7 @@ describe('detectPatterns', () => {
     } as any); // break
     mockQueryContext.mockResolvedValueOnce({ rows: [] } as any); // persist
 
-    const patterns = await detectPatterns('personal', 'user-1');
+    const patterns = await detectPatterns('operations', 'user-1');
 
     expect(patterns).toHaveLength(1);
     expect(patterns[0].pattern_type).toBe('break');
@@ -194,7 +194,7 @@ describe('detectPatterns', () => {
     mockQueryContext.mockResolvedValueOnce({ rows: [] } as any);
     mockQueryContext.mockResolvedValueOnce({ rows: [] } as any);
 
-    const patterns = await detectPatterns('personal', 'user-1');
+    const patterns = await detectPatterns('operations', 'user-1');
     expect(patterns).toEqual([]);
   });
 
@@ -213,7 +213,7 @@ describe('detectPatterns', () => {
     mockQueryContext.mockResolvedValueOnce({ rows: [] } as any);
     mockQueryContext.mockResolvedValueOnce({ rows: [] } as any);
 
-    const patterns = await detectPatterns('personal', 'user-1');
+    const patterns = await detectPatterns('operations', 'user-1');
 
     expect(patterns).toHaveLength(3);
     const types = patterns.map(p => p.pattern_type);
@@ -230,7 +230,7 @@ describe('detectPatterns', () => {
     mockQueryContext.mockResolvedValueOnce({ rows: [] } as any);
     mockQueryContext.mockResolvedValueOnce({ rows: [] } as any);
 
-    const patterns = await detectPatterns('personal', 'user-1');
+    const patterns = await detectPatterns('operations', 'user-1');
     expect(patterns[0].confidence).toBeLessThanOrEqual(1);
     expect(patterns[0].confidence).toBe(1);
   });
@@ -243,12 +243,12 @@ describe('detectPatterns', () => {
     mockQueryContext.mockResolvedValueOnce({ rows: [] } as any);
     mockQueryContext.mockResolvedValueOnce({ rows: [] } as any); // persist
 
-    await detectPatterns('personal', 'user-1');
+    await detectPatterns('operations', 'user-1');
 
     // 3 detection queries + 1 persist
     expect(mockQueryContext).toHaveBeenCalledTimes(4);
     expect(mockQueryContext).toHaveBeenLastCalledWith(
-      'personal',
+      'operations',
       expect.stringContaining('INSERT INTO habit_patterns'),
       expect.any(Array),
     );
@@ -257,7 +257,7 @@ describe('detectPatterns', () => {
   it('should handle database errors gracefully and return empty array', async () => {
     mockQueryContext.mockRejectedValueOnce(new Error('DB error'));
 
-    const patterns = await detectPatterns('personal', 'user-1');
+    const patterns = await detectPatterns('operations', 'user-1');
     expect(patterns).toEqual([]);
   });
 });
@@ -268,7 +268,7 @@ describe('detectPatterns', () => {
 
 describe('generateSuggestions', () => {
   it('should return default suggestion when no patterns', () => {
-    const suggestions = generateSuggestions('personal', 'user-1', []);
+    const suggestions = generateSuggestions('operations', 'user-1', []);
 
     expect(suggestions).toHaveLength(1);
     expect(suggestions[0].type).toBe('optimize');
@@ -277,7 +277,7 @@ describe('generateSuggestions', () => {
   });
 
   it('should create routine suggestion for high confidence pattern', () => {
-    const suggestions = generateSuggestions('personal', 'user-1', [
+    const suggestions = generateSuggestions('operations', 'user-1', [
       makePattern({ pattern_type: 'routine', confidence: 0.7 }),
     ]);
 
@@ -288,7 +288,7 @@ describe('generateSuggestions', () => {
   });
 
   it('should create medium priority routine for lower confidence', () => {
-    const suggestions = generateSuggestions('personal', 'user-1', [
+    const suggestions = generateSuggestions('operations', 'user-1', [
       makePattern({ pattern_type: 'routine', confidence: 0.5 }),
     ]);
 
@@ -297,7 +297,7 @@ describe('generateSuggestions', () => {
   });
 
   it('should skip routine suggestion when confidence below 0.4', () => {
-    const suggestions = generateSuggestions('personal', 'user-1', [
+    const suggestions = generateSuggestions('operations', 'user-1', [
       makePattern({ pattern_type: 'routine', confidence: 0.3 }),
     ]);
 
@@ -307,7 +307,7 @@ describe('generateSuggestions', () => {
   });
 
   it('should create focus suggestion from productivity pattern', () => {
-    const suggestions = generateSuggestions('personal', 'user-1', [
+    const suggestions = generateSuggestions('operations', 'user-1', [
       makePattern({ pattern_type: 'productivity' }),
     ]);
 
@@ -318,7 +318,7 @@ describe('generateSuggestions', () => {
   });
 
   it('should create break suggestion from break pattern', () => {
-    const suggestions = generateSuggestions('personal', 'user-1', [
+    const suggestions = generateSuggestions('operations', 'user-1', [
       makePattern({ pattern_type: 'break' }),
     ]);
 
@@ -329,7 +329,7 @@ describe('generateSuggestions', () => {
   });
 
   it('should generate multiple suggestions from multiple patterns', () => {
-    const suggestions = generateSuggestions('personal', 'user-1', [
+    const suggestions = generateSuggestions('operations', 'user-1', [
       makePattern({ pattern_type: 'routine', confidence: 0.8 }),
       makePattern({ pattern_type: 'productivity', id: 'p-2' }),
       makePattern({ pattern_type: 'break', id: 'p-3' }),
@@ -344,7 +344,7 @@ describe('generateSuggestions', () => {
 
   it('should include pattern description in suggestion description', () => {
     const desc = 'You frequently visit "/chat" around 9:00';
-    const suggestions = generateSuggestions('personal', 'user-1', [
+    const suggestions = generateSuggestions('operations', 'user-1', [
       makePattern({ pattern_type: 'routine', description: desc, confidence: 0.5 }),
     ]);
 
@@ -352,7 +352,7 @@ describe('generateSuggestions', () => {
   });
 
   it('should not include default suggestion when patterns generate suggestions', () => {
-    const suggestions = generateSuggestions('personal', 'user-1', [
+    const suggestions = generateSuggestions('operations', 'user-1', [
       makePattern({ pattern_type: 'productivity' }),
     ]);
 
@@ -378,7 +378,7 @@ describe('getHabitStats', () => {
       .mockResolvedValueOnce({ rows: [{ streak: 5 }] } as any)                    // streak
       .mockResolvedValueOnce({ rows: [{ page: '/chat', cnt: 15 }] } as any);      // pages
 
-    const stats = await getHabitStats('personal', 'user-1');
+    const stats = await getHabitStats('operations', 'user-1');
 
     expect(stats.activitiesThisWeek).toBe(42);
     expect(stats.taskCompletionRate).toBe(0.5);
@@ -395,7 +395,7 @@ describe('getHabitStats', () => {
       .mockResolvedValueOnce({ rows: [{ streak: 0 }] } as any)
       .mockResolvedValueOnce({ rows: [] } as any);
 
-    const stats = await getHabitStats('personal', 'user-1');
+    const stats = await getHabitStats('operations', 'user-1');
 
     expect(stats.taskCompletionRate).toBe(0);
     expect(stats.deepWorkMinutes).toBe(0);
@@ -411,7 +411,7 @@ describe('getHabitStats', () => {
       .mockResolvedValueOnce({ rows: [{}] } as any)
       .mockResolvedValueOnce({ rows: [] } as any);
 
-    const stats = await getHabitStats('personal', 'user-1');
+    const stats = await getHabitStats('operations', 'user-1');
 
     expect(stats.activitiesThisWeek).toBe(0);
     expect(stats.taskCompletionRate).toBe(0);
@@ -422,7 +422,7 @@ describe('getHabitStats', () => {
   it('should return default stats on database error', async () => {
     mockQueryContext.mockRejectedValue(new Error('DB connection failed'));
 
-    const stats = await getHabitStats('personal', 'user-1');
+    const stats = await getHabitStats('operations', 'user-1');
 
     expect(stats).toEqual({
       deepWorkMinutes: 0,
@@ -447,7 +447,7 @@ describe('getHabitStats', () => {
         ],
       } as any);
 
-    const stats = await getHabitStats('personal', 'user-1');
+    const stats = await getHabitStats('operations', 'user-1');
 
     expect(stats.topPages).toHaveLength(3);
     expect(stats.topPages[0].page).toBe('/chat');
@@ -462,12 +462,12 @@ describe('getHabitStats', () => {
       .mockResolvedValueOnce({ rows: [{ streak: 0 }] } as any)
       .mockResolvedValueOnce({ rows: [] } as any);
 
-    await getHabitStats('work', 'user-1');
+    await getHabitStats('finance', 'user-1');
 
     expect(mockQueryContext).toHaveBeenCalledTimes(5);
     // All queries should use same context
     for (let i = 0; i < 5; i++) {
-      expect(mockQueryContext.mock.calls[i][0]).toBe('work');
+      expect(mockQueryContext.mock.calls[i][0]).toBe('finance');
     }
   });
 
@@ -479,7 +479,7 @@ describe('getHabitStats', () => {
       .mockResolvedValueOnce({ rows: [{ streak: 0 }] } as any)
       .mockResolvedValueOnce({ rows: [] } as any);
 
-    const stats = await getHabitStats('personal', 'user-1');
+    const stats = await getHabitStats('operations', 'user-1');
     expect(stats.taskCompletionRate).toBeCloseTo(0.7, 5);
   });
 });
@@ -506,7 +506,7 @@ describe('getStoredPatterns', () => {
       }],
     } as any);
 
-    const patterns = await getStoredPatterns('personal', 'user-1');
+    const patterns = await getStoredPatterns('operations', 'user-1');
 
     expect(patterns).toHaveLength(1);
     expect(patterns[0].id).toBe('p-1');
@@ -518,7 +518,7 @@ describe('getStoredPatterns', () => {
   it('should return empty array when no patterns stored', async () => {
     mockQueryContext.mockResolvedValueOnce({ rows: [] } as any);
 
-    const patterns = await getStoredPatterns('personal', 'user-1');
+    const patterns = await getStoredPatterns('operations', 'user-1');
     expect(patterns).toEqual([]);
   });
 
@@ -534,17 +534,17 @@ describe('getStoredPatterns', () => {
       }],
     } as any);
 
-    const patterns = await getStoredPatterns('personal', 'user-1');
+    const patterns = await getStoredPatterns('operations', 'user-1');
     expect(patterns[0].data).toEqual({});
   });
 
   it('should query with correct SQL for active patterns', async () => {
     mockQueryContext.mockResolvedValueOnce({ rows: [] } as any);
 
-    await getStoredPatterns('learning', 'user-42');
+    await getStoredPatterns('people', 'user-42');
 
     expect(mockQueryContext).toHaveBeenCalledWith(
-      'learning',
+      'people',
       expect.stringContaining("status = 'active'"),
       ['user-42'],
     );
@@ -559,7 +559,7 @@ describe('getStoredPatterns', () => {
       ],
     } as any);
 
-    const patterns = await getStoredPatterns('personal', 'user-1');
+    const patterns = await getStoredPatterns('operations', 'user-1');
 
     expect(patterns).toHaveLength(3);
     expect(patterns[0].pattern_type).toBe('routine');
@@ -570,11 +570,11 @@ describe('getStoredPatterns', () => {
   it('should propagate database errors', async () => {
     mockQueryContext.mockRejectedValueOnce(new Error('Connection refused'));
 
-    await expect(getStoredPatterns('personal', 'user-1')).rejects.toThrow('Connection refused');
+    await expect(getStoredPatterns('operations', 'user-1')).rejects.toThrow('Connection refused');
   });
 
   it('should work with all valid contexts', async () => {
-    for (const ctx of ['personal', 'work', 'learning', 'creative'] as const) {
+    for (const ctx of ['operations', 'finance', 'people', 'strategy'] as const) {
       mockQueryContext.mockReset();
       mockQueryContext.mockResolvedValueOnce({ rows: [] } as any);
 

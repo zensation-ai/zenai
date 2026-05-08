@@ -9,7 +9,7 @@ import { AIContext } from '../../utils/database-context';
 import { estimateTravelDuration, type TravelEstimate } from '../travel-estimator';
 import { logger } from '../../utils/logger';
 import type { DetectedIntent } from '../intent-detector';
-import type { IntentHandlerResult } from './index';
+import type { IntentHandlerResult } from './intent-types';
 
 /**
  * Handle a travel_query intent

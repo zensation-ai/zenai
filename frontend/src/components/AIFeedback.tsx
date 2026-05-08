@@ -1,8 +1,6 @@
 import { useState } from 'react';
 import axios from 'axios';
 import { showToast } from './Toast';
-import './AIFeedback.css';
-
 interface AIFeedbackProps {
   responseType: string;
   originalResponse: string;
@@ -102,7 +100,7 @@ export function AIFeedback({
           className={`feedback-btn thumbs-down ${feedback === 'negative' ? 'active' : ''}`}
           onClick={handleThumbsDown}
           disabled={submitting}
-          title="Verbesserung noetig"
+          title="Verbesserung nötig"
           aria-label="Negative Bewertung"
         >
           {feedback === 'negative' ? '👎' : '👎🏻'}

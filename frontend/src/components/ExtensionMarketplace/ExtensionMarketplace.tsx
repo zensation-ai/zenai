@@ -9,8 +9,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { ExtensionCard, type ExtensionData } from './ExtensionCard';
-import './ExtensionMarketplace.css';
-
 // ===========================================
 // Types
 // ===========================================
@@ -39,7 +37,7 @@ function normalizeExtension(raw: Record<string, unknown>): ExtensionData {
         name: ext.name || '',
         description: '',
         version: ext.version || '1.0.0',
-        author: ext.author || 'Unknown',
+        author: ext.author || 'Unbekannt',
         type: ext.type || 'tool',
         category: ext.category || 'productivity',
         icon: '',
@@ -65,7 +63,7 @@ function normalizeExtension(raw: Record<string, unknown>): ExtensionData {
     version: ext.version || manifest.version || '1.0.0',
     type: (ext.type || manifest.type || 'tool') as ExtensionData['type'],
     manifest: manifest as ExtensionData['manifest'],
-    author: ext.author || manifest.author || 'Unknown',
+    author: ext.author || manifest.author || 'Unbekannt',
     category: ext.category || manifest.category || 'productivity',
     permissions: permissions as string[],
     installed: !!ext.installed,

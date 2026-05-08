@@ -29,7 +29,7 @@ function ActionConfig({
             <input
               id={`afm-action-${index}-title`}
               type="text"
-              className="liquid-glass-input"
+              className="bg-[var(--color-glass-bg)] backdrop-blur-md border border-[var(--color-glass-border)] rounded-lg px-4 py-2.5 text-sm text-[var(--color-text)] placeholder:text-[var(--color-text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/50 transition-shadow"
               value={(action.config.title as string) || ''}
               onChange={e => updateActionConfig(index, 'title', e.target.value)}
               placeholder="Benachrichtigungstitel"
@@ -40,7 +40,7 @@ function ActionConfig({
             <input
               id={`afm-action-${index}-message`}
               type="text"
-              className={`liquid-glass-input ${errors[`action_${index}_config`] ? 'has-error' : ''}`}
+              className={`bg-[var(--color-glass-bg)] backdrop-blur-md border border-[var(--color-glass-border)] rounded-lg px-4 py-2.5 text-sm text-[var(--color-text)] placeholder:text-[var(--color-text-muted)] focus:outline-none focus:ring-2 transition-shadow ${errors[`action_${index}_config`] ? 'ring-[var(--color-danger)]/50' : 'focus:ring-[var(--color-primary)]/50'}`}
               value={(action.config.message as string) || ''}
               onChange={e => updateActionConfig(index, 'message', e.target.value)}
               placeholder="z.B. Neue Idee: {{title}}"
@@ -57,7 +57,7 @@ function ActionConfig({
           <input
             id={`afm-action-${index}-tags`}
             type="text"
-            className={`liquid-glass-input ${errors[`action_${index}_config`] ? 'has-error' : ''}`}
+            className={`bg-[var(--color-glass-bg)] backdrop-blur-md border border-[var(--color-glass-border)] rounded-lg px-4 py-2.5 text-sm text-[var(--color-text)] placeholder:text-[var(--color-text-muted)] focus:outline-none focus:ring-2 transition-shadow ${errors[`action_${index}_config`] ? 'ring-[var(--color-danger)]/50' : 'focus:ring-[var(--color-primary)]/50'}`}
             value={((action.config.tags as string[]) || []).join(', ')}
             onChange={e => updateActionConfig(index, 'tags', e.target.value.split(',').map(t => t.trim()).filter(Boolean))}
             placeholder="z.B. dringend, review"
@@ -72,7 +72,7 @@ function ActionConfig({
           <label htmlFor={`afm-action-${index}-priority`}>Priorität *</label>
           <select
             id={`afm-action-${index}-priority`}
-            className="liquid-glass-input"
+            className="bg-[var(--color-glass-bg)] backdrop-blur-md border border-[var(--color-glass-border)] rounded-lg px-4 py-2.5 text-sm text-[var(--color-text)] placeholder:text-[var(--color-text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/50 transition-shadow"
             value={(action.config.priority as string) || ''}
             onChange={e => updateActionConfig(index, 'priority', e.target.value)}
           >
@@ -92,7 +92,7 @@ function ActionConfig({
             <input
               id={`afm-action-${index}-task-title`}
               type="text"
-              className={`liquid-glass-input ${errors[`action_${index}_config`] ? 'has-error' : ''}`}
+              className={`bg-[var(--color-glass-bg)] backdrop-blur-md border border-[var(--color-glass-border)] rounded-lg px-4 py-2.5 text-sm text-[var(--color-text)] placeholder:text-[var(--color-text-muted)] focus:outline-none focus:ring-2 transition-shadow ${errors[`action_${index}_config`] ? 'ring-[var(--color-danger)]/50' : 'focus:ring-[var(--color-primary)]/50'}`}
               value={(action.config.title as string) || ''}
               onChange={e => updateActionConfig(index, 'title', e.target.value)}
               placeholder="z.B. Wochenplanung"
@@ -102,7 +102,7 @@ function ActionConfig({
             <label htmlFor={`afm-action-${index}-task-desc`}>Beschreibung</label>
             <textarea
               id={`afm-action-${index}-task-desc`}
-              className="liquid-glass-input"
+              className="bg-[var(--color-glass-bg)] backdrop-blur-md border border-[var(--color-glass-border)] rounded-lg px-4 py-2.5 text-sm text-[var(--color-text)] placeholder:text-[var(--color-text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/50 transition-shadow"
               value={(action.config.description as string) || ''}
               onChange={e => updateActionConfig(index, 'description', e.target.value)}
               placeholder="Optionale Beschreibung"
@@ -119,7 +119,7 @@ function ActionConfig({
           <input
             id={`afm-action-${index}-url`}
             type="url"
-            className={`liquid-glass-input ${errors[`action_${index}_config`] ? 'has-error' : ''}`}
+            className={`bg-[var(--color-glass-bg)] backdrop-blur-md border border-[var(--color-glass-border)] rounded-lg px-4 py-2.5 text-sm text-[var(--color-text)] placeholder:text-[var(--color-text-muted)] focus:outline-none focus:ring-2 transition-shadow ${errors[`action_${index}_config`] ? 'ring-[var(--color-danger)]/50' : 'focus:ring-[var(--color-primary)]/50'}`}
             value={(action.config.url as string) || ''}
             onChange={e => updateActionConfig(index, 'url', e.target.value)}
             placeholder="https://..."
@@ -135,7 +135,7 @@ function ActionConfig({
             <input
               id={`afm-action-${index}-channel`}
               type="text"
-              className="liquid-glass-input"
+              className="bg-[var(--color-glass-bg)] backdrop-blur-md border border-[var(--color-glass-border)] rounded-lg px-4 py-2.5 text-sm text-[var(--color-text)] placeholder:text-[var(--color-text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/50 transition-shadow"
               value={(action.config.channel as string) || ''}
               onChange={e => updateActionConfig(index, 'channel', e.target.value)}
               placeholder="z.B. #general"
@@ -146,7 +146,7 @@ function ActionConfig({
             <input
               id={`afm-action-${index}-slack-msg`}
               type="text"
-              className={`liquid-glass-input ${errors[`action_${index}_config`] ? 'has-error' : ''}`}
+              className={`bg-[var(--color-glass-bg)] backdrop-blur-md border border-[var(--color-glass-border)] rounded-lg px-4 py-2.5 text-sm text-[var(--color-text)] placeholder:text-[var(--color-text-muted)] focus:outline-none focus:ring-2 transition-shadow ${errors[`action_${index}_config`] ? 'ring-[var(--color-danger)]/50' : 'focus:ring-[var(--color-primary)]/50'}`}
               value={(action.config.message as string) || ''}
               onChange={e => updateActionConfig(index, 'message', e.target.value)}
               placeholder="z.B. Neue Idee: {{title}}"
@@ -193,7 +193,7 @@ export function ActionsStep({
             {errors[`action_${index}_type`] && <span className="afm-error">{errors[`action_${index}_type`]}</span>}
             <select
               id={`afm-action-${index}-type`}
-              className={`liquid-glass-input ${errors[`action_${index}_type`] ? 'has-error' : ''}`}
+              className={`bg-[var(--color-glass-bg)] backdrop-blur-md border border-[var(--color-glass-border)] rounded-lg px-4 py-2.5 text-sm text-[var(--color-text)] placeholder:text-[var(--color-text-muted)] focus:outline-none focus:ring-2 transition-shadow ${errors[`action_${index}_type`] ? 'ring-[var(--color-danger)]/50' : 'focus:ring-[var(--color-primary)]/50'}`}
               value={action.type}
               onChange={e => updateAction(index, { type: e.target.value as ActionType, config: {} })}
             >

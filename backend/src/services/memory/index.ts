@@ -98,3 +98,16 @@ export {
   MemoryAuditEntry,
   MemoryLayer,
 } from './memory-governance';
+
+// Phase 145: Predictive Memory Architecture (PMA)
+export { NeuromodulatorEngine } from './neuromodulator-engine';
+export type { NeuromodulatorState, ModulationParams, NeuroEvent, EventType } from './neuromodulator-engine';
+export { ReconsolidationEngine, reconsolidationEngine } from './reconsolidation-engine';
+export type { ReconsolidationResult, LabilityWindow, UpdateMode } from './reconsolidation-engine';
+export { TripleCopyMemory } from './triple-copy-memory';
+export type { MemoryCopy, StoreResult } from './triple-copy-memory';
+export { priorityMap, PriorityMap, bridgeEmotionalTagger } from './priority-map';
+export type { PriorityInput, PriorityScore, NeuroState } from './priority-map';
+export { StabilityProtector } from './stability-protector';
+export { metacognitiveMonitor, MetacognitiveMonitor } from './metacognitive-monitor';
+export type { BiasMetrics, EfficiencyTrend } from './metacognitive-monitor';

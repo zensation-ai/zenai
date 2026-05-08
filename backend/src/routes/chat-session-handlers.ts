@@ -45,17 +45,17 @@ export async function handleCreateSession(req: Request, res: Response): Promise<
 
 export async function handleListSessions(req: Request, res: Response): Promise<void> {
   const userId = getUserId(req);
-  const context = (req.query.context as string) || 'personal';
+  const context = (req.query.context as string) || 'operations';
   const limit = toIntBounded(req.query.limit as string, 20, 1, 100);
 
   // Validate context
   if (!isValidContext(context)) {
-    throw new ValidationError('Invalid context. Use "personal", "work", "learning", or "creative".');
+    throw new ValidationError('Invalid context. Use "operations", "finance", "people", or "strategy".');
   }
 
   const typeFilter = req.query.type as string | undefined;
   const sessionType = typeFilter === 'assistant' ? 'assistant' as const : undefined;
-  const sessions = await getSessions(context as 'personal' | 'work' | 'learning' | 'creative' | 'demo', limit, sessionType, userId);
+  const sessions = await getSessions(context as 'operations' | 'finance' | 'people' | 'strategy' | 'demo', limit, sessionType, userId);
 
   res.json({
     success: true,
