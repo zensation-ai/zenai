@@ -1,7 +1,7 @@
 {
   "name": "@zensation/cli",
-  "version": "0.1.1",
-  "description": "ZenAI CLI Agent — Terminal interface with Memory, Knowledge Graph and Agent System",
+  "version": "0.1.2",
+  "description": "ZenAI CLI Agent \u2014 Terminal interface with Memory, Knowledge Graph and Agent System",
   "main": "dist/index.js",
   "bin": {
     "zenai": "dist/index.js"

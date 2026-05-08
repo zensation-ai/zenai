@@ -14,6 +14,7 @@
  */
 
 import * as readline from 'readline';
+import { version as PKG_VERSION } from '../package.json';
 import { agentLoop } from './agent-loop';
 import { getFilesystemTools, executeFilesystemTool } from './filesystem-tools';
 import { BackendBridge, getBackendTools, executeBackendTool } from './backend-bridge';
@@ -74,7 +75,7 @@ async function main(): Promise<void> {
 
   // Version flag
   if (args.includes('--version') || args.includes('-v')) {
-    console.log('zenai v0.1.0');
+    console.log(`zenai v${PKG_VERSION}`);
     return;
   }
 

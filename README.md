@@ -98,10 +98,10 @@ Full API documentation: `/api-docs` (Swagger UI when running)
 ## Testing
 
 ```bash
-# Backend (10,141 tests)
+# Backend (~11,500+ tests)
 cd backend && npm test
 
-# Frontend (1,340 tests)
+# Frontend (~1,500+ tests)
 cd frontend && npx vitest run
 
 # CLI (108 tests)
