@@ -1,14 +1,14 @@
 /**
  * ZenAI Algorithms — Unified barrel export
  *
- * This directory contains NeurIPS-track research algorithms that are
+ * This directory contains research-track research algorithms that are
  * project-specific and NOT yet published in @zensation/algorithms.
  *
  * The @zensation/algorithms package (v0.2.x) provides the foundational
  * memory algorithms (FSRS, Ebbinghaus, Hebbian basics, Bayesian, Emotional,
  * Similarity, Intervals, Visualization, Sleep Consolidation, Context Retrieval).
  *
- * The 5 NeurIPS algorithms below extend those foundations with novel
+ * The 5 research algorithms below extend those foundations with novel
  * research contributions. They will be migrated to @zensation/algorithms
  * in a future major release once stabilized.
  *
@@ -16,7 +16,7 @@
  * permanently as they are experiment infrastructure, not library code.
  */
 
-// --- NeurIPS Research Algorithms (project-specific, not yet in @zensation/algorithms) ---
+// --- research Research Algorithms (project-specific, not yet in @zensation/algorithms) ---
 export * from './fsrs-vmPFC';
 export * from './hebbian-two-factor';
 export * from './spectral-health';
@@ -33,7 +33,7 @@ export * from './ablation';
 export * from './benchmark-adapter';
 
 // --- Foundational Algorithms (re-exported from @zensation/algorithms) ---
-// These provide the base layer that the NeurIPS algorithms build upon.
+// These provide the base layer that the research algorithms build upon.
 // Consumers can import from either '@zensation/algorithms' directly
 // or from this barrel file for convenience.
 export {

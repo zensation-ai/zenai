@@ -71,7 +71,7 @@ export interface ScheduleWithVFEOptions {
  * High |delta| (lots of surprise) → faster review. Identity behaviour
  * (vfeDelta = 0 OR feature off) returns the input interval unchanged.
  *
- * This is the load-bearing coupling for the **A2 NeurIPS novelty
+ * This is the load-bearing coupling for the **A2 research novelty
  * hypothesis** — Titans surprise × FSRS-vmPFC PE-coupling. Production
  * caller composes this AFTER `scheduleWithVmPFC`:
  *

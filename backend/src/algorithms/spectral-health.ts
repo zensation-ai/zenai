@@ -1,7 +1,7 @@
 /**
  * Spectral KG Health Monitor
  *
- * NeurIPS Algorithm E — NOT yet published in @zensation/algorithms.
+ * — NOT yet published in @zensation/algorithms.
  * Provides post-sleep consolidation quality assessment using spectral
  * graph theory (Fiedler value of the Graph Laplacian).
  *

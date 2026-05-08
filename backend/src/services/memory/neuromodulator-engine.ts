@@ -13,7 +13,7 @@
  *   - Phasic bursts on events, exponential decay (5-min half-life)
  *   - Tonic baseline with slow homeostatic drift toward 0.5
  *   - DA <-> 5HT opposition coupling (-0.3 coefficient, Stanford 2024)
- *   - Ablation flag for NeurIPS experiment control
+ *   - Ablation flag for research experiment control
  *
  * Part of the Predictive Memory Architecture (PMA).
  */

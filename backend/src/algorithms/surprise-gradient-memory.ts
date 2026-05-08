@@ -24,7 +24,7 @@
  *   - **Encoding-time FSRS-interval shrink**: a memory whose vfe_delta
  *     is high (lots of accumulated surprise) should be reviewed sooner.
  *     interval = base × (1 - β · |δ|).  This is the load-bearing
- *     coupling for the A2 NeurIPS novelty hypothesis (Titans
+ *     coupling for the A2 research novelty hypothesis (Titans
  *     surprise × FSRS-vmPFC PE-coupling).
  *
  * Why pure-algorithm here

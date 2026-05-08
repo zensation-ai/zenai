@@ -1,5 +1,5 @@
 /**
- * Ablation Toggle Registry — feature flags for NeurIPS ablation studies.
+ * Ablation Toggle Registry — feature flags for research ablation studies.
  * Register features, toggle on/off, generate one-at-a-time ablation configs.
  *
  * Project-specific experiment infrastructure — will NOT be published in
