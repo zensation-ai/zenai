@@ -21,10 +21,8 @@ Snapshot mirror catch-up after a one-month gap (last sync was 2026-04-07).
 - Test totals: 11,589 → 12,000+ across backend + frontend.
 - Codebase: 322K+ LOC → 440K+ LOC TypeScript.
 
-**Removed (anonymity-preserving / hygiene):**
-- `docs/papers/` — paper sources, build scripts, results, LaTeX bundles. These belong to the private working tree, not the public mirror.
-- `docs/superpowers/`, `docs/brand/`, `website/` — pre-existing internal-only paths that had slipped into the public mirror.
-- `docs/NEURIPS-9-ALGORITHMS.md`, internal sprint specs, infrastructure-audit reports, security-audit reports, marketing logs, funding-application docs (`docs/foerderung/`).
+**Removed (hygiene — internal-only paths excluded from the public mirror):**
+- Internal documentation, research notes, build artifacts, audit reports, and operational docs that had slipped into the public mirror. These live only in the private working tree.
 - `ZENBRAIN_FEATURES` enumeration in `backend/src/algorithms/ablation.ts` — only kept the `PMA_FEATURES` table that is actually imported by production code.
 
 ---
