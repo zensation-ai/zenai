@@ -63,7 +63,7 @@
   },
   "devDependencies": {
     "madge": "^8.0.0",
-    "turbo": "^2.5.0"
+    "turbo": "^2.10.8"
   },
   "dependencies": {
     "docx": "^9.6.1",
