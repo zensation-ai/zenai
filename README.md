@@ -13,6 +13,24 @@
 
 ---
 
+> ### 📌 This repository is a snapshot, not the living tree
+>
+> The code here was published on **8 May 2026** and has not been synced since. It is a
+> faithful copy of what ZenAI was on that date — readable, citable and runnable — but it
+> is **not** the current state of development, and it does not receive fixes.
+>
+> The CI pipeline is set to manual dispatch for the same reason: it tests files that the
+> development tree has since removed, so an automatic run reported a failure that nobody
+> here could act on. That says nothing about the snapshot itself.
+>
+> **What is current:** the memory library [ZenBrain](https://github.com/zensation-ai/zenbrain)
+> is actively developed and released to npm, and the research record behind both is kept
+> up to date at [zensation.ai/en/publikationen](https://zensation.ai/en/publikationen).
+>
+> Questions about the state of ZenAI: **open-source@zensation.ai**
+
+---
+
 ## What is ZenAI?
 
 ZenAI is a self-hosted AI platform with neuroscience-inspired memory. Unlike ChatGPT or Claude, ZenAI remembers your conversations, learns from your preferences, and improves over time — using the same mechanisms your brain uses.
