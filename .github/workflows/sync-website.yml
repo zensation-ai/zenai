@@ -18,12 +18,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout KI-AB
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           fetch-depth: 1
 
       - name: Checkout ZenSation-Web
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           repository: Alexander-Bering/ZenSation-Web
           token: ${{ secrets.WEBSITE_SYNC_TOKEN }}
