@@ -22,12 +22,22 @@ updates:
       - dependency-name: "*"
         update-types: ["version-update:semver-major"]
 
+  # The major-ignore below is repeated per ecosystem on purpose: Dependabot scopes
+  # `ignore` to the block it appears in. Leaving it out here opened six major PRs
+  # (checkout 4->7, setup-node 4->7, cache 4->6, upload-artifact 4->7,
+  # pnpm/action-setup 4->6, node 20->25-alpine) within a minute of this file landing.
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
       interval: "weekly"
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
 
   - package-ecosystem: "docker"
     directory: "/"
     schedule:
       interval: "weekly"
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
