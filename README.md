@@ -15,7 +15,8 @@
 
 > ### 📌 This repository is a snapshot, not the living tree
 >
-> The code here was published on **8 May 2026** and has not been synced since. It is a
+> The application code here was synced from the development tree on **8 May 2026**; only
+> documentation and CLI packaging changed after that, up to **25 May 2026**. It is a
 > faithful copy of what ZenAI was on that date — readable, citable and runnable — but it
 > is **not** the current state of development, and it does not receive fixes.
 >
