@@ -1,0 +1,33 @@
+version: 2
+updates:
+  # npm — grouped deliberately. This is a pnpm workspace with backend, frontend,
+  # cli and packages; ungrouped weekly updates would open a dozen PRs at a time.
+  # Two grouped PRs per week keep the signal readable.
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+    groups:
+      production-dependencies:
+        dependency-type: "production"
+        update-types: ["minor", "patch"]
+      development-dependencies:
+        dependency-type: "development"
+        update-types: ["minor", "patch"]
+    ignore:
+      # Majors are never merged blind here — they are adopted deliberately after
+      # reading the advisory or changelog. Security updates are unaffected: they
+      # are delivered by Dependabot security updates, not by this file.
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+
+  - package-ecosystem: "docker"
+    directory: "/"
+    schedule:
+      interval: "weekly"
