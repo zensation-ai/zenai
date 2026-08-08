@@ -64,7 +64,7 @@ Cache:    Redis (optional)
 
 ### Prerequisites
 
-- Node.js 18+
+- Node.js 20 (this snapshot declares `"node": "20.x"`)
 - PostgreSQL 15+ with pgvector extension
 - Anthropic API key
 
@@ -91,11 +91,23 @@ npm run dev
 
 Open http://localhost:5173 in your browser.
 
-### Docker Compose (Coming Soon)
+### Docker Compose
+
+Two compose files ship with this snapshot.
 
 ```bash
+# Self-hosting: Postgres (pgvector) + Redis + backend on :3000
+cp .env.docker .env
 docker compose up -d
 ```
+
+```bash
+# Infrastructure only — Postgres + Redis, run backend and frontend locally
+docker compose -f docker-compose.dev.yml up -d
+```
+
+The frontend is not part of the compose stack; run it as shown under
+[Setup](#setup).
 
 ## API
 
@@ -120,7 +132,7 @@ Full API documentation: `/api-docs` (Swagger UI when running)
 # Backend (~11,500+ tests)
 cd backend && npm test
 
-# Frontend (~1,500+ tests)
+# Frontend (~1,400+ tests)
 cd frontend && npx vitest run
 
 # CLI (108 tests)
