@@ -1,0 +1,72 @@
+name: Publish @zensation/cli
+
+# Narrow on purpose.
+#
+# This repository is a frozen snapshot and its main pipeline is manual-only, because it
+# tests files the development tree deleted (see ci.yml). The `cli/` subtree is the one
+# part that is still published to npm, and it is self-contained: its own tsconfig, its
+# own tests, its own lockfile. This workflow therefore builds and publishes ONLY that
+# subtree, and only on a `cli-v*` tag — it never runs the snapshot's broken pipeline.
+#
+# Authentication is OIDC trusted publishing configured per package on npmjs.com. There
+# is no NPM_TOKEN. Provenance attestations are generated automatically, which is the
+# whole point: before this workflow, @zensation/cli was the only package in the
+# @zensation scope without a provenance attestation.
+
+on:
+  push:
+    tags: ['cli-v*']
+  workflow_dispatch:
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    defaults:
+      run:
+        working-directory: cli
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          registry-url: 'https://registry.npmjs.org'
+
+      # Trusted publishing (OIDC) requires npm >= 11.5.1; Node 22 bundles npm 10.x.
+      - name: Upgrade npm (trusted publishing needs >= 11.5.1)
+        run: npm install -g npm@^11.5.1
+
+      - run: npm ci
+
+      - name: Type-check
+        run: npx tsc --noEmit
+
+      - name: Test
+        run: npx jest --config jest.config.js
+
+      - name: Build
+        run: npx tsc
+
+      # Idempotent: re-tagging a version that is already on the registry must not fail.
+      - name: Publish (skip if already published)
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          if npm view "@zensation/cli@$VERSION" version >/dev/null 2>&1; then
+            echo "@zensation/cli@$VERSION already on npm — skipping"
+          else
+            npm publish --access public
+          fi
+
+      - name: Confirm provenance landed
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          sleep 15
+          if npm view "@zensation/cli@$VERSION" dist.attestations --json | grep -q provenance; then
+            echo "Provenance attestation present for @zensation/cli@$VERSION"
+          else
+            echo "::error::No provenance attestation for @zensation/cli@$VERSION."
+            echo "::error::Trusted publishing is configured PER PACKAGE on npmjs.com — check that @zensation/cli itself has a trusted publisher, not just the other packages."
+            exit 1
+          fi

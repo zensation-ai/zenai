@@ -65,9 +65,19 @@ All configuration is via environment variables:
 
 Set `ZENAI_BACKEND_URL` (and `ZENAI_BACKEND_API_KEY`) to connect to a running ZenAI backend. The agent then gains tools backed by ZenAI's 7-layer memory and knowledge graph, so context persists across sessions. If no backend is reachable, `zenai` reports *local-only mode* and runs with the filesystem tools alone.
 
+## Requirements
+
+Node.js 22 or newer. Earlier versions cannot load this package: two of its dependencies ship
+as ES modules, and `require()` of an ES module only exists from Node 20.19 / 22.12 onwards.
+Versions up to 0.1.3 declared `>=18`, which was not achievable — 0.2.0 corrects the floor.
+
 ## Part of ZenAI
 
 This CLI lives in the [ZenAI](https://github.com/zensation-ai/zenai) monorepo and builds on the same neuroscience-inspired memory system published as [`@zensation/core`](https://www.npmjs.com/package/@zensation/core) and [`@zensation/algorithms`](https://www.npmjs.com/package/@zensation/algorithms).
+
+- Memory library and issues: [github.com/zensation-ai/zenbrain](https://github.com/zensation-ai/zenbrain)
+- Paper: [arXiv:2604.23878](https://arxiv.org/abs/2604.23878)
+- Lab: [zensation.ai](https://zensation.ai) · open-source@zensation.ai
 
 ## License
 
