@@ -5,7 +5,6 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/zensation-ai/zenai/stargazers"><img src="https://img.shields.io/github/stars/zensation-ai/zenai?style=social" alt="GitHub stars"></a>
   <a href="https://github.com/zensation-ai/zenbrain"><img src="https://img.shields.io/badge/memory-ZenBrain-blue" alt="Built on ZenBrain"></a>
   <a href="https://github.com/zensation-ai/zenai/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-Apache%202.0-blue.svg" alt="License"></a>
   <a href="https://www.typescriptlang.org/"><img src="https://img.shields.io/badge/TypeScript-5.7+-blue.svg" alt="TypeScript"></a>
@@ -151,7 +150,30 @@ ZenAI's memory is powered by [ZenBrain](https://github.com/zensation-ai/zenbrain
 | Semantic | FSRS + Ebbinghaus | Facts with spaced repetition |
 | Procedural | Cognitive psychology | "How to do X" skills |
 | Core | Letta/MemGPT | Pinned, user-editable facts |
-| Cross-Context | Novel | Shared knowledge across domains |
+| Cross-Context | ZenBrain architecture | Shared knowledge across domains |
+
+## Paper & Citation
+
+The memory architecture underneath ZenAI is documented and peer-reviewable:
+
+- **arXiv preprint** (cs.AI): [arxiv.org/abs/2604.23878](https://arxiv.org/abs/2604.23878)
+- **Open-access archive** (Zenodo / CERN): [doi.org/10.5281/zenodo.19353663](https://doi.org/10.5281/zenodo.19353663)
+- **Reproducibility artifacts** (Zenodo): [doi.org/10.5281/zenodo.19481262](https://doi.org/10.5281/zenodo.19481262)
+- **ORCID**: [0009-0001-1793-012X](https://orcid.org/0009-0001-1793-012X)
+
+```bibtex
+@article{bering2026zenbrain,
+  title         = {ZenBrain: A Neuroscience-Inspired 7-Layer Memory Architecture for Autonomous AI Systems},
+  author        = {Bering, Alexander},
+  year          = {2026},
+  eprint        = {2604.23878},
+  archivePrefix = {arXiv},
+  primaryClass  = {cs.AI},
+  url           = {https://arxiv.org/abs/2604.23878}
+}
+```
+
+To cite this snapshot itself rather than the architecture, see [CITATION.cff](./CITATION.cff).
 
 ## Contributing
 
