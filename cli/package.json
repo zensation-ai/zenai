@@ -1,6 +1,6 @@
 {
   "name": "@zensation/cli",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "ZenAI CLI Agent - terminal interface with persistent memory, knowledge graph and agent system, built on the ZenBrain memory architecture.",
   "main": "dist/index.js",
   "bin": {

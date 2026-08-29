@@ -73,11 +73,22 @@ Versions up to 0.1.3 declared `>=18`, which was not achievable — 0.2.0 correct
 
 ## Part of ZenAI
 
-This CLI lives in the [ZenAI](https://github.com/zensation-ai/zenai) monorepo and builds on the same neuroscience-inspired memory system published as [`@zensation/core`](https://www.npmjs.com/package/@zensation/core) and [`@zensation/algorithms`](https://www.npmjs.com/package/@zensation/algorithms).
+This CLI lives in the [ZenAI](https://github.com/zensation-ai/zenai) monorepo and builds on the
+same neuroscience-inspired memory system that ZenBrain publishes as standalone packages.
+Lab: [zensation.ai](https://zensation.ai) · open-source@zensation.ai
 
-- Memory library and issues: [github.com/zensation-ai/zenbrain](https://github.com/zensation-ai/zenbrain)
-- Paper: [arXiv:2604.23878](https://arxiv.org/abs/2604.23878)
-- Lab: [zensation.ai](https://zensation.ai) · open-source@zensation.ai
+## About ZenBrain
+
+ZenBrain is a seven-layer, neuroscience-derived memory architecture for LLM agents, built as
+zero-dependency TypeScript and published under Apache-2.0. On LongMemEval-500 it wins all nine
+head-to-head answer-quality comparisons against Letta, Mem0 and A-Mem (three competitors x three
+LLM judges, Bonferroni-corrected), reaching 91.3% of a full-context oracle's binary-judge
+accuracy at 1/106th of the per-query token cost.
+
+- Source and issues: [github.com/zensation-ai/zenbrain](https://github.com/zensation-ai/zenbrain)
+- Paper: [arXiv:2604.23878](https://arxiv.org/abs/2604.23878) · Reproduction material: [10.5281/zenodo.19481262](https://doi.org/10.5281/zenodo.19481262)
+- Try it in the browser: [zensation.ai/en/playground](https://zensation.ai/en/playground)
+- Packages: [`@zensation/algorithms`](https://www.npmjs.com/package/@zensation/algorithms) · [`@zensation/core`](https://www.npmjs.com/package/@zensation/core) · [`@zensation/adapter-postgres`](https://www.npmjs.com/package/@zensation/adapter-postgres) · [`@zensation/adapter-sqlite`](https://www.npmjs.com/package/@zensation/adapter-sqlite) · [`@zensation/mcp`](https://www.npmjs.com/package/@zensation/mcp) · [`@zensation/ai-sdk`](https://www.npmjs.com/package/@zensation/ai-sdk)
 
 ## License
 
