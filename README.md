@@ -162,7 +162,6 @@ The memory architecture underneath ZenAI is documented and peer-reviewable:
 
 - **arXiv preprint** (cs.AI): [arxiv.org/abs/2604.23878](https://arxiv.org/abs/2604.23878)
 - **Open-access archive** (Zenodo / CERN): [doi.org/10.5281/zenodo.19353663](https://doi.org/10.5281/zenodo.19353663)
-- **Reproducibility artifacts** (Zenodo): [doi.org/10.5281/zenodo.19481262](https://doi.org/10.5281/zenodo.19481262)
 - **ORCID**: [0009-0001-1793-012X](https://orcid.org/0009-0001-1793-012X)
 
 ```bibtex
