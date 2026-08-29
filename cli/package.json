@@ -1,6 +1,6 @@
 {
   "name": "@zensation/cli",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "ZenAI CLI Agent - terminal interface with persistent memory, knowledge graph and agent system, built on the ZenBrain memory architecture.",
   "main": "dist/index.js",
   "bin": {
@@ -41,7 +41,7 @@
     "llm-agents",
     "claude"
   ],
-  "author": "Zensation AI <hello@zensation.ai>",
+  "author": "Zensation AI <open-source@zensation.ai>",
   "dependencies": {
     "@anthropic-ai/sdk": "^0.121.0",
     "chalk": "^4.1.2",
