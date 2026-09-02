@@ -28,8 +28,6 @@
 > up to date at [zensation.ai/en/publikationen](https://zensation.ai/en/publikationen).
 > The one part of this repository that is still published is the terminal agent in `cli/`,
 > released as [`@zensation/cli`](https://www.npmjs.com/package/@zensation/cli).
-> The one part of this repository that is still published is the terminal agent in `cli/`,
-> released as [`@zensation/cli`](https://www.npmjs.com/package/@zensation/cli).
 >
 > Questions about the state of ZenAI: **open-source@zensation.ai**
 
