@@ -1,7 +1,7 @@
 {
   "name": "@zensation/cli",
   "version": "0.2.2",
-  "description": "ZenAI CLI Agent - terminal interface with persistent memory, knowledge graph and agent system, built on the ZenBrain memory architecture.",
+  "description": "Terminal AI agent with filesystem tools, plus persistent agent memory and a knowledge graph for LLM agents when a backend is configured. Built on ZenBrain: 9 of 9 answer-quality wins on LongMemEval-500 vs Letta, Mem0, A-Mem.",
   "main": "dist/index.js",
   "bin": {
     "zenai": "dist/index.js"
@@ -39,7 +39,8 @@
     "zenai",
     "terminal",
     "llm-agents",
-    "claude"
+    "claude",
+    "longmemeval"
   ],
   "author": "Zensation AI <open-source@zensation.ai>",
   "dependencies": {
