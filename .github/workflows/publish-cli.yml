@@ -59,14 +59,34 @@ jobs:
             npm publish --access public
           fi
 
+      # On 2026-09-22 this step failed while the publish had SUCCEEDED
+      # (`+ @zensation/cli@0.2.3`, provenance signed). Two causes, both fixed here:
+      #
+      #   1. A single 15 s wait is not enough. The registry needed ~75 s that day to
+      #      answer for the fresh version; `npm view` returned E404 until then.
+      #   2. `npm view ... | grep -q` throws npm's exit code away — the pipeline reports
+      #      grep's status, so an E404 was indistinguishable from "published, but no
+      #      attestation" and fell into the else branch.
+      #
+      # A red release job looks exactly like an unpublished package. Whoever sees it
+      # re-tags and hunts a bug where there is none. The proof of a publish is the
+      # receipt (`+ package@version`), not the registry a moment later.
       - name: Confirm provenance landed
         run: |
           VERSION=$(node -p "require('./package.json').version")
-          sleep 15
-          if npm view "@zensation/cli@$VERSION" dist.attestations --json | grep -q provenance; then
-            echo "Provenance attestation present for @zensation/cli@$VERSION"
-          else
-            echo "::error::No provenance attestation for @zensation/cli@$VERSION."
-            echo "::error::Trusted publishing is configured PER PACKAGE on npmjs.com — check that @zensation/cli itself has a trusted publisher, not just the other packages."
-            exit 1
-          fi
+          for attempt in $(seq 1 8); do
+            if ATTESTATIONS=$(npm view "@zensation/cli@$VERSION" dist.attestations --json 2>/dev/null); then
+              if printf '%s' "$ATTESTATIONS" | grep -q provenance; then
+                echo "Provenance attestation present for @zensation/cli@$VERSION (attempt $attempt)"
+                exit 0
+              fi
+              echo "Attempt $attempt/8: version is visible but carries no attestation yet."
+            else
+              echo "Attempt $attempt/8: version not visible on the registry yet (propagation)."
+            fi
+            sleep 15
+          done
+          echo "::error::No provenance attestation for @zensation/cli@$VERSION after 8 attempts (~2 minutes)."
+          echo "::error::Check the publish step above first: if it printed '+ @zensation/cli@$VERSION', the package IS published and this is a propagation or attestation problem, not a failed release. Do NOT re-tag before checking npmjs.com."
+          echo "::error::Trusted publishing is configured PER PACKAGE on npmjs.com — check that @zensation/cli itself has a trusted publisher, not just the other packages."
+          exit 1
