@@ -26,8 +26,10 @@
 > **What is current:** the memory library [ZenBrain](https://github.com/zensation-ai/zenbrain)
 > is actively developed and released to npm, and the research record behind both is kept
 > up to date at [zensation.ai/en/publikationen](https://zensation.ai/en/publikationen).
-> The one part of this repository that is still published is the terminal agent in `cli/`,
-> released as [`@zensation/cli`](https://www.npmjs.com/package/@zensation/cli).
+> The terminal agent in `cli/` was published as [`@zensation/cli`](https://www.npmjs.com/package/@zensation/cli).
+> It is retired: every version is deprecated on npm (1 October 2026), because it reads
+> `API_URL` and `VITE_API_KEY` from the environment as undocumented fallbacks. Maintained
+> memory tooling: [`@zensation/mcp`](https://www.npmjs.com/package/@zensation/mcp).
 >
 > Questions about the state of ZenAI: **open-source@zensation.ai**
 
