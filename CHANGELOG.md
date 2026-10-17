@@ -2,7 +2,7 @@
 
 All notable changes to ZenAI's public mirror are documented in this file. The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-ZenAI's public mirror is a snapshot of the production platform with internal documents, paper sources, and operational runbooks excluded. Functionality entries below refer to the production platform; what's actually exposed in the mirror is the corresponding source code and tests.
+ZenAI's public mirror is a snapshot of the ZenAI platform as it ran in production, with internal documents, paper sources, and operational runbooks excluded. Functionality entries below refer to that platform; what's actually exposed in the mirror is the corresponding source code and tests.
 
 ## [Unreleased] — 2026-05-08
 
