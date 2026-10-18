@@ -80,11 +80,11 @@ Lab: [zensation.ai](https://zensation.ai/?utm_source=npm&utm_medium=readme&utm_c
 ## About ZenBrain
 
 ZenBrain is a seven-layer, neuroscience-derived memory architecture for LLM agents, built as
-zero-dependency TypeScript and published under Apache-2.0. On LongMemEval-500 three of nine
-head-to-head answer-quality comparisons hold against Letta, Mem0 and A-Mem — all three against
+TypeScript with no third-party dependencies in its core packages and published under Apache-2.0. On LongMemEval-500 three of nine
+head-to-head comparisons hold against Letta, Mem0 and A-Mem — all three against
 A-Mem, the remaining six are ties, none lost (three competitors x three LLM judges,
-Bonferroni-corrected, version-matched) — reaching 91.3% of a full-context oracle's binary-judge
-accuracy at 1/109.6 of the per-query token cost.
+Bonferroni-corrected, version-matched) — and the measured arm (per the correction notice a Python port of a test-harness class, not the seven-layer system)
+reaches 91.3% of the accuracy of a full-context comparison arm (whose answer model reads the whole history) with 1/109.6 of its input tokens in the answer step.
 
 - Source and issues: [github.com/zensation-ai/zenbrain](https://github.com/zensation-ai/zenbrain)
 - Paper: [arXiv:2604.23878](https://arxiv.org/abs/2604.23878) · Open-access archive: [10.5281/zenodo.19353663](https://doi.org/10.5281/zenodo.19353663)
